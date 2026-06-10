@@ -1,0 +1,10 @@
+{
+  "name": "ai-training-canvas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dansk browserbaseret træningsplanlægger og tracker",
+  "scripts": {
+    "start": "node serve.cjs"
+  },
+  "license": "MIT"
+}
