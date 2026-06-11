@@ -318,7 +318,8 @@
     }
     if (
       window.ENABLE_DAILY_START_WIZARD === true &&
-      profile.hasCompletedProfileWizard
+      profile.hasCompletedProfileWizard &&
+      window.Membership?.getMembership?.().isPremium !== false
     ) {
       window.DailyStartWizard?.open?.();
     }

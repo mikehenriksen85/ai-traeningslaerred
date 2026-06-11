@@ -21,6 +21,9 @@ En statisk dansk træningsapp til planlægning, registrering og analyse af træn
 - Målstyret programgenerator for muskelopbygning, vægttab, styrke og generel sundhed
 - Målbaserede øvelsesvalg, rep-intervaller, sæt, pauser, split og Copilot-anbefalinger
 - Fler-dages træningsprogrammer med dag-navigation og separat dagsdata
+- Medlemskabsside med gratisversion, 10 dages Premium-prøveperiode og demo-planer
+- Automatisk prøveudløb uden sletning af brugerdata
+- Premium-markeringer og lokal adgangskontrol, klar til senere betalingsintegration
 - Lokal lagring i browseren
 
 ## Projektstruktur
@@ -34,6 +37,7 @@ En statisk dansk træningsapp til planlægning, registrering og analyse af træn
 ├── profile-wizard.js
 ├── daily-start-wizard.js
 ├── wizard-controller.js
+├── membership.js
 ├── serve.cjs
 ├── package.json
 ├── .gitignore
@@ -129,9 +133,20 @@ Canvas Copilot understøtter blandt andet:
 
 Appen bliver derefter udgivet direkte fra `index.html`.
 
+## Medlemskab
+
+`membership.js` håndterer medlemskabsstatus lokalt i browseren. Nye brugere får
+automatisk 10 dages Premium-prøveperiode. Når perioden udløber, skifter appen
+til gratisversionen uden at ændre eller slette træningsdata.
+
+Planerne 3 måneder, 12 måneder og livstid er kun demo/test. Der gennemføres
+ingen betaling. Modulet gemmer den valgte plan og de relevante start- og
+slutdatoer i `localStorage`, så strukturen senere kan forbindes til et
+betalingssystem og Firebase.
+
 ## Data
 
-Træningspas, historik, kropsmål, profilvalg og wizard-status gemmes i browserens `localStorage`.
+Træningspas, historik, kropsmål, profilvalg, wizard-status og medlemskabsdata gemmes i browserens `localStorage`.
 Data følger derfor ikke automatisk med mellem forskellige browsere eller enheder.
 
 ## Licens

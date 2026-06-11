@@ -421,6 +421,147 @@
       background: rgba(74,222,128,.12);
       color: var(--green);
     }
+    .premium-indicator {
+      margin-left: auto;
+      padding: 2px 6px;
+      border: 1px solid rgba(251,191,36,.45);
+      border-radius: 4px;
+      color: var(--text-warning);
+      background: rgba(251,191,36,.08);
+      font-size: var(--font-size-compact);
+      font-weight: var(--font-weight-bold);
+      line-height: var(--line-height-control);
+    }
+    .premium-locked { position: relative; }
+    .premium-locked::after {
+      content: "Premium";
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 2px 6px;
+      border: 1px solid rgba(251,191,36,.45);
+      border-radius: 4px;
+      color: var(--text-warning);
+      background: var(--panel);
+      font-size: var(--font-size-compact);
+      font-weight: var(--font-weight-bold);
+      pointer-events: none;
+    }
+    .membership-view { display: none; position: fixed; inset: 60px 0 0; z-index: 305; overflow-y: auto; background: var(--bg); padding: 20px; }
+    .membership-view.open { display: block; }
+    .membership-shell { width: min(1080px, 100%); margin: 0 auto; }
+    .membership-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .membership-title { font-size: var(--font-size-h1); font-weight: var(--font-weight-bold); line-height: var(--line-height-heading); }
+    .membership-status {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(230px, .6fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .membership-status-card, .membership-benefits {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .membership-status-card {
+      border-color: rgba(58,147,255,.55);
+      background: linear-gradient(135deg, rgba(58,147,255,.14), rgba(74,222,128,.07));
+    }
+    .membership-eyebrow { color: var(--text-accent); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); margin-bottom: 6px; }
+    .membership-status-name { font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); margin-bottom: 6px; }
+    .membership-status-copy, .membership-date, .membership-note { color: var(--text-secondary); }
+    .membership-date { margin-top: 8px; font-size: var(--font-size-small); }
+    .membership-benefits-title { font-size: var(--font-size-h3); font-weight: var(--font-weight-semibold); margin-bottom: 8px; }
+    .membership-benefits ul, .membership-plan ul { margin: 0; padding-left: 18px; color: var(--text-secondary); }
+    .membership-plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .membership-plan {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .membership-plan.best { border-color: var(--green); box-shadow: 0 0 0 1px rgba(74,222,128,.16); }
+    .membership-best-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      color: #07130c;
+      background: var(--green);
+      font-size: var(--font-size-compact);
+      font-weight: var(--font-weight-bold);
+    }
+    .membership-plan-name { padding-right: 72px; font-size: var(--font-size-h3); font-weight: var(--font-weight-bold); }
+    .membership-price { margin: 12px 0 2px; color: var(--text-primary); font-size: 1.65rem; font-weight: var(--font-weight-bold); line-height: 1; }
+    .membership-price-note { min-height: 30px; color: var(--text-secondary); font-size: var(--font-size-small); }
+    .membership-plan ul { flex: 1; margin: 12px 0 16px; }
+    .membership-plan-btn {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      color: var(--text-primary);
+      background: var(--input);
+      cursor: pointer;
+    }
+    .membership-plan-btn.primary { border-color: var(--blue); background: var(--blue); }
+    .membership-plan-btn.best { border-color: var(--green); background: var(--green); color: #07130c; }
+    .membership-terms { color: var(--text-secondary); font-size: var(--font-size-small); text-align: center; }
+    .membership-popup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 520;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0,0,0,.76);
+    }
+    .membership-popup.open { display: flex; }
+    .membership-popup-panel {
+      width: min(680px, 100%);
+      max-height: 92vh;
+      overflow-y: auto;
+      background: var(--card);
+      border: 1px solid rgba(58,147,255,.55);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    .membership-popup-title { font-size: var(--font-size-h1); font-weight: var(--font-weight-bold); line-height: var(--line-height-heading); }
+    .membership-popup-copy { color: var(--text-secondary); margin: 8px 0 16px; }
+    .membership-popup-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .membership-popup-option {
+      position: relative;
+      min-height: 112px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 12px;
+      color: var(--text-primary);
+      background: var(--input);
+      cursor: pointer;
+      text-align: left;
+    }
+    .membership-popup-option.best { border-color: var(--green); }
+    .membership-popup-option strong, .membership-popup-option span { display: block; }
+    .membership-popup-option span { margin-top: 5px; color: var(--text-secondary); }
+    .membership-popup-free { width: 100%; margin-top: 10px; }
+    .membership-confirmation {
+      display: none;
+      margin-top: 12px;
+      padding: 10px;
+      border: 1px solid rgba(74,222,128,.35);
+      border-radius: 6px;
+      color: var(--text-success);
+      background: rgba(74,222,128,.08);
+    }
+    .membership-confirmation.show { display: block; }
 
     @media (max-width: 560px) {
       .canvas { padding: 12px; }
@@ -437,6 +578,10 @@
       .development-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .measure-field.goal { grid-column: auto; }
       .measure-entry { grid-template-columns: 1fr; }
+      .membership-view { padding: 12px; }
+      .membership-status, .membership-plans, .membership-popup-plans { grid-template-columns: 1fr; }
+      .membership-price-note { min-height: 0; }
+      .membership-popup-option { min-height: 0; }
     }
   </style>
 </head>
@@ -469,11 +614,12 @@
         <div class="mini-title" id="trashEmpty" style="margin-top:8px;">Papirkurven er tom.</div>
       </div>
     </div>
-    <div class="sidebar-item" onclick="openProgressView()">📈 Min udvikling</div>
+    <div class="sidebar-item" id="progressNavItem" onclick="openPremiumFeature('progress', openProgressView)">📈 Min udvikling <span class="premium-indicator">Premium</span></div>
+    <div class="sidebar-item" id="membershipNavItem" onclick="openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">Prøve</span></div>
     <div class="sidebar-item" onclick="openDashboard()">📜 Historik / Dashboard</div>
 
     <div class="section-title">Automatiske træningspas</div>
-    <div class="sidebar-box">
+    <div class="sidebar-box" id="programGeneratorAccess">
       <select class="sidebar-select" id="programType" onchange="chooseProgramType(this.value)">
         <option value="" selected disabled>✨ Vælg træningstype...</option>
         <option value="fullbody">Fullbody Pas</option>
@@ -528,7 +674,7 @@
         </div>
         <button class="add-btn" onclick="toggleMuscleMenu(event)">➕ Tilføj ny øvelse</button>
       </div>
-      <div class="copilot">
+      <div class="copilot" id="copilotAccess">
         <div class="copilot-title">✨ Canvas Copilot (Styr hele træningspasset med AI)</div>
         <div class="copilot-bar">
           <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'navn til Push dag', 'øvelse 1 til Pull-ups' eller 'pause til 1m30s'">
@@ -588,6 +734,105 @@
       </div>
     </div>
   </section>
+
+  <section class="membership-view" id="membershipView" aria-hidden="true">
+    <div class="membership-shell">
+      <div class="membership-head">
+        <div class="membership-title">Medlemskab</div>
+        <button class="close" onclick="closeMembershipView()" aria-label="Luk">×</button>
+      </div>
+
+      <div class="membership-status">
+        <article class="membership-status-card">
+          <div class="membership-eyebrow">10 dage gratis prøveperiode</div>
+          <div class="membership-status-name" id="membershipStatusName">Premium-prøveperiode</div>
+          <div class="membership-status-copy" id="membershipStatusCopy">Fuld adgang til alle Premium-funktioner uden betalingskrav.</div>
+          <div class="membership-date" id="membershipStatusDate"></div>
+          <button class="membership-plan-btn primary" id="startTrialBtn" onclick="startMembershipTrial()" style="margin-top:12px;">Start gratis prøveperiode</button>
+          <div class="membership-confirmation" id="membershipConfirmation"></div>
+        </article>
+        <article class="membership-benefits">
+          <div class="membership-benefits-title">Premium indeholder</div>
+          <ul>
+            <li>AI Copilot og programgenerator</li>
+            <li>Op til 10 træningspas</li>
+            <li>Min udvikling og avancerede diagrammer</li>
+            <li>Kropsmålinger og ubegrænset historik</li>
+            <li>Daglig wizard og automatisk tilpasning</li>
+            <li>Cloud-backup, når Firebase tilføjes</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="membership-plans">
+        <article class="membership-plan">
+          <div class="membership-plan-name">Gratis version</div>
+          <div class="membership-price">0 kr.</div>
+          <div class="membership-price-note">Altid tilgængelig</div>
+          <ul>
+            <li>Eksisterende træningspas og historik</li>
+            <li>Gennemfør træning og gem lokalt</li>
+            <li>Basale træningsfunktioner</li>
+            <li>Brugerdata slettes aldrig</li>
+          </ul>
+          <button class="membership-plan-btn" onclick="selectMembershipPlan('free')">Fortsæt gratis</button>
+        </article>
+
+        <article class="membership-plan">
+          <div class="membership-plan-name">Premium 3 måneder</div>
+          <div class="membership-price">25 kr.</div>
+          <div class="membership-price-note">Premium-adgang i 3 måneder</div>
+          <ul>
+            <li>Alle Premium-funktioner</li>
+            <li>Ingen automatisk betaling i demoen</li>
+          </ul>
+          <button class="membership-plan-btn primary" onclick="selectMembershipPlan('quarterly')">Vælg 3 måneder</button>
+        </article>
+
+        <article class="membership-plan best">
+          <div class="membership-best-badge">Bedste værdi</div>
+          <div class="membership-plan-name">Premium 12 måneder</div>
+          <div class="membership-price">79 kr.</div>
+          <div class="membership-price-note">Premium-adgang i 12 måneder</div>
+          <ul>
+            <li>Alle Premium-funktioner</li>
+            <li>Laveste pris pr. måned</li>
+          </ul>
+          <button class="membership-plan-btn best" onclick="selectMembershipPlan('yearly')">Vælg 12 måneder</button>
+        </article>
+
+        <article class="membership-plan">
+          <div class="membership-plan-name">Livstid</div>
+          <div class="membership-price">199 kr.</div>
+          <div class="membership-price-note">Én betaling, permanent adgang</div>
+          <ul>
+            <li>Permanent Premium-adgang</li>
+            <li>Alle nuværende Premium-funktioner</li>
+          </ul>
+          <button class="membership-plan-btn primary" onclick="selectMembershipPlan('lifetime')">Vælg livstid</button>
+        </article>
+      </div>
+
+      <div class="membership-terms">
+        Betaling er ikke aktiveret endnu. Valgte planer gemmes kun lokalt som demo/test, og gratisversionen kan altid vælges.
+      </div>
+    </div>
+  </section>
+
+  <div class="membership-popup" id="membershipPopup" role="dialog" aria-modal="true" aria-labelledby="membershipPopupTitle">
+    <div class="membership-popup-panel">
+      <div class="membership-popup-title" id="membershipPopupTitle">🎉 Tak fordi du har prøvet appen</div>
+      <div class="membership-popup-copy">
+        Din gratis prøveperiode er udløbet. Du kan fortsætte gratis med begrænsede funktioner eller vælge et medlemskab for at få adgang til alle Premium-funktioner.
+      </div>
+      <div class="membership-popup-plans">
+        <button class="membership-popup-option" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span>25 kr.</span></button>
+        <button class="membership-popup-option best" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span>79 kr. · Bedste værdi</span></button>
+        <button class="membership-popup-option" onclick="selectMembershipPlan('lifetime')"><strong>🥇 Livstid</strong><span>199 kr.</span></button>
+      </div>
+      <button class="membership-plan-btn membership-popup-free" onclick="selectMembershipPlan('free')">📘 Fortsæt gratis</button>
+    </div>
+  </div>
 
   <div class="modal" id="modal">
     <div class="modal-panel">
@@ -655,6 +900,7 @@
         savedWorkouts: "📂 Gemte Træningspas",
         trashWorkouts: "🗑 Papirkurv",
         myProgress: "📈 Min udvikling",
+        membership: "💎 Medlemskab",
         history: "📜 Historik / Dashboard",
         autoPrograms: "Automatiske træningspas",
         chooseType: "✨ Vælg træningstype...",
@@ -782,8 +1028,13 @@
       if (sidebarItems[0]) sidebarItems[0].textContent = t("newWorkout");
       if (sidebarItems[1]) sidebarItems[1].textContent = t("savedWorkouts");
       if (sidebarItems[2]) sidebarItems[2].textContent = t("trashWorkouts");
-      if (sidebarItems[3]) sidebarItems[3].textContent = t("myProgress");
-      if (sidebarItems[4]) sidebarItems[4].textContent = t("history");
+      if (sidebarItems[3]) {
+        sidebarItems[3].childNodes[0].textContent = `${t("myProgress")} `;
+      }
+      if (sidebarItems[4]) {
+        sidebarItems[4].childNodes[0].textContent = `${t("membership")} `;
+      }
+      if (sidebarItems[5]) sidebarItems[5].textContent = t("history");
 
       document.querySelector("#programType option[value='']").textContent = t("chooseType");
       document.querySelector("#programType option[value='fullbody']").textContent = tp("fullbody");
@@ -845,6 +1096,10 @@
       window.location.href = appUrl();
     }
     function goBackSafe() {
+      if ($("membershipView")?.classList.contains("open")) {
+        closeMembershipView();
+        return;
+      }
       if ($("progressView")?.classList.contains("open")) {
         closeProgressView();
         return;
@@ -1007,6 +1262,10 @@
     }
 
     function chooseProgramType(type) {
+      if (!openPremiumFeature("generator")) {
+        $("programType").value = "";
+        return;
+      }
       pendingProgram = type;
       $("countTitle").textContent = `${t("howMany")} ${tp(type)}?`;
       $("countPicker").style.display = "block";
@@ -1538,6 +1797,11 @@
     function toggleTrashDropdown() { renderTrash(); $("trashDropdown").style.display = $("trashDropdown").style.display === "block" ? "none" : "block"; }
     function saveCanvasState() {
       const programs = getPrograms();
+      const isNewProgram = !currentSavedProgramId;
+      if (isNewProgram && programs.length >= 2 && !window.Membership?.getMembership?.().isPremium) {
+        openPremiumFeature("programs");
+        return;
+      }
       const state = collectWorkoutState();
       const id = currentSavedProgramId || `program_${Date.now()}`;
       currentSavedProgramId = id;
@@ -2013,6 +2277,7 @@
     }
     function openDashboard(slot = null, improve = 5) {
       const hist = history(), current = collectAnalyticsEntry();
+      const hasPremium = window.Membership?.getMembership?.().isPremium !== false;
       const allSets = hist.flatMap(e => e.exercises || []).flatMap(e => e.sets || []);
       const bestOne = Math.max(0, ...allSets.map(s => s.oneRm));
       const bestLift = Math.max(0, ...allSets.map(s => s.weight));
@@ -2029,11 +2294,13 @@
           <div class="dash-card"><div class="dash-label">${t("bestWorkoutVolume")}</div><div class="dash-value">${vol(bestWorkoutVol)}</div></div>
           <div class="dash-card"><div class="dash-label">${t("totalVolume")}</div><div class="dash-value">${vol(totalVol)}</div></div>
         </div>
-        <div class="section">${t("oneRmDevelopment")}</div><div class="chart">${bars}</div>
+        ${hasPremium
+          ? `<div class="section">${t("oneRmDevelopment")}</div><div class="chart">${bars}</div>`
+          : `<div class="dash-card premium-locked"><div class="dash-label">Avancerede diagrammer</div><div class="helper-text">Diagrammer og periodeanalyser er tilgængelige med Premium.</div><button class="small-btn" style="margin-top:8px;" onclick="closeModal();openMembershipView();">Se medlemskab</button></div>`}
         ${slot ? simulationHtml(slot, improve) : ""}
         <div class="section">${t("volumePerExercise")}</div>${table([t("exerciseHeader"),t("volumeHeader"),t("changeHeader")], current.exercises.map(e => [e.name, vol(e.totalVolume), "+0%"]))}
-        <div class="section">${t("volumePerWeek")}</div>${table([t("weekHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"week").map(x => [x.key, vol(x.volume), x.change]))}
-        <div class="section">${t("volumePerMonth")}</div>${table([t("monthHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"month").map(x => [x.key, vol(x.volume), x.change]))}
+        ${hasPremium ? `<div class="section">${t("volumePerWeek")}</div>${table([t("weekHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"week").map(x => [x.key, vol(x.volume), x.change]))}` : ""}
+        ${hasPremium ? `<div class="section">${t("volumePerMonth")}</div>${table([t("monthHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"month").map(x => [x.key, vol(x.volume), x.change]))}` : ""}
         <div class="section">${t("personalRecords")}</div>${table([t("typeHeader"),t("resultHeader")], [[t("bestOneRm"), bestOne ? kg(bestOne) : "-"], [t("heaviestWeight"), bestLift ? kg(bestLift) : "-"]])}
       `;
       $("modal").style.display = "flex";
@@ -2135,6 +2402,7 @@
     }
 
     function runCopilot() {
+      if (!openPremiumFeature("copilot")) return;
       const cmd = $("copilotInput").value.trim();
       if (!cmd) return;
       const normalized = cmd.toLowerCase();
@@ -2340,6 +2608,7 @@
     }
 
     function adaptDailyWorkout(event) {
+      if (!openPremiumFeature("adaptation")) return;
       const motivation = event.detail?.motivation || "normal";
       const programId = preferredDailyProgramId();
       if (programId) loadSavedProgram(programId, false);
@@ -2392,6 +2661,7 @@
     }
 
     function openDailyProgramGenerator() {
+      if (!openPremiumFeature("generator")) return;
       const context = window.TrainingWizardStore?.getContext?.() || {};
       const focus = context.focusAreas || [];
       const type = ["weight_loss", "strength", "general_health"].includes(context.goal)
@@ -2439,6 +2709,7 @@
   <script src="profile-wizard.js"></script>
   <script src="daily-start-wizard.js"></script>
   <script src="wizard-controller.js"></script>
+  <script src="membership.js"></script>
 </body>
 </html>
 
