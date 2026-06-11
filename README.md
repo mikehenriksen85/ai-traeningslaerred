@@ -38,6 +38,7 @@ En statisk dansk træningsapp til planlægning, registrering og analyse af træn
 ├── daily-start-wizard.js
 ├── wizard-controller.js
 ├── membership.js
+├── QA-REPORT.md
 ├── serve.cjs
 ├── package.json
 ├── .gitignore

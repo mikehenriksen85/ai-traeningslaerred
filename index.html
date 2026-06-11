@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:,">
   <title>AI Training Canvas</title>
   <style>
     :root {
@@ -394,6 +395,7 @@
     .feedback-success { display: none; color: var(--text-success); margin-top: 8px; }
     .helper-text { color: var(--text-secondary); }
     .mobile-action-label { display: none; }
+    .mobile-table-label { display: none; }
     .day-navigation {
       display: none;
       gap: 6px;
@@ -563,6 +565,10 @@
     }
     .membership-confirmation.show { display: block; }
 
+    @media (max-width: 900px) {
+      .membership-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
     @media (max-width: 560px) {
       .canvas { padding: 12px; }
       .top-controls { grid-template-columns: 1fr; }
@@ -571,7 +577,17 @@
       .exercise-actions .small-btn { min-width: 0; padding: 6px 2px; font-size: var(--font-size-compact); text-overflow: clip; }
       .exercise-actions .desktop-action-label { display: none; }
       .exercise-actions .mobile-action-label { display: inline; }
-      .table-head, .set-row { grid-template-columns: 24px 34px 50px 44px 44px minmax(116px, 1fr); }
+      .desktop-table-label { display: none; }
+      .mobile-table-label { display: inline; }
+      .table-head, .set-row {
+        grid-template-columns: 18px 26px 32px 34px 34px minmax(92px, 1fr);
+        gap: 3px;
+      }
+      .table-head { font-size: var(--font-size-compact); }
+      .set-row input { width: 100%; min-width: 0; }
+      .pause-control { gap: 2px; }
+      .pause-control input { width: 44px; }
+      .timer-btn { width: 22px; height: 25px; padding: 0; }
       .dash-grid { grid-template-columns: 1fr; }
       .progress-view { padding: 12px; }
       .development-grid, .measure-form { grid-template-columns: 1fr; }
@@ -886,6 +902,7 @@
     let currentProgramSession = null;
     let currentProgramDayIndex = 0;
     let currentLanguage = "da";
+    let autosaveDebounce = null;
     const pauseTimers = {};
 
     const translations = {
@@ -995,6 +1012,29 @@
 
     function $(id) { return document.getElementById(id); }
     function esc(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+    function readLocalJson(key, fallback) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "null");
+        return parsed ?? fallback;
+      } catch {
+        return fallback;
+      }
+    }
+    function writeLocalJson(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch {
+        const status = $("autosaveStatus");
+        if (status) status.textContent = "Kunne ikke gemme lokalt";
+        return false;
+      }
+    }
+    function removeLocalValue(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch {}
+    }
     function t(key) { return (translations[currentLanguage] || translations.da)[key] || translations.da[key] || key; }
     function tm(muscle) { return (translations[currentLanguage]?.muscles || translations.da.muscles)[muscle] || muscle; }
     function tt(type) { return (translations[currentLanguage]?.types || translations.da.types)[type] || type; }
@@ -1378,7 +1418,14 @@
           <div class="row"><input class="field" id="replace-input-${slot}" placeholder="${t("aiReplacePlaceholder")}" onkeyup="if(event.key==='Enter') smartReplace('${slot}')"><button class="small-btn orange" onclick="smartReplace('${slot}')">${t("askAi")}</button></div>
           <div class="list" id="replace-list-${slot}"></div>
         </div>
-        <div class="table-head"><div>${t("set")}</div><div>${t("ok")}</div><div>${t("previous")}</div><div>${t("weight")}</div><div>${t("reps")}</div><div>${t("pauseLabel")}</div></div>
+        <div class="table-head">
+          <div>${t("set")}</div>
+          <div>${t("ok")}</div>
+          <div><span class="desktop-table-label">${t("previous")}</span><span class="mobile-table-label">Sidst</span></div>
+          <div><span class="desktop-table-label">${t("weight")}</span><span class="mobile-table-label">Kg</span></div>
+          <div>${t("reps")}</div>
+          <div>${t("pauseLabel")}</div>
+        </div>
         <div id="sets-${slot}"></div>
         <div class="set-controls"><span>${t("adjustSets")}</span><button class="square" onclick="changeSets('${slot}',-1)">-</button><b id="count-${slot}">2</b><button class="square" onclick="changeSets('${slot}',1)">+</button></div>
       `;
@@ -1388,6 +1435,7 @@
     }
 
     function removeExercise(slot) {
+      clearPauseTimers(slot);
       const el = $(`block-${slot}`);
       if (el) el.remove();
       updateWorkoutProgress();
@@ -1464,7 +1512,7 @@
     }
 
     function saveCustomExercises() {
-      localStorage.setItem("custom_exercises", JSON.stringify(catalog.filter(x => x.custom)));
+      writeLocalJson("custom_exercises", catalog.filter(x => x.custom));
     }
 
     function setExercise(slot, name, muscle) {
@@ -1489,6 +1537,7 @@
       $(`name-${slot}`).dataset.muscle = muscle;
       const m = $(`filter-muscle-${slot}`);
       if (m) m.value = muscle;
+      clearPauseTimers(slot);
       renderSets(slot, parseInt($(`count-${slot}`).textContent), data);
       const manualBox = $(`manual-${slot}`);
       const replaceBox = $(`replace-${slot}`);
@@ -1516,8 +1565,8 @@
             <div>${i}</div>
             <div><input type="checkbox" ${data.completed ? "checked" : ""} onchange="toggleCompleted(this,'${slot}')"></div>
             <div class="previous">${esc(data.prev || "-")}</div>
-            <div><input class="weight" placeholder="kg" value="${esc(data.weight || "")}" oninput="updateAnalytics('${slot}'); autoSave();"></div>
-            <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); autoSave();"></div>
+            <div><input class="weight" placeholder="kg" value="${esc(data.weight || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
+            <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div class="pause-control"><input class="pause" id="pause-${slot}-${i}" placeholder="0m00s" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="markPauseManual(this)"><button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})">▶</button><button class="timer-btn" onclick="resetPause('${slot}',${i})">↺</button></div>
           </div>
           <div class="set-analytics"><span class="pill" id="orm-${slot}-${i}">1RM: -</span><span class="pill green" id="vol-${slot}-${i}">Volumen: -</span></div>
@@ -1562,12 +1611,13 @@
     function markPauseManual(input) {
       input.dataset.pauseManual = "true";
       updateEstimatedTime();
-      autoSave();
+      scheduleAutoSave();
     }
 
     function changeSets(slot, delta) {
       const data = collectSetData(slot);
       const next = Math.max(1, parseInt($(`count-${slot}`).textContent) + delta);
+      clearPauseTimers(slot);
       renderSets(slot, next, data);
       autoSave();
     }
@@ -1591,6 +1641,14 @@
     }
 
     function pauseKey(slot, set) { return `${slot}-${set}`; }
+    function clearPauseTimers(slot = "") {
+      Object.keys(pauseTimers).forEach(key => {
+        if (!slot || key.startsWith(`${slot}-`)) {
+          clearInterval(pauseTimers[key]?.interval);
+          delete pauseTimers[key];
+        }
+      });
+    }
     function togglePause(slot, set) {
       const key = pauseKey(slot, set);
       const input = $(`pause-${slot}-${set}`);
@@ -1681,6 +1739,7 @@
       delete $("workoutTitle").dataset.customTitle;
       totalSeconds = Number(day.timerSeconds) || 0;
       $("globalTimer").textContent = formatTime(totalSeconds);
+      clearPauseTimers();
       $("exercises").innerHTML = "";
       (day.exercises || []).forEach(exercise => addExercise(exercise.name, exercise.muscle, exercise.sets, exercise));
       renderDayNavigation();
@@ -1722,21 +1781,32 @@
       };
     }
     function autoSave() {
+      if (autosaveDebounce) {
+        clearTimeout(autosaveDebounce);
+        autosaveDebounce = null;
+      }
       const state = collectWorkoutState();
+      let savedLocally;
       if (currentProgramSession) {
         syncActiveDayFromCanvas();
-        localStorage.setItem("active_workout_autosave", JSON.stringify({
+        savedLocally = writeLocalJson("active_workout_autosave", {
           version: 2,
           program: currentProgramSession
-        }));
+        });
       } else {
-        localStorage.setItem("active_workout_autosave", JSON.stringify(state));
+        savedLocally = writeLocalJson("active_workout_autosave", state);
       }
       if (currentSavedProgramId) window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
-      $("autosaveStatus").textContent = `${t("autosaved")} ${new Date(state.savedAt).toLocaleTimeString("da-DK", { hour:"2-digit", minute:"2-digit" })}`;
+      if (savedLocally) {
+        $("autosaveStatus").textContent = `${t("autosaved")} ${new Date(state.savedAt).toLocaleTimeString("da-DK", { hour:"2-digit", minute:"2-digit" })}`;
+      }
+    }
+    function scheduleAutoSave() {
+      if (autosaveDebounce) clearTimeout(autosaveDebounce);
+      autosaveDebounce = setTimeout(autoSave, 250);
     }
     function loadAutosave() {
-      const saved = JSON.parse(localStorage.getItem("active_workout_autosave") || "null");
+      const saved = readLocalJson("active_workout_autosave", null);
       if (saved?.version === 2 && saved.program) {
         currentProgramSession = window.WorkoutProgramStore?.normalizeProgram?.(saved.program) || saved.program;
         currentSavedProgramId = currentProgramSession.id || "";
@@ -1760,16 +1830,20 @@
       return true;
     }
 
-    function getPrograms() { return JSON.parse(localStorage.getItem("saved_workout_programs") || "[]"); }
-    function setPrograms(p) { localStorage.setItem("saved_workout_programs", JSON.stringify(p)); }
+    function getPrograms() {
+      const programs = readLocalJson("saved_workout_programs", []);
+      return Array.isArray(programs) ? programs.filter(program => program && typeof program === "object") : [];
+    }
+    function setPrograms(p) { return writeLocalJson("saved_workout_programs", p); }
     function getTrash() {
-      const raw = JSON.parse(localStorage.getItem("deleted_workout_programs") || "[]");
+      const stored = readLocalJson("deleted_workout_programs", []);
+      const raw = Array.isArray(stored) ? stored.filter(program => program && typeof program === "object") : [];
       const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
       const list = raw.filter(p => new Date(p.deletedAt || 0).getTime() > cutoff);
       if (list.length !== raw.length) setTrash(list);
       return list;
     }
-    function setTrash(p) { localStorage.setItem("deleted_workout_programs", JSON.stringify(p)); }
+    function setTrash(p) { return writeLocalJson("deleted_workout_programs", p); }
     function renderSaved() {
       const list = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
       $("savedSelect").innerHTML = list.length ? `<option value="">${t("selectProgram")}</option>` + list.map(p => `<option value="${p.id}">${esc(p.title)} - ${new Date(p.savedAt).toLocaleDateString("da-DK")}</option>`).join("") : `<option value="">${t("noSavedPrograms")}</option>`;
@@ -1824,7 +1898,10 @@
       const program = window.WorkoutProgramStore.clone(currentProgramSession);
       const i = programs.findIndex(p => p.id === id);
       if (i >= 0) programs[i] = program; else programs.push(program);
-      setPrograms(programs);
+      if (!setPrograms(programs)) {
+        alert("Træningspasset kunne ikke gemmes lokalt. Kontrollér browserens lagerplads og prøv igen.");
+        return;
+      }
       autoSave();
       renderSaved();
       alert(`"${program.title}" ${t("savedAlert")}`);
@@ -1955,9 +2032,14 @@
       if (closeSidebar && $("sidebar").classList.contains("open")) toggleSidebar();
     }
     function resetWorkoutCanvas(status = t("ready")) {
+      if (autosaveDebounce) {
+        clearTimeout(autosaveDebounce);
+        autosaveDebounce = null;
+      }
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = null;
       isTimerRunning = false;
+      clearPauseTimers();
       $("exercises").innerHTML = "";
       $("workoutTitle").textContent = t("defaultTitle");
       delete $("workoutTitle").dataset.customTitle;
@@ -1971,7 +2053,7 @@
       $("timerBtn").classList.remove("active");
       $("stopBtn").style.display = "none";
       $("autosaveStatus").textContent = status;
-      localStorage.removeItem("active_workout_autosave");
+      removeLocalValue("active_workout_autosave");
       updateWorkoutProgress();
       updateEstimatedTime();
     }
@@ -1991,13 +2073,17 @@
     }
     function finishWorkout() {
       if (!confirm(t("finishConfirm"))) return;
+      if (autosaveDebounce) {
+        clearTimeout(autosaveDebounce);
+        autosaveDebounce = null;
+      }
       if (isTimerRunning) toggleWorkoutTimer();
       syncActiveDayFromCanvas();
       const entry = collectAnalyticsEntry();
-      const history = JSON.parse(localStorage.getItem("training_analytics_history") || "[]");
-      if (entry.totalVolume) history.push(entry);
-      localStorage.setItem("training_analytics_history", JSON.stringify(history));
-      localStorage.removeItem("active_workout_autosave");
+      const entries = history();
+      if (entry.totalVolume) entries.push(entry);
+      writeLocalJson("training_analytics_history", entries);
+      removeLocalValue("active_workout_autosave");
       $("autosaveStatus").textContent = t("finishedSaved");
       alert(`${t("workoutFinished")}\n${t("volumeHeader")}: ${vol(entry.totalVolume)}\n${t("bestOneRm")}: ${entry.bestOneRm ? kg(entry.bestOneRm) : "-"}`);
     }
@@ -2028,7 +2114,10 @@
         bestLift: Math.max(0,...exercises.map(e=>e.bestLift))
       };
     }
-    function history() { return JSON.parse(localStorage.getItem("training_analytics_history") || "[]"); }
+    function history() {
+      const entries = readLocalJson("training_analytics_history", []);
+      return Array.isArray(entries) ? entries.filter(entry => entry && typeof entry === "object") : [];
+    }
     function pct(cur, prev) { if (!prev) return cur ? "+100%" : "0%"; const p = ((cur-prev)/prev)*100; return `${p>0?"+":""}${p.toFixed(1).replace(".",",")}%`; }
     function exerciseDevelopmentData() {
       const grouped = {};
@@ -2162,12 +2251,12 @@
     };
 
     function getBodyMeasurements() {
-      try { return JSON.parse(localStorage.getItem("body_measurement_history") || "[]"); }
-      catch { return []; }
+      const entries = readLocalJson("body_measurement_history", []);
+      return Array.isArray(entries) ? entries.filter(entry => entry && typeof entry === "object") : [];
     }
 
     function setBodyMeasurements(entries) {
-      localStorage.setItem("body_measurement_history", JSON.stringify(entries));
+      return writeLocalJson("body_measurement_history", entries);
     }
 
     function bodyNumber(id) {
@@ -2514,12 +2603,13 @@
     function inferMuscle(name, fallback) { return catalog.find(x => x.name.toLowerCase() === name.toLowerCase())?.muscle || fallback || "Ryg"; }
 
     function loadCustom() {
-      try {
-        (JSON.parse(localStorage.getItem("custom_exercises") || "[]")).forEach(x => {
-          const exists = catalog.some(ex => ex.name.toLowerCase() === x.name.toLowerCase() && ex.muscle === x.muscle);
-          if (!exists) catalog.push({ ...x, custom: true });
-        });
-      } catch {}
+      const customExercises = readLocalJson("custom_exercises", []);
+      if (!Array.isArray(customExercises)) return;
+      customExercises.forEach(x => {
+        if (!x?.name || !x?.muscle) return;
+        const exists = catalog.some(ex => ex.name.toLowerCase() === String(x.name).toLowerCase() && ex.muscle === x.muscle);
+        if (!exists) catalog.push({ ...x, custom: true });
+      });
     }
 
     function createOnboardingPrograms(event) {
@@ -2588,7 +2678,7 @@
       const storedId = window.TrainingWizardStore?.getLastActiveProgramId?.() || "";
       if (storedId && getPrograms().some(program => program.id === storedId)) return storedId;
       if (currentSavedProgramId && getPrograms().some(program => program.id === currentSavedProgramId)) return currentSavedProgramId;
-      const autosave = JSON.parse(localStorage.getItem("active_workout_autosave") || "null");
+      const autosave = readLocalJson("active_workout_autosave", null);
       if (autosave?.savedProgramId && getPrograms().some(program => program.id === autosave.savedProgramId)) return autosave.savedProgramId;
       return getPrograms().sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt))[0]?.id || "";
     }
