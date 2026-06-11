@@ -1,94 +1,2446 @@
 <!DOCTYPE html>
 <html lang="da">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Training Canvas - Dynamisk Afslut Knap</title>
-    <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Training Canvas</title>
+  <style>
+    :root {
+      --bg: #1e252b;
+      --card: #252e36;
+      --panel: #151a1e;
+      --input: #1a2026;
+      --border: #313d49;
+      --text: #fff;
+      --muted: #a0aab2;
+      --blue: #3a93ff;
+      --green: #4ade80;
+      --orange: #fb923c;
+      --purple: #a855f7;
+      --red: #ef4444;
+      --font-primary: "Segoe UI", Arial, sans-serif;
+      --font-size-h1: 1.5rem;
+      --font-size-h2: 1.125rem;
+      --font-size-h3: 1rem;
+      --font-size-body: .875rem;
+      --font-size-small: .75rem;
+      --font-size-button: .8125rem;
+      --font-size-compact: .6875rem;
+      --font-size-icon: 1.25rem;
+      --font-weight-regular: 400;
+      --font-weight-medium: 500;
+      --font-weight-semibold: 600;
+      --font-weight-bold: 700;
+      --line-height-heading: 1.25;
+      --line-height-body: 1.5;
+      --line-height-control: 1.2;
+      --text-primary: var(--text);
+      --text-secondary: var(--muted);
+      --text-accent: var(--blue);
+      --text-success: var(--green);
+      --text-danger: var(--red);
+      --text-warning: #fbbf24;
+    }
+
+    * { box-sizing: border-box; }
+    html { font-family: var(--font-primary); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-primary);
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-regular);
+      line-height: var(--line-height-body);
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 18px;
+      z-index: 100;
+    }
+
+    button, select, input, textarea { font-family: inherit; }
+    .menu-toggle-btn, .nav-btn {
+      background: var(--input);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .menu-toggle-btn { font-size: var(--font-size-icon); padding: 5px 10px; }
+    .nav-btn { padding: 7px 12px; font-size: var(--font-size-body); }
+    .app-title { font-weight: var(--font-weight-bold); margin-left: 4px; }
+
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 -290px;
+      width: 290px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      z-index: 220;
+      transition: left .25s ease;
+      box-shadow: 8px 0 24px rgba(0,0,0,.42);
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 180;
+    }
+    .overlay.show { display: block; }
+    .profile { padding: 26px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
+    .profile.profile-edit-enabled { cursor: pointer; }
+    .profile.profile-edit-enabled:hover { background: rgba(58,147,255,.08); }
+    .avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--blue); display: grid; place-items: center; background: var(--card); }
+    .section-title { padding: 16px 24px 6px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0; }
+    .sidebar-item { padding: 12px 24px; color: var(--text-secondary); cursor: pointer; display: flex; gap: 12px; align-items: center; }
+    .sidebar-item:hover { color: var(--text-primary); background: rgba(58,147,255,.1); }
+    .sidebar-box { padding: 6px 24px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .sidebar-select, .field {
+      width: 100%;
+      background: var(--input);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px;
+      outline: none;
+    }
+    .saved-dropdown, .count-picker { display: none; padding: 0 24px 12px; }
+    .nested-box { background: var(--input); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+    .mini-title { color: var(--text-secondary); font-size: var(--font-size-small); margin-bottom: 8px; }
+    .count-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 170px; overflow-y: auto; }
+    .count-grid button { background: var(--card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 5px; padding: 8px 0; cursor: pointer; }
+    .count-grid button:hover { color: var(--text-accent); border-color: var(--text-accent); }
+    .trash-list { display: flex; flex-direction: column; gap: 8px; }
+    .trash-item { background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 9px; }
+    .trash-name { font-weight: var(--font-weight-bold); color: var(--text-primary); overflow-wrap: anywhere; }
+    .trash-meta { color: var(--text-secondary); font-size: var(--font-size-small); margin: 4px 0 8px; }
+    .trash-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    .canvas { width: 100%; max-width: 560px; margin-top: 80px; padding: 20px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+    #workoutTitle { font-size: var(--font-size-h1); font-weight: var(--font-weight-semibold); margin-bottom: 12px; }
+    .top-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .top-btn { border: 0; border-radius: 6px; color: var(--text-primary); padding: 11px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+    .save-btn { background: #22c55e; }
+    .start-btn { background: var(--blue); }
+    .start-btn.active { background: var(--orange); }
+    .stop-btn { background: var(--red); display: none; grid-column: 1 / -1; }
+    .stats { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(0,0,0,.18); padding: 9px 12px; border-radius: 6px; color: var(--text-secondary); font-size: var(--font-size-body); }
+    #globalTimer { color: var(--text-success); }
+    #autosaveStatus { color: var(--text-accent); font-size: var(--font-size-small); margin-left: auto; }
+    #estimatedTime { color: var(--text-primary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; }
+    .workout-progress { display: flex; align-items: center; gap: 8px; margin-left: 4px; }
+    .progress-ring {
+      --progress: 0%;
+      width: 58px;
+      height: 58px;
+      flex: 0 0 58px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--blue) var(--progress), rgba(255,255,255,.1) 0);
+      position: relative;
+      transition: background .25s ease;
+    }
+    .progress-ring::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--card); }
+    .progress-ring.complete { background: conic-gradient(var(--green) 100%, rgba(255,255,255,.1) 0); }
+    #progressPercent { position: relative; z-index: 1; color: var(--text-primary); font-size: var(--font-size-body); font-weight: var(--font-weight-bold); }
+    #progressComplete { display: none; max-width: 92px; color: var(--text-success); font-size: var(--font-size-small); line-height: var(--line-height-control); font-weight: var(--font-weight-bold); }
+    #progressComplete.show { display: block; }
+    .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--purple); color: var(--text-primary); border: 0; border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+
+    .exercise { background: rgba(0,0,0,.12); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 18px; }
+    .exercise-transition { display: none; color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); margin-bottom: 9px; }
+    .exercise-transition.show { display: block; }
+    .exercise-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 2.4fr); gap: 12px; align-items: start; margin-bottom: 10px; }
+    .exercise-name { color: var(--text-success); font-size: var(--font-size-h3); font-weight: var(--font-weight-semibold); min-width: 0; line-height: var(--line-height-heading); overflow-wrap: anywhere; }
+    .exercise-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; justify-content: stretch; align-items: stretch; }
+    .exercise-actions .danger-slot { grid-column: auto; }
+    .small-btn { background: var(--input); border: 1px solid var(--border); color: var(--text-accent); border-radius: 5px; padding: 6px 6px; min-height: 32px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+    .small-btn.orange { color: var(--orange); border-color: var(--orange); }
+    .small-btn.red { color: var(--text-danger); border-color: var(--text-danger); }
+    .small-btn:hover { background: rgba(255,255,255,.05); }
+
+    .manual-box, .replace-box { display: none; background: var(--input); border: 1px solid var(--blue); border-radius: 8px; padding: 12px; margin: 10px 0; }
+    .replace-box { border-color: var(--orange); }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .row > * { flex: 1; }
+    .custom-box { border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); margin: 10px 0; padding: 10px 0; }
+    .custom-title { color: var(--text-success); font-size: var(--font-size-body); font-weight: var(--font-weight-semibold); margin-bottom: 8px; }
+    .list { max-height: 420px; overflow-y: auto; }
+    .list-count { color: var(--text-success); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .item { display: flex; justify-content: space-between; gap: 8px; padding: 8px; border-bottom: 1px solid rgba(255,255,255,.05); cursor: pointer; font-size: var(--font-size-body); }
+    .item:hover { background: rgba(255,255,255,.06); }
+    .badge { background: #313d49; color: var(--text-secondary); border-radius: 4px; padding: 2px 6px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+
+    .table-head, .set-row { display: grid; grid-template-columns: 28px 38px 58px 50px 50px minmax(126px, 1fr); gap: 5px; align-items: center; text-align: center; }
+    .table-head { color: var(--text-secondary); border-bottom: 1px solid var(--border); padding-bottom: 7px; margin-top: 12px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .set-block { border-bottom: 1px solid rgba(49,61,73,.45); padding: 7px 0; }
+    .set-block.completed { background: rgba(74,222,128,.07); border-radius: 6px; }
+    .set-row input { width: 92%; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 5px 3px; text-align: center; font-size: var(--font-size-small); }
+    .set-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--text-success); cursor: pointer; }
+    .previous { color: var(--text-secondary); font-size: var(--font-size-small); word-break: break-word; }
+    .pause-control { display: flex; gap: 4px; justify-content: center; align-items: center; }
+    .pause-control input { width: 58px; }
+    .timer-btn { width: 25px; height: 25px; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; cursor: pointer; }
+    .timer-btn.running { color: var(--orange); border-color: var(--orange); }
+    .set-analytics { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0 28px; font-size: var(--font-size-small); }
+    .pill { color: var(--text-accent); background: rgba(58,147,255,.08); border: 1px solid rgba(58,147,255,.25); border-radius: 4px; padding: 3px 7px; }
+    .pill.green { color: var(--text-success); border-color: rgba(74,222,128,.25); background: rgba(74,222,128,.08); }
+    .set-controls { margin-top: 12px; display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: var(--font-size-body); }
+    .square { width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border); background: var(--input); color: var(--text-primary); cursor: pointer; font-weight: var(--font-weight-bold); }
+
+    .add-zone { position: relative; z-index: 10; margin: 20px 0 24px; }
+    .movement-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+    .movement-btn { background: var(--input); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 9px 6px; font-weight: var(--font-weight-bold); cursor: pointer; }
+    .movement-btn.active { color: var(--text-primary); border-color: var(--text-success); background: rgba(74,222,128,.12); }
+    .add-btn { width: 100%; background: rgba(74,222,128,.08); border: 1px dashed var(--green); color: var(--text-success); border-radius: 8px; padding: 13px; font-weight: var(--font-weight-bold); cursor: pointer; }
+    .muscle-menu { display: none; position: absolute; z-index: 20; bottom: 105%; left: 0; right: 0; isolation: isolate; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 -8px 24px rgba(0,0,0,.4); }
+    .muscle-item { padding: 12px 14px; cursor: pointer; }
+    .muscle-item small { color: var(--text-secondary); font-size: var(--font-size-small); margin-left: 6px; }
+    .muscle-item:hover { background: rgba(58,147,255,.12); color: var(--text-accent); }
+    .copilot { border-top: 1px dashed var(--border); padding-top: 18px; }
+    .copilot-title { color: var(--text-accent); font-weight: var(--font-weight-bold); margin-bottom: 10px; }
+    .copilot-bar { display: flex; gap: 8px; }
+    .copilot-input { flex: 1; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 6px; padding: 11px; min-width: 0; }
+    .copilot-btn { background: var(--blue); color: var(--text-primary); border: 0; border-radius: 6px; padding: 0 18px; font-weight: var(--font-weight-bold); cursor: pointer; }
+    #copilotFeedback { display: none; color: var(--text-success); margin-top: 8px; font-size: var(--font-size-body); }
+    .program-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .program-action-btn { border-radius: 6px; padding: 10px; font-weight: var(--font-weight-bold); cursor: pointer; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); }
+    .program-action-btn.share { color: var(--text-accent); border-color: rgba(58,147,255,.7); }
+    .program-action-btn.delete { color: var(--text-danger); border-color: rgba(239,68,68,.7); }
+    .program-action-btn:hover { background: rgba(255,255,255,.05); }
+
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 320; align-items: center; justify-content: center; padding: 18px; }
+    .modal-panel { width: min(780px, 100%); max-height: 88vh; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .modal-title { color: var(--text-success); font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); }
+    .close { width: 30px; height: 30px; background: var(--input); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+    .dash-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .dash-card { background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+    .dash-label { color: var(--text-secondary); font-size: var(--font-size-small); }
+    .dash-value { font-size: var(--font-size-h3); font-weight: var(--font-weight-bold); margin-top: 4px; }
+    .chart { height: 170px; display: flex; align-items: end; gap: 6px; background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin: 10px 0 14px; }
+    .bar { flex: 1; min-width: 8px; background: linear-gradient(180deg, var(--green), var(--blue)); border-radius: 4px 4px 0 0; }
+    .section { color: var(--text-accent); font-weight: var(--font-weight-bold); margin: 14px 0 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: var(--font-size-body); }
+    th, td { text-align: left; padding: 7px 5px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    th { color: var(--text-secondary); }
+    .positive { color: var(--text-success); font-weight: var(--font-weight-bold); }
+    .negative { color: var(--text-danger); font-weight: var(--font-weight-bold); }
+
+    .progress-view { display: none; position: fixed; inset: 60px 0 0; z-index: 300; overflow-y: auto; background: var(--bg); padding: 20px; }
+    .progress-view.open { display: block; }
+    .progress-shell { width: min(980px, 100%); margin: 0 auto; }
+    .progress-view-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .progress-view-title { font-size: var(--font-size-h1); font-weight: var(--font-weight-bold); }
+    .progress-section { margin-bottom: 24px; }
+    .progress-section-title { color: var(--text-accent); font-size: var(--font-size-h3); font-weight: var(--font-weight-bold); margin-bottom: 10px; }
+    .development-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .development-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 13px; }
+    .development-name { color: var(--text-primary); font-weight: var(--font-weight-bold); margin-bottom: 10px; overflow-wrap: anywhere; }
+    .development-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+    .development-stat { background: rgba(0,0,0,.16); border-radius: 5px; padding: 7px; }
+    .development-stat span { display: block; color: var(--text-secondary); font-size: var(--font-size-small); margin-bottom: 3px; }
+    .development-stat b { font-size: var(--font-size-body); }
+    .development-change { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
+    .change-badge { border-radius: 4px; padding: 4px 7px; font-size: var(--font-size-small); font-weight: var(--font-weight-bold); }
+    .change-badge.up { color: var(--text-success); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.3); }
+    .change-badge.down { color: var(--text-warning); background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); }
+    .change-badge.neutral { color: var(--text-secondary); background: rgba(255,255,255,.05); border: 1px solid var(--border); }
+    .progress-panel { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .chart-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .chart-toolbar label { color: var(--text-secondary); font-size: var(--font-size-small); }
+    .line-chart-wrap { min-height: 250px; background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 10px; overflow: hidden; }
+    .line-chart { display: block; width: 100%; height: 230px; }
+    .chart-axis-text { fill: var(--text-secondary); font-family: var(--font-primary); font-size: var(--font-size-small); font-weight: var(--font-weight-regular); }
+    .chart-empty, .progress-empty { color: var(--text-secondary); padding: 24px 10px; text-align: center; line-height: var(--line-height-body); }
+    .measure-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .measure-field label { display: block; color: var(--text-secondary); font-size: var(--font-size-small); margin-bottom: 5px; }
+    .measure-field.goal { grid-column: 1 / -1; }
+    .measure-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+    .measure-save { background: var(--green); border: 0; border-radius: 6px; padding: 10px 16px; font-weight: var(--font-weight-bold); cursor: pointer; }
+    .measure-history { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .measure-entry { display: grid; grid-template-columns: 100px 1fr; gap: 10px; padding: 10px; background: rgba(0,0,0,.14); border: 1px solid var(--border); border-radius: 6px; }
+    .measure-date { color: var(--text-primary); font-weight: var(--font-weight-bold); font-size: var(--font-size-small); }
+    .measure-values { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    /* Global typography system */
+    body, input, select, textarea {
+      color: var(--text-primary);
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-regular);
+      line-height: var(--line-height-body);
+      letter-spacing: 0;
+    }
+    button {
+      font-family: var(--font-primary);
+      font-size: var(--font-size-button);
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-control);
+      letter-spacing: 0;
+    }
+    #workoutTitle, .progress-view-title {
+      color: var(--text-primary);
+      font-size: var(--font-size-h1);
+      font-weight: var(--font-weight-bold);
+      line-height: var(--line-height-heading);
+      letter-spacing: 0;
+    }
+    .modal-title, .progress-section-title {
+      color: var(--text-accent);
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      line-height: var(--line-height-heading);
+      letter-spacing: 0;
+    }
+    .exercise-name, .development-name, .copilot-title, .section {
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-heading);
+      letter-spacing: 0;
+    }
+    .app-title, .profile b, .trash-name, .custom-title {
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-heading);
+    }
+    .nav-btn, .top-btn, .dashboard-btn, .small-btn, .movement-btn, .add-btn,
+    .copilot-btn, .program-action-btn, .measure-save, .count-grid button,
+    .timer-btn, .square {
+      font-size: var(--font-size-button);
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-control);
+      letter-spacing: 0;
+    }
+    .sidebar-item, .item, .stats, .set-controls, table, .sidebar-select, .field,
+    .copilot-input, .set-row input {
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-body);
+    }
+    .section-title, .mini-title, .trash-meta, #autosaveStatus, #estimatedTime,
+    #progressPercent, #progressComplete, .exercise-transition, .list-count,
+    .badge, .table-head, .previous, .set-analytics, .muscle-item small,
+    #copilotFeedback, .dash-label, .development-stat span, .change-badge,
+    .chart-toolbar label, .measure-field label, .measure-date, .profile-login {
+      font-size: var(--font-size-small);
+      line-height: var(--line-height-body);
+      letter-spacing: 0;
+    }
+    .section-title, .table-head, .list-count, .measure-date {
+      font-weight: var(--font-weight-semibold);
+    }
+    .mini-title, .trash-meta, #autosaveStatus, .exercise-transition, .previous,
+    .dash-label, .development-stat span, .chart-toolbar label, .measure-field label {
+      color: var(--text-secondary);
+      font-weight: var(--font-weight-regular);
+    }
+    .sidebar-item { color: var(--text-secondary); }
+    .profile-login, #autosaveStatus, .copilot-title, .section, .progress-section-title,
+    .modal-title { color: var(--text-accent); }
+    .exercise-name, .custom-title, .list-count, #progressComplete, #copilotFeedback {
+      color: var(--text-success);
+    }
+    .top-btn, .dashboard-btn, .copilot-btn, .measure-save {
+      color: var(--text-primary);
+    }
+    #globalTimer {
+      color: var(--text-success);
+      font-family: var(--font-primary);
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-bold);
+      line-height: var(--line-height-control);
+      letter-spacing: 0;
+    }
+    #estimatedTime, #progressPercent, .dash-value, .development-stat b {
+      color: var(--text-primary);
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-heading);
+    }
+    .dash-value, .development-stat b {
+      font-size: var(--font-size-h3);
+    }
+    .small-btn {
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+    }
+    .positive { color: var(--text-success); font-weight: var(--font-weight-semibold); }
+    .negative { color: var(--text-danger); font-weight: var(--font-weight-semibold); }
+    .change-badge { font-weight: var(--font-weight-semibold); }
+    .chart-empty, .progress-empty {
+      color: var(--text-secondary);
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-regular);
+      line-height: var(--line-height-body);
+    }
+    .feedback-success { display: none; color: var(--text-success); margin-top: 8px; }
+    .helper-text { color: var(--text-secondary); }
+    .mobile-action-label { display: none; }
+    .day-navigation {
+      display: none;
+      gap: 6px;
+      margin: 10px 0 12px;
+      padding-bottom: 3px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .day-navigation.show { display: flex; }
+    .day-navigation button {
+      flex: 0 0 auto;
+      min-width: 70px;
+      padding: 8px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-secondary);
+      font: inherit;
+      font-size: var(--font-size-button);
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+    }
+    .day-navigation button.active {
+      border-color: var(--green);
+      background: rgba(74,222,128,.12);
+      color: var(--green);
+    }
+
+    @media (max-width: 560px) {
+      .canvas { padding: 12px; }
+      .top-controls { grid-template-columns: 1fr; }
+      .exercise-head { grid-template-columns: 1fr; }
+      .exercise-actions { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+      .exercise-actions .small-btn { min-width: 0; padding: 6px 2px; font-size: var(--font-size-compact); text-overflow: clip; }
+      .exercise-actions .desktop-action-label { display: none; }
+      .exercise-actions .mobile-action-label { display: inline; }
+      .table-head, .set-row { grid-template-columns: 24px 34px 50px 44px 44px minmax(116px, 1fr); }
+      .dash-grid { grid-template-columns: 1fr; }
+      .progress-view { padding: 12px; }
+      .development-grid, .measure-form { grid-template-columns: 1fr; }
+      .development-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .measure-field.goal { grid-column: auto; }
+      .measure-entry { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
+  <header class="app-header">
+    <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <button class="nav-btn" onclick="goBackSafe()">Tilbage</button>
+    <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
+    <div class="app-title">AI Training Canvas</div>
+  </header>
 
-    <header class="app-header">
-        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-        <button class="nav-btn" onclick="history.back()">Tilbage</button>
-        <button class="nav-btn" onclick="window.location.href = window.location.origin">Hovedmenu</button>
-        <div class="app-title" id="globalHeaderTitle">AI Training Canvas</div>
-    </header>
-
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-    <nav class="sidebar" id="sidebarMenu">
-        <div class="sidebar-profile">
-            <div class="profile-avatar">👤</div>
-            <div class="profile-info">
-                <span style="font-weight: bold; font-size: 1rem;">Trænings Profil</span>
-                <span style="color: var(--accent-blue); font-size:0.85rem; cursor:pointer;">Log ind</span>
-            </div>
-        </div>
-        <ul class="sidebar-menu-list">
-            <div class="sidebar-section-title">Manuel styring</div>
-            <li class="sidebar-item" onclick="handleMenuAction('create_new')"><span>➕</span> Opret tomt Træningspas</li>
-            <li class="sidebar-item" onclick="handleMenuAction('see_saved')"><span>📂</span> Gemte Træningspas</li>
-            <li class="sidebar-item" onclick="handleMenuAction('history')"><span>📜</span> Historik</li>
-            
-            <div class="sidebar-section-title">Automatiske programmer</div>
-            <div class="sidebar-dropdown-container" style="display:flex; flex-direction:column; gap:8px;">
-                <select class="sidebar-select" id="exerciseCountSelect">
-                    <option value="4">4 øvelser</option>
-                    <option value="6">6 øvelser</option>
-                    <option value="8">8 øvelser</option>
-                    <option value="10">10 øvelser</option>
-                </select>
-                <select class="sidebar-select" id="autoProgramSelect" onchange="handleAutoProgramGeneration(this.value)">
-                    <option value="" disabled selected>✨ Vælg træningstype...</option>
-                    <option value="fullbody">🏋️ Fullbody Pas</option>
-                    <option value="push">🔥 Push Pas</option>
-                    <option value="pull">🦅 Pull Pas</option>
-                    <option value="legs">🦵 Legs Pas</option>
-                </select>
-            </div>
-        </ul>
-    </nav>
-
-    <div class="canvas-container">
-        <div class="workout-card">
-            <div class="workout-header">
-                <div style="font-size: 1.4rem; font-weight: bold; margin-bottom: 5px;" id="workoutTitleDisplay">Triceps Power</div>
-                <div class="top-controls">
-                    <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem ændringer</button>
-                    <button class="top-btn start-btn" id="workoutTimerBtn" onclick="toggleWorkoutTimer()">▶️ Start Træning</button>
-                    <button class="top-btn stop-btn" id="workoutStopBtn" onclick="finishWorkoutSession()">⏹️ Afslut Træning</button>
-                </div>
-                <div class="workout-stats">
-                    <span>⏱ Tid brugt: &nbsp;</span>
-                    <span class="global-timer-display" id="globalTimer">00:00:00</span>
-                </div>
-            </div>
-
-            <div id="exercises-master-container"></div>
-
-            <div class="add-exercise-zone">
-                <div class="muscle-dropdown-menu" id="muscleDropdownMenu">
-                    <div class="muscle-dropdown-header">Hvilken muskelgruppe vil du starte?</div>
-                    <div class="muscle-dropdown-item" onclick="selectMuscleGroup('Bryst')">💪 Bryst</div>
-                    <div class="muscle-dropdown-item" onclick="selectMuscleGroup('Ryg')">🦅 Ryg</div>
-                    <div class="muscle-dropdown-item" onclick="selectMuscleGroup('Biceps')">🔥 Biceps</div>
-                    <div class="muscle-dropdown-item" onclick="selectMuscleGroup('Ben')">🦵 Ben</div>
-                </div>
-                <button class="add-exercise-btn" onclick="toggleMuscleDropdown(event)">➕ Tilføj ny øvelse</button>
-            </div>
-
-            <div class="copilot-section">
-                <div class="copilot-header">✨ Canvas Copilot (Styr hele træningspasset med AI)</div>
-                <div class="copilot-bar">
-                    <input type="text" class="copilot-input" id="copilotInputField" placeholder="F.eks. 'bænkpres til armbøjninger' eller 'gør kortere'...">
-                    <button class="copilot-btn" onclick="executeGlobalCopilot()">Kør</button>
-                </div>
-                <div class="copilot-feedback" id="globalCopilotFeedback">✓ Canvas opdateret</div>
-            </div>
-        </div>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="profile" role="button" tabindex="0" onclick="openProfileSetup()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfileSetup();}"><div class="avatar">👤</div><div><b>Trænings Profil</b><br><span class="profile-login">Log ind</span></div></div>
+    <div class="section-title">Manuel styring</div>
+    <div class="sidebar-item" onclick="newWorkout()">➕ Opret tomt Træningspas</div>
+    <div class="sidebar-item" onclick="toggleSavedDropdown()">📂 Gemte Træningspas</div>
+    <div class="saved-dropdown" id="savedDropdown">
+      <div class="nested-box">
+        <div class="mini-title">Vælg et gemt træningspas</div>
+        <select class="sidebar-select" id="savedSelect" onchange="loadSavedProgram(this.value)"></select>
+        <div class="mini-title" id="savedEmpty" style="margin-top:8px;">Gem et træningspas for at se det her.</div>
+      </div>
     </div>
+    <div class="sidebar-item" onclick="toggleTrashDropdown()">🗑 Papirkurv</div>
+    <div class="saved-dropdown" id="trashDropdown">
+      <div class="nested-box">
+        <div class="mini-title" id="trashTitle">Slettede træningspas</div>
+        <div class="trash-list" id="trashItems"></div>
+        <div class="mini-title" id="trashEmpty" style="margin-top:8px;">Papirkurven er tom.</div>
+      </div>
+    </div>
+    <div class="sidebar-item" onclick="openProgressView()">📈 Min udvikling</div>
+    <div class="sidebar-item" onclick="openDashboard()">📜 Historik / Dashboard</div>
 
-    <script src="js/app.js"></script>
+    <div class="section-title">Automatiske træningspas</div>
+    <div class="sidebar-box">
+      <select class="sidebar-select" id="programType" onchange="chooseProgramType(this.value)">
+        <option value="" selected disabled>✨ Vælg træningstype...</option>
+        <option value="fullbody">Fullbody Pas</option>
+        <option value="push">Push Pas</option>
+        <option value="pull">Pull Pas</option>
+        <option value="legs">Legs Pas</option>
+      </select>
+      <div class="count-picker" id="countPicker">
+        <div class="nested-box">
+          <div class="mini-title" id="countTitle">Hvor mange øvelser?</div>
+          <div class="count-grid" id="countGrid"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="canvas">
+    <section class="card">
+      <div id="workoutTitle">Mit nye træningspas</div>
+      <div class="day-navigation" id="dayNavigation" aria-label="Vælg træningsdag"></div>
+      <div class="top-controls">
+        <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem ændringer</button>
+        <button class="top-btn start-btn" id="timerBtn" onclick="toggleWorkoutTimer()">▶ Start Træning</button>
+        <button class="top-btn stop-btn" id="stopBtn" onclick="finishWorkout()">⏹ Afslut Træning</button>
+      </div>
+      <div class="stats">
+        <span id="estimatedTime">Estimeret tid: 0 min</span>
+        <span id="timeUsedLabel">Tid brugt:</span>
+        <span id="globalTimer">00:00:00</span>
+        <div class="workout-progress" aria-label="Gennemført træningspas">
+          <div class="progress-ring" id="progressRing" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="progressPercent">0%</span>
+          </div>
+          <span id="progressComplete">Program gennemført!</span>
+        </div>
+        <span id="autosaveStatus">Klar til første øvelse</span>
+      </div>
+      <button class="dashboard-btn" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
+      <div id="exercises"></div>
+      <div class="add-zone">
+        <div class="movement-picker">
+          <button class="movement-btn active" data-movement="Alle" onclick="setMovementFilter('Alle', event)">Alle</button>
+          <button class="movement-btn" data-movement="Push" onclick="setMovementFilter('Push', event)">Push</button>
+          <button class="movement-btn" data-movement="Pull" onclick="setMovementFilter('Pull', event)">Pull</button>
+        </div>
+        <div class="movement-picker" style="grid-template-columns:1fr;">
+          <button class="movement-btn" data-movement="Stabilitet" onclick="setMovementFilter('Stabilitet', event)">Stabilitet</button>
+        </div>
+        <div class="muscle-menu" id="muscleMenu">
+          <div class="mini-title" style="padding:10px 14px;margin:0;border-bottom:1px solid var(--border);">Hvilken muskelgruppe?</div>
+          <div id="muscleMenuItems"></div>
+        </div>
+        <button class="add-btn" onclick="toggleMuscleMenu(event)">➕ Tilføj ny øvelse</button>
+      </div>
+      <div class="copilot">
+        <div class="copilot-title">✨ Canvas Copilot (Styr hele træningspasset med AI)</div>
+        <div class="copilot-bar">
+          <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'navn til Push dag', 'øvelse 1 til Pull-ups' eller 'pause til 1m30s'">
+          <button class="copilot-btn" onclick="runCopilot()">Kør</button>
+        </div>
+        <div id="copilotFeedback"></div>
+        <div class="program-actions">
+          <button class="program-action-btn share" onclick="shareCurrentProgram()">🔗 Del træningspas</button>
+          <button class="program-action-btn delete" onclick="deleteCurrentProgram()">🗑 Slet træningspas</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="progress-view" id="progressView" aria-hidden="true">
+    <div class="progress-shell">
+      <div class="progress-view-head">
+        <div class="progress-view-title">Min udvikling</div>
+        <button class="close" onclick="closeProgressView()" aria-label="Luk">×</button>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-section-title">Træningsudvikling</div>
+        <div class="development-grid" id="developmentList"></div>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-section-title">Udvikling over tid</div>
+        <div class="progress-panel">
+          <div class="chart-toolbar">
+            <label for="developmentExercise">Øvelse</label>
+            <select class="sidebar-select" id="developmentExercise" onchange="renderDevelopmentChart(this.value)"></select>
+          </div>
+          <div class="line-chart-wrap" id="developmentChart"></div>
+        </div>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-section-title">Mine mål</div>
+        <div class="progress-panel">
+          <div class="measure-form">
+            <div class="measure-field"><label for="bodyHeight">Højde (cm)</label><input class="field" id="bodyHeight" type="number" min="50" step="0.1" oninput="updateBodyBmi()"></div>
+            <div class="measure-field"><label for="bodyWeight">Vægt (kg)</label><input class="field" id="bodyWeight" type="number" min="1" step="0.1" oninput="updateBodyBmi()"></div>
+            <div class="measure-field"><label for="bodyBmi">BMI</label><input class="field" id="bodyBmi" readonly></div>
+            <div class="measure-field"><label for="bodyFat">Fedtprocent (%)</label><input class="field" id="bodyFat" type="number" min="0" step="0.1"></div>
+            <div class="measure-field"><label for="bodyMuscle">Muskelmasse (kg)</label><input class="field" id="bodyMuscle" type="number" min="0" step="0.1"></div>
+            <div class="measure-field"><label for="bodyWaist">Taljemål (cm)</label><input class="field" id="bodyWaist" type="number" min="0" step="0.1"></div>
+            <div class="measure-field"><label for="bodyChest">Brystmål (cm)</label><input class="field" id="bodyChest" type="number" min="0" step="0.1"></div>
+            <div class="measure-field"><label for="bodyHip">Hoftemål (cm)</label><input class="field" id="bodyHip" type="number" min="0" step="0.1"></div>
+            <div class="measure-field"><label for="bodyThigh">Lårmål (cm)</label><input class="field" id="bodyThigh" type="number" min="0" step="0.1"></div>
+            <div class="measure-field"><label for="bodyArm">Armmål (cm)</label><input class="field" id="bodyArm" type="number" min="0" step="0.1"></div>
+            <div class="measure-field goal"><label for="personalGoal">Personligt mål</label><input class="field" id="personalGoal" placeholder="F.eks. Ned på 85 kg eller Bænkpres 100 kg"></div>
+          </div>
+          <div class="measure-actions"><button class="measure-save" onclick="saveBodyMeasurement()">Gem måling</button></div>
+          <div class="measure-history" id="bodyHistory"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="modal" id="modal">
+    <div class="modal-panel">
+      <div class="modal-head"><div class="modal-title" id="modalTitle">Træningsdashboard</div><button class="close" onclick="closeModal()">×</button></div>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    const muscleGroups = [
+      { key: "Bryst", category: "Push", emoji: "💪" },
+      { key: "Øvre ryg", category: "Pull", emoji: "🪽" },
+      { key: "Skuldre", category: "Push", emoji: "🏋️" },
+      { key: "Forside lår", category: "Push", emoji: "🦵" },
+      { key: "Bagside lår & baller", category: "Pull", emoji: "🍑" },
+      { key: "Biceps", category: "Pull", emoji: "💥" },
+      { key: "Triceps", category: "Push", emoji: "⚡" },
+      { key: "Mave", category: "Stabilitet", emoji: "🧱" },
+      { key: "Nedre ryg / lænd", category: "Stabilitet", emoji: "🛡️" }
+    ];
+    const muscleGroupKeys = muscleGroups.map(group => group.key);
+    let activeMovementFilter = "Alle";
+
+    const exerciseLibrary = {
+      "Bryst": ["Barbell Bench Press","Dumbbell Bench Press","Incline Barbell Bench Press","Incline Dumbbell Press","Machine Chest Press","Push-ups","Weighted Push-ups","Chest Dips","Cable Fly","Dumbbell Fly","Pec Deck","Decline Bench Press","Close-Grip Bench Press","Landmine Press","Svend Press"],
+      "Øvre ryg": ["Pull-ups","Chin-ups","Lat Pulldown","Chest-Supported Row","Barbell Row","Seated Cable Row","One-Arm Dumbbell Row","T-Bar Row","Machine Row","Inverted Row","Face Pull","Rear Delt Row","Straight-Arm Pulldown","Meadows Row","Scapular Pull-up"],
+      "Skuldre": ["Overhead Press","Dumbbell Shoulder Press","Arnold Press","Machine Shoulder Press","Landmine Press","Lateral Raise","Cable Lateral Raise","Rear Delt Fly","Face Pull","Upright Row","Front Raise","Pike Push-up","Handstand Push-up Progression","Y-Raise","Scaption Raise"],
+      "Forside lår": ["Back Squat","Front Squat","Leg Press","Bulgarian Split Squat","Walking Lunge","Reverse Lunge","Hack Squat","Goblet Squat","Step-up","Leg Extension","Split Squat","Smith Machine Squat","Cyclist Squat","Sissy Squat","Wall Sit"],
+      "Bagside lår & baller": ["Romanian Deadlift","Hip Thrust","Glute Bridge","Good Morning","Nordic Hamstring Curl","Lying Leg Curl","Seated Leg Curl","Cable Pull-Through","Kettlebell Swing","Single-Leg Romanian Deadlift","Back Extension Glute Focus","Reverse Hyperextension","Frog Pump","Sumo Deadlift","Hamstring Slide Curl"],
+      "Biceps": ["Barbell Curl","Dumbbell Curl","Incline Dumbbell Curl","Hammer Curl","Preacher Curl","Cable Curl","EZ-Bar Curl","Concentration Curl","Spider Curl","Bayesian Cable Curl","Chin-up","Reverse Curl","Zottman Curl","Machine Curl","Drag Curl"],
+      "Triceps": ["Close-Grip Bench Press","Parallel Bar Dip","Cable Triceps Pushdown","Rope Pushdown","Overhead Cable Extension","Skull Crusher","EZ-Bar Lying Extension","Dumbbell Overhead Extension","Diamond Push-up","JM Press","Machine Triceps Extension","Single-Arm Cable Extension","Bench Dip","Tate Press","Cross-Body Cable Extension"],
+      "Mave": ["Plank","Side Plank","Dead Bug","Hollow Body Hold","Ab Wheel Rollout","Cable Crunch","Hanging Knee Raise","Hanging Leg Raise","Reverse Crunch","Pallof Press","Bird Dog","Mountain Climber","Stir-the-Pot","V-Up","Farmer Carry"],
+      "Nedre ryg / lænd": ["Back Extension","Bird Dog","McGill Curl-Up","Good Morning","Romanian Deadlift","Deadlift","Rack Pull","Reverse Hyperextension","Superman Hold","Hip Hinge Drill","Cable Pull-Through","Kettlebell Swing","Jefferson Curl","Quadruped Hip Extension","Suitcase Carry"]
+    };
+
+    const catalog = Object.entries(exerciseLibrary).flatMap(([muscle, names]) =>
+      names.map((name, index) => ({
+        name,
+        muscle,
+        type: index % 5 === 0 ? "Hjemme" : "Center",
+        tags: [muscle.toLowerCase(), name.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase()]
+      }))
+    );
+
+    let slotCounter = 0;
+    let totalSeconds = 0;
+    let timerInterval = null;
+    let isTimerRunning = false;
+    let pendingProgram = "";
+    let currentSavedProgramId = "";
+    let currentProgramSession = null;
+    let currentProgramDayIndex = 0;
+    let currentLanguage = "da";
+    const pauseTimers = {};
+
+    const translations = {
+      da: {
+        appTitle: "AI Training Canvas",
+        back: "Tilbage",
+        home: "Hovedmenu",
+        profile: "Trænings Profil",
+        login: "Log ind",
+        manual: "Manuel styring",
+        newWorkout: "➕ Opret tomt Træningspas",
+        savedWorkouts: "📂 Gemte Træningspas",
+        trashWorkouts: "🗑 Papirkurv",
+        myProgress: "📈 Min udvikling",
+        history: "📜 Historik / Dashboard",
+        autoPrograms: "Automatiske træningspas",
+        chooseType: "✨ Vælg træningstype...",
+        savedTitle: "Vælg et gemt træningspas",
+        savedEmpty: "Gem et træningspas for at se det her.",
+        trashTitle: "Slettede træningspas",
+        trashEmpty: "Papirkurven er tom.",
+        defaultTitle: "Mit nye træningspas",
+        save: "💾 Gem ændringer",
+        start: "▶ Start Træning",
+        pause: "⏸ Pause Træning",
+        stop: "⏹ Afslut Træning",
+        timeUsed: "Tid brugt:",
+        ready: "Klar til første øvelse",
+        dashboard: "📊 Åbn træningsdashboard",
+        addExercise: "➕ Tilføj ny øvelse",
+        copilotTitle: "✨ Canvas Copilot (Styr hele træningspasset med AI)",
+        copilotPlaceholder: "F.eks. 'navn til Push dag', 'øvelse 1 til Pull-ups' eller 'pause til 1m30s'",
+        run: "Kør",
+        chooseMuscle: "Hvilken muskelgruppe?",
+        muscles: { Bryst: "Bryst", "Øvre ryg": "Øvre ryg", Skuldre: "Skuldre", "Forside lår": "Forside lår", "Bagside lår & baller": "Bagside lår & baller", Biceps: "Biceps", Triceps: "Triceps", Mave: "Mave", "Nedre ryg / lænd": "Nedre ryg / lænd" },
+        types: { Alle: "Alle", Center: "Center", Hjemme: "Hjemme" },
+        manualBtn: "Manuel",
+        replaceBtn: "AI Erstat",
+        simulateBtn: "Simuler fremgang",
+        deleteBtn: "Slet",
+        addCustomTitle: "Tilføj ny øvelse",
+        exerciseNamePlaceholder: "Giv øvelsen et navn...",
+        addBtn: "Tilføj",
+        customSaved: "Øvelse gemt i arkivet.",
+        set: "Sæt",
+        ok: "OK",
+        previous: "Tidligere",
+        weight: "Vægt",
+        reps: "Reps",
+        pauseLabel: "Pause",
+        adjustSets: "Justér Sæt:",
+        selectProgram: "Vælg træningspas...",
+        noSavedPrograms: "Ingen gemte træningspas endnu",
+        workoutFallback: "Træningspas",
+        savedAlert: "er gemt under Gemte Træningspas.",
+        autosaved: "Autosaved",
+        restored: "Gendannet autosave",
+        restoredProgram: "Gemt træningspas indlæst",
+        finishedSaved: "Afsluttet og gemt",
+        finishConfirm: "Afslut træningen og gem analysehistorik?",
+        workoutFinished: "Træning afsluttet.",
+        bestOneRm: "Bedste 1RM",
+        heaviestWeight: "Højeste løftede vægt",
+        bestWorkoutVolume: "Højeste volumen på én træning",
+        totalVolume: "Samlet volumen gennem tiden",
+        oneRmDevelopment: "1RM-udvikling",
+        noHistory: "Ingen historik endnu.",
+        volumePerExercise: "Volumen pr. øvelse i aktuel træning",
+        volumePerWeek: "Volumen pr. uge",
+        volumePerMonth: "Volumen pr. måned",
+        personalRecords: "Personlige rekorder",
+        typeHeader: "Type",
+        resultHeader: "Resultat",
+        changeHeader: "Ændring",
+        exerciseHeader: "Øvelse",
+        weekHeader: "Uge",
+        monthHeader: "Måned",
+        volumeHeader: "Volumen",
+        noData: "Ingen data endnu",
+        simulation: "Simulering",
+        enterWeightReps: "Indtast vægt og reps først.",
+        measureHeader: "Måling",
+        newEstimatedOneRm: "Ny estimeret 1RM",
+        workingWeight5: "Arbejdsvægt ved 5 reps",
+        workingWeight8: "Arbejdsvægt ved 8 reps",
+        workingWeight12: "Arbejdsvægt ved 12 reps",
+        expectedVolume: "Forventet volumen",
+        askExerciseName: "Skriv et navn på øvelsen først.",
+        exerciseExists: "Øvelsen findes allerede.",
+        archived: "er gemt i arkivet.",
+        nameChanged: "Navn ændret til",
+        exerciseChanged: "Øvelse ændret til",
+        pauseFieldsChanged: "pausefelter ændret.",
+        timeChanged: "Tid ændret til",
+        unknownCommand: "Kunne ikke forstå kommandoen. Prøv fx 'navn til Push dag', 'øvelse 1 til Pull-ups' eller 'pause til 1m30s'.",
+        howMany: "Hvor mange øvelser til",
+        exerciseCountSuffix: "øvelser",
+        chooseExercisePrefix: "Vælg",
+        chooseExerciseSuffix: "øvelse...",
+        aiReplacePlaceholder: "F.eks. øvre ryg, hjemme, tung...",
+        askAi: "Spørg AI",
+        programs: { fullbody: "Fullbody Pas", push: "Push Pas", pull: "Pull Pas", legs: "Legs Pas" },
+        categories: { Alle: "Alle", Push: "Push", Pull: "Pull", Stabilitet: "Stabilitet" }
+      }
+    };
+
+    function $(id) { return document.getElementById(id); }
+    function esc(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+    function t(key) { return (translations[currentLanguage] || translations.da)[key] || translations.da[key] || key; }
+    function tm(muscle) { return (translations[currentLanguage]?.muscles || translations.da.muscles)[muscle] || muscle; }
+    function tt(type) { return (translations[currentLanguage]?.types || translations.da.types)[type] || type; }
+    function tp(program) { return (translations[currentLanguage]?.programs || translations.da.programs)[program] || program; }
+    function tc(category) { return (translations[currentLanguage]?.categories || translations.da.categories)[category] || category; }
+    function muscleGroupMeta(muscle) { return muscleGroups.find(group => group.key === muscle) || { key: muscle, category: "Pull", emoji: "•" }; }
+    function muscleDisplay(muscle) { const meta = muscleGroupMeta(muscle); return `${meta.emoji} ${tm(muscle)} – ${tc(meta.category)}`; }
+    function movementMuscles(movement = activeMovementFilter) {
+      return muscleGroups.filter(group => movement === "Alle" || group.category === movement).map(group => group.key);
+    }
+    function optionList(values, selected, mapper = v => v) {
+      return values.map(v => `<option value="${esc(v)}" ${v === selected ? "selected" : ""}>${esc(mapper(v))}</option>`).join("");
+    }
+    function applyLanguage(lang = currentLanguage) {
+      currentLanguage = lang;
+      document.documentElement.lang = lang === "da" ? "da" : lang;
+      document.title = t("appTitle");
+
+      const navButtons = document.querySelectorAll(".nav-btn");
+      if (navButtons[0]) navButtons[0].textContent = t("back");
+      if (navButtons[1]) navButtons[1].textContent = t("home");
+      document.querySelector(".app-title").textContent = t("appTitle");
+      document.querySelector(".profile b").textContent = t("profile");
+      document.querySelector(".profile span").textContent = t("login");
+
+      const sectionTitles = document.querySelectorAll(".section-title");
+      if (sectionTitles[0]) sectionTitles[0].textContent = t("manual");
+      if (sectionTitles[1]) sectionTitles[1].textContent = t("autoPrograms");
+
+      const sidebarItems = document.querySelectorAll(".sidebar-item");
+      if (sidebarItems[0]) sidebarItems[0].textContent = t("newWorkout");
+      if (sidebarItems[1]) sidebarItems[1].textContent = t("savedWorkouts");
+      if (sidebarItems[2]) sidebarItems[2].textContent = t("trashWorkouts");
+      if (sidebarItems[3]) sidebarItems[3].textContent = t("myProgress");
+      if (sidebarItems[4]) sidebarItems[4].textContent = t("history");
+
+      document.querySelector("#programType option[value='']").textContent = t("chooseType");
+      document.querySelector("#programType option[value='fullbody']").textContent = tp("fullbody");
+      document.querySelector("#programType option[value='push']").textContent = tp("push");
+      document.querySelector("#programType option[value='pull']").textContent = tp("pull");
+      document.querySelector("#programType option[value='legs']").textContent = tp("legs");
+      $("countTitle").textContent = t("chooseType");
+      document.querySelector("#savedDropdown .mini-title").textContent = t("savedTitle");
+      $("savedEmpty").textContent = t("savedEmpty");
+      $("trashTitle").textContent = t("trashTitle");
+      $("trashEmpty").textContent = t("trashEmpty");
+      const legacyDefaultTitle = "Mit nye trænings" + "program";
+      if (!$("workoutTitle").dataset.customTitle && ["Mit nye træningspas", legacyDefaultTitle].includes($("workoutTitle").textContent)) {
+        $("workoutTitle").textContent = t("defaultTitle");
+      }
+
+      document.querySelector(".save-btn").textContent = t("save");
+      $("timerBtn").textContent = isTimerRunning ? t("pause") : t("start");
+      $("stopBtn").textContent = t("stop");
+      $("timeUsedLabel").textContent = t("timeUsed");
+      if (["Klar til første øvelse", "Ready for first exercise", "Bereit für die erste Übung", "Listo para el primer ejercicio"].includes($("autosaveStatus").textContent)) {
+        $("autosaveStatus").textContent = t("ready");
+      }
+      document.querySelector(".dashboard-btn").textContent = t("dashboard");
+      document.querySelector(".add-btn").textContent = t("addExercise");
+      document.querySelector(".copilot-title").textContent = t("copilotTitle");
+      $("copilotInput").placeholder = t("copilotPlaceholder");
+      document.querySelector(".copilot-btn").textContent = t("run");
+      document.querySelectorAll(".movement-btn").forEach(btn => btn.textContent = tc(btn.dataset.movement));
+      document.querySelector(".muscle-menu .mini-title").textContent = t("chooseMuscle");
+      renderMuscleMenu();
+
+      const exerciseStates = [...document.querySelectorAll(".exercise")].map(block => {
+        const slot = block.id.replace("block-", "");
+        const nameEl = $(`name-${slot}`);
+        return {
+          name: nameEl.textContent,
+          muscle: nameEl.dataset.muscle || "Ryg",
+          goal: block.dataset.goal || currentTrainingGoal(),
+          role: block.dataset.role || "accessory",
+          sets: collectSetData(slot)
+        };
+      });
+      $("exercises").innerHTML = "";
+      exerciseStates.forEach(ex => addExercise(ex.name, ex.muscle, ex.sets, ex));
+      renderSaved();
+    }
+
+    function toggleSidebar() { $("sidebar").classList.toggle("open"); $("overlay").classList.toggle("show"); }
+    function appUrl() {
+      if (window.location.protocol === "file:") {
+        const path = window.location.pathname.replace(/\\/g, "/");
+        const folder = path.slice(0, path.lastIndexOf("/") + 1);
+        return `file://${folder}index.html`;
+      }
+      return `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "index.html")}`;
+    }
+    function goHome() {
+      window.location.href = appUrl();
+    }
+    function goBackSafe() {
+      if ($("progressView")?.classList.contains("open")) {
+        closeProgressView();
+        return;
+      }
+      if ($("sidebar").classList.contains("open")) {
+        toggleSidebar();
+        return;
+      }
+      window.location.href = appUrl();
+    }
+    function numberValue(v) { const n = parseFloat(String(v || "").replace(",", ".").replace(/[^\d.]/g, "")); return Number.isFinite(n) ? n : 0; }
+    function oneRm(w, r) { return w > 0 && r > 0 ? w * (1 + r / 30) : 0; }
+    function volume(w, r) { return w > 0 && r > 0 ? w * r : 0; }
+    function kg(v) { return `${v.toFixed(1).replace(".", ",")} kg`; }
+    function vol(v) { return `${Math.round(v).toLocaleString("da-DK")} kg`; }
+    function formatTime(s) { return [Math.floor(s/3600), Math.floor((s%3600)/60), s%60].map(x => String(x).padStart(2,"0")).join(":"); }
+    function formatPause(s) { return `${Math.floor(s/60)}m${String(s%60).padStart(2,"0")}s`; }
+    function parsePause(v) {
+      const t = String(v || "").trim().toLowerCase();
+      if (!t) return 0;
+      if (t.includes(":")) {
+        const p = t.split(":").map(x => parseInt(x) || 0);
+        return p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p[0]*60 + p[1];
+      }
+      const m = t.match(/(\d+)\s*m/);
+      const s = t.match(/(\d+)\s*s/);
+      if (m || s) return (m ? parseInt(m[1])*60 : 0) + (s ? parseInt(s[1]) : 0);
+      return parseInt(t) || 0;
+    }
+
+    function trainingContext() {
+      return window.TrainingWizardStore?.getContext?.() || {
+        goal: "general_health",
+        experience: "intermediate",
+        focusAreas: [],
+        exercisePreference: "mixed"
+      };
+    }
+
+    function currentTrainingGoal() {
+      return trainingContext().goal || "general_health";
+    }
+
+    function goalPrescription(name, muscle, position = 0) {
+      const context = trainingContext();
+      return window.TrainingGoalEngine?.prescription?.(
+        name,
+        muscle,
+        context.goal || "general_health",
+        context.experience || "intermediate",
+        position
+      ) || {
+        sets: 3,
+        targetReps: "8-12",
+        pauseSeconds: suggestedPauseSeconds(name, muscle, false),
+        role: "accessory",
+        goal: context.goal || "general_health"
+      };
+    }
+
+    function plannedSetsForExercise(name, muscle, position = 0) {
+      const plan = goalPrescription(name, muscle, position);
+      return Array.from({ length: plan.sets }, () => ({
+        prev: "-",
+        completed: false,
+        weight: "",
+        reps: "",
+        targetReps: plan.targetReps,
+        pause: formatPause(plan.pauseSeconds),
+        pauseManual: false
+      }));
+    }
+
+    function exercisePauseCategory(name, muscle) {
+      const text = `${name || ""} ${muscle || ""}`.toLowerCase();
+      const heavy = [
+        "squat", "back squat", "front squat", "dødløft", "deadlift", "bænkpres", "bench press",
+        "pull-up", "pull up", "chin-up", "chin up", "barbell row", "bent-over row", "pendlay row",
+        "overhead press", "military press", "skulderpres med stang"
+      ];
+      const core = ["planke", "plank", "crunch", "mave", "core", "stabilitet", "lænd", "lower back", "bird dog", "dead bug"];
+      const isolation = [
+        "curl", "pushdown", "triceps extension", "sidehæv", "lateral raise", "cable fly", "flyes",
+        "pec deck", "leg extension", "leg curl", "calf raise", "kickback", "front raise", "reverse fly"
+      ];
+      const large = [
+        "benpres", "leg press", "lunge", "split squat", "hip thrust", "lat pulldown", "pulldown",
+        "chest press", "seated row", "cable row", "step-up", "step up"
+      ];
+      if (core.some(term => text.includes(term)) || ["Mave", "Nedre ryg / lænd"].includes(muscle)) return "core";
+      if (heavy.some(term => text.includes(term))) return "heavy";
+      if (isolation.some(term => text.includes(term)) || ["Biceps", "Triceps"].includes(muscle)) return "isolation";
+      if (large.some(term => text.includes(term)) || ["Bryst", "Øvre ryg", "Skuldre", "Forside lår", "Bagside lår & baller"].includes(muscle)) return "large";
+      return "default";
+    }
+
+    function suggestedPauseSeconds(name, muscle, useGoal = true) {
+      if (useGoal && window.TrainingGoalEngine) {
+        return goalPrescription(name, muscle).pauseSeconds;
+      }
+      return { heavy: 120, large: 90, isolation: 60, core: 45, default: 90 }[exercisePauseCategory(name, muscle)];
+    }
+
+    function exerciseTransitionSeconds(previous, next) {
+      if (!previous || !next) return 0;
+      const goal = currentTrainingGoal();
+      if (goal === "weight_loss") return previous.muscle === next.muscle ? 60 : 45;
+      if (goal === "strength") return previous.muscle === next.muscle ? 180 : 120;
+      if (previous.muscle === next.muscle) return 120;
+      if (exercisePauseCategory(next.name, next.muscle) === "isolation") return 60;
+      return 90;
+    }
+
+    function updateEstimatedTime() {
+      const exercises = [...document.querySelectorAll(".exercise")].map(block => {
+        const slot = block.id.replace("block-", "");
+        const nameElement = $(`name-${slot}`);
+        const rows = [...block.querySelectorAll(".set-block")];
+        return {
+          slot,
+          name: nameElement?.textContent || "",
+          muscle: nameElement?.dataset.muscle || "",
+          rows
+        };
+      });
+      let seconds = 0;
+      exercises.forEach((exercise, exerciseIndex) => {
+        seconds += exercise.rows.length * 45;
+        exercise.rows.slice(0, -1).forEach(row => {
+          seconds += parsePause(row.querySelector(".pause")?.value);
+        });
+        const transition = $(`transition-${exercise.slot}`);
+        if (exerciseIndex > 0) {
+          const transitionSeconds = exerciseTransitionSeconds(exercises[exerciseIndex - 1], exercise);
+          seconds += transitionSeconds;
+          if (transition) {
+            transition.textContent = `Foreslået pause før øvelse: ${transitionSeconds} sek.`;
+            transition.classList.add("show");
+          }
+        } else if (transition) {
+          transition.classList.remove("show");
+        }
+      });
+      const minutes = seconds ? Math.ceil(seconds / 60) : 0;
+      const output = $("estimatedTime");
+      if (output) {
+        output.textContent = `Estimeret tid: ${minutes} min`;
+        output.title = `${formatTime(seconds)} baseret på 45 sek. pr. sæt og foreslåede pauser`;
+      }
+    }
+
+    function renderCountButtons() {
+      $("countGrid").innerHTML = "";
+      for (let i = 1; i <= 20; i++) {
+        const b = document.createElement("button");
+        b.textContent = i;
+        b.onclick = () => generateProgram(i);
+        $("countGrid").appendChild(b);
+      }
+    }
+
+    function chooseProgramType(type) {
+      pendingProgram = type;
+      $("countTitle").textContent = `${t("howMany")} ${tp(type)}?`;
+      $("countPicker").style.display = "block";
+    }
+
+    function generateProgram(count) {
+      const types = {
+        fullbody: muscleGroupKeys,
+        push: movementMuscles("Push"),
+        pull: movementMuscles("Pull"),
+        legs: ["Forside lår", "Bagside lår & baller"]
+      };
+      const muscles = types[pendingProgram] || ["Ryg"];
+      const context = trainingContext();
+      const goalProfile = window.TrainingGoalEngine?.profile?.(context.goal);
+      $("workoutTitle").textContent = `${goalProfile?.label || "Auto"}: ${tp(pendingProgram)} (${count} ${t("exerciseCountSuffix")})`;
+      $("exercises").innerHTML = "";
+      currentSavedProgramId = "";
+      currentProgramSession = null;
+      currentProgramDayIndex = 0;
+      renderDayNavigation();
+      const used = new Set();
+      for (let i = 0; i < count; i++) {
+        const muscle = muscles[i % muscles.length];
+        const pool = catalog.filter(x => x.muscle === muscle);
+        const ranked = window.TrainingGoalEngine?.rankExercises?.(pool, context.goal, i) || pool;
+        const ex = ranked.find(item => !used.has(item.name)) || ranked[i % ranked.length] || {
+          name: `${t("chooseExercisePrefix")} ${tm(muscle)} ${t("chooseExerciseSuffix")}`,
+          muscle
+        };
+        used.add(ex.name);
+        const plan = goalPrescription(ex.name, muscle, i);
+        addExercise(ex.name, muscle, plannedSetsForExercise(ex.name, muscle, i), plan);
+      }
+      $("programType").value = "";
+      $("countPicker").style.display = "none";
+      pendingProgram = "";
+      autoSave();
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+    }
+
+    function setMovementFilter(movement, event = null) {
+      if (event) event.stopPropagation();
+      activeMovementFilter = movement;
+      document.querySelectorAll(".movement-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.movement === movement));
+      renderMuscleMenu();
+      $("muscleMenu").style.display = "block";
+    }
+
+    function renderMuscleMenu() {
+      const container = $("muscleMenuItems");
+      if (!container) return;
+      container.innerHTML = movementMuscles().map(muscle => {
+        const meta = muscleGroupMeta(muscle);
+        return `<div class="muscle-item" data-muscle="${esc(muscle)}" onclick="selectMuscle('${esc(muscle)}')">${meta.emoji} ${esc(tm(muscle))}<small>${esc(tc(meta.category))}</small></div>`;
+      }).join("");
+    }
+
+    function toggleMuscleMenu(e) { e.stopPropagation(); renderMuscleMenu(); $("muscleMenu").style.display = $("muscleMenu").style.display === "block" ? "none" : "block"; }
+    function selectMuscle(muscle) { $("muscleMenu").style.display = "none"; addExercise(`${t("chooseExercisePrefix")} ${tm(muscle)} ${t("chooseExerciseSuffix")}`, muscle); autoSave(); }
+    document.addEventListener("click", () => { if ($("muscleMenu")) $("muscleMenu").style.display = "none"; });
+
+    function addExercise(name = null, muscle = "Ryg", savedSets = null, metadata = null) {
+      if (!name) name = `${t("chooseExercisePrefix")} ${t("exerciseHeader").toLowerCase()}...`;
+      const plan = metadata || goalPrescription(name, muscle, document.querySelectorAll(".exercise").length);
+      slotCounter++;
+      const slot = `slot_${slotCounter}`;
+      const block = document.createElement("div");
+      block.className = "exercise";
+      block.id = `block-${slot}`;
+      block.dataset.goal = plan.goal || currentTrainingGoal();
+      block.dataset.role = plan.role || window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory";
+      block.dataset.pauseInitialized = savedSets || !name.toLowerCase().startsWith(t("chooseExercisePrefix").toLowerCase()) ? "true" : "false";
+      block.innerHTML = `
+        <div class="exercise-transition" id="transition-${slot}"></div>
+        <div class="exercise-head">
+          <div class="exercise-name" id="name-${slot}" data-muscle="${esc(muscle)}">${esc(name)}</div>
+          <div class="exercise-actions">
+            <button class="small-btn" onclick="openExerciseDemo('${slot}')">Demo</button>
+            <button class="small-btn" onclick="toggleManual('${slot}')" title="${t("manualBtn")}" aria-label="${t("manualBtn")}"><span class="desktop-action-label">${t("manualBtn")}</span><span class="mobile-action-label">Manuel</span></button>
+            <button class="small-btn orange" onclick="toggleReplace('${slot}')" title="${t("replaceBtn")}" aria-label="${t("replaceBtn")}"><span class="desktop-action-label">${t("replaceBtn")}</span><span class="mobile-action-label">Erstat</span></button>
+            <button class="small-btn" onclick="openDashboard('${slot}')" title="${t("simulateBtn")}" aria-label="${t("simulateBtn")}"><span class="desktop-action-label">${t("simulateBtn")}</span><span class="mobile-action-label">Simuler</span></button>
+            <button class="small-btn red danger-slot" onclick="removeExercise('${slot}')">${t("deleteBtn")}</button>
+          </div>
+        </div>
+        <div class="manual-box" id="manual-${slot}">
+          <div class="row">
+            <select class="field" id="filter-muscle-${slot}" onchange="filterManual('${slot}')">
+              ${optionList(muscleGroupKeys, muscle, muscleDisplay)}
+            </select>
+            <select class="field" id="filter-type-${slot}" onchange="filterManual('${slot}')">
+              ${optionList(["Alle","Center","Hjemme"], "Alle", tt)}
+            </select>
+          </div>
+          <div class="custom-box">
+            <div class="custom-title">${t("addCustomTitle")}</div>
+            <div class="row">
+              <select class="field" id="new-muscle-${slot}">${optionList(muscleGroupKeys, muscle, muscleDisplay)}</select>
+              <select class="field" id="new-type-${slot}">${optionList(["Center","Hjemme"], "Center", tt)}</select>
+            </div>
+            <div class="row">
+              <input class="field" id="new-name-${slot}" placeholder="${t("exerciseNamePlaceholder")}" onkeyup="if(event.key==='Enter') addCustom('${slot}')">
+              <button class="small-btn" onclick="addCustom('${slot}')">${t("addBtn")}</button>
+            </div>
+            <div class="mini-title feedback-success" id="custom-feedback-${slot}">${t("customSaved")}</div>
+          </div>
+          <div class="list" id="manual-list-${slot}"></div>
+        </div>
+        <div class="replace-box" id="replace-${slot}">
+          <div class="row"><input class="field" id="replace-input-${slot}" placeholder="${t("aiReplacePlaceholder")}" onkeyup="if(event.key==='Enter') smartReplace('${slot}')"><button class="small-btn orange" onclick="smartReplace('${slot}')">${t("askAi")}</button></div>
+          <div class="list" id="replace-list-${slot}"></div>
+        </div>
+        <div class="table-head"><div>${t("set")}</div><div>${t("ok")}</div><div>${t("previous")}</div><div>${t("weight")}</div><div>${t("reps")}</div><div>${t("pauseLabel")}</div></div>
+        <div id="sets-${slot}"></div>
+        <div class="set-controls"><span>${t("adjustSets")}</span><button class="square" onclick="changeSets('${slot}',-1)">-</button><b id="count-${slot}">2</b><button class="square" onclick="changeSets('${slot}',1)">+</button></div>
+      `;
+      $("exercises").appendChild(block);
+      const initialSets = savedSets || plannedSetsForExercise(name, muscle, document.querySelectorAll(".exercise").length - 1);
+      renderSets(slot, initialSets.length, initialSets);
+    }
+
+    function removeExercise(slot) {
+      const el = $(`block-${slot}`);
+      if (el) el.remove();
+      updateWorkoutProgress();
+      updateEstimatedTime();
+      autoSave();
+    }
+    function openExerciseDemo(slot) {
+      const exerciseName = $(`name-${slot}`)?.textContent?.trim();
+      if (!exerciseName) return;
+      const url = `https://www.google.com/search?tbm=vid&q=${encodeURIComponent(exerciseName + " exercise form")}`;
+      window.open(url, "_blank", "noopener");
+    }
+    function toggleManual(slot) {
+      $(`replace-${slot}`).style.display = "none";
+      const b = $(`manual-${slot}`);
+      b.style.display = b.style.display === "block" ? "none" : "block";
+      if (b.style.display === "block") {
+        const typeFilter = $(`filter-type-${slot}`);
+        if (typeFilter) typeFilter.value = "Alle";
+        filterManual(slot);
+      }
+    }
+    function toggleReplace(slot) { $(`manual-${slot}`).style.display = "none"; const b = $(`replace-${slot}`); b.style.display = b.style.display === "block" ? "none" : "block"; if (b.style.display === "block") smartReplace(slot); }
+
+    function filterManual(slot) {
+      const muscle = $(`filter-muscle-${slot}`).value;
+      const type = $(`filter-type-${slot}`).value;
+      let list = catalog.filter(x => x.muscle === muscle);
+      if (type !== "Alle") list = list.filter(x => x.type === type);
+      renderExerciseList(slot, `manual-list-${slot}`, list);
+    }
+
+    function renderExerciseList(slot, id, list) {
+      const container = $(id);
+      container.innerHTML = `<div class="list-count">${list.length} ${t("exerciseCountSuffix")}</div>`;
+      list.forEach(ex => {
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `<span>${esc(ex.name)}</span><span class="badge">${esc(tt(ex.type))}</span>`;
+        item.addEventListener("click", () => setExercise(slot, ex.name, ex.muscle));
+        container.appendChild(item);
+      });
+    }
+
+    function smartReplace(slot) {
+      const input = ($(`replace-input-${slot}`).value || "").toLowerCase();
+      const muscle = $(`name-${slot}`).dataset.muscle || "Ryg";
+      const goal = currentTrainingGoal();
+      const list = catalog.filter(x => x.muscle === muscle).map(ex => ({
+        ex,
+        score: (window.TrainingGoalEngine?.scoreExercise?.(ex, goal) || 0) +
+          ex.tags.reduce((sum, tag) => sum + (input.includes(tag) ? 8 : 0), 0)
+      })).sort((a,b) => b.score-a.score).map(x => x.ex);
+      renderExerciseList(slot, `replace-list-${slot}`, list);
+    }
+
+    function addCustom(slot) {
+      const name = $(`new-name-${slot}`).value.trim();
+      const muscle = $(`new-muscle-${slot}`).value;
+      const type = $(`new-type-${slot}`).value;
+      if (!name) return alert(t("askExerciseName"));
+      if (catalog.some(x => x.name.toLowerCase() === name.toLowerCase() && x.muscle === muscle)) return alert(t("exerciseExists"));
+      const customExercise = { name, muscle, type, tags: name.toLowerCase().split(/\s+/), custom: true };
+      catalog.push(customExercise);
+      saveCustomExercises();
+      setExercise(slot, name, muscle);
+      $(`new-name-${slot}`).value = "";
+      const feedback = $(`custom-feedback-${slot}`);
+      if (feedback) {
+        feedback.style.display = "block";
+        feedback.textContent = `"${name}" ${t("archived")}`;
+      }
+      filterManual(slot);
+    }
+
+    function saveCustomExercises() {
+      localStorage.setItem("custom_exercises", JSON.stringify(catalog.filter(x => x.custom)));
+    }
+
+    function setExercise(slot, name, muscle) {
+      const data = collectSetData(slot);
+      const exerciseBlock = $(`block-${slot}`);
+      const plan = goalPrescription(name, muscle, slotIds().indexOf(slot));
+      if (exerciseBlock?.dataset.pauseInitialized !== "true") {
+        const suggestedPause = formatPause(plan.pauseSeconds);
+        data.forEach(set => {
+          if (!set.pauseManual) {
+            set.pause = suggestedPause;
+            set.targetReps = plan.targetReps;
+          }
+        });
+        exerciseBlock.dataset.pauseInitialized = "true";
+      }
+      if (exerciseBlock) {
+        exerciseBlock.dataset.goal = plan.goal;
+        exerciseBlock.dataset.role = plan.role;
+      }
+      $(`name-${slot}`).textContent = name;
+      $(`name-${slot}`).dataset.muscle = muscle;
+      const m = $(`filter-muscle-${slot}`);
+      if (m) m.value = muscle;
+      renderSets(slot, parseInt($(`count-${slot}`).textContent), data);
+      const manualBox = $(`manual-${slot}`);
+      const replaceBox = $(`replace-${slot}`);
+      if (manualBox) manualBox.style.display = "none";
+      if (replaceBox) replaceBox.style.display = "none";
+      updateEstimatedTime();
+      autoSave();
+    }
+
+    function renderSets(slot, count, saved = null) {
+      const container = $(`sets-${slot}`);
+      const nameElement = $(`name-${slot}`);
+      const plan = goalPrescription(nameElement?.textContent, nameElement?.dataset.muscle, slotIds().indexOf(slot));
+      const defaultPause = formatPause(plan.pauseSeconds);
+      container.innerHTML = "";
+      for (let i = 1; i <= count; i++) {
+        const data = saved?.[i-1] || {};
+        const pauseValue = data.pause || defaultPause;
+        const targetReps = data.targetReps || plan.targetReps || "";
+        const pauseManual = data.pauseManual === true || (data.pauseManual === undefined && Boolean(data.pause));
+        const block = document.createElement("div");
+        block.className = "set-block" + (data.completed ? " completed" : "");
+        block.innerHTML = `
+          <div class="set-row">
+            <div>${i}</div>
+            <div><input type="checkbox" ${data.completed ? "checked" : ""} onchange="toggleCompleted(this,'${slot}')"></div>
+            <div class="previous">${esc(data.prev || "-")}</div>
+            <div><input class="weight" placeholder="kg" value="${esc(data.weight || "")}" oninput="updateAnalytics('${slot}'); autoSave();"></div>
+            <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); autoSave();"></div>
+            <div class="pause-control"><input class="pause" id="pause-${slot}-${i}" placeholder="0m00s" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="markPauseManual(this)"><button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})">▶</button><button class="timer-btn" onclick="resetPause('${slot}',${i})">↺</button></div>
+          </div>
+          <div class="set-analytics"><span class="pill" id="orm-${slot}-${i}">1RM: -</span><span class="pill green" id="vol-${slot}-${i}">Volumen: -</span></div>
+        `;
+        container.appendChild(block);
+      }
+      $(`count-${slot}`).textContent = count;
+      updateAnalytics(slot);
+      updateWorkoutProgress();
+      updateEstimatedTime();
+    }
+
+    function updateWorkoutProgress() {
+      const checkboxes = [...document.querySelectorAll('.set-block input[type="checkbox"]')];
+      const totalSets = checkboxes.length;
+      const completedSets = checkboxes.filter(checkbox => checkbox.checked).length;
+      const percent = totalSets ? Math.round((completedSets / totalSets) * 100) : 0;
+      const ring = $("progressRing");
+      const label = $("progressPercent");
+      const completeMessage = $("progressComplete");
+      if (!ring || !label || !completeMessage) return;
+      ring.style.setProperty("--progress", `${percent}%`);
+      ring.classList.toggle("complete", totalSets > 0 && percent === 100);
+      ring.setAttribute("aria-valuenow", percent);
+      ring.setAttribute("aria-label", `${completedSets} af ${totalSets} sæt gennemført`);
+      label.textContent = `${percent}%`;
+      completeMessage.classList.toggle("show", totalSets > 0 && percent === 100);
+    }
+
+    function collectSetData(slot) {
+      return [...$(`sets-${slot}`).querySelectorAll(".set-block")].map(row => ({
+        prev: row.querySelector(".previous")?.textContent || "-",
+        completed: row.querySelector('input[type="checkbox"]')?.checked || false,
+        weight: row.querySelector(".weight")?.value || "",
+        reps: row.querySelector(".reps")?.value || "",
+        targetReps: row.querySelector(".reps")?.dataset.targetReps || "",
+        pause: row.querySelector(".pause")?.value || "",
+        pauseManual: row.querySelector(".pause")?.dataset.pauseManual === "true"
+      }));
+    }
+
+    function markPauseManual(input) {
+      input.dataset.pauseManual = "true";
+      updateEstimatedTime();
+      autoSave();
+    }
+
+    function changeSets(slot, delta) {
+      const data = collectSetData(slot);
+      const next = Math.max(1, parseInt($(`count-${slot}`).textContent) + delta);
+      renderSets(slot, next, data);
+      autoSave();
+    }
+
+    function toggleCompleted(cb, slot) {
+      cb.closest(".set-block").classList.toggle("completed", cb.checked);
+      updateAnalytics(slot);
+      updateWorkoutProgress();
+      autoSave();
+    }
+
+    function updateAnalytics(slot) {
+      [...$(`sets-${slot}`).querySelectorAll(".set-row")].forEach((row, idx) => {
+        const w = numberValue(row.querySelector(".weight")?.value);
+        const r = numberValue(row.querySelector(".reps")?.value);
+        const o = oneRm(w, r);
+        const v = volume(w, r);
+        $(`orm-${slot}-${idx+1}`).textContent = o ? `1RM: ${kg(o)}` : "1RM: -";
+        $(`vol-${slot}-${idx+1}`).textContent = v ? `${t("volumeHeader")}: ${vol(v)}` : `${t("volumeHeader")}: -`;
+      });
+    }
+
+    function pauseKey(slot, set) { return `${slot}-${set}`; }
+    function togglePause(slot, set) {
+      const key = pauseKey(slot, set);
+      const input = $(`pause-${slot}-${set}`);
+      const btn = $(`pause-btn-${slot}-${set}`);
+      if (pauseTimers[key]?.running) return stopPause(key);
+      const seconds = pauseTimers[key]?.remaining || parsePause(input.value);
+      if (!seconds) return;
+      pauseTimers[key] = { remaining: seconds, total: seconds, running: true, interval: null, btn: btn.id, input: input.id };
+      btn.textContent = "⏸";
+      btn.classList.add("running");
+      input.value = formatPause(seconds);
+      pauseTimers[key].interval = setInterval(() => {
+        pauseTimers[key].remaining--;
+        input.value = formatPause(pauseTimers[key].remaining);
+        if (pauseTimers[key].remaining <= 0) { stopPause(key); beep(); }
+      }, 1000);
+    }
+    function stopPause(key) {
+      if (!pauseTimers[key]) return;
+      clearInterval(pauseTimers[key].interval);
+      const btn = $(pauseTimers[key].btn);
+      if (btn) { btn.textContent = "▶"; btn.classList.remove("running"); }
+      pauseTimers[key].running = false;
+    }
+    function resetPause(slot, set) {
+      const key = pauseKey(slot, set);
+      const input = $(`pause-${slot}-${set}`);
+      const total = pauseTimers[key]?.total || parsePause(input.value);
+      stopPause(key);
+      input.value = total ? formatPause(total) : "";
+      if (pauseTimers[key]) pauseTimers[key].remaining = total;
+      updateEstimatedTime();
+      autoSave();
+    }
+    function beep() {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx(), osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + .12);
+      gain.gain.setValueAtTime(.001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.18, ctx.currentTime + .02);
+      gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .32);
+      osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + .34); osc.onended = () => ctx.close();
+    }
+
+    function activeProgramDay() {
+      return currentProgramSession?.days?.[currentProgramDayIndex] || null;
+    }
+
+    function trainingDayHeading(dayCount, dayIndex = 0) {
+      const count = Math.max(1, Number(dayCount) || 1);
+      return count === 1 ? "Dagens træning" : `Dag ${Math.max(0, Number(dayIndex) || 0) + 1}`;
+    }
+
+    function syncActiveDayFromCanvas() {
+      const day = activeProgramDay();
+      if (!day) return;
+      const state = collectWorkoutState();
+      Object.assign(day, {
+        goal: state.goal,
+        timerSeconds: state.timerSeconds,
+        exercises: state.exercises
+      });
+      currentProgramSession.activeDayIndex = currentProgramDayIndex;
+      currentProgramSession.savedAt = state.savedAt;
+    }
+
+    function renderDayNavigation() {
+      const navigation = $("dayNavigation");
+      const days = currentProgramSession?.days || [];
+      if (!navigation) return;
+      navigation.classList.toggle("show", days.length > 1);
+      navigation.innerHTML = days.length > 1 ? days.map((day, index) => `
+        <button type="button" class="${index === currentProgramDayIndex ? "active" : ""}"
+          onclick="switchProgramDay(${index})" aria-current="${index === currentProgramDayIndex ? "page" : "false"}">
+          Dag ${index + 1}
+        </button>`).join("") : "";
+    }
+
+    function renderProgramDay(index) {
+      const days = currentProgramSession?.days || [];
+      if (!days.length) return false;
+      currentProgramDayIndex = Math.max(0, Math.min(Number(index) || 0, days.length - 1));
+      currentProgramSession.activeDayIndex = currentProgramDayIndex;
+      const day = days[currentProgramDayIndex];
+      $("workoutTitle").textContent = trainingDayHeading(days.length, currentProgramDayIndex);
+      delete $("workoutTitle").dataset.customTitle;
+      totalSeconds = Number(day.timerSeconds) || 0;
+      $("globalTimer").textContent = formatTime(totalSeconds);
+      $("exercises").innerHTML = "";
+      (day.exercises || []).forEach(exercise => addExercise(exercise.name, exercise.muscle, exercise.sets, exercise));
+      renderDayNavigation();
+      updateWorkoutProgress();
+      updateEstimatedTime();
+      return true;
+    }
+
+    function switchProgramDay(index) {
+      if (!currentProgramSession || index === currentProgramDayIndex) return;
+      if (isTimerRunning) toggleWorkoutTimer();
+      syncActiveDayFromCanvas();
+      renderProgramDay(index);
+      autoSave();
+      $("autosaveStatus").textContent = `Dag ${currentProgramDayIndex + 1} er åbnet`;
+    }
+
+    function collectWorkoutState() {
+      return {
+        savedAt: new Date().toISOString(),
+        savedProgramId: currentSavedProgramId,
+        programTitle: currentProgramSession?.title || $("workoutTitle").textContent,
+        dayId: activeProgramDay()?.id || "day_1",
+        dayIndex: currentProgramDayIndex,
+        goal: activeProgramDay()?.goal || currentTrainingGoal(),
+        title: activeProgramDay()?.title || $("workoutTitle").textContent,
+        timerSeconds: totalSeconds,
+        exercises: [...document.querySelectorAll(".exercise")].map(block => {
+          const slot = block.id.replace("block-", "");
+          const nameEl = $(`name-${slot}`);
+          return {
+            name: nameEl.textContent,
+            muscle: nameEl.dataset.muscle || "Ryg",
+            goal: block.dataset.goal || currentTrainingGoal(),
+            role: block.dataset.role || "accessory",
+            sets: collectSetData(slot)
+          };
+        })
+      };
+    }
+    function autoSave() {
+      const state = collectWorkoutState();
+      if (currentProgramSession) {
+        syncActiveDayFromCanvas();
+        localStorage.setItem("active_workout_autosave", JSON.stringify({
+          version: 2,
+          program: currentProgramSession
+        }));
+      } else {
+        localStorage.setItem("active_workout_autosave", JSON.stringify(state));
+      }
+      if (currentSavedProgramId) window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
+      $("autosaveStatus").textContent = `${t("autosaved")} ${new Date(state.savedAt).toLocaleTimeString("da-DK", { hour:"2-digit", minute:"2-digit" })}`;
+    }
+    function loadAutosave() {
+      const saved = JSON.parse(localStorage.getItem("active_workout_autosave") || "null");
+      if (saved?.version === 2 && saved.program) {
+        currentProgramSession = window.WorkoutProgramStore?.normalizeProgram?.(saved.program) || saved.program;
+        currentSavedProgramId = currentProgramSession.id || "";
+        currentProgramDayIndex = currentProgramSession.activeDayIndex || 0;
+        renderProgramDay(currentProgramDayIndex);
+        $("autosaveStatus").textContent = t("restored");
+        return true;
+      }
+      const state = saved;
+      if (!state?.exercises?.length) return false;
+      currentSavedProgramId = state.savedProgramId || "";
+      currentProgramSession = null;
+      currentProgramDayIndex = 0;
+      $("workoutTitle").textContent = state.title || t("defaultTitle");
+      totalSeconds = state.timerSeconds || 0;
+      $("globalTimer").textContent = formatTime(totalSeconds);
+      $("exercises").innerHTML = "";
+      state.exercises.forEach(ex => addExercise(ex.name, ex.muscle, ex.sets, ex));
+      renderDayNavigation();
+      $("autosaveStatus").textContent = t("restored");
+      return true;
+    }
+
+    function getPrograms() { return JSON.parse(localStorage.getItem("saved_workout_programs") || "[]"); }
+    function setPrograms(p) { localStorage.setItem("saved_workout_programs", JSON.stringify(p)); }
+    function getTrash() {
+      const raw = JSON.parse(localStorage.getItem("deleted_workout_programs") || "[]");
+      const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const list = raw.filter(p => new Date(p.deletedAt || 0).getTime() > cutoff);
+      if (list.length !== raw.length) setTrash(list);
+      return list;
+    }
+    function setTrash(p) { localStorage.setItem("deleted_workout_programs", JSON.stringify(p)); }
+    function renderSaved() {
+      const list = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
+      $("savedSelect").innerHTML = list.length ? `<option value="">${t("selectProgram")}</option>` + list.map(p => `<option value="${p.id}">${esc(p.title)} - ${new Date(p.savedAt).toLocaleDateString("da-DK")}</option>`).join("") : `<option value="">${t("noSavedPrograms")}</option>`;
+      $("savedEmpty").style.display = list.length ? "none" : "block";
+    }
+    function toggleSavedDropdown() { renderSaved(); $("savedDropdown").style.display = $("savedDropdown").style.display === "block" ? "none" : "block"; }
+    function daysLeftInTrash(deletedAt) {
+      const expires = new Date(deletedAt).getTime() + 30 * 24 * 60 * 60 * 1000;
+      return Math.max(1, Math.ceil((expires - Date.now()) / 86400000));
+    }
+    function renderTrash() {
+      const list = getTrash().sort((a,b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+      $("trashItems").innerHTML = list.map(p => `
+        <div class="trash-item">
+          <div class="trash-name">${esc(p.title || t("workoutFallback"))}</div>
+          <div class="trash-meta">Slettet ${new Date(p.deletedAt).toLocaleDateString("da-DK")} · slettes automatisk om ${daysLeftInTrash(p.deletedAt)} dage</div>
+          <div class="trash-actions">
+            <button class="small-btn" onclick="restoreProgramFromTrash('${p.id}')">Gendan</button>
+            <button class="small-btn red" onclick="deleteProgramPermanently('${p.id}')">Slet permanent</button>
+          </div>
+        </div>
+      `).join("");
+      $("trashEmpty").style.display = list.length ? "none" : "block";
+    }
+    function toggleTrashDropdown() { renderTrash(); $("trashDropdown").style.display = $("trashDropdown").style.display === "block" ? "none" : "block"; }
+    function saveCanvasState() {
+      const programs = getPrograms();
+      const state = collectWorkoutState();
+      const id = currentSavedProgramId || `program_${Date.now()}`;
+      currentSavedProgramId = id;
+      if (currentProgramSession) {
+        syncActiveDayFromCanvas();
+        currentProgramSession.id = id;
+        currentProgramSession.version = 2;
+        currentProgramSession.savedAt = new Date().toISOString();
+        currentProgramSession.activeDayIndex = currentProgramDayIndex;
+      } else {
+        currentProgramSession = window.WorkoutProgramStore.createProgram({
+          id,
+          title: state.title || t("workoutFallback"),
+          goal: state.goal,
+          activeDayIndex: 0,
+          days: [{ ...state, id: "day_1" }]
+        });
+        currentProgramDayIndex = 0;
+      }
+      const program = window.WorkoutProgramStore.clone(currentProgramSession);
+      const i = programs.findIndex(p => p.id === id);
+      if (i >= 0) programs[i] = program; else programs.push(program);
+      setPrograms(programs);
+      autoSave();
+      renderSaved();
+      alert(`"${program.title}" ${t("savedAlert")}`);
+    }
+    function deleteCurrentProgram() {
+      if (!currentSavedProgramId) {
+        alert("Træningspasset er ikke gemt endnu. Gem det først, hvis det skal kunne slettes fra Gemte Træningspas.");
+        return;
+      }
+      const programs = getPrograms();
+      const program = programs.find(p => p.id === currentSavedProgramId);
+      if (!program) {
+        currentSavedProgramId = "";
+        renderSaved();
+        alert("Træningspasset findes ikke længere i Gemte Træningspas.");
+        return;
+      }
+      if (!confirm(`Slet "${program.title}" fra Gemte Træningspas?`)) return;
+      const trash = getTrash().filter(p => p.id !== program.id);
+      trash.push({ ...program, deletedAt: new Date().toISOString() });
+      setTrash(trash);
+      setPrograms(programs.filter(p => p.id !== currentSavedProgramId));
+      resetWorkoutCanvas("Klar til nyt træningspas");
+      renderSaved();
+      renderTrash();
+      alert(`"${program.title}" er flyttet til Papirkurv og kan genskabes i 30 dage.`);
+    }
+    function restoreProgramFromTrash(id) {
+      const trash = getTrash();
+      const program = trash.find(p => p.id === id);
+      if (!program) return;
+      const restored = { ...program, savedAt: new Date().toISOString() };
+      delete restored.deletedAt;
+      if (restored.version !== 2) restored.state = { ...(restored.state || {}), savedProgramId: restored.id };
+      const programs = getPrograms().filter(p => p.id !== restored.id);
+      programs.push(restored);
+      setPrograms(programs);
+      setTrash(trash.filter(p => p.id !== id));
+      renderSaved();
+      renderTrash();
+      loadSavedProgram(restored.id);
+      $("autosaveStatus").textContent = "Træningspas gendannet";
+    }
+    function deleteProgramPermanently(id) {
+      const trash = getTrash();
+      const program = trash.find(p => p.id === id);
+      if (!program) return;
+      if (!confirm(`Slet "${program.title}" permanent fra Papirkurv?`)) return;
+      setTrash(trash.filter(p => p.id !== id));
+      renderTrash();
+      alert(`"${program.title}" er slettet permanent.`);
+    }
+    function buildDayShareText(state, heading = "") {
+      const lines = [
+        heading || state.title || t("workoutFallback"),
+        `Tid: ${formatTime(state.timerSeconds || 0)}`,
+        ""
+      ];
+      (state.exercises || []).forEach((exercise, index) => {
+        lines.push(`${index + 1}. ${exercise.name} (${exercise.muscle})`);
+        (exercise.sets || []).forEach((set, setIndex) => {
+          const weight = set.weight ? `${set.weight} kg` : "- kg";
+          const reps = set.reps ? `${set.reps} reps` : "- reps";
+          const pause = set.pause ? `, pause ${set.pause}` : "";
+          const done = set.completed ? " ✓" : "";
+          lines.push(`   Sæt ${setIndex + 1}: ${weight}, ${reps}${pause}${done}`);
+        });
+      });
+      return lines.join("\n");
+    }
+    function buildProgramShareText(state) {
+      if (currentProgramSession?.days?.length) {
+        syncActiveDayFromCanvas();
+        const lines = [currentProgramSession.title || t("workoutFallback"), ""];
+        currentProgramSession.days.forEach((day, index) => {
+          lines.push(buildDayShareText(day, `Dag ${index + 1}: ${day.title || ""}`), "");
+        });
+        return lines.join("\n");
+      }
+      return buildDayShareText(state);
+    }
+    async function shareCurrentProgram() {
+      const state = collectWorkoutState();
+      const hasExercises = currentProgramSession?.days?.some(day => day.exercises?.length) || state.exercises.length;
+      if (!hasExercises) {
+        alert("Tilføj mindst én øvelse, før du deler træningspasset.");
+        return;
+      }
+      const text = buildProgramShareText(state);
+      const title = currentProgramSession?.title || state.title || t("workoutFallback");
+      try {
+        if (navigator.share) {
+          await navigator.share({ title, text });
+          $("autosaveStatus").textContent = "Træningspas delt";
+          return;
+        }
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          $("autosaveStatus").textContent = "Træningspas kopieret";
+          alert("Træningspasset er kopieret og kan deles.");
+          return;
+        }
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+      }
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.style.position = "fixed";
+      area.style.left = "-9999px";
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+      $("autosaveStatus").textContent = "Træningspas kopieret";
+      alert("Træningspasset er kopieret og kan deles.");
+    }
+    function loadSavedProgram(id, closeSidebar = true) {
+      const p = getPrograms().find(x => x.id === id);
+      if (!p) return;
+      currentProgramSession = window.WorkoutProgramStore.normalizeProgram(p);
+      currentSavedProgramId = currentProgramSession.id;
+      currentProgramDayIndex = currentProgramSession.activeDayIndex || 0;
+      window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
+      renderProgramDay(currentProgramDayIndex);
+      autoSave();
+      $("autosaveStatus").textContent = t("restoredProgram");
+      $("savedDropdown").style.display = "none";
+      if (closeSidebar && $("sidebar").classList.contains("open")) toggleSidebar();
+    }
+    function resetWorkoutCanvas(status = t("ready")) {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      isTimerRunning = false;
+      $("exercises").innerHTML = "";
+      $("workoutTitle").textContent = t("defaultTitle");
+      delete $("workoutTitle").dataset.customTitle;
+      totalSeconds = 0;
+      currentSavedProgramId = "";
+      currentProgramSession = null;
+      currentProgramDayIndex = 0;
+      renderDayNavigation();
+      $("globalTimer").textContent = "00:00:00";
+      $("timerBtn").textContent = t("start");
+      $("timerBtn").classList.remove("active");
+      $("stopBtn").style.display = "none";
+      $("autosaveStatus").textContent = status;
+      localStorage.removeItem("active_workout_autosave");
+      updateWorkoutProgress();
+      updateEstimatedTime();
+    }
+    function newWorkout() {
+      resetWorkoutCanvas(t("ready"));
+      toggleSidebar();
+    }
+
+    function toggleWorkoutTimer() {
+      const btn = $("timerBtn"), stop = $("stopBtn");
+      if (!isTimerRunning) {
+        isTimerRunning = true; btn.textContent = t("pause"); btn.classList.add("active"); stop.style.display = "block";
+        timerInterval = setInterval(() => { totalSeconds++; $("globalTimer").textContent = formatTime(totalSeconds); }, 1000);
+      } else {
+        isTimerRunning = false; btn.textContent = t("start"); btn.classList.remove("active"); clearInterval(timerInterval); autoSave();
+      }
+    }
+    function finishWorkout() {
+      if (!confirm(t("finishConfirm"))) return;
+      if (isTimerRunning) toggleWorkoutTimer();
+      syncActiveDayFromCanvas();
+      const entry = collectAnalyticsEntry();
+      const history = JSON.parse(localStorage.getItem("training_analytics_history") || "[]");
+      if (entry.totalVolume) history.push(entry);
+      localStorage.setItem("training_analytics_history", JSON.stringify(history));
+      localStorage.removeItem("active_workout_autosave");
+      $("autosaveStatus").textContent = t("finishedSaved");
+      alert(`${t("workoutFinished")}\n${t("volumeHeader")}: ${vol(entry.totalVolume)}\n${t("bestOneRm")}: ${entry.bestOneRm ? kg(entry.bestOneRm) : "-"}`);
+    }
+
+    function collectAnalyticsEntry() {
+      const exercises = [...document.querySelectorAll(".exercise")].map(block => {
+        const slot = block.id.replace("block-", "");
+        const name = $(`name-${slot}`).textContent;
+        const sets = collectSetData(slot).map((s,i) => {
+          const w = numberValue(s.weight), r = numberValue(s.reps);
+          return w && r ? { set:i+1, weight:w, reps:r, oneRm:oneRm(w,r), volume:volume(w,r) } : null;
+        }).filter(Boolean);
+        return sets.length ? { name, sets, totalSets:sets.length, totalVolume:sets.reduce((a,s)=>a+s.volume,0), bestOneRm:Math.max(...sets.map(s=>s.oneRm)), bestLift:Math.max(...sets.map(s=>s.weight)) } : null;
+      }).filter(Boolean);
+      return {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        programId: currentProgramSession?.id || currentSavedProgramId || "",
+        programTitle: currentProgramSession?.title || $("workoutTitle").textContent,
+        dayId: activeProgramDay()?.id || "day_1",
+        dayIndex: currentProgramDayIndex,
+        dayTitle: activeProgramDay()?.title || $("workoutTitle").textContent,
+        title: $("workoutTitle").textContent,
+        duration: formatTime(totalSeconds),
+        exercises,
+        totalVolume: exercises.reduce((a,e)=>a+e.totalVolume,0),
+        bestOneRm: Math.max(0,...exercises.map(e=>e.bestOneRm)),
+        bestLift: Math.max(0,...exercises.map(e=>e.bestLift))
+      };
+    }
+    function history() { return JSON.parse(localStorage.getItem("training_analytics_history") || "[]"); }
+    function pct(cur, prev) { if (!prev) return cur ? "+100%" : "0%"; const p = ((cur-prev)/prev)*100; return `${p>0?"+":""}${p.toFixed(1).replace(".",",")}%`; }
+    function exerciseDevelopmentData() {
+      const grouped = {};
+      history().sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(workout => {
+        (workout.exercises || []).forEach(exercise => {
+          const weights = (exercise.sets || []).map(set => numberValue(set.weight)).filter(Boolean);
+          if (!weights.length) return;
+          const key = exercise.name.trim().toLowerCase();
+          if (!grouped[key]) grouped[key] = { name: exercise.name.trim(), points: [] };
+          grouped[key].points.push({
+            date: workout.date,
+            weight: Math.max(...weights),
+            workoutId: workout.id
+          });
+        });
+      });
+      return Object.values(grouped).map(exercise => {
+        const points = exercise.points.sort((a,b) => new Date(a.date) - new Date(b.date));
+        const start = points[0].weight;
+        const latest = points[points.length - 1].weight;
+        const best = Math.max(...points.map(point => point.weight));
+        const change = latest - start;
+        const changePercent = start ? (change / start) * 100 : 0;
+        return { ...exercise, points, start, latest, best, change, changePercent, workouts: new Set(points.map(point => point.workoutId)).size };
+      }).sort((a,b) => a.name.localeCompare(b.name, "da"));
+    }
+
+    function formatSigned(value, suffix = "") {
+      const sign = value > 0 ? "+" : "";
+      return `${sign}${value.toFixed(1).replace(".", ",")}${suffix}`;
+    }
+
+    function openProgressView() {
+      renderProgressView();
+      $("progressView").classList.add("open");
+      $("progressView").setAttribute("aria-hidden", "false");
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+    }
+
+    function closeProgressView() {
+      $("progressView").classList.remove("open");
+      $("progressView").setAttribute("aria-hidden", "true");
+    }
+
+    function renderProgressView() {
+      const exercises = exerciseDevelopmentData();
+      const list = $("developmentList");
+      if (!exercises.length) {
+        list.innerHTML = `<div class="progress-panel progress-empty" style="grid-column:1/-1;">Der er endnu ingen registrerede træningsdata. Afslut et træningspas med vægt og reps for at begynde at følge din udvikling.</div>`;
+      } else {
+        list.innerHTML = exercises.map(exercise => {
+          const tone = exercise.change > 0 ? "up" : exercise.change < 0 ? "down" : "neutral";
+          return `
+            <article class="development-card">
+              <div class="development-name">${esc(exercise.name)}</div>
+              <div class="development-stats">
+                <div class="development-stat"><span>Startvægt</span><b>${kg(exercise.start)}</b></div>
+                <div class="development-stat"><span>Seneste vægt</span><b>${kg(exercise.latest)}</b></div>
+                <div class="development-stat"><span>PR</span><b>${kg(exercise.best)}</b></div>
+                <div class="development-stat"><span>Træninger</span><b>${exercise.workouts}</b></div>
+              </div>
+              <div class="development-change">
+                <span class="change-badge ${tone}">${formatSigned(exercise.change, " kg")}</span>
+                <span class="change-badge ${tone}">${formatSigned(exercise.changePercent, "%")}</span>
+              </div>
+            </article>
+          `;
+        }).join("");
+      }
+      const select = $("developmentExercise");
+      const previous = select.value;
+      select.innerHTML = exercises.length
+        ? exercises.map(exercise => `<option value="${esc(exercise.name)}">${esc(exercise.name)}</option>`).join("")
+        : `<option value="">Ingen øvelser med data</option>`;
+      if (exercises.some(exercise => exercise.name === previous)) select.value = previous;
+      renderDevelopmentChart(select.value);
+      loadLatestBodyMeasurement();
+      renderBodyHistory();
+    }
+
+    function renderDevelopmentChart(exerciseName) {
+      const exercise = exerciseDevelopmentData().find(item => item.name === exerciseName);
+      const container = $("developmentChart");
+      if (!exercise || exercise.points.length < 2) {
+        container.innerHTML = `<div class="chart-empty">Der er endnu ikke nok data til at vise udvikling.</div>`;
+        return;
+      }
+      const width = 760, height = 230, left = 48, right = 18, top = 18, bottom = 42;
+      const weights = exercise.points.map(point => point.weight);
+      const minWeight = Math.min(...weights);
+      const maxWeight = Math.max(...weights);
+      const padding = Math.max(2.5, (maxWeight - minWeight) * .15);
+      const yMin = Math.max(0, minWeight - padding);
+      const yMax = maxWeight + padding;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const x = index => left + (exercise.points.length === 1 ? plotWidth / 2 : (index / (exercise.points.length - 1)) * plotWidth);
+      const y = weight => top + ((yMax - weight) / Math.max(1, yMax - yMin)) * plotHeight;
+      const coordinates = exercise.points.map((point, index) => `${x(index)},${y(point.weight)}`).join(" ");
+      const grid = [0, .25, .5, .75, 1].map(ratio => {
+        const gridY = top + ratio * plotHeight;
+        const label = yMax - ratio * (yMax - yMin);
+        return `<line x1="${left}" y1="${gridY}" x2="${width-right}" y2="${gridY}" stroke="#313d49" stroke-width="1"/><text class="chart-axis-text" x="${left-8}" y="${gridY+4}" text-anchor="end">${label.toFixed(0)}</text>`;
+      }).join("");
+      const points = exercise.points.map((point, index) => {
+        const date = new Date(point.date).toLocaleDateString("da-DK", { day:"2-digit", month:"2-digit" });
+        return `<circle cx="${x(index)}" cy="${y(point.weight)}" r="4" fill="#4ade80" stroke="#1e252b" stroke-width="2"><title>${date}: ${point.weight} kg</title></circle><text class="chart-axis-text" x="${x(index)}" y="${height-17}" text-anchor="middle">${date}</text>`;
+      }).join("");
+      container.innerHTML = `
+        <svg class="line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Vægtudvikling for ${esc(exercise.name)}">
+          ${grid}
+          <polyline points="${coordinates}" fill="none" stroke="#3a93ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          ${points}
+          <text class="chart-axis-text" x="14" y="${top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90 14 ${top + plotHeight / 2})">kg</text>
+        </svg>
+      `;
+    }
+
+    const bodyMeasurementFields = {
+      height: { id: "bodyHeight", label: "Højde", unit: "cm" },
+      weight: { id: "bodyWeight", label: "Vægt", unit: "kg" },
+      bmi: { id: "bodyBmi", label: "BMI", unit: "" },
+      fat: { id: "bodyFat", label: "Fedtprocent", unit: "%" },
+      muscle: { id: "bodyMuscle", label: "Muskelmasse", unit: "kg" },
+      waist: { id: "bodyWaist", label: "Talje", unit: "cm" },
+      chest: { id: "bodyChest", label: "Bryst", unit: "cm" },
+      hip: { id: "bodyHip", label: "Hofte", unit: "cm" },
+      thigh: { id: "bodyThigh", label: "Lår", unit: "cm" },
+      arm: { id: "bodyArm", label: "Arm", unit: "cm" },
+      goal: { id: "personalGoal", label: "Mål", unit: "" }
+    };
+
+    function getBodyMeasurements() {
+      try { return JSON.parse(localStorage.getItem("body_measurement_history") || "[]"); }
+      catch { return []; }
+    }
+
+    function setBodyMeasurements(entries) {
+      localStorage.setItem("body_measurement_history", JSON.stringify(entries));
+    }
+
+    function bodyNumber(id) {
+      const value = numberValue($(id)?.value);
+      return value > 0 ? value : null;
+    }
+
+    function calculateBmi(height, weight) {
+      if (!height || !weight) return null;
+      const meters = height / 100;
+      return weight / (meters * meters);
+    }
+
+    function updateBodyBmi() {
+      const bmi = calculateBmi(bodyNumber("bodyHeight"), bodyNumber("bodyWeight"));
+      $("bodyBmi").value = bmi ? bmi.toFixed(1).replace(".", ",") : "";
+    }
+
+    function loadLatestBodyMeasurement() {
+      const entries = getBodyMeasurements().sort((a,b) => new Date(a.date) - new Date(b.date));
+      const latest = entries[entries.length - 1];
+      if (!latest) {
+        updateBodyBmi();
+        return;
+      }
+      Object.entries(bodyMeasurementFields).forEach(([key, meta]) => {
+        const input = $(meta.id);
+        if (!input) return;
+        input.value = latest[key] ?? "";
+      });
+      updateBodyBmi();
+    }
+
+    function saveBodyMeasurement() {
+      const height = bodyNumber("bodyHeight");
+      const weight = bodyNumber("bodyWeight");
+      const entry = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        height,
+        weight,
+        bmi: calculateBmi(height, weight),
+        fat: bodyNumber("bodyFat"),
+        muscle: bodyNumber("bodyMuscle"),
+        waist: bodyNumber("bodyWaist"),
+        chest: bodyNumber("bodyChest"),
+        hip: bodyNumber("bodyHip"),
+        thigh: bodyNumber("bodyThigh"),
+        arm: bodyNumber("bodyArm"),
+        goal: $("personalGoal").value.trim()
+      };
+      const hasMeasurement = Object.entries(entry).some(([key, value]) => !["id","date","goal"].includes(key) && value !== null);
+      if (!hasMeasurement && !entry.goal) {
+        alert("Indtast mindst ét kropsmål eller et personligt mål.");
+        return;
+      }
+      const entries = getBodyMeasurements();
+      entries.push(entry);
+      setBodyMeasurements(entries);
+      updateBodyBmi();
+      renderBodyHistory();
+      alert("Din måling er gemt.");
+    }
+
+    function measurementChange(entries, key) {
+      const values = entries.filter(entry => numberValue(entry[key]) > 0);
+      if (values.length < 2) return null;
+      return numberValue(values[values.length - 1][key]) - numberValue(values[0][key]);
+    }
+
+    function measurementBadge(label, change, unit) {
+      if (change === null) return "";
+      const tone = change > 0 ? "up" : change < 0 ? "down" : "neutral";
+      return `<span class="change-badge ${tone}">${esc(label)}: ${formatSigned(change, unit ? ` ${unit}` : "")}</span>`;
+    }
+
+    function renderBodyHistory() {
+      const entries = getBodyMeasurements().sort((a,b) => new Date(a.date) - new Date(b.date));
+      const container = $("bodyHistory");
+      if (!entries.length) {
+        container.innerHTML = `<div class="progress-empty">Du har endnu ikke gemt kropsmål. Udfyld de mål, du vil følge, og tryk “Gem måling”.</div>`;
+        return;
+      }
+      const changes = [
+        measurementBadge("Vægt", measurementChange(entries, "weight"), "kg"),
+        measurementBadge("Fedtprocent", measurementChange(entries, "fat"), "%"),
+        measurementBadge("Talje", measurementChange(entries, "waist"), "cm"),
+        measurementBadge("Muskelmasse", measurementChange(entries, "muscle"), "kg")
+      ].filter(Boolean).join("");
+      const historyRows = [...entries].reverse().map(entry => {
+        const values = Object.entries(bodyMeasurementFields).filter(([key]) => key !== "goal" && entry[key] !== null && entry[key] !== undefined && entry[key] !== "").map(([key, meta]) => {
+          const value = key === "bmi" ? numberValue(entry[key]).toFixed(1).replace(".", ",") : numberValue(entry[key]).toFixed(1).replace(".", ",");
+          return `<span class="pill">${esc(meta.label)}: ${value}${meta.unit ? ` ${meta.unit}` : ""}</span>`;
+        }).join("");
+        const goal = entry.goal ? `<span class="pill green">Mål: ${esc(entry.goal)}</span>` : "";
+        return `<div class="measure-entry"><div class="measure-date">${new Date(entry.date).toLocaleDateString("da-DK")}</div><div class="measure-values">${values}${goal}</div></div>`;
+      }).join("");
+      container.innerHTML = `${changes ? `<div class="development-change">${changes}</div>` : ""}<div class="section">Målehistorik</div>${historyRows}`;
+    }
+
+    function periodKey(date, type) { const d = new Date(date); if (type === "month") return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; const start = new Date(d.getFullYear(),0,1); return `${d.getFullYear()}-U${String(Math.ceil((((d-start)/86400000)+start.getDay()+1)/7)).padStart(2,"0")}`; }
+    function aggregate(hist, type) {
+      const g = {};
+      hist.forEach(e => { const k = periodKey(e.date,type); g[k] = (g[k] || 0) + e.totalVolume; });
+      const keys = Object.keys(g).sort();
+      return keys.map((k,i) => ({ key:k, volume:g[k], change:pct(g[k], i ? g[keys[i-1]] : 0) }));
+    }
+    function openDashboard(slot = null, improve = 5) {
+      const hist = history(), current = collectAnalyticsEntry();
+      const allSets = hist.flatMap(e => e.exercises || []).flatMap(e => e.sets || []);
+      const bestOne = Math.max(0, ...allSets.map(s => s.oneRm));
+      const bestLift = Math.max(0, ...allSets.map(s => s.weight));
+      const bestWorkoutVol = Math.max(0, ...hist.map(e => e.totalVolume || 0));
+      const totalVol = hist.reduce((a,e)=>a+(e.totalVolume||0),0);
+      const chartVals = hist.slice(-12).map(e => e.bestOneRm || 0);
+      const max = Math.max(1, ...chartVals);
+      const bars = chartVals.length ? chartVals.map(v => `<div class="bar" style="height:${Math.max(8,Math.round((v/max)*145))}px"></div>`).join("") : `<span class="helper-text">${t("noHistory")}</span>`;
+      $("modalTitle").textContent = slot ? `${t("simulateBtn")}: ${$(`name-${slot}`).textContent}` : t("dashboard").replace("📊 ", "");
+      $("modalContent").innerHTML = `
+        <div class="dash-grid">
+          <div class="dash-card"><div class="dash-label">${t("bestOneRm")}</div><div class="dash-value">${bestOne ? kg(bestOne) : "-"}</div></div>
+          <div class="dash-card"><div class="dash-label">${t("heaviestWeight")}</div><div class="dash-value">${bestLift ? kg(bestLift) : "-"}</div></div>
+          <div class="dash-card"><div class="dash-label">${t("bestWorkoutVolume")}</div><div class="dash-value">${vol(bestWorkoutVol)}</div></div>
+          <div class="dash-card"><div class="dash-label">${t("totalVolume")}</div><div class="dash-value">${vol(totalVol)}</div></div>
+        </div>
+        <div class="section">${t("oneRmDevelopment")}</div><div class="chart">${bars}</div>
+        ${slot ? simulationHtml(slot, improve) : ""}
+        <div class="section">${t("volumePerExercise")}</div>${table([t("exerciseHeader"),t("volumeHeader"),t("changeHeader")], current.exercises.map(e => [e.name, vol(e.totalVolume), "+0%"]))}
+        <div class="section">${t("volumePerWeek")}</div>${table([t("weekHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"week").map(x => [x.key, vol(x.volume), x.change]))}
+        <div class="section">${t("volumePerMonth")}</div>${table([t("monthHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"month").map(x => [x.key, vol(x.volume), x.change]))}
+        <div class="section">${t("personalRecords")}</div>${table([t("typeHeader"),t("resultHeader")], [[t("bestOneRm"), bestOne ? kg(bestOne) : "-"], [t("heaviestWeight"), bestLift ? kg(bestLift) : "-"]])}
+      `;
+      $("modal").style.display = "flex";
+    }
+    function table(headers, rows) { return `<table><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr>${rows.length ? rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("") : `<tr><td colspan="${headers.length}">${t("noData")}</td></tr>`}</table>`; }
+    function simulationHtml(slot, improve) {
+      const sets = collectSetData(slot).map(s => ({ w:numberValue(s.weight), r:numberValue(s.reps) })).filter(s => s.w && s.r);
+      if (!sets.length) return `<div class="section">${t("simulation")}</div><p class="helper-text">${t("enterWeightReps")}</p>`;
+      const best = Math.max(...sets.map(s => oneRm(s.w,s.r)));
+      const factor = 1 + numberValue(improve)/100;
+      const newOne = best * factor;
+      return `<div class="section">${t("simulation")}</div><div class="row"><input class="field" id="simPercent" type="number" step="0.5" value="${numberValue(improve)}"><button class="small-btn" onclick="openDashboard('${slot}', $('simPercent').value)">${t("simulateBtn")}</button><button class="small-btn" onclick="openDashboard('${slot}',5)">5%</button><button class="small-btn" onclick="openDashboard('${slot}',10)">10%</button></div>${table([t("measureHeader"),t("resultHeader")], [[t("newEstimatedOneRm"), kg(newOne)], [t("workingWeight5"), kg(newOne/(1+5/30))], [t("workingWeight8"), kg(newOne/(1+8/30))], [t("workingWeight12"), kg(newOne/(1+12/30))], [t("expectedVolume"), vol(sets.reduce((a,s)=>a+volume(s.w,s.r),0)*factor)]])}`;
+    }
+    function closeModal() { $("modal").style.display = "none"; }
+
+    function feedback(msg, bad=false) { const el = $("copilotFeedback"); el.style.display = "block"; el.style.color = bad ? "var(--red)" : "var(--green)"; el.textContent = msg; }
+    function slotIds() { return [...document.querySelectorAll(".exercise")].map(b => b.id.replace("block-", "")); }
+
+    function optimizeCurrentWorkoutForGoal(mode = "all") {
+      const context = trainingContext();
+      const slots = slotIds();
+      if (!slots.length) return false;
+
+      slots.forEach((slot, position) => {
+        const nameElement = $(`name-${slot}`);
+        const plan = goalPrescription(nameElement.textContent, nameElement.dataset.muscle, position);
+        const block = $(`block-${slot}`);
+        if (block) {
+          block.dataset.goal = plan.goal;
+          block.dataset.role = plan.role;
+        }
+        const current = collectSetData(slot);
+        const desiredCount = mode === "pauses" ? current.length : plan.sets;
+        const updated = Array.from({ length: desiredCount }, (_, index) => {
+          const set = { ...(current[index] || {}) };
+          set.targetReps = plan.targetReps;
+          if (!set.pauseManual && mode !== "volume") set.pause = formatPause(plan.pauseSeconds);
+          return set;
+        });
+        renderSets(slot, desiredCount, updated);
+      });
+
+      autoSave();
+      updateEstimatedTime();
+      return true;
+    }
+
+    function generateProgramForProfileGoal() {
+      const context = trainingContext();
+      const profile = window.TrainingGoalEngine?.profile?.(context.goal);
+      const focus = context.focusAreas || [];
+      const type = context.goal === "weight_loss" || context.goal === "general_health" || context.goal === "strength"
+        ? "fullbody"
+        : focus.includes("Ben") && !focus.includes("Bryst") && !focus.includes("Ryg")
+          ? "legs"
+          : focus.includes("Ryg") && !focus.includes("Bryst")
+            ? "pull"
+            : focus.some(area => ["Bryst", "Skuldre", "Arme"].includes(area)) && !focus.includes("Ryg")
+              ? "push"
+              : "fullbody";
+      pendingProgram = type;
+      const range = profile?.exerciseCount || [5, 7];
+      generateProgram(Math.round((range[0] + range[1]) / 2));
+    }
+
+    function showProgramDay(dayNumber) {
+      const index = Number(dayNumber) - 1;
+      if (!currentProgramSession?.days?.[index]) return false;
+      switchProgramDay(index);
+      return true;
+    }
+
+    function moveExercisesToDay(matcher, dayNumber) {
+      if (!currentProgramSession?.days?.length) return 0;
+      const targetIndex = Number(dayNumber) - 1;
+      if (!currentProgramSession.days[targetIndex] || targetIndex === currentProgramDayIndex) return 0;
+      syncActiveDayFromCanvas();
+      const source = currentProgramSession.days[currentProgramDayIndex];
+      const moved = source.exercises.filter(matcher);
+      if (!moved.length) return 0;
+      source.exercises = source.exercises.filter(exercise => !matcher(exercise));
+      currentProgramSession.days[targetIndex].exercises.push(...moved);
+      renderProgramDay(currentProgramDayIndex);
+      autoSave();
+      return moved.length;
+    }
+
+    function addGoalExerciseForMuscle(muscle) {
+      const existing = new Set(slotIds().map(slot => $(`name-${slot}`).textContent));
+      const pool = catalog.filter(exercise => exercise.muscle === muscle && !existing.has(exercise.name));
+      const ranked = window.TrainingGoalEngine?.rankExercises?.(pool, currentTrainingGoal()) || pool;
+      const exercise = ranked[0];
+      if (!exercise) return false;
+      const position = slotIds().length;
+      const plan = goalPrescription(exercise.name, exercise.muscle, position);
+      addExercise(exercise.name, exercise.muscle, plannedSetsForExercise(exercise.name, exercise.muscle, position), plan);
+      autoSave();
+      return true;
+    }
+
+    function runCopilot() {
+      const cmd = $("copilotInput").value.trim();
+      if (!cmd) return;
+      const normalized = cmd.toLowerCase();
+      const goalRecommendation = window.TrainingGoalEngine?.recommendation?.(currentTrainingGoal()) || "";
+      let dayMatch = normalized.match(/^vis\s+dag\s+(\d+)$/i);
+      if (dayMatch) {
+        feedback(showProgramDay(dayMatch[1]) ? `Dag ${dayMatch[1]} er åbnet.` : `Dag ${dayMatch[1]} findes ikke.`, !currentProgramSession?.days?.[Number(dayMatch[1]) - 1]);
+        $("copilotInput").value = "";
+        return;
+      }
+      if (/^næste\s+dag$/i.test(normalized)) {
+        const next = currentProgramDayIndex + 1;
+        feedback(showProgramDay(next + 1) ? `Dag ${next + 1} er åbnet.` : "Der er ikke flere dage.", next >= (currentProgramSession?.days?.length || 0));
+        $("copilotInput").value = "";
+        return;
+      }
+      if (/^forrige\s+dag$/i.test(normalized)) {
+        const previous = currentProgramDayIndex - 1;
+        feedback(showProgramDay(previous + 1) ? `Dag ${previous + 1} er åbnet.` : "Du er allerede på første dag.", previous < 0);
+        $("copilotInput").value = "";
+        return;
+      }
+      let moveMatch = normalized.match(/^flyt\s+øvelse\s+(\d+)\s+til\s+dag\s+(\d+)$/i);
+      if (moveMatch) {
+        const exerciseIndex = Number(moveMatch[1]) - 1;
+        const slots = slotIds();
+        const name = slots[exerciseIndex] ? $(`name-${slots[exerciseIndex]}`).textContent : "";
+        const moved = name ? moveExercisesToDay(exercise => exercise.name === name, moveMatch[2]) : 0;
+        feedback(moved ? `"${name}" er flyttet til Dag ${moveMatch[2]}.` : "Øvelsen eller dagen blev ikke fundet.", !moved);
+        $("copilotInput").value = "";
+        return;
+      }
+      moveMatch = normalized.match(/^flyt\s+(.+?)\s+til\s+dag\s+(\d+)$/i);
+      if (moveMatch) {
+        const term = moveMatch[1].trim();
+        const aliases = { biceps: "Biceps", triceps: "Triceps", ryg: "Øvre ryg", bryst: "Bryst", skuldre: "Skuldre", ben: "Forside lår", mave: "Mave" };
+        const muscle = aliases[term];
+        const moved = moveExercisesToDay(exercise =>
+          muscle ? exercise.muscle === muscle : exercise.name.toLowerCase().includes(term),
+          moveMatch[2]
+        );
+        feedback(moved ? `${moved} øvelse${moved === 1 ? "" : "r"} er flyttet til Dag ${moveMatch[2]}.` : "Ingen matchende øvelser eller dag blev fundet.", !moved);
+        $("copilotInput").value = "";
+        return;
+      }
+      const addMatch = normalized.match(/^tilføj\s+mere\s+(ryg|bryst|biceps|triceps|skuldre|ben|mave)$/i);
+      if (addMatch) {
+        const aliases = { ryg: "Øvre ryg", bryst: "Bryst", biceps: "Biceps", triceps: "Triceps", skuldre: "Skuldre", ben: "Forside lår", mave: "Mave" };
+        const muscle = aliases[addMatch[1]];
+        feedback(addGoalExerciseForMuscle(muscle) ? `${muscle} er tilføjet til Dag ${currentProgramDayIndex + 1}.` : "Der kunne ikke findes en ny passende øvelse.", false);
+        $("copilotInput").value = "";
+        return;
+      }
+      if (/^(tilpas|optimer|optimér).*(mit mål|træningsmål|profil)/i.test(normalized)) {
+        if (optimizeCurrentWorkoutForGoal("all")) feedback(`${goalRecommendation} Træningspasset er opdateret.`);
+        else feedback("Tilføj først mindst én øvelse.", true);
+        $("copilotInput").value = "";
+        return;
+      }
+      if (/^(optimer|optimér).*(pause|pauser)/i.test(normalized)) {
+        if (optimizeCurrentWorkoutForGoal("pauses")) feedback(`${goalRecommendation} Pauserne er opdateret.`);
+        else feedback("Tilføj først mindst én øvelse.", true);
+        $("copilotInput").value = "";
+        return;
+      }
+      if (/^(optimer|optimér).*(volumen|sæt)/i.test(normalized)) {
+        if (optimizeCurrentWorkoutForGoal("volume")) feedback(`${goalRecommendation} Antal sæt og rep-forslag er opdateret.`);
+        else feedback("Tilføj først mindst én øvelse.", true);
+        $("copilotInput").value = "";
+        return;
+      }
+      if (/(lav|generér|generer|opret).*(program|træningspas).*(mit mål|træningsmål|profil)/i.test(normalized)) {
+        generateProgramForProfileGoal();
+        feedback(`${goalRecommendation} Et nyt måltilpasset træningspas er oprettet.`);
+        $("copilotInput").value = "";
+        return;
+      }
+      if (/^(hvad anbefaler du|anbefaling|mit mål)$/i.test(normalized)) {
+        feedback(goalRecommendation);
+        $("copilotInput").value = "";
+        return;
+      }
+      let m = cmd.match(/(?:navn|titel|program|træningspas)\s*(?:til|=|:|hedder)\s*(.+)$/i);
+      if (m) {
+        const newTitle = m[1].trim();
+        if (currentProgramSession) {
+          currentProgramSession.title = newTitle;
+          $("workoutTitle").textContent = trainingDayHeading(currentProgramSession.days?.length, currentProgramDayIndex);
+          delete $("workoutTitle").dataset.customTitle;
+        } else {
+          $("workoutTitle").textContent = newTitle;
+          $("workoutTitle").dataset.customTitle = "true";
+        }
+        autoSave();
+        feedback(`${t("nameChanged")} "${newTitle}".`);
+        $("copilotInput").value = "";
+        return;
+      }
+      m = cmd.match(/øvelse\s*(\d+)\s*(?:til|=|:|hedder)\s*(.+)$/i);
+      if (m) { const slot = slotIds()[parseInt(m[1])-1]; if (slot) { setExercise(slot, m[2].trim(), inferMuscle(m[2].trim(), $(`name-${slot}`).dataset.muscle)); feedback(`${t("exerciseChanged")} "${m[2].trim()}".`); $("copilotInput").value = ""; return; } }
+      m = cmd.match(/(?:sæt\s*(\d+)\s*)?pause\s*(?:til|=|:)?\s*([0-9:.,\smtimersekund]+s?)/i);
+      if (m) { const target = m[1] ? parseInt(m[1]) : null, sec = parsePause(m[2]); let changed = 0; document.querySelectorAll(".pause").forEach(input => { const setNo = parseInt(input.id.split("-").pop()); if (!target || target === setNo) { input.value = formatPause(sec); input.dataset.pauseManual = "true"; changed++; } }); updateEstimatedTime(); autoSave(); feedback(`${changed} ${t("pauseFieldsChanged")}`); $("copilotInput").value = ""; return; }
+      m = cmd.match(/(?:tid|timer|tid brugt)\s*(?:til|=|:)\s*([0-9:.,\smtimersekund]+s?)/i);
+      if (m) { totalSeconds = parsePause(m[1]); $("globalTimer").textContent = formatTime(totalSeconds); autoSave(); feedback(`${t("timeChanged")} ${formatTime(totalSeconds)}.`); $("copilotInput").value = ""; return; }
+      m = cmd.match(/^(.+?)\s+til\s+(.+)$/i);
+      if (m) { const slot = slotIds().find(s => $(`name-${s}`).textContent.toLowerCase().includes(m[1].toLowerCase())); if (slot) { setExercise(slot, m[2].trim(), inferMuscle(m[2].trim(), $(`name-${slot}`).dataset.muscle)); feedback(`${t("exerciseChanged")} "${m[2].trim()}".`); $("copilotInput").value = ""; return; } }
+      feedback(`${t("unknownCommand")} ${goalRecommendation}`, true);
+    }
+    function inferMuscle(name, fallback) { return catalog.find(x => x.name.toLowerCase() === name.toLowerCase())?.muscle || fallback || "Ryg"; }
+
+    function loadCustom() {
+      try {
+        (JSON.parse(localStorage.getItem("custom_exercises") || "[]")).forEach(x => {
+          const exists = catalog.some(ex => ex.name.toLowerCase() === x.name.toLowerCase() && ex.muscle === x.muscle);
+          if (!exists) catalog.push({ ...x, custom: true });
+        });
+      } catch {}
+    }
+
+    function createOnboardingPrograms(event) {
+      const generated = event.detail?.programs;
+      if (!Array.isArray(generated) || !generated.length) return;
+      const programs = getPrograms();
+      const createdAt = new Date().toISOString();
+      const programId = `wizard_program_${Date.now()}`;
+      const days = generated.map((day, dayIndex) => {
+        const title = day.title || `Wizard træningspas ${dayIndex + 1}`;
+        const exercises = (day.exercises || []).map((exercise, exerciseIndex) => {
+          const setCount = Math.max(1, Number(exercise.sets) || 3);
+          const plan = {
+            ...goalPrescription(exercise.name, exercise.muscle, exerciseIndex),
+            ...exercise,
+            goal: exercise.goal || day.goal || event.detail?.goal || currentTrainingGoal()
+          };
+          const pause = formatPause(Number(plan.pauseSeconds) || suggestedPauseSeconds(exercise.name, exercise.muscle));
+          return {
+            name: exercise.name,
+            muscle: exercise.muscle,
+            goal: plan.goal,
+            role: plan.role,
+            sets: Array.from({ length: setCount }, () => ({
+              prev: "-",
+              completed: false,
+              weight: "",
+              reps: "",
+              targetReps: plan.targetReps || "",
+              pause,
+              pauseManual: false
+            }))
+          };
+        });
+        return {
+          id: `day_${dayIndex + 1}`,
+          goal: day.goal || event.detail?.goal || currentTrainingGoal(),
+          structure: day.structure || "",
+          title,
+          timerSeconds: 0,
+          exercises
+        };
+      }).filter(day => day.exercises.length);
+      if (!days.length) return;
+
+      const goalLabel = window.TrainingGoalEngine?.profile?.(event.detail?.goal)?.label || "Mit træningsprogram";
+      currentProgramSession = window.WorkoutProgramStore.createProgram({
+        id: programId,
+        title: `${goalLabel} · ${days.length} dage`,
+        goal: event.detail?.goal || currentTrainingGoal(),
+        savedAt: createdAt,
+        activeDayIndex: 0,
+        days
+      });
+      setPrograms([...programs, window.WorkoutProgramStore.clone(currentProgramSession)]);
+      currentSavedProgramId = programId;
+      currentProgramDayIndex = 0;
+      window.TrainingWizardStore?.setLastActiveProgramId?.(programId);
+      renderProgramDay(0);
+      autoSave();
+      renderSaved();
+      $("autosaveStatus").textContent = `${days.length} træningsdage oprettet`;
+    }
+
+    function preferredDailyProgramId() {
+      const storedId = window.TrainingWizardStore?.getLastActiveProgramId?.() || "";
+      if (storedId && getPrograms().some(program => program.id === storedId)) return storedId;
+      if (currentSavedProgramId && getPrograms().some(program => program.id === currentSavedProgramId)) return currentSavedProgramId;
+      const autosave = JSON.parse(localStorage.getItem("active_workout_autosave") || "null");
+      if (autosave?.savedProgramId && getPrograms().some(program => program.id === autosave.savedProgramId)) return autosave.savedProgramId;
+      return getPrograms().sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt))[0]?.id || "";
+    }
+
+    function continueDailyWorkout() {
+      if (currentProgramSession?.days?.length || document.querySelectorAll(".exercise").length) {
+        $("autosaveStatus").textContent = "Seneste aktive træningspas er klar";
+        return;
+      }
+      const programId = preferredDailyProgramId();
+      if (programId) {
+        loadSavedProgram(programId, false);
+        $("autosaveStatus").textContent = "Seneste aktive træningspas er klar";
+        return;
+      }
+      $("autosaveStatus").textContent = "Opret eller gem dit første træningspas";
+    }
+
+    function adaptDailyWorkout(event) {
+      const motivation = event.detail?.motivation || "normal";
+      const programId = preferredDailyProgramId();
+      if (programId) loadSavedProgram(programId, false);
+      const slots = slotIds();
+      if (!slots.length) {
+        openDailyProgramGenerator();
+        return;
+      }
+
+      const originalTitle = $("workoutTitle").textContent.replace(/\s·\sDagens tilpasning$/, "");
+      currentSavedProgramId = "";
+      if (currentProgramSession) {
+        currentProgramSession.id = "";
+        currentProgramSession.title = `${currentProgramSession.title || originalTitle} · Dagens tilpasning`;
+      }
+      $("workoutTitle").textContent = currentProgramSession
+        ? trainingDayHeading(currentProgramSession.days?.length, currentProgramDayIndex)
+        : `${originalTitle} · Dagens tilpasning`;
+
+      slots.forEach(slot => {
+        const currentCount = parseInt($(`count-${slot}`).textContent) || 1;
+        const nextCount = motivation === "low"
+          ? Math.max(1, currentCount - 1)
+          : motivation === "high"
+            ? Math.min(6, currentCount + 1)
+            : currentCount;
+        const data = collectSetData(slot).map(set => {
+          const next = { ...set };
+          if (motivation === "low" && numberValue(next.weight)) {
+            next.weight = String(Math.round(numberValue(next.weight) * .9 * 2) / 2);
+          }
+          if (motivation === "high" && numberValue(next.weight)) {
+            next.weight = String(Math.round(numberValue(next.weight) * 1.025 * 2) / 2);
+          }
+          if (!next.pauseManual) {
+            const seconds = parsePause(next.pause);
+            const adjusted = motivation === "low" ? seconds + 15 : motivation === "high" ? Math.max(30, seconds - 10) : seconds;
+            next.pause = formatPause(adjusted);
+          }
+          return next;
+        });
+        renderSets(slot, nextCount, data);
+      });
+
+      autoSave();
+      updateWorkoutProgress();
+      updateEstimatedTime();
+      const motivationLabel = motivation === "low" ? "lav" : motivation === "high" ? "høj" : "normal";
+      $("autosaveStatus").textContent = `Dagens træning er tilpasset til ${motivationLabel} motivation`;
+    }
+
+    function openDailyProgramGenerator() {
+      const context = window.TrainingWizardStore?.getContext?.() || {};
+      const focus = context.focusAreas || [];
+      const type = ["weight_loss", "strength", "general_health"].includes(context.goal)
+        ? "fullbody"
+        : focus.includes("Ben") && !focus.includes("Bryst") && !focus.includes("Ryg")
+        ? "legs"
+        : focus.some(area => ["Bryst", "Skuldre", "Arme"].includes(area)) && !focus.includes("Ryg")
+          ? "push"
+          : focus.includes("Ryg") && !focus.includes("Bryst")
+            ? "pull"
+            : "fullbody";
+      chooseProgramType(type);
+      $("programType").value = type;
+      if (!$("sidebar").classList.contains("open")) toggleSidebar();
+      $("autosaveStatus").textContent = "Vælg antal øvelser til dagens nye træningspas";
+    }
+
+    window.addEventListener("onboarding:create-programs", createOnboardingPrograms);
+    window.addEventListener("daily-wizard:continue", continueDailyWorkout);
+    window.addEventListener("daily-wizard:adapt", adaptDailyWorkout);
+    window.addEventListener("daily-wizard:generate", openDailyProgramGenerator);
+
+    window.onload = function() {
+      currentLanguage = "da";
+      renderCountButtons();
+      loadCustom();
+      renderSaved();
+      renderTrash();
+      if (!loadAutosave()) {
+        $("workoutTitle").textContent = t("defaultTitle");
+        $("exercises").innerHTML = "";
+      }
+      applyLanguage(currentLanguage);
+      updateWorkoutProgress();
+      window.dispatchEvent(new CustomEvent("training-app:ready"));
+    };
+  </script>
+  <script>
+    window.ENABLE_PROFILE_WIZARD = true;
+    window.ENABLE_DAILY_START_WIZARD = true;
+  </script>
+  <script src="training-goal-engine.js"></script>
+  <script src="workout-program-store.js"></script>
+  <script src="wizard-store.js"></script>
+  <script src="profile-wizard.js"></script>
+  <script src="daily-start-wizard.js"></script>
+  <script src="wizard-controller.js"></script>
 </body>
-</html>	
+</html>
+
+
+
