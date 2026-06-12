@@ -27,6 +27,8 @@
         box-shadow: 0 22px 60px rgba(0, 0, 0, .48);
       }
       .wizard-panel.daily-panel { width: min(560px, 100%); }
+      .wizard-overlay.daily { min-height: 100vh; min-height: 100dvh; }
+      .wizard-panel.daily-panel { max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); }
       .wizard-head { padding: 18px 18px 14px; border-bottom: 1px solid var(--border, #313d49); }
       .wizard-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       .wizard-title {
@@ -292,6 +294,25 @@
       .wizard-button:disabled { cursor: not-allowed; opacity: .45; }
       @media (max-width: 560px) {
         .wizard-overlay { padding: 10px; }
+        .wizard-overlay.daily {
+          padding:
+            max(10px, env(safe-area-inset-top))
+            max(10px, env(safe-area-inset-right))
+            max(10px, env(safe-area-inset-bottom))
+            max(10px, env(safe-area-inset-left));
+        }
+        .wizard-panel.daily-panel {
+          width: 100%;
+          max-height: calc(100vh - 20px);
+          max-height: calc(100dvh - 20px);
+        }
+        .daily-panel .wizard-option, .daily-panel .wizard-button { min-height: 48px; }
+        .daily-panel .wizard-footer {
+          position: sticky;
+          bottom: 0;
+          z-index: 1;
+          background: var(--card, #252e36);
+        }
         .wizard-options, .wizard-fields { grid-template-columns: 1fr; }
         .wizard-options.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .wizard-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -304,6 +325,7 @@
   function start() {
     const store = window.TrainingWizardStore;
     if (!store) return;
+    if (document.getElementById("profile-wizard-root") || document.getElementById("daily-start-wizard-root")) return;
     const profile = store.getProfile();
     const profileEntry = document.querySelector(".profile");
     const profileLabel = document.querySelector(".profile-login");
@@ -333,5 +355,13 @@
     window.ProfileWizard?.open?.({ mode: "edit" });
   };
 
-  window.addEventListener("training-app:ready", start, { once: true });
+  function startAfterLayout() {
+    window.requestAnimationFrame(start);
+  }
+
+  window.addEventListener("training-app:ready", startAfterLayout);
+  window.addEventListener("load", startAfterLayout, { once: true });
+  window.addEventListener("pageshow", event => {
+    if (event.persisted) startAfterLayout();
+  });
 })();
