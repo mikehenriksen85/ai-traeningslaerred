@@ -128,6 +128,31 @@
     .count-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 170px; overflow-y: auto; }
     .count-grid button { background: var(--card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 5px; padding: 8px 0; cursor: pointer; }
     .count-grid button:hover { color: var(--text-accent); border-color: var(--text-accent); }
+    .generator-count-label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-semibold);
+    }
+    .generator-helper {
+      margin: 7px 0 10px;
+      color: var(--text-secondary);
+      font-size: var(--font-size-small);
+      line-height: var(--line-height-body);
+    }
+    .generator-create {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--blue);
+      border-radius: 6px;
+      background: var(--blue);
+      color: var(--text-primary);
+      font: inherit;
+      font-size: var(--font-size-button);
+      font-weight: var(--font-weight-bold);
+      cursor: pointer;
+    }
     .trash-list { display: flex; flex-direction: column; gap: 8px; }
     .trash-item { background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 9px; }
     .trash-name { font-weight: var(--font-weight-bold); color: var(--text-primary); overflow-wrap: anywhere; }
@@ -144,6 +169,35 @@
     .start-btn.active { background: var(--orange); }
     .stop-btn { background: var(--red); display: none; grid-column: 1 / -1; }
     .stats { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(0,0,0,.18); padding: 9px 12px; border-radius: 6px; color: var(--text-secondary); font-size: var(--font-size-body); }
+    .daily-motivation-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 8px;
+      padding: 9px 12px;
+      border: 1px solid rgba(74,222,128,.35);
+      border-radius: 6px;
+      background: rgba(74,222,128,.07);
+    }
+    .daily-motivation-summary[hidden] { display: none; }
+    .daily-motivation-value { color: var(--text-primary); font-weight: var(--font-weight-semibold); }
+    .daily-motivation-change {
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--input);
+      color: var(--text-accent);
+      font: inherit;
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+    @media (max-width: 520px) {
+      .daily-motivation-summary { align-items: stretch; flex-direction: column; }
+      .daily-motivation-change { min-height: 44px; width: 100%; }
+    }
     #globalTimer { color: var(--text-success); }
     #autosaveStatus { color: var(--text-accent); font-size: var(--font-size-small); margin-left: auto; }
     #estimatedTime { color: var(--text-primary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; }
@@ -223,17 +277,68 @@
     .copilot-input { flex: 1; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 6px; padding: 11px; min-width: 0; }
     .copilot-btn { background: var(--blue); color: var(--text-primary); border: 0; border-radius: 6px; padding: 0 18px; font-weight: var(--font-weight-bold); cursor: pointer; }
     #copilotFeedback { display: none; color: var(--text-success); margin-top: 8px; font-size: var(--font-size-body); }
+    #copilotFeedback.ai-change {
+      padding: 9px 11px;
+      border: 1px solid rgba(74, 222, 128, .45);
+      background: rgba(74, 222, 128, .08);
+      border-radius: 6px;
+    }
     .program-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
     .program-action-btn { border-radius: 6px; padding: 10px; font-weight: var(--font-weight-bold); cursor: pointer; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); }
     .program-action-btn.share { color: var(--text-accent); border-color: rgba(58,147,255,.7); }
     .program-action-btn.delete { color: var(--text-danger); border-color: rgba(239,68,68,.7); }
     .program-action-btn:hover { background: rgba(255,255,255,.05); }
+    .contact-form { display: grid; gap: 10px; }
+    .contact-form label {
+      color: var(--text-secondary);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+    }
+    .contact-form input, .contact-form textarea {
+      width: 100%;
+      margin-top: 5px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      font: inherit;
+      padding: 10px;
+    }
+    .contact-form textarea { min-height: 130px; resize: vertical; }
+    .contact-form button { min-height: 44px; }
+    .contact-note { margin: 0; color: var(--text-secondary); font-size: var(--font-size-small); }
 
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 320; align-items: center; justify-content: center; padding: 18px; }
     .modal-panel { width: min(780px, 100%); max-height: 88vh; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
     .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
     .modal-title { color: var(--text-success); font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); }
     .close { width: 30px; height: 30px; background: var(--input); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+    .daily-muscle-copy { margin: 0 0 14px; color: var(--text-secondary); }
+    .daily-muscle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .daily-muscle-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .daily-muscle-option:has(input:checked) {
+      border-color: var(--green);
+      background: rgba(74,222,128,.12);
+    }
+    .daily-muscle-option input { width: 18px; height: 18px; accent-color: var(--green); }
+    .daily-muscle-feedback { min-height: 20px; margin-top: 10px; color: var(--text-danger); font-size: var(--font-size-small); }
+    .daily-muscle-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+    .daily-muscle-actions button { min-height: 44px; }
+    @media (max-width: 520px) {
+      .daily-muscle-grid { grid-template-columns: 1fr; }
+      .daily-muscle-actions button { width: 100%; }
+    }
     .dash-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .dash-card { background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
     .dash-label { color: var(--text-secondary); font-size: var(--font-size-small); }
@@ -249,6 +354,72 @@
 
     .progress-view { display: none; position: fixed; inset: 60px 0 0; z-index: 300; overflow-y: auto; background: var(--bg); padding: 20px; }
     .progress-view.open { display: block; }
+    .profile-account-view { display: none; position: fixed; inset: 60px 0 0; z-index: 310; overflow-y: auto; background: var(--bg); padding: 20px; }
+    .profile-account-view.open { display: block; }
+    .profile-account-shell { width: min(980px, 100%); margin: 0 auto; }
+    .profile-account-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .profile-account-title { font-size: var(--font-size-h1); font-weight: var(--font-weight-bold); line-height: var(--line-height-heading); }
+    .profile-account-intro { margin: 0 0 20px; color: var(--text-secondary); }
+    .profile-account-section { padding: 20px 0; border-top: 1px solid var(--border); }
+    .profile-account-section h2 { margin: 0 0 5px; font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); }
+    .profile-section-copy { margin: 0 0 14px; color: var(--text-secondary); font-size: var(--font-size-small); }
+    .profile-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .profile-form-field { min-width: 0; color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .profile-form-field.wide { grid-column: 1 / -1; }
+    .profile-form-field input, .profile-form-field select {
+      width: 100%;
+      margin-top: 5px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      font: inherit;
+      padding: 10px;
+    }
+    .profile-focus-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+    .profile-focus-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .profile-focus-option:has(input:checked) { border-color: var(--green); background: rgba(74,222,128,.1); }
+    .profile-focus-option input { width: 18px; height: 18px; accent-color: var(--green); }
+    .profile-account-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .profile-account-button {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      font: inherit;
+      font-weight: var(--font-weight-semibold);
+      padding: 9px 14px;
+      cursor: pointer;
+    }
+    .profile-account-button.primary { border-color: var(--blue); background: var(--blue); }
+    .profile-account-button.danger { border-color: rgba(239,68,68,.7); color: var(--text-danger); }
+    .profile-account-button:disabled { cursor: not-allowed; opacity: .5; }
+    .profile-account-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: rgba(0,0,0,.14);
+    }
+    .profile-account-status strong, .profile-account-status span { display: block; }
+    .profile-account-status span { margin-top: 3px; color: var(--text-secondary); font-size: var(--font-size-small); }
+    .profile-ready-badge { flex: 0 0 auto; color: var(--text-warning); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); }
+    .profile-save-feedback { min-height: 20px; margin-top: 10px; color: var(--text-success); font-size: var(--font-size-small); }
     .progress-shell { width: min(980px, 100%); margin: 0 auto; }
     .progress-view-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
     .progress-view-title { font-size: var(--font-size-h1); font-weight: var(--font-weight-bold); }
@@ -590,6 +761,11 @@
       .timer-btn { width: 22px; height: 25px; padding: 0; }
       .dash-grid { grid-template-columns: 1fr; }
       .progress-view { padding: 12px; }
+      .profile-account-view { padding: 12px; }
+      .profile-form-grid, .profile-focus-grid { grid-template-columns: 1fr; }
+      .profile-form-field.wide { grid-column: auto; }
+      .profile-account-status { align-items: flex-start; flex-direction: column; }
+      .profile-account-actions .profile-account-button { width: 100%; }
       .development-grid, .measure-form { grid-template-columns: 1fr; }
       .development-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .measure-field.goal { grid-column: auto; }
@@ -612,29 +788,11 @@
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
   <nav class="sidebar" id="sidebar">
     <div class="profile" role="button" tabindex="0" onclick="openProfileSetup()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfileSetup();}"><div class="avatar">👤</div><div><b>Trænings Profil</b><br><span class="profile-login">Log ind</span></div></div>
-    <div class="section-title">Manuel styring</div>
-    <div class="sidebar-item" onclick="newWorkout()">➕ Opret tomt Træningspas</div>
-    <div class="sidebar-item" onclick="toggleSavedDropdown()">📂 Gemte Træningspas</div>
-    <div class="saved-dropdown" id="savedDropdown">
-      <div class="nested-box">
-        <div class="mini-title">Vælg et gemt træningspas</div>
-        <select class="sidebar-select" id="savedSelect" onchange="loadSavedProgram(this.value)"></select>
-        <div class="mini-title" id="savedEmpty" style="margin-top:8px;">Gem et træningspas for at se det her.</div>
-      </div>
-    </div>
-    <div class="sidebar-item" onclick="toggleTrashDropdown()">🗑 Papirkurv</div>
-    <div class="saved-dropdown" id="trashDropdown">
-      <div class="nested-box">
-        <div class="mini-title" id="trashTitle">Slettede træningspas</div>
-        <div class="trash-list" id="trashItems"></div>
-        <div class="mini-title" id="trashEmpty" style="margin-top:8px;">Papirkurven er tom.</div>
-      </div>
-    </div>
-    <div class="sidebar-item" id="progressNavItem" onclick="openPremiumFeature('progress', openProgressView)">📈 Min udvikling <span class="premium-indicator">Premium</span></div>
-    <div class="sidebar-item" id="membershipNavItem" onclick="openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">Prøve</span></div>
-    <div class="sidebar-item" onclick="openDashboard()">📜 Historik / Dashboard</div>
 
-    <div class="section-title">Automatiske træningspas</div>
+    <div class="sidebar-item" id="membershipNavItem" onclick="openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">10 dage</span></div>
+    <div class="sidebar-item" id="todayWorkoutNavItem" onclick="openTodayWorkout()">▶ Dagens træning</div>
+
+    <div class="section-title" id="generatorSectionTitle">✨ Vælg træningstype</div>
     <div class="sidebar-box" id="programGeneratorAccess">
       <select class="sidebar-select" id="programType" onchange="chooseProgramType(this.value)">
         <option value="" selected disabled>✨ Vælg træningstype...</option>
@@ -645,11 +803,43 @@
       </select>
       <div class="count-picker" id="countPicker">
         <div class="nested-box">
-          <div class="mini-title" id="countTitle">Hvor mange øvelser?</div>
-          <div class="count-grid" id="countGrid"></div>
+          <label class="generator-count-label" id="countTitle" for="automaticExerciseCount">Antal øvelser</label>
+          <select class="sidebar-select" id="automaticExerciseCount" onchange="setAutomaticExerciseCount(this.value)">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5" selected>5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+          </select>
+          <p class="generator-helper">Vælg hvor mange øvelser dagens program skal indeholde.</p>
+          <button class="generator-create" type="button" onclick="generateSelectedAutomaticProgram()">Opret træningspas</button>
         </div>
       </div>
     </div>
+
+    <div class="sidebar-item" id="newWorkoutNavItem" onclick="newWorkout()">➕ Opret tomt Træningspas</div>
+    <div class="sidebar-item" id="savedWorkoutsNavItem" onclick="toggleSavedDropdown()">📂 Gemte Træningspas</div>
+    <div class="saved-dropdown" id="savedDropdown">
+      <div class="nested-box">
+        <div class="mini-title">Vælg et gemt træningspas</div>
+        <select class="sidebar-select" id="savedSelect" onchange="loadSavedProgram(this.value)"></select>
+        <div class="mini-title" id="savedEmpty" style="margin-top:8px;">Gem et træningspas for at se det her.</div>
+      </div>
+    </div>
+    <div class="sidebar-item" id="historyNavItem" onclick="openDashboard()">📜 Historik / Dashboard</div>
+    <div class="sidebar-item" id="progressNavItem" onclick="openPremiumFeature('progress', openProgressView)">📈 Min udvikling <span class="premium-indicator">Premium</span></div>
+    <div class="sidebar-item" id="trashNavItem" onclick="toggleTrashDropdown()">🗑 Papirkurv</div>
+    <div class="saved-dropdown" id="trashDropdown">
+      <div class="nested-box">
+        <div class="mini-title" id="trashTitle">Slettede træningspas</div>
+        <div class="trash-list" id="trashItems"></div>
+        <div class="mini-title" id="trashEmpty" style="margin-top:8px;">Papirkurven er tom.</div>
+      </div>
+    </div>
+    <div class="sidebar-item" id="contactNavItem" onclick="openContactDialog()">✉ Kontakt</div>
   </nav>
 
   <main class="canvas">
@@ -673,6 +863,10 @@
         </div>
         <span id="autosaveStatus">Klar til første øvelse</span>
       </div>
+      <div class="daily-motivation-summary" id="dailyMotivationSummary" hidden>
+        <span class="daily-motivation-value" id="dailyMotivationValue"></span>
+        <button class="daily-motivation-change" type="button" onclick="changeDailyMotivation()">Skift dagens motivation</button>
+      </div>
       <button class="dashboard-btn" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
       <div id="exercises"></div>
       <div class="add-zone">
@@ -691,7 +885,7 @@
         <button class="add-btn" onclick="toggleMuscleMenu(event)">➕ Tilføj ny øvelse</button>
       </div>
       <div class="copilot" id="copilotAccess">
-        <div class="copilot-title">✨ Canvas Copilot (Styr hele træningspasset med AI)</div>
+        <div class="copilot-title">✨ AI Træningsassistent (Profil, programmer og træningspas)</div>
         <div class="copilot-bar">
           <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'navn til Push dag', 'øvelse 1 til Pull-ups' eller 'pause til 1m30s'">
           <button class="copilot-btn" onclick="runCopilot()">Kør</button>
@@ -704,6 +898,128 @@
       </div>
     </section>
   </main>
+
+  <section class="profile-account-view" id="profileAccountView" aria-hidden="true">
+    <div class="profile-account-shell">
+      <div class="profile-account-head">
+        <div class="profile-account-title">Træningsprofil</div>
+        <button class="close" onclick="closeProfileAccountView()" aria-label="Luk">×</button>
+      </div>
+      <p class="profile-account-intro">Administrér personlige oplysninger, træningsopsætning, konto og lokale data.</p>
+
+      <form id="profileAccountForm" onsubmit="saveProfileAccount(event)">
+        <section class="profile-account-section">
+          <h2>Personlige oplysninger</h2>
+          <p class="profile-section-copy">Oplysningerne gemmes lokalt og kan senere synkroniseres med Firebase.</p>
+          <div class="profile-form-grid">
+            <label class="profile-form-field">Navn<input id="profileName" autocomplete="name"></label>
+            <label class="profile-form-field">Alder<input id="profileAge" type="number" min="13" max="120"></label>
+            <label class="profile-form-field">Køn
+              <select id="profileGender">
+                <option value="">Vælg køn</option>
+                <option value="man">Mand</option>
+                <option value="woman">Kvinde</option>
+                <option value="not_specified">Ønsker ikke at oplyse</option>
+              </select>
+            </label>
+            <label class="profile-form-field">Højde (cm)<input id="profileHeight" type="number" min="50" max="250" step="0.1"></label>
+            <label class="profile-form-field">Vægt (kg)<input id="profileWeight" type="number" min="1" step="0.1"></label>
+            <label class="profile-form-field">Fedtprocent (%)<input id="profileBodyFat" type="number" min="0" max="100" step="0.1"></label>
+            <label class="profile-form-field">Muskelmasse (kg)<input id="profileMuscleMass" type="number" min="0" step="0.1"></label>
+            <label class="profile-form-field wide">Personligt mål<input id="profilePersonalGoal" placeholder="F.eks. Ned på 85 kg eller Bænkpres 100 kg"></label>
+          </div>
+        </section>
+
+        <section class="profile-account-section">
+          <h2>Træningsopsætning</h2>
+          <p class="profile-section-copy">Disse valg bruges af programgeneratoren, AI Copilot og fremtidige anbefalinger.</p>
+          <div class="profile-form-grid">
+            <label class="profile-form-field">Træningsmål
+              <select id="profileGoal">
+                <option value="muscle_gain">Muskelopbygning</option>
+                <option value="weight_loss">Vægttab</option>
+                <option value="strength">Styrke</option>
+                <option value="general_health">Generel sundhed</option>
+              </select>
+            </label>
+            <label class="profile-form-field">Erfaring
+              <select id="profileExperience">
+                <option value="beginner">Nybegynder</option>
+                <option value="light_intermediate">Let øvet</option>
+                <option value="intermediate">Øvet</option>
+                <option value="experienced">Erfaren</option>
+              </select>
+            </label>
+            <label class="profile-form-field">Træningsdage pr. uge
+              <select id="profileTrainingDays">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+              </select>
+            </label>
+            <label class="profile-form-field wide">Øvelsespræference
+              <select id="profileExercisePreference">
+                <option value="variation">Variation</option>
+                <option value="consistent">Faste øvelser</option>
+                <option value="mixed">Lidt af begge dele</option>
+              </select>
+            </label>
+            <label class="profile-form-field">Foretrukket antal øvelser
+              <select id="profilePreferredExerciseCount">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                <option value="7">7</option><option value="8">8</option>
+              </select>
+            </label>
+          </div>
+          <div class="profile-focus-grid" id="profileFocusAreas"></div>
+          <div class="profile-account-actions">
+            <button class="profile-account-button primary" type="submit">Gem profil</button>
+            <button class="profile-account-button" type="button" onclick="openProfileWizardAgain()">Åbn profil-wizard igen</button>
+          </div>
+          <div class="profile-save-feedback" id="profileSaveFeedback" aria-live="polite"></div>
+        </section>
+      </form>
+
+      <section class="profile-account-section">
+        <h2>Konto & login</h2>
+        <p class="profile-section-copy">Autentificering kobles på, når Firebase aktiveres.</p>
+        <div class="profile-account-status">
+          <div><strong id="profileLoginStatus">Ikke logget ind</strong><span id="profileActiveEmail">Ingen aktiv e-mail</span></div>
+          <div class="profile-ready-badge">Klar til Firebase</div>
+        </div>
+        <div class="profile-form-grid" style="margin-top:12px;">
+          <label class="profile-form-field">E-mail<input id="profileLoginEmail" type="email" autocomplete="email" disabled placeholder="email@example.com"></label>
+          <label class="profile-form-field">Adgangskode<input id="profileLoginPassword" type="password" autocomplete="current-password" disabled placeholder="••••••••"></label>
+        </div>
+        <div class="profile-account-actions">
+          <button class="profile-account-button" type="button" disabled>Log ind med e-mail</button>
+          <button class="profile-account-button" type="button" disabled>Log ind med Google</button>
+          <button class="profile-account-button" type="button" disabled>Log ud</button>
+        </div>
+      </section>
+
+      <section class="profile-account-section">
+        <h2>Sikkerhed</h2>
+        <p class="profile-section-copy">Sikkerhedsfunktionerne bliver tilgængelige sammen med Firebase-login.</p>
+        <div class="profile-account-actions">
+          <button class="profile-account-button" type="button" disabled>Skift adgangskode</button>
+          <button class="profile-account-button" type="button" disabled>Nulstil adgangskode</button>
+          <button class="profile-account-button" type="button" disabled>Skift e-mail senere</button>
+        </div>
+      </section>
+
+      <section class="profile-account-section">
+        <h2>Data & privatliv</h2>
+        <p class="profile-section-copy">Dine nuværende data ligger lokalt i denne browser.</p>
+        <div class="profile-account-actions">
+          <button class="profile-account-button" type="button" onclick="exportProfileData()">Eksportér mine data</button>
+          <button class="profile-account-button danger" type="button" onclick="clearAllLocalData()">Ryd lokale data</button>
+          <button class="profile-account-button" type="button" disabled>Slet konto senere</button>
+          <button class="profile-account-button" type="button" disabled>Privatliv / GDPR-info senere</button>
+        </div>
+      </section>
+    </div>
+  </section>
 
   <section class="progress-view" id="progressView" aria-hidden="true">
     <div class="progress-shell">
@@ -898,6 +1214,8 @@
     let timerInterval = null;
     let isTimerRunning = false;
     let pendingProgram = "";
+    let selectedAutomaticExerciseCount = 5;
+    let activeExerciseCountPreference = null;
     let currentSavedProgramId = "";
     let currentProgramSession = null;
     let currentProgramDayIndex = 0;
@@ -934,8 +1252,8 @@
         ready: "Klar til første øvelse",
         dashboard: "📊 Åbn træningsdashboard",
         addExercise: "➕ Tilføj ny øvelse",
-        copilotTitle: "✨ Canvas Copilot (Styr hele træningspasset med AI)",
-        copilotPlaceholder: "F.eks. 'navn til Push dag', 'øvelse 1 til Pull-ups' eller 'pause til 1m30s'",
+        copilotTitle: "✨ AI Træningsassistent (Profil, programmer og træningspas)",
+        copilotPlaceholder: "F.eks. 'Jeg vejer 88 kg', 'tilføj biceps curls' eller 'sæt bænkpres til 4 sæt af 8 reps'",
         run: "Kør",
         chooseMuscle: "Hvilken muskelgruppe?",
         muscles: { Bryst: "Bryst", "Øvre ryg": "Øvre ryg", Skuldre: "Skuldre", "Forside lår": "Forside lår", "Bagside lår & baller": "Bagside lår & baller", Biceps: "Biceps", Triceps: "Triceps", Mave: "Mave", "Nedre ryg / lænd": "Nedre ryg / lænd" },
@@ -1060,28 +1378,22 @@
       document.querySelector(".profile b").textContent = t("profile");
       document.querySelector(".profile span").textContent = t("login");
 
-      const sectionTitles = document.querySelectorAll(".section-title");
-      if (sectionTitles[0]) sectionTitles[0].textContent = t("manual");
-      if (sectionTitles[1]) sectionTitles[1].textContent = t("autoPrograms");
-
-      const sidebarItems = document.querySelectorAll(".sidebar-item");
-      if (sidebarItems[0]) sidebarItems[0].textContent = t("newWorkout");
-      if (sidebarItems[1]) sidebarItems[1].textContent = t("savedWorkouts");
-      if (sidebarItems[2]) sidebarItems[2].textContent = t("trashWorkouts");
-      if (sidebarItems[3]) {
-        sidebarItems[3].childNodes[0].textContent = `${t("myProgress")} `;
-      }
-      if (sidebarItems[4]) {
-        sidebarItems[4].childNodes[0].textContent = `${t("membership")} `;
-      }
-      if (sidebarItems[5]) sidebarItems[5].textContent = t("history");
+      $("generatorSectionTitle").textContent = "✨ Vælg træningstype";
+      $("todayWorkoutNavItem").textContent = "▶ Dagens træning";
+      $("newWorkoutNavItem").textContent = t("newWorkout");
+      $("savedWorkoutsNavItem").textContent = t("savedWorkouts");
+      $("trashNavItem").textContent = t("trashWorkouts");
+      $("progressNavItem").childNodes[0].textContent = `${t("myProgress")} `;
+      $("membershipNavItem").childNodes[0].textContent = `${t("membership")} `;
+      $("historyNavItem").textContent = t("history");
+      $("contactNavItem").textContent = "✉ Kontakt";
 
       document.querySelector("#programType option[value='']").textContent = t("chooseType");
       document.querySelector("#programType option[value='fullbody']").textContent = tp("fullbody");
       document.querySelector("#programType option[value='push']").textContent = tp("push");
       document.querySelector("#programType option[value='pull']").textContent = tp("pull");
       document.querySelector("#programType option[value='legs']").textContent = tp("legs");
-      $("countTitle").textContent = t("chooseType");
+      $("countTitle").textContent = "Antal øvelser";
       document.querySelector("#savedDropdown .mini-title").textContent = t("savedTitle");
       $("savedEmpty").textContent = t("savedEmpty");
       $("trashTitle").textContent = t("trashTitle");
@@ -1124,6 +1436,46 @@
     }
 
     function toggleSidebar() { $("sidebar").classList.toggle("open"); $("overlay").classList.toggle("show"); }
+    function openTodayWorkout() {
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      const profile = window.TrainingWizardStore?.getProfile?.();
+      const hasTodayMotivation = window.TrainingWizardStore?.hasDailyMotivationForDate?.() === true;
+      const canOpenDailyWizard =
+        window.ENABLE_DAILY_START_WIZARD === true &&
+        profile?.hasCompletedProfileWizard &&
+        window.Membership?.getMembership?.().isPremium !== false &&
+        !hasTodayMotivation;
+      if (canOpenDailyWizard) {
+        window.DailyStartWizard?.open?.();
+        return;
+      }
+      continueDailyWorkout();
+    }
+
+    function dailyMotivationPresentation(motivation) {
+      return {
+        low: { icon: "💪", label: "Lav" },
+        normal: { icon: "💪", label: "Normal" },
+        high: { icon: "🚀", label: "Høj" }
+      }[motivation] || null;
+    }
+
+    function updateDailyMotivationDisplay() {
+      const summary = $("dailyMotivationSummary");
+      const value = $("dailyMotivationValue");
+      if (!summary || !value || !window.TrainingWizardStore) return;
+      const state = window.TrainingWizardStore.getDailyState();
+      const isToday = window.TrainingWizardStore.hasDailyMotivationForDate?.() === true;
+      const presentation = isToday ? dailyMotivationPresentation(state.dailyMotivation) : null;
+      summary.hidden = !presentation;
+      value.textContent = presentation
+        ? `${presentation.icon} Dagens motivation: ${presentation.label}`
+        : "";
+    }
+
+    function changeDailyMotivation() {
+      window.DailyStartWizard?.open?.({ forceMotivation: true });
+    }
     function appUrl() {
       if (window.location.protocol === "file:") {
         const path = window.location.pathname.replace(/\\/g, "/");
@@ -1138,6 +1490,10 @@
     function goBackSafe() {
       if ($("membershipView")?.classList.contains("open")) {
         closeMembershipView();
+        return;
+      }
+      if ($("profileAccountView")?.classList.contains("open")) {
+        closeProfileAccountView();
         return;
       }
       if ($("progressView")?.classList.contains("open")) {
@@ -1292,13 +1648,20 @@
     }
 
     function renderCountButtons() {
-      $("countGrid").innerHTML = "";
-      for (let i = 1; i <= 20; i++) {
-        const b = document.createElement("button");
-        b.textContent = i;
-        b.onclick = () => generateProgram(i);
-        $("countGrid").appendChild(b);
-      }
+      const preferredCount = window.TrainingWizardStore?.getProfile?.().preferredExerciseCount;
+      selectedAutomaticExerciseCount = normalizeAutomaticExerciseCount(preferredCount || selectedAutomaticExerciseCount);
+      const select = $("automaticExerciseCount");
+      if (select) select.value = String(selectedAutomaticExerciseCount);
+    }
+
+    function normalizeAutomaticExerciseCount(value) {
+      return Math.max(1, Math.min(8, Number.parseInt(value, 10) || 5));
+    }
+
+    function setAutomaticExerciseCount(value) {
+      selectedAutomaticExerciseCount = normalizeAutomaticExerciseCount(value);
+      const select = $("automaticExerciseCount");
+      if (select) select.value = String(selectedAutomaticExerciseCount);
     }
 
     function chooseProgramType(type) {
@@ -1307,11 +1670,19 @@
         return;
       }
       pendingProgram = type;
-      $("countTitle").textContent = `${t("howMany")} ${tp(type)}?`;
+      $("countTitle").textContent = "Antal øvelser";
+      setAutomaticExerciseCount($("automaticExerciseCount")?.value || selectedAutomaticExerciseCount);
       $("countPicker").style.display = "block";
     }
 
-    function generateProgram(count) {
+    function generateSelectedAutomaticProgram() {
+      if (!pendingProgram) return;
+      generateProgram(selectedAutomaticExerciseCount);
+    }
+
+    function generateProgram(count = selectedAutomaticExerciseCount) {
+      count = normalizeAutomaticExerciseCount(count);
+      setAutomaticExerciseCount(count);
       const types = {
         fullbody: muscleGroupKeys,
         push: movementMuscles("Push"),
@@ -1326,6 +1697,7 @@
       currentSavedProgramId = "";
       currentProgramSession = null;
       currentProgramDayIndex = 0;
+      activeExerciseCountPreference = count;
       renderDayNavigation();
       const used = new Set();
       for (let i = 0; i < count; i++) {
@@ -1711,6 +2083,7 @@
       Object.assign(day, {
         goal: state.goal,
         timerSeconds: state.timerSeconds,
+        desiredExerciseCount: state.desiredExerciseCount,
         exercises: state.exercises
       });
       currentProgramSession.activeDayIndex = currentProgramDayIndex;
@@ -1735,6 +2108,9 @@
       currentProgramDayIndex = Math.max(0, Math.min(Number(index) || 0, days.length - 1));
       currentProgramSession.activeDayIndex = currentProgramDayIndex;
       const day = days[currentProgramDayIndex];
+      activeExerciseCountPreference = Number.isInteger(day.desiredExerciseCount)
+        ? normalizeAutomaticExerciseCount(day.desiredExerciseCount)
+        : null;
       $("workoutTitle").textContent = trainingDayHeading(days.length, currentProgramDayIndex);
       delete $("workoutTitle").dataset.customTitle;
       totalSeconds = Number(day.timerSeconds) || 0;
@@ -1767,6 +2143,7 @@
         goal: activeProgramDay()?.goal || currentTrainingGoal(),
         title: activeProgramDay()?.title || $("workoutTitle").textContent,
         timerSeconds: totalSeconds,
+        desiredExerciseCount: activeExerciseCountPreference,
         exercises: [...document.querySelectorAll(".exercise")].map(block => {
           const slot = block.id.replace("block-", "");
           const nameEl = $(`name-${slot}`);
@@ -1820,6 +2197,9 @@
       currentSavedProgramId = state.savedProgramId || "";
       currentProgramSession = null;
       currentProgramDayIndex = 0;
+      activeExerciseCountPreference = Number.isInteger(state.desiredExerciseCount)
+        ? normalizeAutomaticExerciseCount(state.desiredExerciseCount)
+        : null;
       $("workoutTitle").textContent = state.title || t("defaultTitle");
       totalSeconds = state.timerSeconds || 0;
       $("globalTimer").textContent = formatTime(totalSeconds);
@@ -2047,6 +2427,7 @@
       currentSavedProgramId = "";
       currentProgramSession = null;
       currentProgramDayIndex = 0;
+      activeExerciseCountPreference = null;
       renderDayNavigation();
       $("globalTimer").textContent = "00:00:00";
       $("timerBtn").textContent = t("start");
@@ -2405,7 +2786,62 @@
     }
     function closeModal() { $("modal").style.display = "none"; }
 
-    function feedback(msg, bad=false) { const el = $("copilotFeedback"); el.style.display = "block"; el.style.color = bad ? "var(--red)" : "var(--green)"; el.textContent = msg; }
+    function openContactDialog() {
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      $("modalTitle").textContent = "Kontakt";
+      $("modalContent").innerHTML = `
+        <form class="contact-form" onsubmit="sendContactMessage(event)">
+          <p class="contact-note">Skriv din besked her. Din mailapp åbnes med beskeden adresseret til Mikehenriksen85@gmail.com.</p>
+          <label>Navn
+            <input id="contactName" name="name" autocomplete="name" placeholder="Dit navn">
+          </label>
+          <label>Din e-mail
+            <input id="contactEmail" name="email" type="email" autocomplete="email" placeholder="din@email.dk">
+          </label>
+          <label>Besked
+            <textarea id="contactMessage" name="message" required placeholder="Skriv din besked..."></textarea>
+          </label>
+          <button class="small-btn" type="submit">Åbn mail til afsendelse</button>
+        </form>`;
+      $("modal").style.display = "flex";
+      window.requestAnimationFrame(() => $("contactMessage")?.focus());
+    }
+
+    function buildContactMailto(name, email, message) {
+      const sender = String(name || "").trim() || "Ikke oplyst";
+      const replyTo = String(email || "").trim() || "Ikke oplyst";
+      const body = `Navn: ${sender}\nE-mail: ${replyTo}\n\nBesked:\n${String(message || "").trim()}`;
+      return `mailto:Mikehenriksen85@gmail.com?subject=${encodeURIComponent("Kontakt fra AI Training Canvas")}&body=${encodeURIComponent(body)}`;
+    }
+
+    function sendContactMessage(event) {
+      event.preventDefault();
+      const message = $("contactMessage")?.value?.trim();
+      if (!message) return;
+      window.location.href = buildContactMailto(
+        $("contactName")?.value,
+        $("contactEmail")?.value,
+        message
+      );
+    }
+
+    let pendingCopilotHistory = null;
+
+    function feedback(msg, bad=false, aiChange=false) {
+      const el = $("copilotFeedback");
+      el.style.display = "block";
+      el.style.color = bad ? "var(--red)" : "var(--green)";
+      el.classList.toggle("ai-change", aiChange && !bad);
+      el.textContent = msg;
+      if (pendingCopilotHistory) {
+        window.AICopilotActions?.log?.(
+          pendingCopilotHistory.command,
+          pendingCopilotHistory.action,
+          { success: !bad, changed: !bad, message: msg }
+        );
+        pendingCopilotHistory = null;
+      }
+    }
     function slotIds() { return [...document.querySelectorAll(".exercise")].map(b => b.id.replace("block-", "")); }
 
     function optimizeCurrentWorkoutForGoal(mode = "all") {
@@ -2451,8 +2887,7 @@
               ? "push"
               : "fullbody";
       pendingProgram = type;
-      const range = profile?.exerciseCount || [5, 7];
-      generateProgram(Math.round((range[0] + range[1]) / 2));
+      generateProgram(selectedAutomaticExerciseCount);
     }
 
     function showProgramDay(dayNumber) {
@@ -2478,22 +2913,319 @@
     }
 
     function addGoalExerciseForMuscle(muscle) {
+      if (activeExerciseCountPreference && slotIds().length >= activeExerciseCountPreference) {
+        return "limit";
+      }
       const existing = new Set(slotIds().map(slot => $(`name-${slot}`).textContent));
       const pool = catalog.filter(exercise => exercise.muscle === muscle && !existing.has(exercise.name));
       const ranked = window.TrainingGoalEngine?.rankExercises?.(pool, currentTrainingGoal()) || pool;
       const exercise = ranked[0];
-      if (!exercise) return false;
+      if (!exercise) return "none";
       const position = slotIds().length;
       const plan = goalPrescription(exercise.name, exercise.muscle, position);
       addExercise(exercise.name, exercise.muscle, plannedSetsForExercise(exercise.name, exercise.muscle, position), plan);
       autoSave();
-      return true;
+      return "added";
+    }
+
+    function normalizedExerciseSearch(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[.,]/g, "")
+        .replace(/\s+/g, " ");
+    }
+
+    function resolveExerciseDefinition(requestedName) {
+      const aliases = {
+        "biceps curl": "Barbell Curl",
+        "biceps curls": "Barbell Curl",
+        "curl": "Barbell Curl",
+        "bænkpres": "Barbell Bench Press",
+        "håndvægtspres": "Dumbbell Bench Press",
+        "håndvægt bænkpres": "Dumbbell Bench Press",
+        "squat": "Back Squat",
+        "dødløft": "Deadlift",
+        "pullups": "Pull-up",
+        "pull-ups": "Pull-up",
+        "triceps pushdown": "Cable Triceps Pushdown",
+        "triceps": "Cable Triceps Pushdown",
+        "skulderpres": "Overhead Press",
+        "row": "Barbell Row"
+      };
+      const requested = normalizedExerciseSearch(requestedName);
+      const alias = aliases[requested];
+      const exactName = normalizedExerciseSearch(alias || requestedName);
+      return catalog.find(exercise => normalizedExerciseSearch(exercise.name) === exactName)
+        || catalog.find(exercise => normalizedExerciseSearch(exercise.name).includes(requested))
+        || catalog.find(exercise => requested.includes(normalizedExerciseSearch(exercise.name)));
+    }
+
+    function findExerciseSlot(requestedName) {
+      const requested = normalizedExerciseSearch(requestedName);
+      const definition = resolveExerciseDefinition(requestedName);
+      const candidates = [requested, normalizedExerciseSearch(definition?.name)].filter(Boolean);
+      return slotIds().find(slot => {
+        const current = normalizedExerciseSearch($(`name-${slot}`)?.textContent);
+        return candidates.some(candidate => current === candidate || current.includes(candidate) || candidate.includes(current));
+      });
+    }
+
+    function profileFieldValidation(field, value) {
+      const numericRanges = {
+        weightKg: [1, 500],
+        heightCm: [50, 250],
+        age: [13, 120],
+        bodyFat: [0, 100],
+        muscleMass: [0, 300]
+      };
+      if (numericRanges[field]) {
+        const number = Number(value);
+        const [minimum, maximum] = numericRanges[field];
+        if (!Number.isFinite(number) || number < minimum || number > maximum) {
+          return { valid: false, message: `Værdien skal være mellem ${minimum} og ${maximum}.` };
+        }
+      }
+      if (field === "gender" && !["man", "woman", "not_specified"].includes(value)) {
+        return { valid: false, message: "Vælg Mand, Kvinde eller Ønsker ikke at oplyse." };
+      }
+      if (field === "personalGoal" && !String(value || "").trim()) {
+        return { valid: false, message: "Det personlige mål må ikke være tomt." };
+      }
+      return { valid: true };
+    }
+
+    function syncProfileMeasurements(profile) {
+      const mapping = {
+        bodyHeight: profile.heightCm,
+        bodyWeight: profile.weightKg,
+        bodyFat: profile.bodyFat,
+        bodyMuscle: profile.muscleMass,
+        personalGoal: profile.personalGoal
+      };
+      Object.entries(mapping).forEach(([id, value]) => {
+        const element = $(id);
+        if (element && value !== undefined && value !== "") element.value = value;
+      });
+      if (typeof updateBodyBmi === "function") updateBodyBmi();
+      window.refreshProfileAccountView?.();
+    }
+
+    function profileFieldLabel(field) {
+      return {
+        weightKg: "Din vægt",
+        heightCm: "Din højde",
+        age: "Din alder",
+        gender: "Dit køn",
+        bodyFat: "Din fedtprocent",
+        muscleMass: "Din muskelmasse",
+        personalGoal: "Dit personlige mål"
+      }[field] || "Din profil";
+    }
+
+    function profileFieldDisplay(field, value) {
+      if (field === "gender") {
+        return { man: "Mand", woman: "Kvinde", not_specified: "Ønsker ikke at oplyse" }[value] || value;
+      }
+      if (field === "weightKg" || field === "muscleMass") return `${String(value).replace(".", ",")} kg`;
+      if (field === "heightCm") return `${String(value).replace(".", ",")} cm`;
+      if (field === "bodyFat") return `${String(value).replace(".", ",")}%`;
+      if (field === "age") return `${value} år`;
+      return value;
+    }
+
+    function executeCopilotAction(action) {
+      if (!action?.action) return { success: false, message: "Kommandoen kunne ikke behandles." };
+      if (action.action === "blockedSecurity" || action.action === "clarify") {
+        return { success: action.action === "clarify", message: action.message, changed: false };
+      }
+
+      if (action.action === "updateProfile") {
+        const validation = profileFieldValidation(action.field, action.value);
+        if (!validation.valid) return { success: false, message: validation.message };
+        const profile = window.TrainingWizardStore?.saveProfile?.({ [action.field]: action.value });
+        if (!profile) return { success: false, message: "Profilen kunne ikke gemmes lokalt." };
+        if (["weightKg", "heightCm", "bodyFat", "muscleMass", "personalGoal"].includes(action.field)) {
+          window.saveProfileMeasurementSnapshot?.(profile);
+        }
+        syncProfileMeasurements(profile);
+        return {
+          success: true,
+          changed: true,
+          message: `${profileFieldLabel(action.field)} er opdateret til ${profileFieldDisplay(action.field, action.value)}.`
+        };
+      }
+
+      if (action.action === "updateTrainingPreference") {
+        if (action.field === "motivation") {
+          if (!["low", "normal", "high"].includes(action.value)) return { success: false, message: "Motivationen skal være Lav, Normal eller Høj." };
+          window.TrainingWizardStore?.saveDailyMotivation?.(action.value);
+          const label = { low: "Lav", normal: "Normal", high: "Høj" }[action.value];
+          return { success: true, changed: true, message: `Dagens motivation er opdateret til ${label}.` };
+        }
+
+        const profile = window.TrainingWizardStore?.getProfile?.() || {};
+        const updates = {};
+        let message = "";
+        if (action.field === "goal") {
+          if (!["muscle_gain", "weight_loss", "strength", "general_health"].includes(action.value)) return { success: false, message: "Træningsmålet blev ikke genkendt." };
+          updates.goal = action.value;
+          message = `Dit træningsmål er opdateret til ${window.TrainingGoalEngine?.profile?.(action.value)?.label || action.value}. Fremtidige forslag tilpasses målet.`;
+        } else if (action.field === "experience") {
+          if (!["beginner", "light_intermediate", "intermediate", "experienced"].includes(action.value)) return { success: false, message: "Erfaringsniveauet blev ikke genkendt." };
+          updates.experience = action.value;
+          const label = { beginner: "Nybegynder", light_intermediate: "Let øvet", intermediate: "Øvet", experienced: "Erfaren" }[action.value];
+          message = `Dit niveau er opdateret til ${label}.`;
+        } else if (action.field === "focusAreas") {
+          const allowed = ["Bryst", "Skuldre", "Arme", "Ben", "Core", "Ryg"];
+          const requested = (Array.isArray(action.value) ? action.value : []).filter(area => allowed.includes(area));
+          if (!requested.length) return { success: false, message: "Ingen gyldige fokusområder blev fundet." };
+          updates.focusAreas = [...new Set([...(profile.focusAreas || []), ...requested])];
+          message = `${requested.join(" og ")} er tilføjet som fokusområde. Fremtidige forslag er opdateret.`;
+        } else if (action.field === "trainingDaysPerWeek") {
+          const days = Number(action.value);
+          if (!Number.isInteger(days) || days < 1 || days > 7) return { success: false, message: "Antal træningsdage skal være mellem 1 og 7." };
+          updates.trainingDaysPerWeek = days;
+          message = `Din profil er opdateret til ${days} træningsdage pr. uge.`;
+        } else if (action.field === "exercisePreference") {
+          if (!["variation", "consistent", "mixed"].includes(action.value)) return { success: false, message: "Øvelsespræferencen blev ikke genkendt." };
+          updates.exercisePreference = action.value;
+          const label = { variation: "variation", consistent: "faste øvelser", mixed: "lidt af begge dele" }[action.value];
+          message = `Din øvelsespræference er opdateret til ${label}.`;
+        } else if (action.field === "preferredExerciseCount") {
+          const count = Number(action.value);
+          if (!Number.isInteger(count) || count < 1 || count > 8) return { success: false, message: "Foretrukket antal øvelser skal være mellem 1 og 8." };
+          updates.preferredExerciseCount = count;
+          setAutomaticExerciseCount(count);
+          message = `Dit foretrukne antal er opdateret til ${count} øvelser pr. træning.`;
+        } else {
+          return { success: false, message: "Indstillingen blev ikke genkendt." };
+        }
+        const savedProfile = window.TrainingWizardStore?.saveProfile?.(updates);
+        if (!savedProfile) return { success: false, message: "Træningsopsætningen kunne ikke gemmes." };
+        window.refreshProfileAccountView?.();
+        return { success: true, changed: true, message };
+      }
+
+      if (action.action === "switchDay") {
+        const success = showProgramDay(action.day);
+        return {
+          success,
+          changed: success,
+          message: success ? `Dag ${action.day} er åbnet.` : `Dag ${action.day} findes ikke.`
+        };
+      }
+
+      if (action.action === "moveExercise") {
+        const term = normalizedExerciseSearch(action.exerciseName);
+        const aliases = { biceps: "Biceps", triceps: "Triceps", ryg: "Øvre ryg", bryst: "Bryst", skuldre: "Skuldre", ben: "Forside lår", mave: "Mave", core: "Mave" };
+        const muscle = aliases[term];
+        const moved = moveExercisesToDay(exercise =>
+          muscle
+            ? exercise.muscle === muscle
+            : normalizedExerciseSearch(exercise.name).includes(term),
+        action.day);
+        return {
+          success: moved > 0,
+          changed: moved > 0,
+          message: moved ? `${moved} øvelse${moved === 1 ? "" : "r"} er flyttet til Dag ${action.day}.` : "Øvelsen eller dagen blev ikke fundet."
+        };
+      }
+
+      if (action.action === "addExercise") {
+        const exercise = resolveExerciseDefinition(action.exerciseName);
+        if (!exercise) return { success: false, message: `Jeg kunne ikke finde øvelsen "${action.exerciseName}". Prøv et mere præcist navn.` };
+        addExercise(exercise.name, exercise.muscle);
+        autoSave();
+        return { success: true, changed: true, message: `${exercise.name} er tilføjet til træningspasset.` };
+      }
+
+      if (action.action === "removeExercise") {
+        const slot = findExerciseSlot(action.exerciseName);
+        if (!slot) return { success: false, message: `Jeg kunne ikke finde "${action.exerciseName}" i det aktive træningspas.` };
+        const name = $(`name-${slot}`).textContent;
+        removeExercise(slot);
+        return { success: true, changed: true, message: `${name} er fjernet fra træningspasset.` };
+      }
+
+      if (action.action === "replaceExercise") {
+        const slot = findExerciseSlot(action.exerciseName);
+        const replacement = resolveExerciseDefinition(action.replacementName);
+        if (!slot) return { success: false, message: `Jeg kunne ikke finde "${action.exerciseName}" i det aktive træningspas.` };
+        if (!replacement) return { success: false, message: `Jeg kunne ikke finde erstatningen "${action.replacementName}".` };
+        const previousName = $(`name-${slot}`).textContent;
+        setExercise(slot, replacement.name, replacement.muscle);
+        return { success: true, changed: true, message: `${previousName} er erstattet med ${replacement.name}.` };
+      }
+
+      if (action.action === "updateExercise") {
+        const slot = findExerciseSlot(action.exerciseName);
+        if (!slot) return { success: false, message: `Jeg kunne ikke finde "${action.exerciseName}" i det aktive træningspas.` };
+        const current = collectSetData(slot);
+        const setCount = action.sets ?? current.length;
+        if (!Number.isInteger(setCount) || setCount < 1 || setCount > 20) return { success: false, message: "Antal sæt skal være mellem 1 og 20." };
+        if (action.reps !== null && action.reps !== undefined && (!Number.isInteger(action.reps) || action.reps < 1 || action.reps > 100)) {
+          return { success: false, message: "Reps skal være mellem 1 og 100." };
+        }
+        if (action.weightKg !== null && action.weightKg !== undefined && (!Number.isFinite(action.weightKg) || action.weightKg < 0 || action.weightKg > 1000)) {
+          return { success: false, message: "Vægten skal være mellem 0 og 1000 kg." };
+        }
+        const updated = Array.from({ length: setCount }, (_, index) => {
+          const set = { ...(current[index] || current.at(-1) || {}) };
+          if (action.reps !== null && action.reps !== undefined) set.reps = String(action.reps);
+          if (action.weightKg !== null && action.weightKg !== undefined) set.weight = String(action.weightKg).replace(".", ",");
+          return set;
+        });
+        renderSets(slot, setCount, updated);
+        autoSave();
+        const name = $(`name-${slot}`).textContent;
+        const details = [
+          action.sets ? `${setCount} sæt` : "",
+          action.reps !== null && action.reps !== undefined ? `${action.reps} reps` : "",
+          action.weightKg !== null && action.weightKg !== undefined ? `${String(action.weightKg).replace(".", ",")} kg` : ""
+        ].filter(Boolean).join(", ");
+        return { success: true, changed: true, message: `${name} er opdateret: ${details}.` };
+      }
+
+      if (action.action === "updatePause") {
+        const seconds = parsePause(action.value);
+        if (!Number.isFinite(seconds) || seconds < 0 || seconds > 3600) return { success: false, message: "Pausen skal være mellem 0 og 60 minutter." };
+        let changed = 0;
+        document.querySelectorAll(".pause").forEach(input => {
+          input.value = formatPause(seconds);
+          input.dataset.pauseManual = "true";
+          changed++;
+        });
+        if (!changed) return { success: false, message: "Tilføj først mindst én øvelse." };
+        updateEstimatedTime();
+        autoSave();
+        return { success: true, changed: true, message: `${changed} pausefelter er opdateret til ${formatPause(seconds)}.` };
+      }
+
+      return { success: false, message: "Kommandoen kunne ikke behandles." };
     }
 
     function runCopilot() {
       if (!openPremiumFeature("copilot")) return;
       const cmd = $("copilotInput").value.trim();
       if (!cmd) return;
+      pendingCopilotHistory = {
+        command: cmd,
+        action: { action: "legacyCopilotCommand" }
+      };
+      const structuredAction = window.AICopilotActions?.parse?.(cmd);
+      if (structuredAction) {
+        const result = executeCopilotAction(structuredAction);
+        window.AICopilotActions?.log?.(cmd, structuredAction, result);
+        pendingCopilotHistory = null;
+        feedback(
+          result.changed ? `✓ Ændret af AI · ${result.message}` : result.message,
+          !result.success,
+          result.changed
+        );
+        $("copilotInput").value = "";
+        return;
+      }
       const normalized = cmd.toLowerCase();
       const goalRecommendation = window.TrainingGoalEngine?.recommendation?.(currentTrainingGoal()) || "";
       let dayMatch = normalized.match(/^vis\s+dag\s+(\d+)$/i);
@@ -2541,7 +3273,15 @@
       if (addMatch) {
         const aliases = { ryg: "Øvre ryg", bryst: "Bryst", biceps: "Biceps", triceps: "Triceps", skuldre: "Skuldre", ben: "Forside lår", mave: "Mave" };
         const muscle = aliases[addMatch[1]];
-        feedback(addGoalExerciseForMuscle(muscle) ? `${muscle} er tilføjet til Dag ${currentProgramDayIndex + 1}.` : "Der kunne ikke findes en ny passende øvelse.", false);
+        const result = addGoalExerciseForMuscle(muscle);
+        feedback(
+          result === "added"
+            ? `${muscle} er tilføjet til Dag ${currentProgramDayIndex + 1}.`
+            : result === "limit"
+              ? `Træningspasset beholder dit valgte antal på ${activeExerciseCountPreference} øvelser.`
+              : "Der kunne ikke findes en ny passende øvelse.",
+          result === "none"
+        );
         $("copilotInput").value = "";
         return;
       }
@@ -2697,28 +3437,111 @@
       $("autosaveStatus").textContent = "Opret eller gem dit første træningspas";
     }
 
-    function adaptDailyWorkout(event) {
-      if (!openPremiumFeature("adaptation")) return;
-      const motivation = event.detail?.motivation || "normal";
-      const programId = preferredDailyProgramId();
-      if (programId) loadSavedProgram(programId, false);
-      const slots = slotIds();
-      if (!slots.length) {
-        openDailyProgramGenerator();
-        return;
-      }
+    const dailyMotivationExerciseCount = { low: 3, normal: 5, high: 8 };
+    const profileFocusMuscles = {
+      "Bryst": ["Bryst"],
+      "Skuldre": ["Skuldre"],
+      "Arme": ["Biceps", "Triceps"],
+      "Ben": ["Forside lår", "Bagside lår & baller"],
+      "Core": ["Mave", "Nedre ryg / lænd"],
+      "Ryg": ["Øvre ryg"]
+    };
+    let pendingDailyMotivation = "normal";
 
-      const originalTitle = $("workoutTitle").textContent.replace(/\s·\sDagens tilpasning$/, "");
-      currentSavedProgramId = "";
-      if (currentProgramSession) {
-        currentProgramSession.id = "";
-        currentProgramSession.title = `${currentProgramSession.title || originalTitle} · Dagens tilpasning`;
-      }
-      $("workoutTitle").textContent = currentProgramSession
-        ? trainingDayHeading(currentProgramSession.days?.length, currentProgramDayIndex)
-        : `${originalTitle} · Dagens tilpasning`;
+    function normalizedDailyMotivation(value) {
+      return ["low", "normal", "high"].includes(value) ? value : "normal";
+    }
 
+    function preferredProfileMuscles() {
+      const focusAreas = trainingContext().focusAreas || [];
+      return [...new Set(focusAreas.flatMap(area => profileFocusMuscles[area] || []))];
+    }
+
+    function orderedDailyMuscles(muscles) {
+      const unique = [...new Set(muscles.filter(muscle => muscleGroupKeys.includes(muscle)))];
+      const preferred = preferredProfileMuscles();
+      return [...unique].sort((a, b) => {
+        const aIndex = preferred.indexOf(a);
+        const bIndex = preferred.indexOf(b);
+        const aScore = aIndex < 0 ? Number.MAX_SAFE_INTEGER : aIndex;
+        const bScore = bIndex < 0 ? Number.MAX_SAFE_INTEGER : bIndex;
+        return aScore - bScore || unique.indexOf(a) - unique.indexOf(b);
+      });
+    }
+
+    function selectDailySlotsToKeep(slots, targetCount) {
+      if (slots.length <= targetCount) return slots;
+      const orderedMuscles = orderedDailyMuscles(slots.map(slot => $(`name-${slot}`)?.dataset.muscle || ""));
+      const selected = [];
+      orderedMuscles.forEach(muscle => {
+        const slot = slots.find(candidate =>
+          $(`name-${candidate}`)?.dataset.muscle === muscle && !selected.includes(candidate)
+        );
+        if (slot && selected.length < targetCount) selected.push(slot);
+      });
       slots.forEach(slot => {
+        if (selected.length < targetCount && !selected.includes(slot)) selected.push(slot);
+      });
+      return selected;
+    }
+
+    function rankedDailyCandidates(allowedMuscles, existingNames = new Set()) {
+      const muscles = orderedDailyMuscles(allowedMuscles);
+      const rankedByMuscle = new Map(muscles.map((muscle, index) => {
+        const pool = catalog.filter(exercise =>
+          exercise.muscle === muscle && !existingNames.has(exercise.name)
+        );
+        const ranked = window.TrainingGoalEngine?.rankExercises?.(
+          pool,
+          currentTrainingGoal(),
+          currentProgramDayIndex + index
+        ) || pool;
+        return [muscle, ranked];
+      }));
+      const result = [];
+      let level = 0;
+      while (result.length < catalog.length) {
+        let added = false;
+        muscles.forEach(muscle => {
+          const exercise = rankedByMuscle.get(muscle)?.[level];
+          if (exercise && !existingNames.has(exercise.name) && !result.some(item => item.name === exercise.name)) {
+            result.push(exercise);
+            added = true;
+          }
+        });
+        if (!added) break;
+        level++;
+      }
+      return result;
+    }
+
+    function resizeDailyExerciseList(targetCount, allowedMuscles) {
+      const currentSlots = slotIds();
+      const keepSlots = selectDailySlotsToKeep(currentSlots, targetCount);
+      currentSlots.forEach(slot => {
+        if (keepSlots.includes(slot)) return;
+        clearPauseTimers(slot);
+        $(`block-${slot}`)?.remove();
+      });
+
+      const existingNames = new Set(slotIds().map(slot => $(`name-${slot}`)?.textContent?.trim()));
+      const candidates = rankedDailyCandidates(allowedMuscles, existingNames);
+      while (slotIds().length < targetCount && candidates.length) {
+        const exercise = candidates.shift();
+        existingNames.add(exercise.name);
+        const position = slotIds().length;
+        const plan = goalPrescription(exercise.name, exercise.muscle, position);
+        addExercise(
+          exercise.name,
+          exercise.muscle,
+          plannedSetsForExercise(exercise.name, exercise.muscle, position),
+          plan
+        );
+      }
+    }
+
+    function applyDailyMotivation(motivation) {
+      slotIds().forEach(slot => {
         const currentCount = parseInt($(`count-${slot}`).textContent) || 1;
         const nextCount = motivation === "low"
           ? Math.max(1, currentCount - 1)
@@ -2734,20 +3557,99 @@
             next.weight = String(Math.round(numberValue(next.weight) * 1.025 * 2) / 2);
           }
           if (!next.pauseManual) {
-            const seconds = parsePause(next.pause);
-            const adjusted = motivation === "low" ? seconds + 15 : motivation === "high" ? Math.max(30, seconds - 10) : seconds;
+            const seconds = parsePause(next.pause) ||
+              suggestedPauseSeconds($(`name-${slot}`)?.textContent, $(`name-${slot}`)?.dataset.muscle);
+            const adjusted = motivation === "low"
+              ? seconds + 15
+              : motivation === "high"
+                ? Math.max(30, seconds - 10)
+                : seconds;
             next.pause = formatPause(adjusted);
           }
           return next;
         });
         renderSets(slot, nextCount, data);
       });
+    }
 
+    function finishDailyMotivationAdaptation(motivation) {
       autoSave();
       updateWorkoutProgress();
       updateEstimatedTime();
       const motivationLabel = motivation === "low" ? "lav" : motivation === "high" ? "høj" : "normal";
       $("autosaveStatus").textContent = `Dagens træning er tilpasset til ${motivationLabel} motivation`;
+    }
+
+    function dailyMotivationTargetCount(motivation) {
+      return activeExerciseCountPreference || dailyMotivationExerciseCount[normalizedDailyMotivation(motivation)];
+    }
+
+    function dailyMuscleSelectionTitle(muscles, count) {
+      const goalLabel = window.TrainingGoalEngine?.profile?.(currentTrainingGoal())?.label || "Dagens træning";
+      const uniqueMuscles = [...new Set(muscles)];
+      const selection = uniqueMuscles.length === muscleGroupKeys.length
+        ? "Fullbody Pas"
+        : uniqueMuscles.join(" + ");
+      return `${goalLabel}: ${selection} (${count} ${count === 1 ? "øvelse" : "øvelser"}) · Dagens tilpasning`;
+    }
+
+    function openDailyMuscleDialog(motivation) {
+      pendingDailyMotivation = normalizedDailyMotivation(motivation);
+      const targetCount = dailyMotivationTargetCount(pendingDailyMotivation);
+      const motivationLabel = pendingDailyMotivation === "low"
+        ? "Lav"
+        : pendingDailyMotivation === "high"
+          ? "Høj"
+          : "Normal";
+      $("modalTitle").textContent = "Vælg dagens muskelgrupper";
+      $("modalContent").innerHTML = `
+        <p class="daily-muscle-copy">Hvilke muskelgrupper ønsker du at træne i dag?</p>
+        <p class="daily-muscle-copy">${motivationLabel} motivation opretter ${targetCount} ${targetCount === 1 ? "øvelse" : "øvelser"}.</p>
+        <div class="daily-muscle-grid">
+          ${muscleGroups.map(group => `
+            <label class="daily-muscle-option">
+              <input type="checkbox" name="daily-muscle" value="${esc(group.key)}">
+              <span>${group.emoji} ${esc(group.key)}</span>
+            </label>`).join("")}
+        </div>
+        <div class="daily-muscle-feedback" id="dailyMuscleFeedback" aria-live="polite"></div>
+        <div class="daily-muscle-actions">
+          <button class="small-btn" type="button" onclick="createMotivationWorkoutFromMuscles()">Opret dagens træning</button>
+        </div>`;
+      $("modal").style.display = "flex";
+    }
+
+    function createMotivationWorkoutFromMuscles() {
+      const selectedMuscles = [...document.querySelectorAll('input[name="daily-muscle"]:checked')]
+        .map(input => input.value);
+      if (!selectedMuscles.length) {
+        $("dailyMuscleFeedback").textContent = "Vælg mindst én muskelgruppe.";
+        return;
+      }
+
+      closeModal();
+      currentSavedProgramId = "";
+      currentProgramSession = null;
+      currentProgramDayIndex = 0;
+      totalSeconds = 0;
+      $("globalTimer").textContent = formatTime(totalSeconds);
+      clearPauseTimers();
+      $("exercises").innerHTML = "";
+      $("workoutTitle").textContent = "Dagens træning";
+      renderDayNavigation();
+
+      const targetCount = dailyMotivationTargetCount(pendingDailyMotivation);
+      resizeDailyExerciseList(targetCount, selectedMuscles);
+      applyDailyMotivation(pendingDailyMotivation);
+      const actualCount = slotIds().length;
+      $("workoutTitle").textContent = dailyMuscleSelectionTitle(selectedMuscles, actualCount);
+      finishDailyMotivationAdaptation(pendingDailyMotivation);
+    }
+
+    function adaptDailyWorkout(event) {
+      if (!openPremiumFeature("adaptation")) return;
+      const motivation = normalizedDailyMotivation(event.detail?.motivation);
+      openDailyMuscleDialog(motivation);
     }
 
     function openDailyProgramGenerator() {
@@ -2773,6 +3675,7 @@
     window.addEventListener("daily-wizard:continue", continueDailyWorkout);
     window.addEventListener("daily-wizard:adapt", adaptDailyWorkout);
     window.addEventListener("daily-wizard:generate", openDailyProgramGenerator);
+    window.addEventListener("daily-motivation:changed", updateDailyMotivationDisplay);
 
     window.onload = function() {
       currentLanguage = "da";
@@ -2786,6 +3689,7 @@
       }
       applyLanguage(currentLanguage);
       updateWorkoutProgress();
+      updateDailyMotivationDisplay();
       window.dispatchEvent(new CustomEvent("training-app:ready"));
     };
   </script>
@@ -2796,6 +3700,8 @@
   <script src="training-goal-engine.js"></script>
   <script src="workout-program-store.js"></script>
   <script src="wizard-store.js"></script>
+  <script src="ai-copilot-actions.js"></script>
+  <script src="profile-account.js"></script>
   <script src="profile-wizard.js"></script>
   <script src="daily-start-wizard.js"></script>
   <script src="wizard-controller.js"></script>

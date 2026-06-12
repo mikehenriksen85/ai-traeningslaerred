@@ -13,6 +13,9 @@
       goal: source.goal || day?.goal || "",
       structure: source.structure || day?.structure || "",
       timerSeconds: Number(source.timerSeconds) || 0,
+      desiredExerciseCount: Number.isInteger(source.desiredExerciseCount)
+        ? Math.max(1, Math.min(8, source.desiredExerciseCount))
+        : null,
       exercises: Array.isArray(source.exercises) ? clone(source.exercises) : []
     };
   }

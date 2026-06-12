@@ -331,7 +331,7 @@
     const profileLabel = document.querySelector(".profile-login");
     if (window.ENABLE_PROFILE_WIZARD === true) {
       profileEntry?.classList.add("profile-edit-enabled");
-      if (profileLabel) profileLabel.textContent = "Rediger profilopsætning";
+      if (profileLabel) profileLabel.textContent = "Profil og konto";
     }
 
     if (window.ENABLE_PROFILE_WIZARD === true && !profile.hasCompletedProfileWizard) {
@@ -341,18 +341,25 @@
     if (
       window.ENABLE_DAILY_START_WIZARD === true &&
       profile.hasCompletedProfileWizard &&
-      window.Membership?.getMembership?.().isPremium !== false
+      window.Membership?.getMembership?.().isPremium !== false &&
+      !store.hasDailyMotivationForDate?.()
     ) {
       window.DailyStartWizard?.open?.();
     }
   }
 
+  function openDailyAfterOnboarding() {
+    if (
+      window.ENABLE_DAILY_START_WIZARD !== true ||
+      window.Membership?.getMembership?.().isPremium === false ||
+      window.TrainingWizardStore?.hasDailyMotivationForDate?.()
+    ) return;
+    window.requestAnimationFrame(() => window.DailyStartWizard?.open?.());
+  }
+
   window.WizardUI = { ensureStyles };
   window.openProfileSetup = function openProfileSetup() {
-    if (window.ENABLE_PROFILE_WIZARD !== true) return;
-    const sidebar = document.getElementById("sidebar");
-    if (sidebar?.classList.contains("open")) window.toggleSidebar?.();
-    window.ProfileWizard?.open?.({ mode: "edit" });
+    window.openProfileAccountView?.();
   };
 
   function startAfterLayout() {
@@ -361,6 +368,7 @@
 
   window.addEventListener("training-app:ready", startAfterLayout);
   window.addEventListener("load", startAfterLayout, { once: true });
+  window.addEventListener("onboarding:create-programs", openDailyAfterOnboarding);
   window.addEventListener("pageshow", event => {
     if (event.persisted) startAfterLayout();
   });

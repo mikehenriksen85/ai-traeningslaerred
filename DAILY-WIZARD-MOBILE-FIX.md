@@ -22,6 +22,9 @@ gyldige.
 - Panelet kan scrolle internt og footerknapperne forbliver tilgængelige.
 - Touchmål på valg og knapper er mindst 48 px.
 - Feature-flaget `ENABLE_DAILY_START_WIZARD` respekteres fortsat.
+- Nye brugere gennemfører først profilopsætningen. Når programmet er oprettet,
+  åbnes motivationsspørgsmålet automatisk.
+- Kendte brugere får motivationsspørgsmålet direkte ved appstart.
 
 ## Test
 
@@ -43,6 +46,8 @@ På alle størrelser blev følgende bekræftet:
 - Dialogen vises igen efter simuleret mobil BFCache-genoptagelse.
 - Wizarden forbliver skjult, når feature-flaget er `false`.
 - Ingen JavaScript- eller console-fejl.
+- Et komplet ny-brugerflow oprettede tre træningsdage og viste derefter
+  motivationen med valgene Lav, Normal og Høj.
 
 ## Bemærkning
 

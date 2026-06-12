@@ -26,15 +26,20 @@
   function getProfile() {
     return {
       hasCompletedProfileWizard: false,
+      name: "",
       goal: "",
       heightCm: "",
       weightKg: "",
+      bodyFat: "",
+      muscleMass: "",
+      personalGoal: "",
       age: "",
       gender: "",
       experience: "",
       trainingDaysPerWeek: 3,
       focusAreas: [],
       exercisePreference: "",
+      preferredExerciseCount: 5,
       updatedAt: "",
       ...read(PROFILE_KEY, {})
     };
@@ -52,22 +57,63 @@
     return next;
   }
 
+  function localDateString(date = new Date()) {
+    const value = date instanceof Date ? date : new Date(date);
+    if (!Number.isFinite(value.getTime())) return "";
+    return [
+      value.getFullYear(),
+      String(value.getMonth() + 1).padStart(2, "0"),
+      String(value.getDate()).padStart(2, "0")
+    ].join("-");
+  }
+
   function getDailyState() {
+    const stored = read(DAILY_KEY, {});
+    const dailyMotivation = stored.dailyMotivation || stored.motivation || "";
     return {
       motivation: "",
+      dailyMotivation: "",
+      dailyMotivationDate: "",
       selectedAction: "",
       completedAt: "",
-      ...read(DAILY_KEY, {})
+      ...stored,
+      motivation: dailyMotivation,
+      dailyMotivation
     };
   }
 
   function saveDailyState(state) {
+    const current = getDailyState();
+    const explicitMotivation = state.dailyMotivation || state.motivation || "";
+    const motivation = explicitMotivation || current.dailyMotivation;
     const next = {
-      ...getDailyState(),
+      ...current,
       ...state,
+      motivation,
+      dailyMotivation: motivation,
+      dailyMotivationDate: state.dailyMotivationDate ||
+        (explicitMotivation ? localDateString() : current.dailyMotivationDate),
       completedAt: new Date().toISOString()
     };
-    return write(DAILY_KEY, next);
+    const saved = write(DAILY_KEY, next);
+    window.dispatchEvent(new CustomEvent("daily-motivation:changed", { detail: { ...saved } }));
+    return saved;
+  }
+
+  function saveDailyMotivation(motivation, date = new Date()) {
+    return saveDailyState({
+      motivation,
+      dailyMotivation: motivation,
+      dailyMotivationDate: localDateString(date)
+    });
+  }
+
+  function hasDailyMotivationForDate(date = new Date()) {
+    const daily = getDailyState();
+    return Boolean(
+      daily.dailyMotivation &&
+      daily.dailyMotivationDate === localDateString(date)
+    );
   }
 
   function setLastActiveProgramId(programId) {
@@ -94,7 +140,9 @@
       focusAreas: [...profile.focusAreas],
       exercisePreference: profile.exercisePreference,
       trainingDaysPerWeek: profile.trainingDaysPerWeek,
-      motivation: daily.motivation,
+      motivation: daily.dailyMotivation,
+      dailyMotivation: daily.dailyMotivation,
+      dailyMotivationDate: daily.dailyMotivationDate,
       lastActiveProgramId: getLastActiveProgramId()
     };
   }
@@ -102,8 +150,11 @@
   window.TrainingWizardStore = {
     getProfile,
     saveProfile,
+    localDateString,
     getDailyState,
     saveDailyState,
+    saveDailyMotivation,
+    hasDailyMotivationForDate,
     getLastActiveProgramId,
     setLastActiveProgramId,
     getContext

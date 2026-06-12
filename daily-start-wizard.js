@@ -137,8 +137,12 @@
     const button = event.target.closest("[data-action]");
     if (!button || !state) return;
     const action = button.dataset.action;
-    if (action === "close") return close();
+    if (action === "close") {
+      window.TrainingWizardStore?.saveDailyMotivation?.(state.motivation || "normal");
+      return close();
+    }
     if (action === "skip") {
+      window.TrainingWizardStore?.saveDailyMotivation?.(state.motivation || "normal");
       close();
       showSkipFeedback();
       return;
@@ -149,6 +153,7 @@
     }
     if (action === "motivation") {
       state.motivation = button.dataset.value;
+      window.TrainingWizardStore?.saveDailyMotivation?.(state.motivation);
       state.pepTalk = selectPepTalk();
       state.step = 2;
       return render();
@@ -156,12 +161,14 @@
     if (action === "daily-action") finish(button.dataset.value);
   }
 
-  function open() {
-    if (!window.TrainingWizardStore || document.getElementById("daily-start-wizard-root")) return;
+  function open(options = {}) {
+    if (!window.TrainingWizardStore || document.getElementById("daily-start-wizard-root")) return false;
+    if (!options.forceMotivation && window.TrainingWizardStore.hasDailyMotivationForDate?.()) return false;
     window.WizardUI?.ensureStyles?.();
+    const dailyState = window.TrainingWizardStore.getDailyState();
     state = {
       step: 1,
-      motivation: window.TrainingWizardStore.getDailyState().motivation || "normal",
+      motivation: dailyState.dailyMotivation || dailyState.motivation || "normal",
       pepTalk: null,
       selectedAction: ""
     };
@@ -170,6 +177,7 @@
     root.addEventListener("click", handleClick);
     document.body.appendChild(root);
     render();
+    return true;
   }
 
   window.DailyStartWizard = { open, close };
