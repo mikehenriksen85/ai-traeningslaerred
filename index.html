@@ -343,6 +343,56 @@
     .dash-card { background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
     .dash-label { color: var(--text-secondary); font-size: var(--font-size-small); }
     .dash-value { font-size: var(--font-size-h3); font-weight: var(--font-weight-bold); margin-top: 4px; }
+    .calorie-panel {
+      margin: 0 0 18px;
+      padding: 13px 16px;
+      border: 1px solid rgba(58,147,255,.45);
+      border-left: 4px solid var(--green);
+      border-radius: 6px;
+      background: rgba(10,18,25,.44);
+    }
+    .calorie-title { font-size: var(--font-size-h3); font-weight: var(--font-weight-bold); line-height: var(--line-height-heading); }
+    .calorie-value { margin-top: 5px; color: var(--green); font-size: 30px; font-weight: var(--font-weight-bold); line-height: 1.1; }
+    .calorie-value.missing { color: var(--text-secondary); font-size: var(--font-size-body); line-height: var(--line-height-body); }
+    .calorie-view { display: none; position: fixed; inset: 60px 0 0; z-index: 305; overflow-y: auto; background: var(--bg); padding: 20px; }
+    .calorie-view.open { display: block; }
+    .calorie-view-shell { width: min(900px, 100%); margin: 0 auto; }
+    .calorie-view-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .calorie-view-title { font-size: var(--font-size-h1); font-weight: var(--font-weight-bold); line-height: var(--line-height-heading); }
+    .calorie-detail-card { padding: 16px; border: 1px solid var(--border); border-radius: 7px; background: var(--card); margin-bottom: 14px; }
+    .calorie-detail-card h2 { margin: 0 0 8px; font-size: var(--font-size-h2); }
+    .calorie-detail-card p { color: var(--text-secondary); line-height: var(--line-height-body); }
+    .calorie-detail-result { color: var(--green); font-size: 34px; font-weight: var(--font-weight-bold); }
+    .calorie-data-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+    .calorie-data-item { padding: 9px; border: 1px solid var(--border); border-radius: 5px; background: rgba(0,0,0,.14); }
+    .calorie-data-item span { display: block; color: var(--text-secondary); font-size: var(--font-size-small); }
+    .calorie-data-item strong { display: block; margin-top: 3px; }
+    .calorie-missing-list { margin: 8px 0 0; padding-left: 20px; color: var(--text-secondary); }
+    .calorie-quality {
+      flex: 0 0 auto;
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--panel-2);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+    }
+    .calorie-intensity-label { margin-top: 14px; color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .calorie-intensity { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 6px; }
+    .calorie-intensity button {
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--panel-2);
+      color: var(--text-secondary);
+      font: inherit;
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+    }
+    .calorie-intensity button.active { border-color: var(--green); background: rgba(74,222,128,.12); color: var(--text-primary); }
+    .calorie-explanation { color: var(--text-secondary); line-height: var(--line-height-body); }
+    .calorie-explanation strong { color: var(--text-primary); }
+    .calorie-explanation-list { margin: 12px 0; padding-left: 20px; }
     .chart { height: 170px; display: flex; align-items: end; gap: 6px; background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin: 10px 0 14px; }
     .bar { flex: 1; min-width: 8px; background: linear-gradient(180deg, var(--green), var(--blue)); border-radius: 4px 4px 0 0; }
     .section { color: var(--text-accent); font-weight: var(--font-weight-bold); margin: 14px 0 8px; }
@@ -760,6 +810,8 @@
       .pause-control input { width: 44px; }
       .timer-btn { width: 22px; height: 25px; padding: 0; }
       .dash-grid { grid-template-columns: 1fr; }
+      .calorie-view { padding: 12px; }
+      .calorie-data-grid { grid-template-columns: 1fr 1fr; }
       .progress-view { padding: 12px; }
       .profile-account-view { padding: 12px; }
       .profile-form-grid, .profile-focus-grid { grid-template-columns: 1fr; }
@@ -830,6 +882,7 @@
       </div>
     </div>
     <div class="sidebar-item" id="historyNavItem" onclick="openDashboard()">📜 Historik / Dashboard</div>
+    <div class="sidebar-item" id="calorieNavItem" onclick="openCalorieView()">🔥 Kalorie-estimat</div>
     <div class="sidebar-item" id="progressNavItem" onclick="openPremiumFeature('progress', openProgressView)">📈 Min udvikling <span class="premium-indicator">Premium</span></div>
     <div class="sidebar-item" id="trashNavItem" onclick="toggleTrashDropdown()">🗑 Papirkurv</div>
     <div class="saved-dropdown" id="trashDropdown">
@@ -867,6 +920,10 @@
         <span class="daily-motivation-value" id="dailyMotivationValue"></span>
         <button class="daily-motivation-change" type="button" onclick="changeDailyMotivation()">Skift dagens motivation</button>
       </div>
+      <section class="calorie-panel" id="caloriePanel" aria-live="polite">
+        <div class="calorie-title">🔥 Estimeret kalorieforbrug</div>
+        <div class="calorie-value missing" id="calorieEstimateValue">Mangler data til kalorie-estimat</div>
+      </section>
       <button class="dashboard-btn" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
       <div id="exercises"></div>
       <div class="add-zone">
@@ -898,6 +955,16 @@
       </div>
     </section>
   </main>
+
+  <section class="calorie-view" id="calorieView" aria-hidden="true">
+    <div class="calorie-view-shell">
+      <div class="calorie-view-head">
+        <div class="calorie-view-title">Kalorie-estimat</div>
+        <button class="close" type="button" onclick="closeCalorieView()" aria-label="Luk">×</button>
+      </div>
+      <div id="calorieViewContent"></div>
+    </div>
+  </section>
 
   <section class="profile-account-view" id="profileAccountView" aria-hidden="true">
     <div class="profile-account-shell">
@@ -1213,8 +1280,15 @@
     let totalSeconds = 0;
     let timerInterval = null;
     let isTimerRunning = false;
+    let programStatus = "active";
+    let sessionStatus = "not_started";
+    let activeSessionId = "";
+    let sessionStartedAt = null;
+    let sessionCompletedAt = null;
     let pendingProgram = "";
     let selectedAutomaticExerciseCount = 5;
+    let selectedWorkoutIntensity = "medium";
+    let estimatedWorkoutSeconds = 0;
     let activeExerciseCountPreference = null;
     let currentSavedProgramId = "";
     let currentProgramSession = null;
@@ -1280,7 +1354,8 @@
         autosaved: "Autosaved",
         restored: "Gendannet autosave",
         restoredProgram: "Gemt træningspas indlæst",
-        finishedSaved: "Afsluttet og gemt",
+        readyWorkout: "Klar til ny træning",
+        finishedSaved: "Sidste træning afsluttet og gemt",
         finishConfirm: "Afslut træningen og gem analysehistorik?",
         workoutFinished: "Træning afsluttet.",
         bestOneRm: "Bedste 1RM",
@@ -1406,6 +1481,7 @@
       document.querySelector(".save-btn").textContent = t("save");
       $("timerBtn").textContent = isTimerRunning ? t("pause") : t("start");
       $("stopBtn").textContent = t("stop");
+      updateWorkoutButtonVisibility();
       $("timeUsedLabel").textContent = t("timeUsed");
       if (["Klar til første øvelse", "Ready for first exercise", "Bereit für die erste Übung", "Listo para el primer ejercicio"].includes($("autosaveStatus").textContent)) {
         $("autosaveStatus").textContent = t("ready");
@@ -1494,6 +1570,10 @@
       }
       if ($("profileAccountView")?.classList.contains("open")) {
         closeProfileAccountView();
+        return;
+      }
+      if ($("calorieView")?.classList.contains("open")) {
+        closeCalorieView();
         return;
       }
       if ($("progressView")?.classList.contains("open")) {
@@ -1640,11 +1720,154 @@
         }
       });
       const minutes = seconds ? Math.ceil(seconds / 60) : 0;
+      estimatedWorkoutSeconds = seconds;
       const output = $("estimatedTime");
       if (output) {
         output.textContent = `Estimeret tid: ${minutes} min`;
         output.title = `${formatTime(seconds)} baseret på 45 sek. pr. sæt og foreslåede pauser`;
       }
+      updateEstimatedCalories();
+    }
+
+    function calorieExerciseData() {
+      return [...document.querySelectorAll(".exercise")].map(block => {
+        const slot = block.id.replace("block-", "");
+        const nameElement = $(`name-${slot}`);
+        return {
+          name: nameElement?.textContent || "",
+          muscle: nameElement?.dataset.muscle || "",
+          sets: collectSetData(slot)
+        };
+      });
+    }
+
+    function currentCalorieEstimate() {
+      return window.CalorieEstimator?.estimate?.({
+        profile: window.TrainingWizardStore?.getProfile?.() || {},
+        durationSeconds: totalSeconds,
+        fallbackDurationSeconds: estimatedWorkoutSeconds,
+        intensity: selectedWorkoutIntensity,
+        exercises: calorieExerciseData()
+      }) || {
+        estimatedCalories: 0,
+        quality: { level: "low", icon: "🔴", label: "Lav præcision" },
+        inputs: {
+          durationSeconds: totalSeconds,
+          intensity: selectedWorkoutIntensity,
+          exerciseCount: 0,
+          totalSets: 0,
+          totalReps: 0,
+          totalVolumeKg: 0,
+          exerciseLoadDistribution: { low: 0, medium: 0, high: 0, unknown: 0 }
+        }
+      };
+    }
+
+    function updateEstimatedCalories() {
+      const value = $("calorieEstimateValue");
+      const estimate = currentCalorieEstimate();
+      if (value) {
+        value.textContent = estimate.canEstimate
+          ? `${estimate.estimatedCalories || 0} kcal`
+          : "Mangler data til kalorie-estimat";
+        value.classList.toggle("missing", !estimate.canEstimate);
+      }
+      document.querySelectorAll("#calorieIntensity [data-intensity]").forEach(button => {
+        const active = button.dataset.intensity === selectedWorkoutIntensity;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+      window.dispatchEvent(new CustomEvent("calorie-estimate:updated", {
+        detail: window.CalorieEstimator?.toFirestoreRecord?.(estimate) || estimate
+      }));
+      if ($("calorieView")?.classList.contains("open")) renderCalorieView();
+      return estimate;
+    }
+
+    function setWorkoutIntensity(intensity, persist = true) {
+      if (!["low", "medium", "high"].includes(intensity)) return;
+      selectedWorkoutIntensity = intensity;
+      updateEstimatedCalories();
+      if (persist) autoSave();
+    }
+
+    function calorieDataItem(label, value) {
+      return `<div class="calorie-data-item"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
+    }
+
+    function renderCalorieView() {
+      const estimate = currentCalorieEstimate();
+      const inputs = estimate.inputs || {};
+      const distribution = inputs.exerciseLoadDistribution || {};
+      const profile = window.TrainingWizardStore?.getProfile?.() || {};
+      const missing = estimate.missingForEstimate || [];
+      const durationLabel = inputs.durationSource === "actual"
+        ? `${formatTime(inputs.actualDurationSeconds || 0)} faktisk tid`
+        : inputs.durationSource === "estimated"
+          ? `${formatTime(inputs.fallbackDurationSeconds || 0)} estimeret tid`
+          : "Mangler";
+      const content = $("calorieViewContent");
+      if (!content) return;
+      content.innerHTML = `
+        <section class="calorie-detail-card">
+          <h2>Aktuelt estimat</h2>
+          <div class="calorie-detail-result">${estimate.canEstimate ? `${estimate.estimatedCalories} kcal` : "Mangler data til kalorie-estimat"}</div>
+          <div class="calorie-quality" style="display:inline-block;margin-top:9px;">${estimate.quality?.icon || "🔴"} ${esc(estimate.quality?.label || "Lav præcision")}</div>
+          ${missing.length ? `<ul class="calorie-missing-list">${missing.map(item => `<li>Mangler ${esc(item)}</li>`).join("")}</ul>` : ""}
+        </section>
+        <section class="calorie-detail-card">
+          <h2>Valgt intensitet</h2>
+          <p>Intensiteten påvirker grundforbruget. Vælg det niveau, der bedst beskriver træningen.</p>
+          <div class="calorie-intensity" id="calorieIntensity" role="group" aria-label="Vælg træningsintensitet">
+            <button type="button" data-intensity="low" onclick="setWorkoutIntensity('low')">Lav</button>
+            <button type="button" data-intensity="medium" onclick="setWorkoutIntensity('medium')">Middel</button>
+            <button type="button" data-intensity="high" onclick="setWorkoutIntensity('high')">Høj</button>
+          </div>
+        </section>
+        <section class="calorie-detail-card">
+          <h2>Data i den aktuelle beregning</h2>
+          <div class="calorie-data-grid">
+            ${calorieDataItem("Kropsvægt", profile.weightKg ? `${profile.weightKg} kg` : "Standardværdi")}
+            ${calorieDataItem("Køn", profile.gender === "man" ? "Mand" : profile.gender === "woman" ? "Kvinde" : "Ikke oplyst")}
+            ${calorieDataItem("Alder", profile.age ? `${profile.age} år` : "Ikke oplyst")}
+            ${calorieDataItem("Træningstid", durationLabel)}
+            ${calorieDataItem("Øvelser", String(inputs.exerciseCount || 0))}
+            ${calorieDataItem("Sæt", String(inputs.totalSets || 0))}
+            ${calorieDataItem("Reps", String(inputs.totalReps || 0))}
+            ${calorieDataItem("Volumen", vol(inputs.totalVolumeKg || 0))}
+            ${calorieDataItem("Belastning", `${distribution.low || 0} lav · ${distribution.medium || 0} mellem · ${distribution.high || 0} høj`)}
+          </div>
+        </section>
+        <section class="calorie-detail-card">
+          <h2>Hvordan beregnes det?</h2>
+          <p>Appen bruger en MET-baseret grundmodel med kropsvægt, alder, køn, træningstid og intensitet. Resultatet justeres forsigtigt efter sæt, reps, volumen og fordelingen af lette, mellem og tunge øvelser.</p>
+          <p><strong>Præcisionsniveau:</strong> Høj præcision kræver flest mulige profil- og træningsdata. Middel eller lav præcision betyder, at appen bruger neutrale standardværdier eller estimeret træningstid.</p>
+          <p>Kalorieforbrug er et estimat og kan variere fra person til person.</p>
+        </section>`;
+      updateEstimatedCaloriesButtonsOnly();
+    }
+
+    function updateEstimatedCaloriesButtonsOnly() {
+      document.querySelectorAll("#calorieIntensity [data-intensity]").forEach(button => {
+        const active = button.dataset.intensity === selectedWorkoutIntensity;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+    }
+
+    function openCalorieView() {
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      $("progressView")?.classList.remove("open");
+      $("membershipView")?.classList.remove("open");
+      $("profileAccountView")?.classList.remove("open");
+      renderCalorieView();
+      $("calorieView").classList.add("open");
+      $("calorieView").setAttribute("aria-hidden", "false");
+    }
+
+    function closeCalorieView() {
+      $("calorieView").classList.remove("open");
+      $("calorieView").setAttribute("aria-hidden", "true");
     }
 
     function renderCountButtons() {
@@ -1988,7 +2211,20 @@
 
     function changeSets(slot, delta) {
       const data = collectSetData(slot);
-      const next = Math.max(1, parseInt($(`count-${slot}`).textContent) + delta);
+      const current = parseInt($(`count-${slot}`).textContent);
+      const next = Math.max(1, current + delta);
+      if (delta > 0 && next > current) {
+        const previousSet = data[data.length - 1] || {};
+        data.push({
+          prev: "-",
+          completed: false,
+          weight: previousSet.weight || "",
+          reps: previousSet.reps || "",
+          targetReps: previousSet.targetReps || "",
+          pause: previousSet.pause || "",
+          pauseManual: previousSet.pauseManual === true
+        });
+      }
       clearPauseTimers(slot);
       renderSets(slot, next, data);
       autoSave();
@@ -2010,6 +2246,7 @@
         $(`orm-${slot}-${idx+1}`).textContent = o ? `1RM: ${kg(o)}` : "1RM: -";
         $(`vol-${slot}-${idx+1}`).textContent = v ? `${t("volumeHeader")}: ${vol(v)}` : `${t("volumeHeader")}: -`;
       });
+      updateEstimatedCalories();
     }
 
     function pauseKey(slot, set) { return `${slot}-${set}`; }
@@ -2076,16 +2313,95 @@
       return count === 1 ? "Dagens træning" : `Dag ${Math.max(0, Number(dayIndex) || 0) + 1}`;
     }
 
+    function normalizeSessionStatus(status) {
+      return ["not_started", "in_progress", "completed"].includes(status)
+        ? status
+        : "not_started";
+    }
+
+    function stopWorkoutTimerInterval() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      isTimerRunning = false;
+    }
+
+    function startWorkoutTimerInterval() {
+      stopWorkoutTimerInterval();
+      if (sessionStatus !== "in_progress") return;
+      isTimerRunning = true;
+      timerInterval = setInterval(() => {
+        totalSeconds++;
+        $("globalTimer").textContent = formatTime(totalSeconds);
+        if (totalSeconds <= 10 || totalSeconds % 5 === 0) updateEstimatedCalories();
+      }, 1000);
+    }
+
+    function updateWorkoutButtonVisibility() {
+      sessionStatus = normalizeSessionStatus(sessionStatus);
+      const startButton = $("timerBtn");
+      const finishButton = $("stopBtn");
+      if (!startButton || !finishButton) return;
+      startButton.style.display = sessionStatus === "in_progress" ? "none" : "block";
+      finishButton.style.display = sessionStatus === "in_progress" ? "block" : "none";
+      startButton.textContent = t("start");
+      startButton.classList.remove("active");
+      if (sessionStatus === "completed") {
+        stopWorkoutTimerInterval();
+        $("autosaveStatus").textContent = t("finishedSaved");
+      }
+    }
+
+    function setSessionStatus(status, options = {}) {
+      sessionStatus = normalizeSessionStatus(status);
+      if (sessionStatus === "completed") {
+        sessionCompletedAt = options.completedAt || sessionCompletedAt || new Date().toISOString();
+        stopWorkoutTimerInterval();
+      } else if (sessionStatus === "not_started") {
+        activeSessionId = "";
+        sessionStartedAt = null;
+        sessionCompletedAt = null;
+        stopWorkoutTimerInterval();
+      } else if (options.startTimer !== false) {
+        startWorkoutTimerInterval();
+      }
+      updateWorkoutButtonVisibility();
+      updateEstimatedCalories();
+    }
+
+    function resetSessionCompletionMarks() {
+      document.querySelectorAll('.set-block input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = false;
+        checkbox.closest(".set-block")?.classList.remove("completed");
+      });
+      updateWorkoutProgress();
+    }
+
+    function beginWorkoutSession() {
+      activeSessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      sessionStartedAt = new Date().toISOString();
+      sessionCompletedAt = null;
+      totalSeconds = 0;
+      $("globalTimer").textContent = formatTime(totalSeconds);
+      clearPauseTimers();
+      resetSessionCompletionMarks();
+      setSessionStatus("in_progress");
+    }
+
     function syncActiveDayFromCanvas() {
       const day = activeProgramDay();
       if (!day) return;
       const state = collectWorkoutState();
       Object.assign(day, {
         goal: state.goal,
-        timerSeconds: state.timerSeconds,
+        timerSeconds: 0,
+        workoutIntensity: state.workoutIntensity,
         desiredExerciseCount: state.desiredExerciseCount,
-        exercises: state.exercises
+        exercises: state.exercises.map(exercise => ({
+          ...exercise,
+          sets: exercise.sets.map(set => ({ ...set, completed: false }))
+        }))
       });
+      currentProgramSession.status = programStatus === "archived" ? "archived" : "active";
       currentProgramSession.activeDayIndex = currentProgramDayIndex;
       currentProgramSession.savedAt = state.savedAt;
     }
@@ -2108,12 +2424,23 @@
       currentProgramDayIndex = Math.max(0, Math.min(Number(index) || 0, days.length - 1));
       currentProgramSession.activeDayIndex = currentProgramDayIndex;
       const day = days[currentProgramDayIndex];
+      stopWorkoutTimerInterval();
+      programStatus = ["active", "archived"].includes(currentProgramSession.status)
+        ? currentProgramSession.status
+        : "active";
+      sessionStatus = "not_started";
+      activeSessionId = "";
+      sessionStartedAt = null;
+      sessionCompletedAt = null;
+      selectedWorkoutIntensity = ["low", "medium", "high"].includes(day.workoutIntensity)
+        ? day.workoutIntensity
+        : "medium";
       activeExerciseCountPreference = Number.isInteger(day.desiredExerciseCount)
         ? normalizeAutomaticExerciseCount(day.desiredExerciseCount)
         : null;
       $("workoutTitle").textContent = trainingDayHeading(days.length, currentProgramDayIndex);
       delete $("workoutTitle").dataset.customTitle;
-      totalSeconds = Number(day.timerSeconds) || 0;
+      totalSeconds = 0;
       $("globalTimer").textContent = formatTime(totalSeconds);
       clearPauseTimers();
       $("exercises").innerHTML = "";
@@ -2121,12 +2448,13 @@
       renderDayNavigation();
       updateWorkoutProgress();
       updateEstimatedTime();
+      updateWorkoutButtonVisibility();
       return true;
     }
 
     function switchProgramDay(index) {
       if (!currentProgramSession || index === currentProgramDayIndex) return;
-      if (isTimerRunning) toggleWorkoutTimer();
+      stopWorkoutTimerInterval();
       syncActiveDayFromCanvas();
       renderProgramDay(index);
       autoSave();
@@ -2143,6 +2471,12 @@
         goal: activeProgramDay()?.goal || currentTrainingGoal(),
         title: activeProgramDay()?.title || $("workoutTitle").textContent,
         timerSeconds: totalSeconds,
+        programStatus,
+        sessionId: activeSessionId,
+        sessionStatus,
+        startedAt: sessionStartedAt,
+        completedAt: sessionCompletedAt,
+        workoutIntensity: selectedWorkoutIntensity,
         desiredExerciseCount: activeExerciseCountPreference,
         exercises: [...document.querySelectorAll(".exercise")].map(block => {
           const slot = block.id.replace("block-", "");
@@ -2167,15 +2501,18 @@
       if (currentProgramSession) {
         syncActiveDayFromCanvas();
         savedLocally = writeLocalJson("active_workout_autosave", {
-          version: 2,
-          program: currentProgramSession
+          version: 3,
+          program: currentProgramSession,
+          session: state
         });
       } else {
         savedLocally = writeLocalJson("active_workout_autosave", state);
       }
       if (currentSavedProgramId) window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
       if (savedLocally) {
-        $("autosaveStatus").textContent = `${t("autosaved")} ${new Date(state.savedAt).toLocaleTimeString("da-DK", { hour:"2-digit", minute:"2-digit" })}`;
+        $("autosaveStatus").textContent = sessionStatus === "completed"
+          ? t("finishedSaved")
+          : `${t("autosaved")} ${new Date(state.savedAt).toLocaleTimeString("da-DK", { hour:"2-digit", minute:"2-digit" })}`;
       }
     }
     function scheduleAutoSave() {
@@ -2184,12 +2521,32 @@
     }
     function loadAutosave() {
       const saved = readLocalJson("active_workout_autosave", null);
-      if (saved?.version === 2 && saved.program) {
+      if ((saved?.version === 3 || saved?.version === 2) && saved.program) {
+        const legacyDayIndex = saved.program.activeDayIndex || 0;
+        const legacyDay = saved.program.days?.[legacyDayIndex] || null;
+        const restoredSession = saved.session || (legacyDay ? {
+          ...legacyDay,
+          sessionStatus: legacyDay.workoutStatus,
+          startedAt: null,
+          completedAt: legacyDay.completedAt
+        } : null);
         currentProgramSession = window.WorkoutProgramStore?.normalizeProgram?.(saved.program) || saved.program;
         currentSavedProgramId = currentProgramSession.id || "";
         currentProgramDayIndex = currentProgramSession.activeDayIndex || 0;
         renderProgramDay(currentProgramDayIndex);
-        $("autosaveStatus").textContent = t("restored");
+        if (restoredSession?.exercises?.length) {
+          $("exercises").innerHTML = "";
+          restoredSession.exercises.forEach(ex => addExercise(ex.name, ex.muscle, ex.sets, ex));
+        }
+        activeSessionId = restoredSession?.sessionId || "";
+        sessionStartedAt = restoredSession?.startedAt || null;
+        sessionCompletedAt = restoredSession?.completedAt || null;
+        sessionStatus = normalizeSessionStatus(restoredSession?.sessionStatus || restoredSession?.workoutStatus);
+        totalSeconds = Number(restoredSession?.timerSeconds) || 0;
+        $("globalTimer").textContent = formatTime(totalSeconds);
+        if (sessionStatus === "in_progress") startWorkoutTimerInterval();
+        $("autosaveStatus").textContent = sessionStatus === "completed" ? t("finishedSaved") : t("restored");
+        updateWorkoutButtonVisibility();
         return true;
       }
       const state = saved;
@@ -2200,13 +2557,23 @@
       activeExerciseCountPreference = Number.isInteger(state.desiredExerciseCount)
         ? normalizeAutomaticExerciseCount(state.desiredExerciseCount)
         : null;
+      selectedWorkoutIntensity = ["low", "medium", "high"].includes(state.workoutIntensity)
+        ? state.workoutIntensity
+        : "medium";
+      programStatus = state.programStatus === "archived" ? "archived" : "active";
+      activeSessionId = state.sessionId || "";
+      sessionStartedAt = state.startedAt || null;
+      sessionStatus = normalizeSessionStatus(state.sessionStatus || state.workoutStatus);
+      sessionCompletedAt = state.completedAt || null;
       $("workoutTitle").textContent = state.title || t("defaultTitle");
       totalSeconds = state.timerSeconds || 0;
       $("globalTimer").textContent = formatTime(totalSeconds);
       $("exercises").innerHTML = "";
       state.exercises.forEach(ex => addExercise(ex.name, ex.muscle, ex.sets, ex));
       renderDayNavigation();
-      $("autosaveStatus").textContent = t("restored");
+      if (sessionStatus === "in_progress") startWorkoutTimerInterval();
+      $("autosaveStatus").textContent = sessionStatus === "completed" ? t("finishedSaved") : t("restored");
+      updateWorkoutButtonVisibility();
       return true;
     }
 
@@ -2407,7 +2774,8 @@
       window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
       renderProgramDay(currentProgramDayIndex);
       autoSave();
-      $("autosaveStatus").textContent = t("restoredProgram");
+      $("autosaveStatus").textContent = t("readyWorkout");
+      updateWorkoutButtonVisibility();
       $("savedDropdown").style.display = "none";
       if (closeSidebar && $("sidebar").classList.contains("open")) toggleSidebar();
     }
@@ -2419,6 +2787,11 @@
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = null;
       isTimerRunning = false;
+      programStatus = "active";
+      sessionStatus = "not_started";
+      activeSessionId = "";
+      sessionStartedAt = null;
+      sessionCompletedAt = null;
       clearPauseTimers();
       $("exercises").innerHTML = "";
       $("workoutTitle").textContent = t("defaultTitle");
@@ -2428,15 +2801,14 @@
       currentProgramSession = null;
       currentProgramDayIndex = 0;
       activeExerciseCountPreference = null;
+      selectedWorkoutIntensity = "medium";
       renderDayNavigation();
       $("globalTimer").textContent = "00:00:00";
-      $("timerBtn").textContent = t("start");
-      $("timerBtn").classList.remove("active");
-      $("stopBtn").style.display = "none";
       $("autosaveStatus").textContent = status;
       removeLocalValue("active_workout_autosave");
       updateWorkoutProgress();
       updateEstimatedTime();
+      updateWorkoutButtonVisibility();
     }
     function newWorkout() {
       resetWorkoutCanvas(t("ready"));
@@ -2444,29 +2816,37 @@
     }
 
     function toggleWorkoutTimer() {
-      const btn = $("timerBtn"), stop = $("stopBtn");
-      if (!isTimerRunning) {
-        isTimerRunning = true; btn.textContent = t("pause"); btn.classList.add("active"); stop.style.display = "block";
-        timerInterval = setInterval(() => { totalSeconds++; $("globalTimer").textContent = formatTime(totalSeconds); }, 1000);
-      } else {
-        isTimerRunning = false; btn.textContent = t("start"); btn.classList.remove("active"); clearInterval(timerInterval); autoSave();
-      }
+      if (sessionStatus === "in_progress") return;
+      beginWorkoutSession();
+      autoSave();
     }
     function finishWorkout() {
+      if (sessionStatus !== "in_progress") return;
       if (!confirm(t("finishConfirm"))) return;
       if (autosaveDebounce) {
         clearTimeout(autosaveDebounce);
         autosaveDebounce = null;
       }
-      if (isTimerRunning) toggleWorkoutTimer();
+      stopWorkoutTimerInterval();
+      setSessionStatus("completed", { completedAt: new Date().toISOString() });
       syncActiveDayFromCanvas();
       const entry = collectAnalyticsEntry();
       const entries = history();
-      if (entry.totalVolume) entries.push(entry);
+      if (entry.totalVolume || entry.estimatedCalories || entry.exercises.length) entries.push(entry);
       writeLocalJson("training_analytics_history", entries);
-      removeLocalValue("active_workout_autosave");
+      if (currentProgramSession && currentSavedProgramId) {
+        currentProgramSession.savedAt = new Date().toISOString();
+        const programs = getPrograms();
+        const index = programs.findIndex(program => program.id === currentSavedProgramId);
+        if (index >= 0) {
+          programs[index] = window.WorkoutProgramStore.clone(currentProgramSession);
+          setPrograms(programs);
+        }
+      }
+      autoSave();
       $("autosaveStatus").textContent = t("finishedSaved");
-      alert(`${t("workoutFinished")}\n${t("volumeHeader")}: ${vol(entry.totalVolume)}\n${t("bestOneRm")}: ${entry.bestOneRm ? kg(entry.bestOneRm) : "-"}`);
+      updateWorkoutButtonVisibility();
+      alert(`${t("workoutFinished")}\n${t("volumeHeader")}: ${vol(entry.totalVolume)}\n${t("bestOneRm")}: ${entry.bestOneRm ? kg(entry.bestOneRm) : "-"}\nEstimeret kalorieforbrug: ${entry.estimatedCalories} kcal`);
     }
 
     function collectAnalyticsEntry() {
@@ -2479,6 +2859,7 @@
         }).filter(Boolean);
         return sets.length ? { name, sets, totalSets:sets.length, totalVolume:sets.reduce((a,s)=>a+s.volume,0), bestOneRm:Math.max(...sets.map(s=>s.oneRm)), bestLift:Math.max(...sets.map(s=>s.weight)) } : null;
       }).filter(Boolean);
+      const calorieEstimate = currentCalorieEstimate();
       return {
         id: Date.now(),
         date: new Date().toISOString(),
@@ -2489,10 +2870,19 @@
         dayTitle: activeProgramDay()?.title || $("workoutTitle").textContent,
         title: $("workoutTitle").textContent,
         duration: formatTime(totalSeconds),
+        durationSeconds: totalSeconds,
+        sessionId: activeSessionId,
+        sessionStatus: "completed",
+        workoutStatus: "completed",
+        startedAt: sessionStartedAt,
+        completedAt: sessionCompletedAt || new Date().toISOString(),
+        workoutIntensity: selectedWorkoutIntensity,
         exercises,
         totalVolume: exercises.reduce((a,e)=>a+e.totalVolume,0),
         bestOneRm: Math.max(0,...exercises.map(e=>e.bestOneRm)),
-        bestLift: Math.max(0,...exercises.map(e=>e.bestLift))
+        bestLift: Math.max(0,...exercises.map(e=>e.bestLift)),
+        estimatedCalories: calorieEstimate.estimatedCalories || 0,
+        calorieEstimate: window.CalorieEstimator?.toFirestoreRecord?.(calorieEstimate) || calorieEstimate
       };
     }
     function history() {
@@ -2532,6 +2922,7 @@
     }
 
     function openProgressView() {
+      $("calorieView")?.classList.remove("open");
       renderProgressView();
       $("progressView").classList.add("open");
       $("progressView").setAttribute("aria-hidden", "false");
@@ -3335,7 +3726,7 @@
       m = cmd.match(/(?:sæt\s*(\d+)\s*)?pause\s*(?:til|=|:)?\s*([0-9:.,\smtimersekund]+s?)/i);
       if (m) { const target = m[1] ? parseInt(m[1]) : null, sec = parsePause(m[2]); let changed = 0; document.querySelectorAll(".pause").forEach(input => { const setNo = parseInt(input.id.split("-").pop()); if (!target || target === setNo) { input.value = formatPause(sec); input.dataset.pauseManual = "true"; changed++; } }); updateEstimatedTime(); autoSave(); feedback(`${changed} ${t("pauseFieldsChanged")}`); $("copilotInput").value = ""; return; }
       m = cmd.match(/(?:tid|timer|tid brugt)\s*(?:til|=|:)\s*([0-9:.,\smtimersekund]+s?)/i);
-      if (m) { totalSeconds = parsePause(m[1]); $("globalTimer").textContent = formatTime(totalSeconds); autoSave(); feedback(`${t("timeChanged")} ${formatTime(totalSeconds)}.`); $("copilotInput").value = ""; return; }
+      if (m) { totalSeconds = parsePause(m[1]); $("globalTimer").textContent = formatTime(totalSeconds); updateEstimatedCalories(); autoSave(); feedback(`${t("timeChanged")} ${formatTime(totalSeconds)}.`); $("copilotInput").value = ""; return; }
       m = cmd.match(/^(.+?)\s+til\s+(.+)$/i);
       if (m) { const slot = slotIds().find(s => $(`name-${s}`).textContent.toLowerCase().includes(m[1].toLowerCase())); if (slot) { setExercise(slot, m[2].trim(), inferMuscle(m[2].trim(), $(`name-${slot}`).dataset.muscle)); feedback(`${t("exerciseChanged")} "${m[2].trim()}".`); $("copilotInput").value = ""; return; } }
       feedback(`${t("unknownCommand")} ${goalRecommendation}`, true);
@@ -3676,6 +4067,7 @@
     window.addEventListener("daily-wizard:adapt", adaptDailyWorkout);
     window.addEventListener("daily-wizard:generate", openDailyProgramGenerator);
     window.addEventListener("daily-motivation:changed", updateDailyMotivationDisplay);
+    window.addEventListener("training-profile:updated", updateEstimatedCalories);
 
     window.onload = function() {
       currentLanguage = "da";
@@ -3683,13 +4075,17 @@
       loadCustom();
       renderSaved();
       renderTrash();
-      if (!loadAutosave()) {
+      const restoredAutosave = loadAutosave();
+      if (!restoredAutosave) {
+        const motivation = window.TrainingWizardStore?.getDailyState?.().dailyMotivation;
+        selectedWorkoutIntensity = { low: "low", normal: "medium", high: "high" }[motivation] || "medium";
         $("workoutTitle").textContent = t("defaultTitle");
         $("exercises").innerHTML = "";
       }
       applyLanguage(currentLanguage);
       updateWorkoutProgress();
       updateDailyMotivationDisplay();
+      updateEstimatedCalories();
       window.dispatchEvent(new CustomEvent("training-app:ready"));
     };
   </script>
@@ -3700,6 +4096,7 @@
   <script src="training-goal-engine.js"></script>
   <script src="workout-program-store.js"></script>
   <script src="wizard-store.js"></script>
+  <script src="calorie-estimator.js"></script>
   <script src="ai-copilot-actions.js"></script>
   <script src="profile-account.js"></script>
   <script src="profile-wizard.js"></script>

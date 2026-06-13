@@ -244,6 +244,7 @@
   function openView() {
     render();
     document.getElementById("progressView")?.classList.remove("open");
+    document.getElementById("calorieView")?.classList.remove("open");
     const view = document.getElementById("membershipView");
     view?.classList.add("open");
     view?.setAttribute("aria-hidden", "false");

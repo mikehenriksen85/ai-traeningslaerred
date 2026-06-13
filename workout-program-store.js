@@ -12,11 +12,21 @@
       title: source.title || day?.title || fallbackTitle || `Dag ${index + 1}`,
       goal: source.goal || day?.goal || "",
       structure: source.structure || day?.structure || "",
-      timerSeconds: Number(source.timerSeconds) || 0,
+      timerSeconds: 0,
+      workoutIntensity: ["low", "medium", "high"].includes(source.workoutIntensity)
+        ? source.workoutIntensity
+        : "medium",
       desiredExerciseCount: Number.isInteger(source.desiredExerciseCount)
         ? Math.max(1, Math.min(8, source.desiredExerciseCount))
         : null,
-      exercises: Array.isArray(source.exercises) ? clone(source.exercises) : []
+      exercises: Array.isArray(source.exercises)
+        ? clone(source.exercises).map(exercise => ({
+            ...exercise,
+            sets: Array.isArray(exercise.sets)
+              ? exercise.sets.map(set => ({ ...set, completed: false }))
+              : []
+          }))
+        : []
     };
   }
 
@@ -26,6 +36,7 @@
       return {
         ...clone(program),
         version: 2,
+        status: ["active", "archived", "deleted"].includes(program.status) ? program.status : "active",
         activeDayIndex: Math.max(0, Math.min(Number(program.activeDayIndex) || 0, program.days.length - 1)),
         days: program.days.map((day, index) => normalizeDay(day, index))
       };
@@ -38,6 +49,7 @@
       legacy: true,
       title: program.title || legacyState.title || "Træningspas",
       goal: legacyState.goal || "",
+      status: "active",
       savedAt: program.savedAt || legacyState.savedAt || new Date().toISOString(),
       activeDayIndex: 0,
       days: [normalizeDay(legacyState, 0, legacyState.title || program.title || "Dag 1")]
@@ -51,6 +63,7 @@
       version: 2,
       title: options.title || "Mit træningsprogram",
       goal: options.goal || "",
+      status: ["active", "archived", "deleted"].includes(options.status) ? options.status : "active",
       savedAt: options.savedAt || new Date().toISOString(),
       activeDayIndex: Math.max(0, Math.min(Number(options.activeDayIndex) || 0, Math.max(0, days.length - 1))),
       days

@@ -90,6 +90,7 @@
   function openProfileAccountView() {
     document.getElementById("progressView")?.classList.remove("open");
     document.getElementById("membershipView")?.classList.remove("open");
+    document.getElementById("calorieView")?.classList.remove("open");
     if (document.getElementById("sidebar")?.classList.contains("open")) window.toggleSidebar?.();
     populateProfileAccount();
     const view = byId("profileAccountView");
