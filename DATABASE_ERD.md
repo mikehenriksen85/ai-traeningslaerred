@@ -541,7 +541,7 @@ Felter:
 | `goal` | string |
 | `timerSeconds` | integer |
 | `sessionId` | string |
-| `sessionStatus` | string | `not_started`, `in_progress`, `completed` |
+| `sessionStatus` | string | `not_started`, `in_progress`, `paused`, `completed` |
 | `startedAt` | timestamp/null |
 | `completedAt` | timestamp/null |
 | `desiredExerciseCount` | integer/null |
@@ -553,6 +553,12 @@ Felter:
 Anbefaling: behold hurtige tasteændringer lokalt og upload en debounced
 snapshot hvert 5.-15. sekund eller ved væsentlige handlinger. Kladden bør
 udløbe efter eksempelvis 7 dage.
+
+Programeditoren og den aktive træningssession skal behandles som to separate
+datakilder. En aktiv session indeholder en kopi af programdagen samt
+`sourceProgramId`, `sourceDayId`, `sourceDayIndex` og et snapshot af den
+oprindelige struktur. Ændringer i sessionens øvelser og sæt må først skrives
+tilbage til programmet efter et eksplicit Ja fra brugeren.
 
 ### 5.13 Afsluttet træningssession
 
@@ -1187,6 +1193,38 @@ Importen skal være idempotent, så samme lokale data ikke duplikeres.
 - Brugeren kan eksportere og slette sine egne data.
 
 ## 14. Designbeslutninger
+
+### Cardio-datamodel
+
+Cardio følger samme ejerskab og livscyklus som styrketræning, men markeres med `exerciseType: "cardio"` og gemmer cardio-målinger i stedet for styrkesæt.
+
+Firestore paths:
+
+* `users/{userId}/workoutPrograms/{programId}/days/{dayId}/exercises/{exerciseId}`
+* `users/{userId}/workoutSessions/{sessionId}/exercises/{exerciseId}`
+
+Felter:
+
+* `exerciseType: string` (`"cardio"`)
+* `name: string`
+* `muscle: string` (`"Cardio"`)
+* `durationMinutes: number | null`
+* `distanceKm: number | null`
+* `calories: number | null`
+* `averageHeartRate: number | null`
+* `maxHeartRate: number | null`
+* `speedKmh: number | null`
+* `notes: string`
+* `completed: boolean`
+
+Lifecycle:
+
+* Cardio i en programskabelon: `persistent`
+* Cardio i en aktiv session: `temporary` indtil afslutning
+* Afsluttet cardio-historik: `persistent`
+* Ikke-gemte formularværdier: lokal `temporary`
+
+Data ejes af den autentificerede bruger, skal kunne hentes igen, slettes af ejeren og synkroniseres mellem enheder, når Firebase aktiveres. Dashboardtal og udviklingsdiagrammer beregnes fra afsluttede sessions, så appen undgår konkurrerende sandhedskilder.
 
 1. **Firebase Auth, ikke Firestore, ejer credentials.**
 2. **Brugerdata ligger under `users/{uid}`** for enkel ejerskabskontrol.

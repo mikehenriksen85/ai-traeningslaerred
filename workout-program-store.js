@@ -21,7 +21,8 @@
         : null,
       exercises: Array.isArray(source.exercises)
         ? clone(source.exercises).map(exercise => ({
-            ...exercise,
+          ...exercise,
+            cardio: exercise.cardio ? { ...exercise.cardio, completed: false } : null,
             sets: Array.isArray(exercise.sets)
               ? exercise.sets.map(set => ({ ...set, completed: false }))
               : []

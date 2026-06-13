@@ -148,6 +148,30 @@
     match = text.match(/^flyt\s+(.+?)\s+til\s+dag\s+(\d+)$/i);
     if (match) return { action: "moveExercise", exerciseName: match[1].replace(/^øvelse\s+/i, "").trim(), day: Number(match[2]) };
 
+    match = text.match(/^tilføj\s+(\d+(?:[.,]\d+)?)\s*min(?:utter)?\s+(.+)$/i);
+    if (match) {
+      return {
+        action: "addCardioExercise",
+        exerciseName: titleCase(match[2]),
+        cardio: { durationMinutes: numberValue(match[1]) }
+      };
+    }
+
+    match = text.match(/^registrer\s+(\d+(?:[.,]\d+)?)\s*km\s+(.+)$/i);
+    if (match) {
+      return {
+        action: "addCardioExercise",
+        exerciseName: titleCase(match[2]),
+        cardio: { distanceKm: numberValue(match[1]) }
+      };
+    }
+
+    if (/^vis min cardio denne måned$/i.test(text)) return { action: "showCardioSummary", period: "month" };
+    if (/^hvor meget cardio har jeg lavet i år\??$/i.test(text)) return { action: "showCardioSummary", period: "year" };
+
+    match = text.match(/^lav et cardio-program på\s+(\d+)\s*min(?:utter)?$/i);
+    if (match) return { action: "generateCardioProgram", durationMinutes: Number(match[1]) };
+
     match = text.match(/^tilføj\s+(?!mere\s+)(.+)$/i);
     if (match) return { action: "addExercise", exerciseName: titleCase(match[1]) };
 

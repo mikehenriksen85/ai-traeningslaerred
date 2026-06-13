@@ -168,6 +168,28 @@
     .start-btn { background: var(--blue); }
     .start-btn.active { background: var(--orange); }
     .stop-btn { background: var(--red); display: none; grid-column: 1 / -1; }
+    .session-only { display: none !important; }
+    body[data-workout-view="session"] .program-only { display: none !important; }
+    body[data-workout-view="session"] .session-only { display: block !important; }
+    body[data-workout-view="session"] .session-only.stats { display: flex !important; }
+    .session-banner {
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid rgba(58,147,255,.45);
+      border-radius: 7px;
+      background: rgba(58,147,255,.08);
+    }
+    .session-banner-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .session-view-title { color: var(--text-accent); font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); }
+    .session-status-badge { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; color: var(--text-success); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .session-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .session-control-btn { min-height: 42px; border: 1px solid var(--border); border-radius: 6px; background: var(--input); color: var(--text-primary); cursor: pointer; font-weight: var(--font-weight-semibold); }
+    .session-control-btn.pause { color: var(--orange); border-color: var(--orange); }
+    .session-control-btn.resume { color: var(--text-success); border-color: var(--text-success); }
+    .session-control-btn.finish { color: var(--text-danger); border-color: var(--text-danger); }
+    .session-control-btn.close-session { color: var(--text-accent); }
+    .session-dialog-actions { display: grid; gap: 8px; margin-top: 16px; }
+    .session-dialog-actions button { min-height: 44px; }
     .stats { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(0,0,0,.18); padding: 9px 12px; border-radius: 6px; color: var(--text-secondary); font-size: var(--font-size-body); }
     .daily-motivation-summary {
       display: flex;
@@ -226,7 +248,7 @@
     .exercise-transition.show { display: block; }
     .exercise-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 2.4fr); gap: 12px; align-items: start; margin-bottom: 10px; }
     .exercise-name { color: var(--text-success); font-size: var(--font-size-h3); font-weight: var(--font-weight-semibold); min-width: 0; line-height: var(--line-height-heading); overflow-wrap: anywhere; }
-    .exercise-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; justify-content: stretch; align-items: stretch; }
+    .exercise-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; justify-content: stretch; align-items: stretch; }
     .exercise-actions .danger-slot { grid-column: auto; }
     .small-btn { background: var(--input); border: 1px solid var(--border); color: var(--text-accent); border-radius: 5px; padding: 6px 6px; min-height: 32px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
     .small-btn.orange { color: var(--orange); border-color: var(--orange); }
@@ -235,6 +257,48 @@
 
     .manual-box, .replace-box { display: none; background: var(--input); border: 1px solid var(--blue); border-radius: 8px; padding: 12px; margin: 10px 0; }
     .replace-box { border-color: var(--orange); }
+    .replacement-question { margin: 0 0 14px; color: var(--text-primary); font-size: var(--font-size-h3); font-weight: var(--font-weight-semibold); }
+    .replacement-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .replacement-mode {
+      min-height: 74px;
+      border: 1px solid var(--border);
+      background: var(--input);
+      color: var(--text-primary);
+      border-radius: 7px;
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      font-weight: var(--font-weight-semibold);
+    }
+    .replacement-mode:hover, .replacement-mode.active { border-color: var(--green); background: rgba(74,222,128,.08); }
+    .replacement-toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .replacement-toolbar .wide { grid-column: 1 / -1; }
+    .replacement-filter { display: grid; gap: 5px; min-width: 0; }
+    .replacement-filter label { color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .replacement-results { max-height: 44vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
+    .replacement-result {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px;
+      border: 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: transparent;
+      color: var(--text-primary);
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+    }
+    .replacement-result:last-child { border-bottom: 0; }
+    .replacement-result:hover { background: rgba(255,255,255,.06); }
+    .replacement-presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .replacement-preset { min-height: 42px; white-space: normal; }
+    .replacement-ai-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-bottom: 12px; }
+    .replacement-confirm { padding: 12px; border: 1px solid var(--border); background: rgba(0,0,0,.16); border-radius: 7px; }
+    .replacement-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
     .row { display: flex; gap: 8px; margin-bottom: 8px; }
     .row > * { flex: 1; }
     .custom-box { border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); margin: 10px 0; padding: 10px 0; }
@@ -793,8 +857,10 @@
     @media (max-width: 560px) {
       .canvas { padding: 12px; }
       .top-controls { grid-template-columns: 1fr; }
+      .session-banner-head { align-items: flex-start; flex-direction: column; }
+      .session-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .exercise-head { grid-template-columns: 1fr; }
-      .exercise-actions { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+      .exercise-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
       .exercise-actions .small-btn { min-width: 0; padding: 6px 2px; font-size: var(--font-size-compact); text-overflow: clip; }
       .exercise-actions .desktop-action-label { display: none; }
       .exercise-actions .mobile-action-label { display: inline; }
@@ -826,6 +892,57 @@
       .membership-status, .membership-plans, .membership-popup-plans { grid-template-columns: 1fr; }
       .membership-price-note { min-height: 0; }
       .membership-popup-option { min-height: 0; }
+      .replacement-toolbar, .replacement-presets, .replacement-mode-grid { grid-template-columns: 1fr; }
+      .replacement-toolbar .wide { grid-column: auto; }
+      .replacement-ai-row { grid-template-columns: 1fr; }
+      .replacement-ai-row .small-btn { min-height: 44px; }
+      .replacement-confirm-actions { flex-direction: column-reverse; }
+      .replacement-confirm-actions button { width: 100%; min-height: 44px; }
+    }
+
+    .cardio-fields {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .cardio-field { display: grid; gap: 6px; }
+    .cardio-field label { color: var(--muted); font-size: var(--font-small); font-weight: 600; }
+    .cardio-field input, .cardio-field textarea {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--border);
+      background: #172028;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 10px;
+      font: inherit;
+    }
+    .cardio-field.notes { grid-column: 1 / -1; }
+    .cardio-field textarea { min-height: 76px; resize: vertical; }
+    .cardio-complete {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      grid-column: 1 / -1;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .cardio-complete input { width: 20px; height: 20px; accent-color: var(--green); }
+    .cardio-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    @media (max-width: 760px) {
+      .cardio-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cardio-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 430px) {
+      .cardio-fields { grid-template-columns: 1fr; }
+      .cardio-field.notes, .cardio-complete { grid-column: auto; }
     }
   </style>
 </head>
@@ -852,6 +969,7 @@
         <option value="push">Push Pas</option>
         <option value="pull">Pull Pas</option>
         <option value="legs">Legs Pas</option>
+        <option value="cardio">❤️ Cardio</option>
       </select>
       <div class="count-picker" id="countPicker">
         <div class="nested-box">
@@ -866,13 +984,22 @@
             <option value="7">7</option>
             <option value="8">8</option>
           </select>
+          <div id="cardioGoalPicker" style="display:none;margin-top:10px;">
+            <label class="generator-count-label" for="cardioGoalMode">Cardio-mål</label>
+            <select class="sidebar-select" id="cardioGoalMode">
+              <option value="weight_loss">Vægttab</option>
+              <option value="conditioning">Kondition</option>
+              <option value="general_health">Generel sundhed</option>
+              <option value="recovery">Restitution</option>
+            </select>
+          </div>
           <p class="generator-helper">Vælg hvor mange øvelser dagens program skal indeholde.</p>
           <button class="generator-create" type="button" onclick="generateSelectedAutomaticProgram()">Opret træningspas</button>
         </div>
       </div>
     </div>
 
-    <div class="sidebar-item" id="newWorkoutNavItem" onclick="newWorkout()">➕ Opret tomt Træningspas</div>
+    <div class="sidebar-item" id="newWorkoutNavItem" onclick="openBlankWorkoutDialog()">➕ Opret tomt Træningspas</div>
     <div class="sidebar-item" id="savedWorkoutsNavItem" onclick="toggleSavedDropdown()">📂 Gemte Træningspas</div>
     <div class="saved-dropdown" id="savedDropdown">
       <div class="nested-box">
@@ -895,16 +1022,27 @@
     <div class="sidebar-item" id="contactNavItem" onclick="openContactDialog()">✉ Kontakt</div>
   </nav>
 
-  <main class="canvas">
+  <main class="canvas" id="programCanvas">
     <section class="card">
       <div id="workoutTitle">Mit nye træningspas</div>
-      <div class="day-navigation" id="dayNavigation" aria-label="Vælg træningsdag"></div>
-      <div class="top-controls">
+      <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
+      <div class="top-controls program-only">
         <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem ændringer</button>
         <button class="top-btn start-btn" id="timerBtn" onclick="toggleWorkoutTimer()">▶ Start Træning</button>
-        <button class="top-btn stop-btn" id="stopBtn" onclick="finishWorkout()">⏹ Afslut Træning</button>
       </div>
-      <div class="stats">
+      <section class="session-banner session-only" id="trainingSessionView" aria-label="Aktiv træningssession">
+        <div class="session-banner-head">
+          <div class="session-view-title">Aktiv træning</div>
+          <span class="session-status-badge" id="sessionStatusText">I gang</span>
+        </div>
+        <div class="session-controls">
+          <button class="session-control-btn pause" id="pauseWorkoutBtn" onclick="pauseWorkoutSession()">⏸ Pause træning</button>
+          <button class="session-control-btn resume" id="resumeWorkoutBtn" onclick="resumeWorkoutSession()">▶ Fortsæt træning</button>
+          <button class="session-control-btn finish" id="stopBtn" onclick="finishWorkout()">⏹ Afslut træning</button>
+          <button class="session-control-btn close-session" onclick="closeTrainingWindow()">✕ Luk træningsvindue</button>
+        </div>
+      </section>
+      <div class="stats session-only">
         <span id="estimatedTime">Estimeret tid: 0 min</span>
         <span id="timeUsedLabel">Tid brugt:</span>
         <span id="globalTimer">00:00:00</span>
@@ -916,15 +1054,15 @@
         </div>
         <span id="autosaveStatus">Klar til første øvelse</span>
       </div>
-      <div class="daily-motivation-summary" id="dailyMotivationSummary" hidden>
+      <div class="daily-motivation-summary program-only" id="dailyMotivationSummary" hidden>
         <span class="daily-motivation-value" id="dailyMotivationValue"></span>
         <button class="daily-motivation-change" type="button" onclick="changeDailyMotivation()">Skift dagens motivation</button>
       </div>
-      <section class="calorie-panel" id="caloriePanel" aria-live="polite">
+      <section class="calorie-panel session-only" id="caloriePanel" aria-live="polite">
         <div class="calorie-title">🔥 Estimeret kalorieforbrug</div>
         <div class="calorie-value missing" id="calorieEstimateValue">Mangler data til kalorie-estimat</div>
       </section>
-      <button class="dashboard-btn" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
+      <button class="dashboard-btn program-only" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
       <div id="exercises"></div>
       <div class="add-zone">
         <div class="movement-picker">
@@ -935,13 +1073,16 @@
         <div class="movement-picker" style="grid-template-columns:1fr;">
           <button class="movement-btn" data-movement="Stabilitet" onclick="setMovementFilter('Stabilitet', event)">Stabilitet</button>
         </div>
+        <div class="movement-picker" style="grid-template-columns:1fr;">
+          <button class="movement-btn" data-movement="Cardio" onclick="setMovementFilter('Cardio', event)">❤️ Cardio</button>
+        </div>
         <div class="muscle-menu" id="muscleMenu">
           <div class="mini-title" style="padding:10px 14px;margin:0;border-bottom:1px solid var(--border);">Hvilken muskelgruppe?</div>
           <div id="muscleMenuItems"></div>
         </div>
         <button class="add-btn" onclick="toggleMuscleMenu(event)">➕ Tilføj ny øvelse</button>
       </div>
-      <div class="copilot" id="copilotAccess">
+      <div class="copilot program-only" id="copilotAccess">
         <div class="copilot-title">✨ AI Træningsassistent (Profil, programmer og træningspas)</div>
         <div class="copilot-bar">
           <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'navn til Push dag', 'øvelse 1 til Pull-ups' eller 'pause til 1m30s'">
@@ -1112,6 +1253,24 @@
       </div>
 
       <div class="progress-section">
+        <div class="progress-section-title">Cardio-udvikling</div>
+        <div class="progress-panel">
+          <div class="chart-toolbar">
+            <label for="cardioDevelopmentExercise">Cardio-øvelse</label>
+            <select class="sidebar-select" id="cardioDevelopmentExercise" onchange="renderCardioDevelopmentChart()"></select>
+            <label for="cardioDevelopmentMetric">Måling</label>
+            <select class="sidebar-select" id="cardioDevelopmentMetric" onchange="renderCardioDevelopmentChart()">
+              <option value="distanceKm">Distance</option>
+              <option value="durationMinutes">Tid</option>
+              <option value="calories">Kalorier</option>
+              <option value="averageHeartRate">Gennemsnitspuls</option>
+            </select>
+          </div>
+          <div class="line-chart-wrap" id="cardioDevelopmentChart"></div>
+        </div>
+      </div>
+
+      <div class="progress-section">
         <div class="progress-section-title">Mine mål</div>
         <div class="progress-panel">
           <div class="measure-form">
@@ -1250,7 +1409,8 @@
       { key: "Biceps", category: "Pull", emoji: "💥" },
       { key: "Triceps", category: "Push", emoji: "⚡" },
       { key: "Mave", category: "Stabilitet", emoji: "🧱" },
-      { key: "Nedre ryg / lænd", category: "Stabilitet", emoji: "🛡️" }
+      { key: "Nedre ryg / lænd", category: "Stabilitet", emoji: "🛡️" },
+      { key: "Cardio", category: "Cardio", emoji: "❤️" }
     ];
     const muscleGroupKeys = muscleGroups.map(group => group.key);
     let activeMovementFilter = "Alle";
@@ -1264,7 +1424,8 @@
       "Biceps": ["Barbell Curl","Dumbbell Curl","Incline Dumbbell Curl","Hammer Curl","Preacher Curl","Cable Curl","EZ-Bar Curl","Concentration Curl","Spider Curl","Bayesian Cable Curl","Chin-up","Reverse Curl","Zottman Curl","Machine Curl","Drag Curl"],
       "Triceps": ["Close-Grip Bench Press","Parallel Bar Dip","Cable Triceps Pushdown","Rope Pushdown","Overhead Cable Extension","Skull Crusher","EZ-Bar Lying Extension","Dumbbell Overhead Extension","Diamond Push-up","JM Press","Machine Triceps Extension","Single-Arm Cable Extension","Bench Dip","Tate Press","Cross-Body Cable Extension"],
       "Mave": ["Plank","Side Plank","Dead Bug","Hollow Body Hold","Ab Wheel Rollout","Cable Crunch","Hanging Knee Raise","Hanging Leg Raise","Reverse Crunch","Pallof Press","Bird Dog","Mountain Climber","Stir-the-Pot","V-Up","Farmer Carry"],
-      "Nedre ryg / lænd": ["Back Extension","Bird Dog","McGill Curl-Up","Good Morning","Romanian Deadlift","Deadlift","Rack Pull","Reverse Hyperextension","Superman Hold","Hip Hinge Drill","Cable Pull-Through","Kettlebell Swing","Jefferson Curl","Quadruped Hip Extension","Suitcase Carry"]
+      "Nedre ryg / lænd": ["Back Extension","Bird Dog","McGill Curl-Up","Good Morning","Romanian Deadlift","Deadlift","Rack Pull","Reverse Hyperextension","Superman Hold","Hip Hinge Drill","Cable Pull-Through","Kettlebell Swing","Jefferson Curl","Quadruped Hip Extension","Suitcase Carry"],
+      "Cardio": ["Løbebånd","Udendørs løb","Stairmaster / Stair Climber","Romaskine","Crosstrainer","Motionscykel","Air Bike","Spinning","Sjipning","Svømning","Rask gang","Hiking / Vandring","Trappeløb","Roning på vand","Assault Runner"]
     };
 
     const catalog = Object.entries(exerciseLibrary).flatMap(([muscle, names]) =>
@@ -1285,6 +1446,8 @@
     let activeSessionId = "";
     let sessionStartedAt = null;
     let sessionCompletedAt = null;
+    let currentWorkoutView = "program";
+    let activeWorkoutSession = null;
     let pendingProgram = "";
     let selectedAutomaticExerciseCount = 5;
     let selectedWorkoutIntensity = "medium";
@@ -1468,6 +1631,7 @@
       document.querySelector("#programType option[value='push']").textContent = tp("push");
       document.querySelector("#programType option[value='pull']").textContent = tp("pull");
       document.querySelector("#programType option[value='legs']").textContent = tp("legs");
+      document.querySelector("#programType option[value='cardio']").textContent = "❤️ Cardio";
       $("countTitle").textContent = "Antal øvelser";
       document.querySelector("#savedDropdown .mini-title").textContent = t("savedTitle");
       $("savedEmpty").textContent = t("savedEmpty");
@@ -1503,7 +1667,9 @@
           muscle: nameEl.dataset.muscle || "Ryg",
           goal: block.dataset.goal || currentTrainingGoal(),
           role: block.dataset.role || "accessory",
-          sets: collectSetData(slot)
+          exerciseType: block.dataset.exerciseType || "strength",
+          sets: collectSetData(slot),
+          cardio: collectCardioData(slot)
         };
       });
       $("exercises").innerHTML = "";
@@ -1514,6 +1680,10 @@
     function toggleSidebar() { $("sidebar").classList.toggle("open"); $("overlay").classList.toggle("show"); }
     function openTodayWorkout() {
       if ($("sidebar").classList.contains("open")) toggleSidebar();
+      if (hasActiveWorkoutSession()) {
+        showTrainingSession();
+        return;
+      }
       const profile = window.TrainingWizardStore?.getProfile?.();
       const hasTodayMotivation = window.TrainingWizardStore?.hasDailyMotivationForDate?.() === true;
       const canOpenDailyWizard =
@@ -1561,6 +1731,10 @@
       return `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "index.html")}`;
     }
     function goHome() {
+      if (currentWorkoutView === "session" && hasActiveWorkoutSession()) {
+        closeTrainingWindow();
+        return;
+      }
       window.location.href = appUrl();
     }
     function goBackSafe() {
@@ -1582,6 +1756,10 @@
       }
       if ($("sidebar").classList.contains("open")) {
         toggleSidebar();
+        return;
+      }
+      if (currentWorkoutView === "session" && hasActiveWorkoutSession()) {
+        closeTrainingWindow();
         return;
       }
       window.location.href = appUrl();
@@ -1698,15 +1876,21 @@
           slot,
           name: nameElement?.textContent || "",
           muscle: nameElement?.dataset.muscle || "",
+          exerciseType: block.dataset.exerciseType || "strength",
+          cardio: collectCardioData(slot),
           rows
         };
       });
       let seconds = 0;
       exercises.forEach((exercise, exerciseIndex) => {
-        seconds += exercise.rows.length * 45;
-        exercise.rows.slice(0, -1).forEach(row => {
-          seconds += parsePause(row.querySelector(".pause")?.value);
-        });
+        if (exercise.exerciseType === "cardio") {
+          seconds += numberValue(exercise.cardio?.durationMinutes) * 60;
+        } else {
+          seconds += exercise.rows.length * 45;
+          exercise.rows.slice(0, -1).forEach(row => {
+            seconds += parsePause(row.querySelector(".pause")?.value);
+          });
+        }
         const transition = $(`transition-${exercise.slot}`);
         if (exerciseIndex > 0) {
           const transitionSeconds = exerciseTransitionSeconds(exercises[exerciseIndex - 1], exercise);
@@ -1736,7 +1920,9 @@
         return {
           name: nameElement?.textContent || "",
           muscle: nameElement?.dataset.muscle || "",
-          sets: collectSetData(slot)
+          exerciseType: block.dataset.exerciseType || "strength",
+          sets: collectSetData(slot),
+          cardio: collectCardioData(slot)
         };
       });
     }
@@ -1894,7 +2080,16 @@
       }
       pendingProgram = type;
       $("countTitle").textContent = "Antal øvelser";
-      setAutomaticExerciseCount($("automaticExerciseCount")?.value || selectedAutomaticExerciseCount);
+      const cardio = type === "cardio";
+      document.querySelectorAll("#automaticExerciseCount option").forEach(option => {
+        const unavailable = cardio && Number(option.value) > 5;
+        option.hidden = unavailable;
+        option.disabled = unavailable;
+      });
+      $("cardioGoalPicker").style.display = cardio ? "block" : "none";
+      setAutomaticExerciseCount(cardio
+        ? Math.min(5, Number($("automaticExerciseCount")?.value || selectedAutomaticExerciseCount))
+        : ($("automaticExerciseCount")?.value || selectedAutomaticExerciseCount));
       $("countPicker").style.display = "block";
     }
 
@@ -1905,9 +2100,14 @@
 
     function generateProgram(count = selectedAutomaticExerciseCount) {
       count = normalizeAutomaticExerciseCount(count);
+      if (pendingProgram === "cardio") count = Math.min(5, count);
       setAutomaticExerciseCount(count);
+      if (pendingProgram === "cardio") {
+        generateCardioProgram(count, $("cardioGoalMode")?.value || "general_health");
+        return;
+      }
       const types = {
-        fullbody: muscleGroupKeys,
+        fullbody: muscleGroupKeys.filter(muscle => muscle !== "Cardio"),
         push: movementMuscles("Push"),
         pull: movementMuscles("Pull"),
         legs: ["Forside lår", "Bagside lår & baller"]
@@ -1942,6 +2142,56 @@
       if ($("sidebar").classList.contains("open")) toggleSidebar();
     }
 
+    const cardioGoalPlans = {
+      weight_loss: { label: "Vægttab", totalMinutes: 35, intensity: "high" },
+      conditioning: { label: "Kondition", totalMinutes: 30, intensity: "high" },
+      general_health: { label: "Generel sundhed", totalMinutes: 30, intensity: "medium" },
+      recovery: { label: "Restitution", totalMinutes: 20, intensity: "low" }
+    };
+
+    function generateCardioProgram(count = 1, goal = "general_health", totalMinutes = null) {
+      count = Math.max(1, Math.min(5, Number(count) || 1));
+      const plan = cardioGoalPlans[goal] || cardioGoalPlans.general_health;
+      const duration = Math.max(count * 5, Number(totalMinutes) || plan.totalMinutes);
+      const pool = catalog.filter(exercise => exercise.muscle === "Cardio");
+      const shuffled = [...pool].sort(() => Math.random() - .5).slice(0, count);
+      $("workoutTitle").textContent = `❤️ Cardio: ${plan.label} (${count} ${count === 1 ? "øvelse" : "øvelser"})`;
+      $("exercises").innerHTML = "";
+      currentSavedProgramId = "";
+      currentProgramSession = null;
+      currentProgramDayIndex = 0;
+      activeExerciseCountPreference = count;
+      selectedWorkoutIntensity = plan.intensity;
+      const baseMinutes = Math.floor(duration / count);
+      let remainder = duration - (baseMinutes * count);
+      shuffled.forEach(exercise => {
+        const minutes = baseMinutes + (remainder-- > 0 ? 1 : 0);
+        addExercise(exercise.name, "Cardio", [], {
+          exerciseType: "cardio",
+          cardio: { durationMinutes: minutes, distanceKm: "", calories: "", averageHeartRate: "", maxHeartRate: "", speedKmh: "", notes: "", completed: false }
+        });
+      });
+      renderDayNavigation();
+      $("programType").value = "";
+      $("countPicker").style.display = "none";
+      $("cardioGoalPicker").style.display = "none";
+      pendingProgram = "";
+      autoSave();
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+    }
+
+    function openBlankWorkoutDialog() {
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      $("modalTitle").textContent = "Opret tomt træningspas";
+      $("modalContent").innerHTML = `
+        <p class="helper-text">Vælg hvilken type træningspas du vil oprette.</p>
+        <div class="row">
+          <button class="small-btn" onclick="closeModal();newWorkout('strength')">🏋️ Styrketræning</button>
+          <button class="small-btn" onclick="closeModal();newWorkout('cardio')">❤️ Cardio</button>
+        </div>`;
+      $("modal").style.display = "flex";
+    }
+
     function setMovementFilter(movement, event = null) {
       if (event) event.stopPropagation();
       activeMovementFilter = movement;
@@ -1966,6 +2216,7 @@
     function addExercise(name = null, muscle = "Ryg", savedSets = null, metadata = null) {
       if (!name) name = `${t("chooseExercisePrefix")} ${t("exerciseHeader").toLowerCase()}...`;
       const plan = metadata || goalPrescription(name, muscle, document.querySelectorAll(".exercise").length);
+      const isCardio = plan.exerciseType === "cardio" || muscle === "Cardio";
       slotCounter++;
       const slot = `slot_${slotCounter}`;
       const block = document.createElement("div");
@@ -1973,6 +2224,7 @@
       block.id = `block-${slot}`;
       block.dataset.goal = plan.goal || currentTrainingGoal();
       block.dataset.role = plan.role || window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory";
+      block.dataset.exerciseType = isCardio ? "cardio" : "strength";
       block.dataset.pauseInitialized = savedSets || !name.toLowerCase().startsWith(t("chooseExercisePrefix").toLowerCase()) ? "true" : "false";
       block.innerHTML = `
         <div class="exercise-transition" id="transition-${slot}"></div>
@@ -1980,38 +2232,10 @@
           <div class="exercise-name" id="name-${slot}" data-muscle="${esc(muscle)}">${esc(name)}</div>
           <div class="exercise-actions">
             <button class="small-btn" onclick="openExerciseDemo('${slot}')">Demo</button>
-            <button class="small-btn" onclick="toggleManual('${slot}')" title="${t("manualBtn")}" aria-label="${t("manualBtn")}"><span class="desktop-action-label">${t("manualBtn")}</span><span class="mobile-action-label">Manuel</span></button>
-            <button class="small-btn orange" onclick="toggleReplace('${slot}')" title="${t("replaceBtn")}" aria-label="${t("replaceBtn")}"><span class="desktop-action-label">${t("replaceBtn")}</span><span class="mobile-action-label">Erstat</span></button>
-            <button class="small-btn" onclick="openDashboard('${slot}')" title="${t("simulateBtn")}" aria-label="${t("simulateBtn")}"><span class="desktop-action-label">${t("simulateBtn")}</span><span class="mobile-action-label">Simuler</span></button>
+            <button class="small-btn orange" onclick="openReplacementDialog('${slot}')" title="Erstat øvelse" aria-label="Erstat øvelse">🔄 Erstat</button>
+            <button class="small-btn" onclick="openDashboard('${slot}')" title="${t("simulateBtn")}" aria-label="${t("simulateBtn")}">Simuler</button>
             <button class="small-btn red danger-slot" onclick="removeExercise('${slot}')">${t("deleteBtn")}</button>
           </div>
-        </div>
-        <div class="manual-box" id="manual-${slot}">
-          <div class="row">
-            <select class="field" id="filter-muscle-${slot}" onchange="filterManual('${slot}')">
-              ${optionList(muscleGroupKeys, muscle, muscleDisplay)}
-            </select>
-            <select class="field" id="filter-type-${slot}" onchange="filterManual('${slot}')">
-              ${optionList(["Alle","Center","Hjemme"], "Alle", tt)}
-            </select>
-          </div>
-          <div class="custom-box">
-            <div class="custom-title">${t("addCustomTitle")}</div>
-            <div class="row">
-              <select class="field" id="new-muscle-${slot}">${optionList(muscleGroupKeys, muscle, muscleDisplay)}</select>
-              <select class="field" id="new-type-${slot}">${optionList(["Center","Hjemme"], "Center", tt)}</select>
-            </div>
-            <div class="row">
-              <input class="field" id="new-name-${slot}" placeholder="${t("exerciseNamePlaceholder")}" onkeyup="if(event.key==='Enter') addCustom('${slot}')">
-              <button class="small-btn" onclick="addCustom('${slot}')">${t("addBtn")}</button>
-            </div>
-            <div class="mini-title feedback-success" id="custom-feedback-${slot}">${t("customSaved")}</div>
-          </div>
-          <div class="list" id="manual-list-${slot}"></div>
-        </div>
-        <div class="replace-box" id="replace-${slot}">
-          <div class="row"><input class="field" id="replace-input-${slot}" placeholder="${t("aiReplacePlaceholder")}" onkeyup="if(event.key==='Enter') smartReplace('${slot}')"><button class="small-btn orange" onclick="smartReplace('${slot}')">${t("askAi")}</button></div>
-          <div class="list" id="replace-list-${slot}"></div>
         </div>
         <div class="table-head">
           <div>${t("set")}</div>
@@ -2025,8 +2249,64 @@
         <div class="set-controls"><span>${t("adjustSets")}</span><button class="square" onclick="changeSets('${slot}',-1)">-</button><b id="count-${slot}">2</b><button class="square" onclick="changeSets('${slot}',1)">+</button></div>
       `;
       $("exercises").appendChild(block);
+      if (isCardio) {
+        block.querySelector(".table-head").style.display = "none";
+        block.querySelector(".set-controls").style.display = "none";
+        ensureCardioFields(slot, plan.cardio || {});
+        updateWorkoutProgress();
+        updateEstimatedTime();
+        return;
+      }
       const initialSets = savedSets || plannedSetsForExercise(name, muscle, document.querySelectorAll(".exercise").length - 1);
       renderSets(slot, initialSets.length, initialSets);
+    }
+
+    function cardioNumber(value) {
+      const parsed = numberValue(value);
+      return parsed > 0 ? parsed : "";
+    }
+
+    function ensureCardioFields(slot, cardio = {}) {
+      const block = $(`block-${slot}`);
+      if (!block) return;
+      let fields = $(`cardio-${slot}`);
+      if (!fields) {
+        fields = document.createElement("div");
+        fields.className = "cardio-fields";
+        fields.id = `cardio-${slot}`;
+        block.querySelector(".table-head").before(fields);
+      }
+      fields.innerHTML = `
+        <label class="cardio-complete"><input class="cardio-completed" type="checkbox" ${cardio.completed ? "checked" : ""} onchange="updateCardioMetrics('${slot}')"> Cardio-øvelse gennemført</label>
+        <div class="cardio-field"><label>Tid (minutter)</label><input class="cardio-duration" type="number" min="0" step="1" value="${esc(cardio.durationMinutes || "")}" oninput="updateCardioMetrics('${slot}')"></div>
+        <div class="cardio-field"><label>Distance (km)</label><input class="cardio-distance" type="number" min="0" step="0.01" value="${esc(cardio.distanceKm || "")}" oninput="updateCardioMetrics('${slot}')"></div>
+        <div class="cardio-field"><label>Kalorier (valgfrit)</label><input class="cardio-calories" type="number" min="0" step="1" value="${esc(cardio.calories || "")}" oninput="updateCardioMetrics('${slot}')"></div>
+        <div class="cardio-field"><label>Gennemsnitspuls</label><input class="cardio-average-heart-rate" type="number" min="0" step="1" value="${esc(cardio.averageHeartRate || "")}" oninput="updateCardioMetrics('${slot}')"></div>
+        <div class="cardio-field"><label>Maks puls</label><input class="cardio-max-heart-rate" type="number" min="0" step="1" value="${esc(cardio.maxHeartRate || "")}" oninput="updateCardioMetrics('${slot}')"></div>
+        <div class="cardio-field"><label>Hastighed (km/t)</label><input class="cardio-speed" type="number" min="0" step="0.1" value="${esc(cardio.speedKmh || "")}" oninput="updateCardioMetrics('${slot}')"></div>
+        <div class="cardio-field notes"><label>Noter</label><textarea class="cardio-notes" oninput="updateCardioMetrics('${slot}')">${esc(cardio.notes || "")}</textarea></div>`;
+    }
+
+    function collectCardioData(slot) {
+      const fields = $(`cardio-${slot}`);
+      if (!fields) return null;
+      return {
+        durationMinutes: cardioNumber(fields.querySelector(".cardio-duration")?.value),
+        distanceKm: cardioNumber(fields.querySelector(".cardio-distance")?.value),
+        calories: cardioNumber(fields.querySelector(".cardio-calories")?.value),
+        averageHeartRate: cardioNumber(fields.querySelector(".cardio-average-heart-rate")?.value),
+        maxHeartRate: cardioNumber(fields.querySelector(".cardio-max-heart-rate")?.value),
+        speedKmh: cardioNumber(fields.querySelector(".cardio-speed")?.value),
+        notes: fields.querySelector(".cardio-notes")?.value || "",
+        completed: fields.querySelector(".cardio-completed")?.checked || false
+      };
+    }
+
+    function updateCardioMetrics() {
+      updateWorkoutProgress();
+      updateEstimatedTime();
+      updateEstimatedCalories();
+      scheduleAutoSave();
     }
 
     function removeExercise(slot) {
@@ -2043,24 +2323,190 @@
       const url = `https://www.google.com/search?tbm=vid&q=${encodeURIComponent(exerciseName + " exercise form")}`;
       window.open(url, "_blank", "noopener");
     }
-    function toggleManual(slot) {
-      $(`replace-${slot}`).style.display = "none";
-      const b = $(`manual-${slot}`);
-      b.style.display = b.style.display === "block" ? "none" : "block";
-      if (b.style.display === "block") {
-        const typeFilter = $(`filter-type-${slot}`);
-        if (typeFilter) typeFilter.value = "Alle";
-        filterManual(slot);
-      }
-    }
-    function toggleReplace(slot) { $(`manual-${slot}`).style.display = "none"; const b = $(`replace-${slot}`); b.style.display = b.style.display === "block" ? "none" : "block"; if (b.style.display === "block") smartReplace(slot); }
+    let replacementState = { slot: "", mode: "", candidate: null };
 
-    function filterManual(slot) {
-      const muscle = $(`filter-muscle-${slot}`).value;
-      const type = $(`filter-type-${slot}`).value;
-      let list = catalog.filter(x => x.muscle === muscle);
-      if (type !== "Alle") list = list.filter(x => x.type === type);
-      renderExerciseList(slot, `manual-list-${slot}`, list);
+    function openReplacementDialog(slot) {
+      const name = $(`name-${slot}`)?.textContent || "øvelsen";
+      replacementState = { slot, mode: "", candidate: null };
+      $("modalTitle").textContent = `Erstat ${name}`;
+      $("modalContent").innerHTML = `
+        <p class="replacement-question">Hvordan vil du finde en ny øvelse?</p>
+        <div class="replacement-mode-grid">
+          <button class="replacement-mode" type="button" onclick="showReplacementSearch()">🔍 Søg selv<br><span class="helper-text">Filtrér og vælg fra øvelsesarkivet</span></button>
+          <button class="replacement-mode" type="button" onclick="showReplacementAi()">🤖 Spørg AI<br><span class="helper-text">Få tre relevante alternativer</span></button>
+        </div>`;
+      $("modal").style.display = "flex";
+    }
+
+    function replacementMuscleOptions(selected = "Alle") {
+      return optionList(["Alle", ...muscleGroupKeys], selected, value => value === "Alle" ? "Alle muskelgrupper" : muscleDisplay(value));
+    }
+
+    function showReplacementSearch() {
+      replacementState.mode = "search";
+      const currentMuscle = $(`name-${replacementState.slot}`)?.dataset.muscle || "Alle";
+      const currentMovement = muscleGroupMeta(currentMuscle).category || "Alle";
+      $("modalContent").innerHTML = `
+        <p class="replacement-question">🔍 Søg selv</p>
+        <div class="replacement-toolbar">
+          <div class="replacement-filter"><label for="replacementMovement">Træningstype</label><select class="field" id="replacementMovement" onchange="filterReplacementSearch()">
+            ${optionList(["Alle","Push","Pull","Stabilitet","Cardio"], currentMovement)}
+          </select></div>
+          <div class="replacement-filter"><label for="replacementMuscle">Muskelgruppe</label><select class="field" id="replacementMuscle" onchange="filterReplacementSearch()">${replacementMuscleOptions(currentMuscle)}</select></div>
+          <div class="replacement-filter"><label for="replacementEquipment">Udstyr</label><select class="field" id="replacementEquipment" onchange="filterReplacementSearch()">
+            ${optionList(["Alle","Kropsvægt","Håndvægte","Stang","Kabel","Maskine","Cardio"], "Alle")}
+          </select></div>
+          <div class="replacement-filter"><label for="replacementLocation">Sted</label><select class="field" id="replacementLocation" onchange="filterReplacementSearch()">
+            ${optionList(["Alle","Hjemme","Center"], "Alle", tt)}
+          </select></div>
+          <div class="replacement-filter wide"><label for="replacementSearchInput">Søg</label><input class="field" id="replacementSearchInput" type="search" placeholder="Søg efter øvelse..." oninput="filterReplacementSearch()"></div>
+        </div>
+        <details class="custom-box">
+          <summary class="custom-title">Tilføj ny øvelse til arkivet</summary>
+          <div class="replacement-toolbar" style="margin-top:10px;">
+            <select class="field" id="replacementNewMuscle">${replacementMuscleOptions(currentMuscle).replace('<option value="Alle" >Alle muskelgrupper</option>', "")}</select>
+            <select class="field" id="replacementNewType">${optionList(["Center","Hjemme"], "Center", tt)}</select>
+            <input class="field wide" id="replacementNewName" placeholder="${t("exerciseNamePlaceholder")}" onkeyup="if(event.key==='Enter') addCustomReplacement()">
+            <button class="small-btn wide" type="button" onclick="addCustomReplacement()">${t("addBtn")}</button>
+          </div>
+        </details>
+        <div class="replacement-results" id="replacementResults"></div>`;
+      filterReplacementSearch();
+    }
+
+    function equipmentCategory(exercise) {
+      const name = normalizedExerciseSearch(exercise?.name);
+      if (exercise?.muscle === "Cardio") return "Cardio";
+      if (/(dumbbell|håndvægt)/.test(name)) return "Håndvægte";
+      if (/(barbell|ez-bar|stang)/.test(name)) return "Stang";
+      if (/(cable|kabel|pulldown|pushdown|face pull)/.test(name)) return "Kabel";
+      if (/(machine|maskine|pec deck|leg press|hack squat|air bike|stairmaster|crosstrainer)/.test(name)) return "Maskine";
+      if (/(push-up|pull-up|chin-up|dip|plank|crunch|lunge|squat|wall sit|bird dog|mountain climber|handstand|pike)/.test(name)) return "Kropsvægt";
+      return "Andet";
+    }
+
+    function filterReplacementSearch() {
+      const movement = $("replacementMovement")?.value || "Alle";
+      const muscle = $("replacementMuscle")?.value || "Alle";
+      const equipment = $("replacementEquipment")?.value || "Alle";
+      const location = $("replacementLocation")?.value || "Alle";
+      const search = normalizedExerciseSearch($("replacementSearchInput")?.value);
+      const currentType = $(`block-${replacementState.slot}`)?.dataset.exerciseType || "strength";
+      let list = catalog.filter(exercise => {
+        const meta = muscleGroupMeta(exercise.muscle);
+        const candidateType = exercise.muscle === "Cardio" ? "cardio" : "strength";
+        return candidateType === currentType
+          && (movement === "Alle" || meta.category === movement)
+          && (muscle === "Alle" || exercise.muscle === muscle)
+          && (equipment === "Alle" || equipmentCategory(exercise) === equipment)
+          && (location === "Alle" || exercise.type === location)
+          && (!search || normalizedExerciseSearch(exercise.name).includes(search));
+      });
+      const currentName = normalizedExerciseSearch($(`name-${replacementState.slot}`)?.textContent);
+      list = list.filter(exercise => normalizedExerciseSearch(exercise.name) !== currentName);
+      renderReplacementResults(list);
+    }
+
+    function renderReplacementResults(list, emptyText = "Ingen øvelser matcher dine valg.") {
+      const container = $("replacementResults");
+      if (!container) return;
+      if (!list.length) {
+        container.innerHTML = `<div class="progress-empty">${esc(emptyText)}</div>`;
+        return;
+      }
+      container.innerHTML = list.map(exercise => `
+        <button class="replacement-result" type="button" onclick="confirmExerciseReplacement('${replacementState.slot}','${encodeURIComponent(exercise.name)}','${encodeURIComponent(exercise.muscle)}')">
+          <span>${esc(exercise.name)}</span>
+          <span class="badge">${esc(muscleGroupMeta(exercise.muscle).emoji)} ${esc(exercise.muscle)} · ${esc(tt(exercise.type))}</span>
+        </button>`).join("");
+    }
+
+    function addCustomReplacement() {
+      const name = $("replacementNewName")?.value.trim();
+      const muscle = $("replacementNewMuscle")?.value;
+      const type = $("replacementNewType")?.value;
+      if (!name) return alert(t("askExerciseName"));
+      const currentType = $(`block-${replacementState.slot}`)?.dataset.exerciseType || "strength";
+      if ((muscle === "Cardio" ? "cardio" : "strength") !== currentType) {
+        return alert("Vælg samme træningstype som den øvelse, du erstatter, så registrerede data bevares.");
+      }
+      if (catalog.some(exercise => normalizedExerciseSearch(exercise.name) === normalizedExerciseSearch(name) && exercise.muscle === muscle)) {
+        return alert(t("exerciseExists"));
+      }
+      const customExercise = { name, muscle, type, tags: [name.toLowerCase(), muscle.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase()], custom: true };
+      catalog.push(customExercise);
+      saveCustomExercises();
+      confirmExerciseReplacement(replacementState.slot, encodeURIComponent(name), encodeURIComponent(muscle));
+    }
+
+    function showReplacementAi() {
+      replacementState.mode = "ai";
+      $("modalContent").innerHTML = `
+        <p class="replacement-question">🤖 Spørg AI</p>
+        <div class="replacement-presets">
+          ${[
+            ["similar","Find en lignende øvelse"],["easier","Find en lettere øvelse"],["harder","Find en hårdere øvelse"],
+            ["home","Find en hjemmeøvelse"],["center","Find en centerøvelse"],["same-muscle","Find en øvelse med samme muskelgruppe"],
+            ["no-machines","Find en øvelse uden maskiner"]
+          ].map(([value,label]) => `<button class="small-btn replacement-preset" type="button" onclick="suggestExerciseReplacements('${value}')">${label}</button>`).join("")}
+        </div>
+        <div class="replacement-ai-row">
+          <input class="field" id="replacementAiInput" placeholder="F.eks. Jeg har kun håndvægte" onkeyup="if(event.key==='Enter') suggestExerciseReplacements('free')">
+          <button class="small-btn orange" type="button" onclick="suggestExerciseReplacements('free')">Find forslag</button>
+        </div>
+        <div class="replacement-results" id="replacementResults"><div class="progress-empty">Vælg et forslag eller beskriv, hvad du har brug for.</div></div>`;
+    }
+
+    function suggestExerciseReplacements(mode = "similar") {
+      const slot = replacementState.slot;
+      const currentName = $(`name-${slot}`)?.textContent || "";
+      const muscle = $(`name-${slot}`)?.dataset.muscle || "Ryg";
+      const current = resolveExerciseDefinition(currentName) || { name: currentName, muscle, type: "Center" };
+      const input = normalizedExerciseSearch($("replacementAiInput")?.value);
+      const query = mode === "free" ? input : mode;
+      let pool = catalog.filter(exercise => exercise.muscle === muscle && normalizedExerciseSearch(exercise.name) !== normalizedExerciseSearch(currentName));
+      if (mode === "home" || /hjemme/.test(query)) pool = pool.filter(exercise => exercise.type === "Hjemme");
+      if (mode === "center") pool = pool.filter(exercise => exercise.type === "Center");
+      if (mode === "no-machines" || /(uden maskiner|ingen maskiner)/.test(query)) {
+        pool = pool.filter(exercise => !["Maskine","Kabel"].includes(equipmentCategory(exercise)));
+      }
+      if (/(håndvægt|håndvægte|dumbbell)/.test(query)) pool = pool.filter(exercise => equipmentCategory(exercise) === "Håndvægte");
+      if (/(ondt i skulder|skuldersmerte|skulderen)/.test(query)) {
+        pool = pool.filter(exercise => !/(overhead|shoulder press|upright row|dip)/i.test(exercise.name));
+      }
+      const compound = /(squat|deadlift|press|row|pull-up|chin-up|dip|lunge|hip thrust|farmer)/i;
+      const ranked = pool.map(exercise => {
+        let score = window.TrainingGoalEngine?.scoreExercise?.(exercise, currentTrainingGoal()) || 0;
+        if (mode === "harder" || /(sværere|hårdere)/.test(query)) score += compound.test(exercise.name) ? 20 : 0;
+        if (mode === "easier" || /(lettere|nemmere)/.test(query)) score += compound.test(exercise.name) ? -10 : 12;
+        if (mode === "similar" || mode === "same-muscle") score += exercise.type === current.type ? 5 : 0;
+        score += (exercise.tags || []).reduce((sum, tag) => sum + (query.includes(normalizedExerciseSearch(tag)) ? 8 : 0), 0);
+        return { exercise, score };
+      }).sort((a,b) => b.score - a.score).slice(0, 3).map(item => item.exercise);
+      renderReplacementResults(ranked, "AI kunne ikke finde tre relevante alternativer. Prøv en anden beskrivelse.");
+    }
+
+    function confirmExerciseReplacement(slot, encodedName, encodedMuscle) {
+      const candidate = { name: decodeURIComponent(encodedName), muscle: decodeURIComponent(encodedMuscle) };
+      const oldName = $(`name-${slot}`)?.textContent || "øvelsen";
+      replacementState.candidate = candidate;
+      $("modalTitle").textContent = "Bekræft udskiftning";
+      $("modalContent").innerHTML = `
+        <div class="replacement-confirm">
+          <p>Erstat <strong>${esc(oldName)}</strong> med <strong>${esc(candidate.name)}</strong>?</p>
+          <div class="replacement-confirm-actions">
+            <button class="small-btn" type="button" onclick="openReplacementDialog('${slot}')">Annuller</button>
+            <button class="small-btn orange" type="button" onclick="applyExerciseReplacement()">Ja</button>
+          </div>
+        </div>`;
+    }
+
+    function applyExerciseReplacement() {
+      const { slot, candidate } = replacementState;
+      if (!slot || !candidate) return;
+      setExercise(slot, candidate.name, candidate.muscle);
+      closeModal();
+      replacementState = { slot: "", mode: "", candidate: null };
     }
 
     function renderExerciseList(slot, id, list) {
@@ -2075,37 +2521,6 @@
       });
     }
 
-    function smartReplace(slot) {
-      const input = ($(`replace-input-${slot}`).value || "").toLowerCase();
-      const muscle = $(`name-${slot}`).dataset.muscle || "Ryg";
-      const goal = currentTrainingGoal();
-      const list = catalog.filter(x => x.muscle === muscle).map(ex => ({
-        ex,
-        score: (window.TrainingGoalEngine?.scoreExercise?.(ex, goal) || 0) +
-          ex.tags.reduce((sum, tag) => sum + (input.includes(tag) ? 8 : 0), 0)
-      })).sort((a,b) => b.score-a.score).map(x => x.ex);
-      renderExerciseList(slot, `replace-list-${slot}`, list);
-    }
-
-    function addCustom(slot) {
-      const name = $(`new-name-${slot}`).value.trim();
-      const muscle = $(`new-muscle-${slot}`).value;
-      const type = $(`new-type-${slot}`).value;
-      if (!name) return alert(t("askExerciseName"));
-      if (catalog.some(x => x.name.toLowerCase() === name.toLowerCase() && x.muscle === muscle)) return alert(t("exerciseExists"));
-      const customExercise = { name, muscle, type, tags: name.toLowerCase().split(/\s+/), custom: true };
-      catalog.push(customExercise);
-      saveCustomExercises();
-      setExercise(slot, name, muscle);
-      $(`new-name-${slot}`).value = "";
-      const feedback = $(`custom-feedback-${slot}`);
-      if (feedback) {
-        feedback.style.display = "block";
-        feedback.textContent = `"${name}" ${t("archived")}`;
-      }
-      filterManual(slot);
-    }
-
     function saveCustomExercises() {
       writeLocalJson("custom_exercises", catalog.filter(x => x.custom));
     }
@@ -2113,6 +2528,7 @@
     function setExercise(slot, name, muscle) {
       const data = collectSetData(slot);
       const exerciseBlock = $(`block-${slot}`);
+      const isCardio = muscle === "Cardio";
       const plan = goalPrescription(name, muscle, slotIds().indexOf(slot));
       if (exerciseBlock?.dataset.pauseInitialized !== "true") {
         const suggestedPause = formatPause(plan.pauseSeconds);
@@ -2127,13 +2543,24 @@
       if (exerciseBlock) {
         exerciseBlock.dataset.goal = plan.goal;
         exerciseBlock.dataset.role = plan.role;
+        exerciseBlock.dataset.exerciseType = isCardio ? "cardio" : "strength";
       }
       $(`name-${slot}`).textContent = name;
       $(`name-${slot}`).dataset.muscle = muscle;
       const m = $(`filter-muscle-${slot}`);
       if (m) m.value = muscle;
       clearPauseTimers(slot);
-      renderSets(slot, parseInt($(`count-${slot}`).textContent), data);
+      const tableHead = exerciseBlock?.querySelector(".table-head");
+      const setControls = exerciseBlock?.querySelector(".set-controls");
+      if (tableHead) tableHead.style.display = isCardio ? "none" : "";
+      if (setControls) setControls.style.display = isCardio ? "none" : "";
+      if (isCardio) {
+        ensureCardioFields(slot, collectCardioData(slot) || {});
+        $(`sets-${slot}`).innerHTML = "";
+      } else {
+        $(`cardio-${slot}`)?.remove();
+        renderSets(slot, Math.max(1, parseInt($(`count-${slot}`).textContent) || data.length || 2), data);
+      }
       const manualBox = $(`manual-${slot}`);
       const replaceBox = $(`replace-${slot}`);
       if (manualBox) manualBox.style.display = "none";
@@ -2175,7 +2602,7 @@
     }
 
     function updateWorkoutProgress() {
-      const checkboxes = [...document.querySelectorAll('.set-block input[type="checkbox"]')];
+      const checkboxes = [...document.querySelectorAll('.set-block input[type="checkbox"], .cardio-completed')];
       const totalSets = checkboxes.length;
       const completedSets = checkboxes.filter(checkbox => checkbox.checked).length;
       const percent = totalSets ? Math.round((completedSets / totalSets) * 100) : 0;
@@ -2186,13 +2613,15 @@
       ring.style.setProperty("--progress", `${percent}%`);
       ring.classList.toggle("complete", totalSets > 0 && percent === 100);
       ring.setAttribute("aria-valuenow", percent);
-      ring.setAttribute("aria-label", `${completedSets} af ${totalSets} sæt gennemført`);
+      ring.setAttribute("aria-label", `${completedSets} af ${totalSets} træningsdele gennemført`);
       label.textContent = `${percent}%`;
       completeMessage.classList.toggle("show", totalSets > 0 && percent === 100);
     }
 
     function collectSetData(slot) {
-      return [...$(`sets-${slot}`).querySelectorAll(".set-block")].map(row => ({
+      const container = $(`sets-${slot}`);
+      if (!container) return [];
+      return [...container.querySelectorAll(".set-block")].map(row => ({
         prev: row.querySelector(".previous")?.textContent || "-",
         completed: row.querySelector('input[type="checkbox"]')?.checked || false,
         weight: row.querySelector(".weight")?.value || "",
@@ -2314,9 +2743,26 @@
     }
 
     function normalizeSessionStatus(status) {
-      return ["not_started", "in_progress", "completed"].includes(status)
+      return ["not_started", "in_progress", "paused", "completed"].includes(status)
         ? status
         : "not_started";
+    }
+
+    function cloneWorkoutData(value) {
+      return value == null ? value : JSON.parse(JSON.stringify(value));
+    }
+
+    function hasActiveWorkoutSession() {
+      return Boolean(activeWorkoutSession && ["in_progress", "paused"].includes(activeWorkoutSession.sessionStatus));
+    }
+
+    function sessionStatusLabel(status = sessionStatus) {
+      return {
+        not_started: "Ikke startet",
+        in_progress: "I gang",
+        paused: "På pause",
+        completed: "Afsluttet"
+      }[normalizeSessionStatus(status)];
     }
 
     function stopWorkoutTimerInterval() {
@@ -2331,20 +2777,31 @@
       isTimerRunning = true;
       timerInterval = setInterval(() => {
         totalSeconds++;
-        $("globalTimer").textContent = formatTime(totalSeconds);
+        if (activeWorkoutSession) {
+          activeWorkoutSession.timerSeconds = totalSeconds;
+          activeWorkoutSession.updatedAt = new Date().toISOString();
+        }
+        if ($("globalTimer")) $("globalTimer").textContent = formatTime(totalSeconds);
         if (totalSeconds <= 10 || totalSeconds % 5 === 0) updateEstimatedCalories();
+        if (totalSeconds % 5 === 0) autoSave();
       }, 1000);
     }
 
     function updateWorkoutButtonVisibility() {
       sessionStatus = normalizeSessionStatus(sessionStatus);
       const startButton = $("timerBtn");
+      const pauseButton = $("pauseWorkoutBtn");
+      const resumeButton = $("resumeWorkoutBtn");
       const finishButton = $("stopBtn");
-      if (!startButton || !finishButton) return;
-      startButton.style.display = sessionStatus === "in_progress" ? "none" : "block";
-      finishButton.style.display = sessionStatus === "in_progress" ? "block" : "none";
-      startButton.textContent = t("start");
+      const statusText = $("sessionStatusText");
+      if (!startButton || !finishButton || !pauseButton || !resumeButton) return;
+      startButton.style.display = currentWorkoutView === "program" ? "block" : "none";
+      startButton.textContent = hasActiveWorkoutSession() ? "▶ Genoptag træning" : t("start");
       startButton.classList.remove("active");
+      pauseButton.style.display = currentWorkoutView === "session" && sessionStatus === "in_progress" ? "block" : "none";
+      resumeButton.style.display = currentWorkoutView === "session" && sessionStatus === "paused" ? "block" : "none";
+      finishButton.style.display = currentWorkoutView === "session" && ["in_progress", "paused"].includes(sessionStatus) ? "block" : "none";
+      if (statusText) statusText.textContent = sessionStatusLabel();
       if (sessionStatus === "completed") {
         stopWorkoutTimerInterval();
         $("autosaveStatus").textContent = t("finishedSaved");
@@ -2361,8 +2818,18 @@
         sessionStartedAt = null;
         sessionCompletedAt = null;
         stopWorkoutTimerInterval();
+      } else if (sessionStatus === "paused") {
+        stopWorkoutTimerInterval();
       } else if (options.startTimer !== false) {
         startWorkoutTimerInterval();
+      }
+      if (activeWorkoutSession) {
+        activeWorkoutSession.sessionStatus = sessionStatus;
+        activeWorkoutSession.sessionId = activeSessionId;
+        activeWorkoutSession.startedAt = sessionStartedAt;
+        activeWorkoutSession.completedAt = sessionCompletedAt;
+        activeWorkoutSession.timerSeconds = totalSeconds;
+        activeWorkoutSession.updatedAt = new Date().toISOString();
       }
       updateWorkoutButtonVisibility();
       updateEstimatedCalories();
@@ -2373,18 +2840,145 @@
         checkbox.checked = false;
         checkbox.closest(".set-block")?.classList.remove("completed");
       });
+      document.querySelectorAll(".cardio-completed").forEach(checkbox => { checkbox.checked = false; });
       updateWorkoutProgress();
     }
 
+    function workoutStructureSnapshot(state) {
+      return JSON.stringify((state?.exercises || []).map(exercise => ({
+        name: exercise.name,
+        muscle: exercise.muscle,
+        role: exercise.role,
+        exerciseType: exercise.exerciseType || "strength",
+        cardio: exercise.cardio ? {
+          durationMinutes: exercise.cardio.durationMinutes || "",
+          distanceKm: exercise.cardio.distanceKm || "",
+          calories: exercise.cardio.calories || "",
+          averageHeartRate: exercise.cardio.averageHeartRate || "",
+          maxHeartRate: exercise.cardio.maxHeartRate || "",
+          speedKmh: exercise.cardio.speedKmh || "",
+          notes: exercise.cardio.notes || ""
+        } : null,
+        sets: (exercise.sets || []).map(set => ({
+          weight: set.weight || "",
+          reps: set.reps || "",
+          targetReps: set.targetReps || "",
+          pause: set.pause || "",
+          pauseManual: set.pauseManual === true
+        }))
+      })));
+    }
+
+    function ensureProgramTemplateFromCanvas() {
+      if (currentProgramSession) {
+        syncActiveDayFromCanvas();
+        return;
+      }
+      const state = collectWorkoutState();
+      currentProgramSession = window.WorkoutProgramStore.createProgram({
+        id: currentSavedProgramId || undefined,
+        title: state.programTitle || state.title || t("workoutFallback"),
+        goal: state.goal,
+        activeDayIndex: 0,
+        days: [{ ...state, id: "day_1" }]
+      });
+      currentProgramDayIndex = 0;
+    }
+
+    function captureActiveSessionFromCanvas() {
+      if (!activeWorkoutSession || currentWorkoutView !== "session") return activeWorkoutSession;
+      const state = collectWorkoutState();
+      activeWorkoutSession = {
+        ...activeWorkoutSession,
+        ...cloneWorkoutData(state),
+        sessionId: activeSessionId,
+        sessionStatus,
+        startedAt: sessionStartedAt,
+        completedAt: sessionCompletedAt,
+        timerSeconds: totalSeconds,
+        updatedAt: new Date().toISOString()
+      };
+      return activeWorkoutSession;
+    }
+
+    function renderWorkoutState(state) {
+      if (!state) return false;
+      selectedWorkoutIntensity = ["low", "medium", "high"].includes(state.workoutIntensity)
+        ? state.workoutIntensity
+        : "medium";
+      activeExerciseCountPreference = Number.isInteger(state.desiredExerciseCount)
+        ? normalizeAutomaticExerciseCount(state.desiredExerciseCount)
+        : null;
+      $("workoutTitle").textContent = state.title || trainingDayHeading(currentProgramSession?.days?.length || 1, state.dayIndex || 0);
+      $("exercises").innerHTML = "";
+      (state.exercises || []).forEach(exercise => addExercise(exercise.name, exercise.muscle, exercise.sets, exercise));
+      totalSeconds = Number(state.timerSeconds) || 0;
+      $("globalTimer").textContent = formatTime(totalSeconds);
+      updateWorkoutProgress();
+      updateEstimatedTime();
+      updateEstimatedCalories();
+      return true;
+    }
+
+    function showTrainingSession() {
+      if (!hasActiveWorkoutSession()) return false;
+      currentWorkoutView = "session";
+      document.body.dataset.workoutView = "session";
+      activeSessionId = activeWorkoutSession.sessionId;
+      sessionStatus = normalizeSessionStatus(activeWorkoutSession.sessionStatus);
+      sessionStartedAt = activeWorkoutSession.startedAt || null;
+      sessionCompletedAt = activeWorkoutSession.completedAt || null;
+      renderWorkoutState(activeWorkoutSession);
+      if (sessionStatus === "in_progress") startWorkoutTimerInterval();
+      else stopWorkoutTimerInterval();
+      updateWorkoutButtonVisibility();
+      return true;
+    }
+
+    function showProgramView(options = {}) {
+      if (currentWorkoutView === "session" && options.captureSession !== false) captureActiveSessionFromCanvas();
+      currentWorkoutView = "program";
+      document.body.dataset.workoutView = "program";
+      if (currentProgramSession?.days?.length) renderProgramDay(currentProgramDayIndex);
+      if (activeWorkoutSession) {
+        sessionStatus = normalizeSessionStatus(activeWorkoutSession.sessionStatus);
+        activeSessionId = activeWorkoutSession.sessionId || "";
+        sessionStartedAt = activeWorkoutSession.startedAt || null;
+        sessionCompletedAt = activeWorkoutSession.completedAt || null;
+        totalSeconds = Number(activeWorkoutSession.timerSeconds) || totalSeconds;
+        if (sessionStatus === "in_progress") startWorkoutTimerInterval();
+      }
+      updateWorkoutButtonVisibility();
+      autoSave();
+    }
+
     function beginWorkoutSession() {
+      ensureProgramTemplateFromCanvas();
+      const templateState = collectWorkoutState();
       activeSessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       sessionStartedAt = new Date().toISOString();
       sessionCompletedAt = null;
       totalSeconds = 0;
-      $("globalTimer").textContent = formatTime(totalSeconds);
       clearPauseTimers();
+      activeWorkoutSession = {
+        ...cloneWorkoutData(templateState),
+        sessionId: activeSessionId,
+        sessionStatus: "in_progress",
+        startedAt: sessionStartedAt,
+        completedAt: null,
+        timerSeconds: 0,
+        updatedAt: sessionStartedAt,
+        sourceProgramId: currentSavedProgramId || currentProgramSession?.id || "",
+        sourceDayId: activeProgramDay()?.id || templateState.dayId || "day_1",
+        sourceDayIndex: currentProgramDayIndex,
+        templateSnapshot: workoutStructureSnapshot(templateState)
+      };
+      activeWorkoutSession.exercises.forEach(exercise => {
+        (exercise.sets || []).forEach(set => { set.completed = false; });
+      });
+      sessionStatus = "in_progress";
+      showTrainingSession();
       resetSessionCompletionMarks();
-      setSessionStatus("in_progress");
     }
 
     function syncActiveDayFromCanvas() {
@@ -2424,14 +3018,9 @@
       currentProgramDayIndex = Math.max(0, Math.min(Number(index) || 0, days.length - 1));
       currentProgramSession.activeDayIndex = currentProgramDayIndex;
       const day = days[currentProgramDayIndex];
-      stopWorkoutTimerInterval();
       programStatus = ["active", "archived"].includes(currentProgramSession.status)
         ? currentProgramSession.status
         : "active";
-      sessionStatus = "not_started";
-      activeSessionId = "";
-      sessionStartedAt = null;
-      sessionCompletedAt = null;
       selectedWorkoutIntensity = ["low", "medium", "high"].includes(day.workoutIntensity)
         ? day.workoutIntensity
         : "medium";
@@ -2440,8 +3029,10 @@
         : null;
       $("workoutTitle").textContent = trainingDayHeading(days.length, currentProgramDayIndex);
       delete $("workoutTitle").dataset.customTitle;
-      totalSeconds = 0;
-      $("globalTimer").textContent = formatTime(totalSeconds);
+      if (!hasActiveWorkoutSession()) {
+        totalSeconds = 0;
+        $("globalTimer").textContent = formatTime(totalSeconds);
+      }
       clearPauseTimers();
       $("exercises").innerHTML = "";
       (day.exercises || []).forEach(exercise => addExercise(exercise.name, exercise.muscle, exercise.sets, exercise));
@@ -2454,7 +3045,7 @@
 
     function switchProgramDay(index) {
       if (!currentProgramSession || index === currentProgramDayIndex) return;
-      stopWorkoutTimerInterval();
+      if (!hasActiveWorkoutSession()) stopWorkoutTimerInterval();
       syncActiveDayFromCanvas();
       renderProgramDay(index);
       autoSave();
@@ -2486,7 +3077,9 @@
             muscle: nameEl.dataset.muscle || "Ryg",
             goal: block.dataset.goal || currentTrainingGoal(),
             role: block.dataset.role || "accessory",
-            sets: collectSetData(slot)
+            exerciseType: block.dataset.exerciseType || "strength",
+            sets: collectSetData(slot),
+            cardio: collectCardioData(slot)
           };
         })
       };
@@ -2498,15 +3091,22 @@
       }
       const state = collectWorkoutState();
       let savedLocally;
+      if (currentWorkoutView === "session") captureActiveSessionFromCanvas();
       if (currentProgramSession) {
-        syncActiveDayFromCanvas();
+        if (currentWorkoutView === "program") syncActiveDayFromCanvas();
         savedLocally = writeLocalJson("active_workout_autosave", {
-          version: 3,
-          program: currentProgramSession,
-          session: state
+          version: 4,
+          program: cloneWorkoutData(currentProgramSession),
+          session: cloneWorkoutData(activeWorkoutSession),
+          draft: currentWorkoutView === "program" ? cloneWorkoutData(state) : null
         });
       } else {
-        savedLocally = writeLocalJson("active_workout_autosave", state);
+        savedLocally = writeLocalJson("active_workout_autosave", {
+          version: 4,
+          program: null,
+          session: cloneWorkoutData(activeWorkoutSession),
+          draft: cloneWorkoutData(state)
+        });
       }
       if (currentSavedProgramId) window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
       if (savedLocally) {
@@ -2521,6 +3121,46 @@
     }
     function loadAutosave() {
       const saved = readLocalJson("active_workout_autosave", null);
+      if (saved?.version === 4) {
+        currentWorkoutView = "program";
+        document.body.dataset.workoutView = "program";
+        if (saved.program) {
+          currentProgramSession = window.WorkoutProgramStore?.normalizeProgram?.(saved.program) || saved.program;
+          currentSavedProgramId = currentProgramSession.id || "";
+          currentProgramDayIndex = currentProgramSession.activeDayIndex || 0;
+          renderProgramDay(currentProgramDayIndex);
+        } else if (saved.draft?.exercises) {
+          currentProgramSession = null;
+          currentSavedProgramId = saved.draft.savedProgramId || "";
+          currentProgramDayIndex = 0;
+          renderWorkoutState(saved.draft);
+        }
+        const restoredSession = saved.session;
+        if (restoredSession && ["in_progress", "paused"].includes(normalizeSessionStatus(restoredSession.sessionStatus))) {
+          activeWorkoutSession = cloneWorkoutData(restoredSession);
+          sessionStatus = normalizeSessionStatus(activeWorkoutSession.sessionStatus);
+          activeSessionId = activeWorkoutSession.sessionId || "";
+          sessionStartedAt = activeWorkoutSession.startedAt || null;
+          sessionCompletedAt = activeWorkoutSession.completedAt || null;
+          totalSeconds = Number(activeWorkoutSession.timerSeconds) || 0;
+          if (sessionStatus === "in_progress" && activeWorkoutSession.updatedAt) {
+            const hiddenSeconds = Math.max(0, Math.floor((Date.now() - new Date(activeWorkoutSession.updatedAt).getTime()) / 1000));
+            totalSeconds += Number.isFinite(hiddenSeconds) ? hiddenSeconds : 0;
+            activeWorkoutSession.timerSeconds = totalSeconds;
+            activeWorkoutSession.updatedAt = new Date().toISOString();
+            startWorkoutTimerInterval();
+          }
+          $("autosaveStatus").textContent = "Aktiv træning kan genoptages";
+        } else {
+          activeWorkoutSession = null;
+          sessionStatus = "not_started";
+          activeSessionId = "";
+          sessionStartedAt = null;
+          sessionCompletedAt = null;
+        }
+        updateWorkoutButtonVisibility();
+        return Boolean(saved.program || saved.draft?.exercises?.length);
+      }
       if ((saved?.version === 3 || saved?.version === 2) && saved.program) {
         const legacyDayIndex = saved.program.activeDayIndex || 0;
         const legacyDay = saved.program.days?.[legacyDayIndex] || null;
@@ -2534,18 +3174,22 @@
         currentSavedProgramId = currentProgramSession.id || "";
         currentProgramDayIndex = currentProgramSession.activeDayIndex || 0;
         renderProgramDay(currentProgramDayIndex);
-        if (restoredSession?.exercises?.length) {
-          $("exercises").innerHTML = "";
-          restoredSession.exercises.forEach(ex => addExercise(ex.name, ex.muscle, ex.sets, ex));
+        const legacyStatus = normalizeSessionStatus(restoredSession?.sessionStatus || restoredSession?.workoutStatus);
+        if (restoredSession?.exercises?.length && ["in_progress", "paused"].includes(legacyStatus)) {
+          activeWorkoutSession = {
+            ...cloneWorkoutData(restoredSession),
+            sessionId: restoredSession.sessionId || `session_${Date.now()}_legacy`,
+            sessionStatus: legacyStatus,
+            templateSnapshot: workoutStructureSnapshot(activeProgramDay())
+          };
+          activeSessionId = activeWorkoutSession.sessionId;
+          sessionStartedAt = activeWorkoutSession.startedAt || null;
+          sessionCompletedAt = null;
+          sessionStatus = legacyStatus;
+          totalSeconds = Number(activeWorkoutSession.timerSeconds) || 0;
+          if (sessionStatus === "in_progress") startWorkoutTimerInterval();
         }
-        activeSessionId = restoredSession?.sessionId || "";
-        sessionStartedAt = restoredSession?.startedAt || null;
-        sessionCompletedAt = restoredSession?.completedAt || null;
-        sessionStatus = normalizeSessionStatus(restoredSession?.sessionStatus || restoredSession?.workoutStatus);
-        totalSeconds = Number(restoredSession?.timerSeconds) || 0;
-        $("globalTimer").textContent = formatTime(totalSeconds);
-        if (sessionStatus === "in_progress") startWorkoutTimerInterval();
-        $("autosaveStatus").textContent = sessionStatus === "completed" ? t("finishedSaved") : t("restored");
+        $("autosaveStatus").textContent = hasActiveWorkoutSession() ? "Aktiv træning kan genoptages" : t("restored");
         updateWorkoutButtonVisibility();
         return true;
       }
@@ -2561,18 +3205,17 @@
         ? state.workoutIntensity
         : "medium";
       programStatus = state.programStatus === "archived" ? "archived" : "active";
-      activeSessionId = state.sessionId || "";
-      sessionStartedAt = state.startedAt || null;
-      sessionStatus = normalizeSessionStatus(state.sessionStatus || state.workoutStatus);
-      sessionCompletedAt = state.completedAt || null;
+      sessionStatus = "not_started";
+      activeSessionId = "";
+      sessionStartedAt = null;
+      sessionCompletedAt = null;
       $("workoutTitle").textContent = state.title || t("defaultTitle");
       totalSeconds = state.timerSeconds || 0;
       $("globalTimer").textContent = formatTime(totalSeconds);
       $("exercises").innerHTML = "";
       state.exercises.forEach(ex => addExercise(ex.name, ex.muscle, ex.sets, ex));
       renderDayNavigation();
-      if (sessionStatus === "in_progress") startWorkoutTimerInterval();
-      $("autosaveStatus").textContent = sessionStatus === "completed" ? t("finishedSaved") : t("restored");
+      $("autosaveStatus").textContent = t("restored");
       updateWorkoutButtonVisibility();
       return true;
     }
@@ -2771,6 +3414,8 @@
       currentProgramSession = window.WorkoutProgramStore.normalizeProgram(p);
       currentSavedProgramId = currentProgramSession.id;
       currentProgramDayIndex = currentProgramSession.activeDayIndex || 0;
+      currentWorkoutView = "program";
+      document.body.dataset.workoutView = "program";
       window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
       renderProgramDay(currentProgramDayIndex);
       autoSave();
@@ -2792,6 +3437,9 @@
       activeSessionId = "";
       sessionStartedAt = null;
       sessionCompletedAt = null;
+      currentWorkoutView = "program";
+      activeWorkoutSession = null;
+      document.body.dataset.workoutView = "program";
       clearPauseTimers();
       $("exercises").innerHTML = "";
       $("workoutTitle").textContent = t("defaultTitle");
@@ -2810,41 +3458,130 @@
       updateEstimatedTime();
       updateWorkoutButtonVisibility();
     }
-    function newWorkout() {
+    function newWorkout(type = "strength") {
+      if (hasActiveWorkoutSession()) {
+        alert("Der er allerede en aktiv træning. Genoptag eller afslut den, før du opretter et nyt træningspas.");
+        if ($("sidebar").classList.contains("open")) toggleSidebar();
+        return;
+      }
       resetWorkoutCanvas(t("ready"));
-      toggleSidebar();
+      if (type === "cardio") {
+        $("workoutTitle").textContent = "Mit nye cardio-pas";
+        activeMovementFilter = "Cardio";
+        document.querySelectorAll(".movement-btn").forEach(button => button.classList.toggle("active", button.dataset.movement === "Cardio"));
+      }
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
     }
 
     function toggleWorkoutTimer() {
-      if (sessionStatus === "in_progress") return;
+      if (hasActiveWorkoutSession()) {
+        showTrainingSession();
+        return;
+      }
       beginWorkoutSession();
       autoSave();
     }
-    function finishWorkout() {
+
+    function pauseWorkoutSession() {
       if (sessionStatus !== "in_progress") return;
-      if (!confirm(t("finishConfirm"))) return;
+      captureActiveSessionFromCanvas();
+      setSessionStatus("paused");
+      autoSave();
+    }
+
+    function resumeWorkoutSession() {
+      if (!activeWorkoutSession || sessionStatus !== "paused") return;
+      setSessionStatus("in_progress");
+      showTrainingSession();
+      autoSave();
+    }
+
+    function closeTrainingWindow() {
+      if (!hasActiveWorkoutSession()) {
+        showProgramView();
+        return;
+      }
+      $("modalTitle").textContent = "Træningen er stadig i gang";
+      $("modalContent").innerHTML = `
+        <p>Træningen er stadig i gang.</p>
+        <p>Hvad vil du gøre?</p>
+        <div class="session-dialog-actions">
+          <button class="small-btn" type="button" onclick="closeModal()">Fortsæt træning</button>
+          <button class="small-btn" type="button" onclick="minimizeWorkoutSession()">Minimer træning</button>
+          <button class="small-btn red" type="button" onclick="closeModal();finishWorkout({ skipConfirm: true })">Afslut træning</button>
+        </div>`;
+      $("modal").style.display = "flex";
+    }
+
+    function minimizeWorkoutSession() {
+      closeModal();
+      captureActiveSessionFromCanvas();
+      showProgramView();
+      $("autosaveStatus").textContent = "Træningen er minimeret og fortsætter";
+    }
+
+    function applySessionChangesToProgram(session) {
+      if (!session) return false;
+      const exercises = cloneWorkoutData(session.exercises || []).map(exercise => ({
+        ...exercise,
+        sets: (exercise.sets || []).map(set => ({ ...set, completed: false })),
+        cardio: exercise.cardio ? { ...exercise.cardio, completed: false } : null
+      }));
+      const sourceId = session.sourceProgramId || "";
+      const sourceDayIndex = Math.max(0, Number(session.sourceDayIndex) || 0);
+      let targetProgram = null;
+      if (currentProgramSession && (!sourceId || currentProgramSession.id === sourceId)) {
+        targetProgram = currentProgramSession;
+      } else if (sourceId) {
+        const programs = getPrograms();
+        const stored = programs.find(program => program.id === sourceId);
+        if (stored) targetProgram = window.WorkoutProgramStore.normalizeProgram(stored);
+      }
+      if (!targetProgram?.days?.length) return false;
+      const targetDay = targetProgram.days[Math.min(sourceDayIndex, targetProgram.days.length - 1)];
+      targetDay.exercises = exercises;
+      targetDay.workoutIntensity = session.workoutIntensity || targetDay.workoutIntensity;
+      targetDay.desiredExerciseCount = session.desiredExerciseCount ?? targetDay.desiredExerciseCount;
+      targetProgram.savedAt = new Date().toISOString();
+      if (currentProgramSession?.id === targetProgram.id || (!sourceId && currentProgramSession === targetProgram)) {
+        currentProgramSession = targetProgram;
+      }
+      if (sourceId) {
+        const programs = getPrograms();
+        const index = programs.findIndex(program => program.id === sourceId);
+        if (index >= 0) {
+          programs[index] = window.WorkoutProgramStore.clone(targetProgram);
+          setPrograms(programs);
+        }
+      }
+      return true;
+    }
+
+    function finishWorkout(options = {}) {
+      if (!["in_progress", "paused"].includes(sessionStatus)) return;
+      if (!options.skipConfirm && !confirm(t("finishConfirm"))) return;
       if (autosaveDebounce) {
         clearTimeout(autosaveDebounce);
         autosaveDebounce = null;
       }
+      captureActiveSessionFromCanvas();
       stopWorkoutTimerInterval();
       setSessionStatus("completed", { completedAt: new Date().toISOString() });
-      syncActiveDayFromCanvas();
       const entry = collectAnalyticsEntry();
       const entries = history();
       if (entry.totalVolume || entry.estimatedCalories || entry.exercises.length) entries.push(entry);
       writeLocalJson("training_analytics_history", entries);
-      if (currentProgramSession && currentSavedProgramId) {
-        currentProgramSession.savedAt = new Date().toISOString();
-        const programs = getPrograms();
-        const index = programs.findIndex(program => program.id === currentSavedProgramId);
-        if (index >= 0) {
-          programs[index] = window.WorkoutProgramStore.clone(currentProgramSession);
-          setPrograms(programs);
-        }
+      const finishedSession = cloneWorkoutData(activeWorkoutSession);
+      const sessionChanged = workoutStructureSnapshot(finishedSession) !== finishedSession?.templateSnapshot;
+      if (sessionChanged && confirm("Vil du også gemme disse ændringer i selve programmet?")) {
+        applySessionChangesToProgram(finishedSession);
       }
+      activeWorkoutSession = null;
+      currentWorkoutView = "program";
+      document.body.dataset.workoutView = "program";
+      showProgramView({ captureSession: false });
+      sessionStatus = "completed";
       autoSave();
-      $("autosaveStatus").textContent = t("finishedSaved");
       updateWorkoutButtonVisibility();
       alert(`${t("workoutFinished")}\n${t("volumeHeader")}: ${vol(entry.totalVolume)}\n${t("bestOneRm")}: ${entry.bestOneRm ? kg(entry.bestOneRm) : "-"}\nEstimeret kalorieforbrug: ${entry.estimatedCalories} kcal`);
     }
@@ -2853,13 +3590,29 @@
       const exercises = [...document.querySelectorAll(".exercise")].map(block => {
         const slot = block.id.replace("block-", "");
         const name = $(`name-${slot}`).textContent;
+        if (block.dataset.exerciseType === "cardio") {
+          const cardio = collectCardioData(slot) || {};
+          const hasData = ["durationMinutes", "distanceKm", "calories", "averageHeartRate", "maxHeartRate", "speedKmh"]
+            .some(field => numberValue(cardio[field]) > 0) || cardio.notes;
+          return hasData ? { name, muscle: "Cardio", exerciseType: "cardio", cardio, sets: [], totalSets: 0, totalVolume: 0, bestOneRm: 0, bestLift: 0 } : null;
+        }
         const sets = collectSetData(slot).map((s,i) => {
           const w = numberValue(s.weight), r = numberValue(s.reps);
           return w && r ? { set:i+1, weight:w, reps:r, oneRm:oneRm(w,r), volume:volume(w,r) } : null;
         }).filter(Boolean);
-        return sets.length ? { name, sets, totalSets:sets.length, totalVolume:sets.reduce((a,s)=>a+s.volume,0), bestOneRm:Math.max(...sets.map(s=>s.oneRm)), bestLift:Math.max(...sets.map(s=>s.weight)) } : null;
+        return sets.length ? { name, exerciseType: "strength", sets, totalSets:sets.length, totalVolume:sets.reduce((a,s)=>a+s.volume,0), bestOneRm:Math.max(...sets.map(s=>s.oneRm)), bestLift:Math.max(...sets.map(s=>s.weight)) } : null;
       }).filter(Boolean);
       const calorieEstimate = currentCalorieEstimate();
+      const cardioExercises = exercises.filter(exercise => exercise.exerciseType === "cardio");
+      const cardioSummary = {
+        durationMinutes: cardioExercises.reduce((sum, exercise) => sum + numberValue(exercise.cardio?.durationMinutes), 0),
+        distanceKm: cardioExercises.reduce((sum, exercise) => sum + numberValue(exercise.cardio?.distanceKm), 0),
+        calories: cardioExercises.reduce((sum, exercise) => sum + numberValue(exercise.cardio?.calories), 0),
+        averageHeartRate: (() => {
+          const values = cardioExercises.map(exercise => numberValue(exercise.cardio?.averageHeartRate)).filter(Boolean);
+          return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0;
+        })()
+      };
       return {
         id: Date.now(),
         date: new Date().toISOString(),
@@ -2877,7 +3630,9 @@
         startedAt: sessionStartedAt,
         completedAt: sessionCompletedAt || new Date().toISOString(),
         workoutIntensity: selectedWorkoutIntensity,
+        workoutType: cardioExercises.length === exercises.length && exercises.length ? "cardio" : cardioExercises.length ? "mixed" : "strength",
         exercises,
+        cardioSummary,
         totalVolume: exercises.reduce((a,e)=>a+e.totalVolume,0),
         bestOneRm: Math.max(0,...exercises.map(e=>e.bestOneRm)),
         bestLift: Math.max(0,...exercises.map(e=>e.bestLift)),
@@ -2914,6 +3669,18 @@
         const changePercent = start ? (change / start) * 100 : 0;
         return { ...exercise, points, start, latest, best, change, changePercent, workouts: new Set(points.map(point => point.workoutId)).size };
       }).sort((a,b) => a.name.localeCompare(b.name, "da"));
+    }
+
+    function cardioDevelopmentData() {
+      const grouped = {};
+      history().sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(workout => {
+        (workout.exercises || []).filter(exercise => exercise.exerciseType === "cardio" || exercise.muscle === "Cardio").forEach(exercise => {
+          const key = String(exercise.name || "Cardio").trim().toLowerCase();
+          if (!grouped[key]) grouped[key] = { name: exercise.name || "Cardio", points: [] };
+          grouped[key].points.push({ date: workout.date, workoutId: workout.id, ...(exercise.cardio || {}) });
+        });
+      });
+      return Object.values(grouped).sort((a,b) => a.name.localeCompare(b.name, "da"));
     }
 
     function formatSigned(value, suffix = "") {
@@ -2966,6 +3733,16 @@
         : `<option value="">Ingen øvelser med data</option>`;
       if (exercises.some(exercise => exercise.name === previous)) select.value = previous;
       renderDevelopmentChart(select.value);
+      const cardioExercises = cardioDevelopmentData();
+      const cardioSelect = $("cardioDevelopmentExercise");
+      const previousCardio = cardioSelect?.value;
+      if (cardioSelect) {
+        cardioSelect.innerHTML = cardioExercises.length
+          ? cardioExercises.map(exercise => `<option value="${esc(exercise.name)}">${esc(exercise.name)}</option>`).join("")
+          : `<option value="">Ingen cardio-data</option>`;
+        if (cardioExercises.some(exercise => exercise.name === previousCardio)) cardioSelect.value = previousCardio;
+      }
+      renderCardioDevelopmentChart();
       loadLatestBodyMeasurement();
       renderBodyHistory();
     }
@@ -3006,6 +3783,39 @@
           <text class="chart-axis-text" x="14" y="${top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90 14 ${top + plotHeight / 2})">kg</text>
         </svg>
       `;
+    }
+
+    function renderCardioDevelopmentChart() {
+      const container = $("cardioDevelopmentChart");
+      if (!container) return;
+      const exerciseName = $("cardioDevelopmentExercise")?.value;
+      const metric = $("cardioDevelopmentMetric")?.value || "distanceKm";
+      const exercise = cardioDevelopmentData().find(item => item.name === exerciseName);
+      const metricMeta = {
+        distanceKm: { label: "Distance", unit: "km" },
+        durationMinutes: { label: "Tid", unit: "min" },
+        calories: { label: "Kalorier", unit: "kcal" },
+        averageHeartRate: { label: "Gennemsnitspuls", unit: "bpm" }
+      }[metric];
+      const points = (exercise?.points || []).map(point => ({ date: point.date, value: numberValue(point[metric]) })).filter(point => point.value > 0);
+      if (points.length < 2) {
+        container.innerHTML = `<div class="chart-empty">Der er endnu ikke nok data til at vise cardio-udvikling.</div>`;
+        return;
+      }
+      const width = 760, height = 230, left = 52, right = 18, top = 18, bottom = 42;
+      const values = points.map(point => point.value);
+      const max = Math.max(...values), min = Math.min(...values);
+      const padding = Math.max(1, (max - min) * .15);
+      const yMin = Math.max(0, min - padding), yMax = max + padding;
+      const plotWidth = width - left - right, plotHeight = height - top - bottom;
+      const x = index => left + (index / (points.length - 1)) * plotWidth;
+      const y = value => top + ((yMax - value) / Math.max(1, yMax - yMin)) * plotHeight;
+      const coordinates = points.map((point, index) => `${x(index)},${y(point.value)}`).join(" ");
+      const dots = points.map((point, index) => {
+        const date = new Date(point.date).toLocaleDateString("da-DK", { day:"2-digit", month:"2-digit" });
+        return `<circle cx="${x(index)}" cy="${y(point.value)}" r="4" fill="#4ade80"><title>${date}: ${point.value} ${metricMeta.unit}</title></circle><text class="chart-axis-text" x="${x(index)}" y="${height-17}" text-anchor="middle">${date}</text>`;
+      }).join("");
+      container.innerHTML = `<svg class="line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${metricMeta.label} over tid for ${esc(exercise.name)}"><polyline points="${coordinates}" fill="none" stroke="#3a93ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}<text class="chart-axis-text" x="14" y="${top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90 14 ${top + plotHeight / 2})">${metricMeta.unit}</text></svg>`;
     }
 
     const bodyMeasurementFields = {
@@ -3144,6 +3954,17 @@
       const bestLift = Math.max(0, ...allSets.map(s => s.weight));
       const bestWorkoutVol = Math.max(0, ...hist.map(e => e.totalVolume || 0));
       const totalVol = hist.reduce((a,e)=>a+(e.totalVolume||0),0);
+      const cardioExercises = hist.flatMap(entry => (entry.exercises || []).filter(exercise => exercise.exerciseType === "cardio" || exercise.muscle === "Cardio"));
+      const cardioTime = cardioExercises.reduce((sum, exercise) => sum + numberValue(exercise.cardio?.durationMinutes), 0);
+      const cardioDistance = cardioExercises.reduce((sum, exercise) => sum + numberValue(exercise.cardio?.distanceKm), 0);
+      const cardioCalories = cardioExercises.reduce((sum, exercise) => sum + numberValue(exercise.cardio?.calories), 0);
+      const cardioSessions = hist.filter(entry => (entry.exercises || []).some(exercise => exercise.exerciseType === "cardio" || exercise.muscle === "Cardio"));
+      const averageCardioTime = cardioSessions.length ? cardioTime / cardioSessions.length : 0;
+      const cardioUsage = cardioExercises.reduce((counts, exercise) => {
+        counts[exercise.name] = (counts[exercise.name] || 0) + 1;
+        return counts;
+      }, {});
+      const mostUsedCardio = Object.entries(cardioUsage).sort((a,b) => b[1] - a[1])[0]?.[0] || "-";
       const chartVals = hist.slice(-12).map(e => e.bestOneRm || 0);
       const max = Math.max(1, ...chartVals);
       const bars = chartVals.length ? chartVals.map(v => `<div class="bar" style="height:${Math.max(8,Math.round((v/max)*145))}px"></div>`).join("") : `<span class="helper-text">${t("noHistory")}</span>`;
@@ -3155,10 +3976,18 @@
           <div class="dash-card"><div class="dash-label">${t("bestWorkoutVolume")}</div><div class="dash-value">${vol(bestWorkoutVol)}</div></div>
           <div class="dash-card"><div class="dash-label">${t("totalVolume")}</div><div class="dash-value">${vol(totalVol)}</div></div>
         </div>
+        <div class="section">❤️ Cardio</div>
+        <div class="cardio-summary-grid">
+          <div class="dash-card"><div class="dash-label">Total cardio-tid</div><div class="dash-value">${Math.round(cardioTime)} min</div></div>
+          <div class="dash-card"><div class="dash-label">Total distance</div><div class="dash-value">${cardioDistance.toFixed(1).replace(".", ",")} km</div></div>
+          <div class="dash-card"><div class="dash-label">Total kalorier</div><div class="dash-value">${Math.round(cardioCalories)} kcal</div></div>
+          <div class="dash-card"><div class="dash-label">Gennemsnitlig tid</div><div class="dash-value">${Math.round(averageCardioTime)} min</div></div>
+          <div class="dash-card"><div class="dash-label">Mest anvendt</div><div class="dash-value">${esc(mostUsedCardio)}</div></div>
+        </div>
         ${hasPremium
           ? `<div class="section">${t("oneRmDevelopment")}</div><div class="chart">${bars}</div>`
           : `<div class="dash-card premium-locked"><div class="dash-label">Avancerede diagrammer</div><div class="helper-text">Diagrammer og periodeanalyser er tilgængelige med Premium.</div><button class="small-btn" style="margin-top:8px;" onclick="closeModal();openMembershipView();">Se medlemskab</button></div>`}
-        ${slot ? simulationHtml(slot, improve) : ""}
+        ${slot && $(`block-${slot}`)?.dataset.exerciseType !== "cardio" ? simulationHtml(slot, improve) : ""}
         <div class="section">${t("volumePerExercise")}</div>${table([t("exerciseHeader"),t("volumeHeader"),t("changeHeader")], current.exercises.map(e => [e.name, vol(e.totalVolume), "+0%"]))}
         ${hasPremium ? `<div class="section">${t("volumePerWeek")}</div>${table([t("weekHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"week").map(x => [x.key, vol(x.volume), x.change]))}` : ""}
         ${hasPremium ? `<div class="section">${t("volumePerMonth")}</div>${table([t("monthHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"month").map(x => [x.key, vol(x.volume), x.change]))}` : ""}
@@ -3342,7 +4171,16 @@
         "triceps pushdown": "Cable Triceps Pushdown",
         "triceps": "Cable Triceps Pushdown",
         "skulderpres": "Overhead Press",
-        "row": "Barbell Row"
+        "row": "Barbell Row",
+        "løb": "Udendørs løb",
+        "løbetur": "Udendørs løb",
+        "løbebånd": "Løbebånd",
+        "cykel": "Motionscykel",
+        "cykling": "Motionscykel",
+        "roning": "Romaskine",
+        "svømning": "Svømning",
+        "gang": "Rask gang",
+        "vandring": "Hiking / Vandring"
       };
       const requested = normalizedExerciseSearch(requestedName);
       const alias = aliases[requested];
@@ -3521,6 +4359,44 @@
           changed: moved > 0,
           message: moved ? `${moved} øvelse${moved === 1 ? "" : "r"} er flyttet til Dag ${action.day}.` : "Øvelsen eller dagen blev ikke fundet."
         };
+      }
+
+      if (action.action === "addCardioExercise") {
+        const exercise = resolveExerciseDefinition(action.exerciseName);
+        if (!exercise || exercise.muscle !== "Cardio") {
+          return { success: false, message: `Jeg kunne ikke finde cardio-øvelsen "${action.exerciseName}".` };
+        }
+        addExercise(exercise.name, "Cardio", [], {
+          exerciseType: "cardio",
+          cardio: { durationMinutes: "", distanceKm: "", calories: "", averageHeartRate: "", maxHeartRate: "", speedKmh: "", notes: "", completed: false, ...(action.cardio || {}) }
+        });
+        autoSave();
+        const detail = action.cardio?.durationMinutes
+          ? ` med ${action.cardio.durationMinutes} minutter`
+          : action.cardio?.distanceKm ? ` med ${action.cardio.distanceKm} km` : "";
+        return { success: true, changed: true, message: `${exercise.name} er tilføjet${detail}.` };
+      }
+
+      if (action.action === "generateCardioProgram") {
+        const minutes = Math.max(5, Math.min(240, Number(action.durationMinutes) || 30));
+        const count = Math.max(1, Math.min(5, Math.round(minutes / 10)));
+        generateCardioProgram(count, "general_health", minutes);
+        return { success: true, changed: true, message: `Et cardio-program på ${minutes} minutter er oprettet med ${count} øvelse${count === 1 ? "" : "r"}.` };
+      }
+
+      if (action.action === "showCardioSummary") {
+        const now = new Date();
+        const entries = history().filter(entry => {
+          const date = new Date(entry.date);
+          return action.period === "year"
+            ? date.getFullYear() === now.getFullYear()
+            : date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+        });
+        const cardio = entries.flatMap(entry => (entry.exercises || []).filter(exercise => exercise.exerciseType === "cardio" || exercise.muscle === "Cardio"));
+        const minutes = cardio.reduce((sum, exercise) => sum + numberValue(exercise.cardio?.durationMinutes), 0);
+        const distance = cardio.reduce((sum, exercise) => sum + numberValue(exercise.cardio?.distanceKm), 0);
+        const period = action.period === "year" ? "i år" : "denne måned";
+        return { success: true, changed: false, message: `Du har registreret ${Math.round(minutes)} minutters cardio og ${distance.toFixed(1).replace(".", ",")} km ${period}.` };
       }
 
       if (action.action === "addExercise") {
@@ -3815,6 +4691,10 @@
     }
 
     function continueDailyWorkout() {
+      if (hasActiveWorkoutSession()) {
+        showTrainingSession();
+        return;
+      }
       if (currentProgramSession?.days?.length || document.querySelectorAll(".exercise").length) {
         $("autosaveStatus").textContent = "Seneste aktive træningspas er klar";
         return;
@@ -3978,7 +4858,7 @@
     function dailyMuscleSelectionTitle(muscles, count) {
       const goalLabel = window.TrainingGoalEngine?.profile?.(currentTrainingGoal())?.label || "Dagens træning";
       const uniqueMuscles = [...new Set(muscles)];
-      const selection = uniqueMuscles.length === muscleGroupKeys.length
+      const selection = uniqueMuscles.length === muscleGroupKeys.filter(muscle => muscle !== "Cardio").length
         ? "Fullbody Pas"
         : uniqueMuscles.join(" + ");
       return `${goalLabel}: ${selection} (${count} ${count === 1 ? "øvelse" : "øvelser"}) · Dagens tilpasning`;
