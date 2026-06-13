@@ -1190,28 +1190,30 @@
 
       <section class="profile-account-section">
         <h2>Konto & login</h2>
-        <p class="profile-section-copy">Autentificering kobles på, når Firebase aktiveres.</p>
+        <p class="profile-section-copy">Log ind for at knytte din konto til Firebase.</p>
         <div class="profile-account-status">
           <div><strong id="profileLoginStatus">Ikke logget ind</strong><span id="profileActiveEmail">Ingen aktiv e-mail</span></div>
-          <div class="profile-ready-badge">Klar til Firebase</div>
+          <div class="profile-ready-badge" id="profileFirebaseStatus">Firebase indlæses</div>
         </div>
         <div class="profile-form-grid" style="margin-top:12px;">
           <label class="profile-form-field">E-mail<input id="profileLoginEmail" type="email" autocomplete="email" disabled placeholder="email@example.com"></label>
           <label class="profile-form-field">Adgangskode<input id="profileLoginPassword" type="password" autocomplete="current-password" disabled placeholder="••••••••"></label>
         </div>
         <div class="profile-account-actions">
-          <button class="profile-account-button" type="button" disabled>Log ind med e-mail</button>
-          <button class="profile-account-button" type="button" disabled>Log ind med Google</button>
-          <button class="profile-account-button" type="button" disabled>Log ud</button>
+          <button class="profile-account-button" id="profileEmailLoginBtn" type="button" onclick="loginProfileWithEmail()" disabled>Log ind med e-mail</button>
+          <button class="profile-account-button" id="profileCreateAccountBtn" type="button" onclick="createProfileAccount()" disabled>Opret bruger</button>
+          <button class="profile-account-button" id="profileGoogleLoginBtn" type="button" onclick="loginProfileWithGoogle()" disabled>Log ind med Google</button>
+          <button class="profile-account-button" id="profileLogoutBtn" type="button" onclick="logoutProfileAccount()" disabled>Log ud</button>
         </div>
+        <div class="profile-save-feedback" id="profileAuthFeedback" aria-live="polite"></div>
       </section>
 
       <section class="profile-account-section">
         <h2>Sikkerhed</h2>
-        <p class="profile-section-copy">Sikkerhedsfunktionerne bliver tilgængelige sammen med Firebase-login.</p>
+        <p class="profile-section-copy">Få tilsendt et sikkert link til nulstilling af adgangskoden.</p>
         <div class="profile-account-actions">
           <button class="profile-account-button" type="button" disabled>Skift adgangskode</button>
-          <button class="profile-account-button" type="button" disabled>Nulstil adgangskode</button>
+          <button class="profile-account-button" id="profileResetPasswordBtn" type="button" onclick="resetProfilePassword()" disabled>Nulstil adgangskode</button>
           <button class="profile-account-button" type="button" disabled>Skift e-mail senere</button>
         </div>
       </section>
@@ -4983,6 +4985,8 @@
   <script src="daily-start-wizard.js"></script>
   <script src="wizard-controller.js"></script>
   <script src="membership.js"></script>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="auth-service.js"></script>
 </body>
 </html>
 

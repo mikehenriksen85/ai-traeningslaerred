@@ -58,11 +58,117 @@
   }
 
   function renderAccountStatus() {
-    const account = readJson(accountKey, {});
-    const firebaseReady = Boolean(window.firebase?.auth || window.FirebaseAuth);
-    const loggedIn = Boolean(account.loggedIn && account.email);
-    byId("profileLoginStatus").textContent = loggedIn ? "Logget ind" : firebaseReady ? "Ikke logget ind" : "Ikke logget ind · Klar til Firebase";
-    byId("profileActiveEmail").textContent = loggedIn ? account.email : "Ingen aktiv e-mail";
+    const service = window.FirebaseAuthService;
+    const user = service?.getCurrentUser?.() || null;
+    const ready = Boolean(service);
+    const loggedIn = Boolean(user);
+    const status = byId("profileLoginStatus");
+    const email = byId("profileActiveEmail");
+    const firebaseStatus = byId("profileFirebaseStatus");
+    const emailInput = byId("profileLoginEmail");
+    const passwordInput = byId("profileLoginPassword");
+
+    if (status) status.textContent = loggedIn ? "Logget ind" : ready ? "Ikke logget ind" : "Firebase indlæses";
+    if (email) email.textContent = loggedIn ? user.email : "Ingen aktiv e-mail";
+    if (firebaseStatus) firebaseStatus.textContent = loggedIn ? "Forbundet" : ready ? "Firebase klar" : "Firebase indlæses";
+    if (emailInput) {
+      emailInput.disabled = !ready || loggedIn;
+      if (loggedIn) emailInput.value = user.email || "";
+    }
+    if (passwordInput) {
+      passwordInput.disabled = !ready || loggedIn;
+      if (loggedIn) passwordInput.value = "";
+    }
+
+    ["profileEmailLoginBtn", "profileCreateAccountBtn", "profileGoogleLoginBtn"].forEach(id => {
+      const button = byId(id);
+      if (button) button.disabled = !ready || loggedIn;
+    });
+    const logoutButton = byId("profileLogoutBtn");
+    if (logoutButton) logoutButton.disabled = !ready || !loggedIn;
+    const resetButton = byId("profileResetPasswordBtn");
+    if (resetButton) resetButton.disabled = !ready;
+  }
+
+  function authErrorMessage(error) {
+    const messages = {
+      "auth/email-already-in-use": "E-mailadressen er allerede i brug.",
+      "auth/invalid-credential": "E-mail eller adgangskode er forkert.",
+      "auth/invalid-email": "E-mailadressen er ikke gyldig.",
+      "auth/popup-closed-by-user": "Google-login blev lukket, før det var færdigt.",
+      "auth/popup-blocked": "Browseren blokerede Google-login-vinduet.",
+      "auth/too-many-requests": "For mange forsøg. Vent lidt og prøv igen.",
+      "auth/user-disabled": "Denne konto er deaktiveret.",
+      "auth/weak-password": "Adgangskoden skal være på mindst 6 tegn."
+    };
+    return messages[error?.code] || error?.message || "Firebase-handlingen kunne ikke gennemføres.";
+  }
+
+  function setAuthFeedback(message, isError = false) {
+    const feedback = byId("profileAuthFeedback");
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.style.color = isError ? "#ff6b6b" : "";
+  }
+
+  function loginValues() {
+    return {
+      email: byId("profileLoginEmail")?.value.trim() || "",
+      password: byId("profileLoginPassword")?.value || ""
+    };
+  }
+
+  async function runAuthAction(action, successMessage) {
+    const service = window.FirebaseAuthService;
+    if (!service?.[action]) {
+      setAuthFeedback("Firebase Authentication er ikke klar endnu.", true);
+      return;
+    }
+    setAuthFeedback("Arbejder...");
+    try {
+      const values = loginValues();
+      await service[action](values.email, values.password);
+      setAuthFeedback(successMessage);
+      renderAccountStatus();
+    } catch (error) {
+      setAuthFeedback(authErrorMessage(error), true);
+    }
+  }
+
+  function loginProfileWithEmail() {
+    return runAuthAction("loginWithEmail", "Du er nu logget ind.");
+  }
+
+  function createProfileAccount() {
+    return runAuthAction("createAccount", "Din bruger er oprettet og logget ind.");
+  }
+
+  function loginProfileWithGoogle() {
+    return runAuthAction("loginWithGoogle", "Du er nu logget ind med Google.");
+  }
+
+  async function logoutProfileAccount() {
+    const service = window.FirebaseAuthService;
+    if (!service?.logout) return;
+    try {
+      await service.logout();
+      setAuthFeedback("Du er nu logget ud.");
+      renderAccountStatus();
+    } catch (error) {
+      setAuthFeedback(authErrorMessage(error), true);
+    }
+  }
+
+  async function resetProfilePassword() {
+    const service = window.FirebaseAuthService;
+    const email = byId("profileLoginEmail")?.value.trim() || service?.getCurrentUser?.()?.email || "";
+    if (!service?.resetPassword) return;
+    try {
+      await service.resetPassword(email);
+      setAuthFeedback("Link til nulstilling af adgangskode er sendt.");
+    } catch (error) {
+      setAuthFeedback(authErrorMessage(error), true);
+    }
   }
 
   function populateProfileAccount() {
@@ -211,4 +317,16 @@
   window.clearAllLocalData = clearAllLocalData;
   window.refreshProfileAccountView = populateProfileAccount;
   window.saveProfileMeasurementSnapshot = saveMeasurementSnapshot;
+  window.loginProfileWithEmail = loginProfileWithEmail;
+  window.createProfileAccount = createProfileAccount;
+  window.loginProfileWithGoogle = loginProfileWithGoogle;
+  window.logoutProfileAccount = logoutProfileAccount;
+  window.resetProfilePassword = resetProfilePassword;
+
+  window.addEventListener("firebase-auth:ready", renderAccountStatus);
+  window.addEventListener("firebase-auth:changed", event => {
+    renderAccountStatus();
+    const error = event.detail?.error;
+    if (error) setAuthFeedback(authErrorMessage(error), true);
+  });
 })();
