@@ -106,12 +106,64 @@
     }
     .overlay.show { display: block; }
     .profile { padding: 26px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
-    .profile.profile-edit-enabled { cursor: pointer; }
-    .profile.profile-edit-enabled:hover { background: rgba(58,147,255,.08); }
+    .profile.profile-edit-enabled { cursor: default; }
     .avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--blue); display: grid; place-items: center; background: var(--card); }
     .section-title { padding: 16px 24px 6px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0; }
     .sidebar-item { padding: 12px 24px; color: var(--text-secondary); cursor: pointer; display: flex; gap: 12px; align-items: center; }
     .sidebar-item:hover { color: var(--text-primary); background: rgba(58,147,255,.1); }
+    .sidebar-accordion { border-bottom: 1px solid var(--border); }
+    .sidebar-accordion:first-of-type { border-top: 1px solid var(--border); }
+    .sidebar-accordion-toggle {
+      width: 100%;
+      min-height: 50px;
+      padding: 12px 18px;
+      border: 0;
+      background: transparent;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-semibold);
+      text-align: left;
+    }
+    .sidebar-accordion-toggle:hover,
+    .sidebar-accordion.open > .sidebar-accordion-toggle {
+      background: rgba(58,147,255,.08);
+    }
+    .sidebar-accordion-chevron {
+      color: var(--text-secondary);
+      transition: transform .2s ease;
+    }
+    .sidebar-accordion.open .sidebar-accordion-chevron { transform: rotate(180deg); }
+    .sidebar-accordion-panel {
+      display: none;
+      padding: 0 8px 10px;
+    }
+    .sidebar-accordion.open > .sidebar-accordion-panel { display: block; }
+    .sidebar-accordion-panel .sidebar-item {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      text-align: left;
+      font: inherit;
+    }
+    .sidebar-item.active {
+      color: var(--text-primary);
+      background: rgba(58,147,255,.16);
+      box-shadow: inset 3px 0 0 var(--blue);
+    }
+    .sidebar-accordion-panel .sidebar-box,
+    .sidebar-accordion-panel .saved-dropdown {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+    .sidebar-menu-spacer { height: 12px; }
     .sidebar-box { padding: 6px 24px 14px; display: flex; flex-direction: column; gap: 8px; }
     .sidebar-select, .field {
       width: 100%;
@@ -955,71 +1007,100 @@
   </header>
 
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-  <nav class="sidebar" id="sidebar">
-    <div class="profile" role="button" tabindex="0" onclick="openProfileSetup()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfileSetup();}"><div class="avatar">👤</div><div><b>Trænings Profil</b><br><span class="profile-login">Log ind</span></div></div>
+  <nav class="sidebar" id="sidebar" aria-label="Hovedmenu">
+    <div class="profile">
+      <div class="avatar">👤</div>
+      <div><b>Trænings Profil</b><br><span class="profile-login">Log ind</span></div>
+    </div>
 
-    <div class="sidebar-item" id="membershipNavItem" onclick="openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">10 dage</span></div>
-    <div class="sidebar-item" id="todayWorkoutNavItem" onclick="openTodayWorkout()">▶ Dagens træning</div>
+    <section class="sidebar-accordion open" data-accordion="profile">
+      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('profile')" aria-expanded="true">
+        <span>👤 Profil</span><span class="sidebar-accordion-chevron">⌄</span>
+      </button>
+      <div class="sidebar-accordion-panel">
+        <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
+        <button class="sidebar-item" id="profileAccountNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileSetup()">Profil og konto</button>
+        <button class="sidebar-item" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">10 dage</span></button>
+      </div>
+    </section>
 
-    <div class="section-title" id="generatorSectionTitle">✨ Vælg træningstype</div>
-    <div class="sidebar-box" id="programGeneratorAccess">
-      <select class="sidebar-select" id="programType" onchange="chooseProgramType(this.value)">
-        <option value="" selected disabled>✨ Vælg træningstype...</option>
-        <option value="fullbody">Fullbody Pas</option>
-        <option value="push">Push Pas</option>
-        <option value="pull">Pull Pas</option>
-        <option value="legs">Legs Pas</option>
-        <option value="cardio">❤️ Cardio</option>
-      </select>
-      <div class="count-picker" id="countPicker">
-        <div class="nested-box">
-          <label class="generator-count-label" id="countTitle" for="automaticExerciseCount">Antal øvelser</label>
-          <select class="sidebar-select" id="automaticExerciseCount" onchange="setAutomaticExerciseCount(this.value)">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5" selected>5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
+    <section class="sidebar-accordion" data-accordion="training">
+      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('training')" aria-expanded="false">
+        <span>💪 Træning</span><span class="sidebar-accordion-chevron">⌄</span>
+      </button>
+      <div class="sidebar-accordion-panel">
+        <button class="sidebar-item" id="todayWorkoutNavItem" type="button" onclick="setActiveSidebarItem(this); openTodayWorkout()">▶ Dagens træning</button>
+        <button class="sidebar-item" type="button" onclick="setActiveSidebarItem(this); toggleGeneratorMenu()"><span id="generatorSectionTitle">✨ Vælg træningstype</span></button>
+        <div class="sidebar-box" id="programGeneratorAccess" hidden>
+          <select class="sidebar-select" id="programType" onchange="chooseProgramType(this.value)">
+            <option value="" selected disabled>✨ Vælg træningstype...</option>
+            <option value="fullbody">Fullbody Pas</option>
+            <option value="push">Push Pas</option>
+            <option value="pull">Pull Pas</option>
+            <option value="legs">Legs Pas</option>
+            <option value="cardio">❤️ Cardio</option>
           </select>
-          <div id="cardioGoalPicker" style="display:none;margin-top:10px;">
-            <label class="generator-count-label" for="cardioGoalMode">Cardio-mål</label>
-            <select class="sidebar-select" id="cardioGoalMode">
-              <option value="weight_loss">Vægttab</option>
-              <option value="conditioning">Kondition</option>
-              <option value="general_health">Generel sundhed</option>
-              <option value="recovery">Restitution</option>
-            </select>
+          <div class="count-picker" id="countPicker">
+            <div class="nested-box">
+              <label class="generator-count-label" id="countTitle" for="automaticExerciseCount">Antal øvelser</label>
+              <select class="sidebar-select" id="automaticExerciseCount" onchange="setAutomaticExerciseCount(this.value)">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                <option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+              </select>
+              <div id="cardioGoalPicker" style="display:none;margin-top:10px;">
+                <label class="generator-count-label" for="cardioGoalMode">Cardio-mål</label>
+                <select class="sidebar-select" id="cardioGoalMode">
+                  <option value="weight_loss">Vægttab</option><option value="conditioning">Kondition</option>
+                  <option value="general_health">Generel sundhed</option><option value="recovery">Restitution</option>
+                </select>
+              </div>
+              <p class="generator-helper">Vælg hvor mange øvelser dagens program skal indeholde.</p>
+              <button class="generator-create" type="button" onclick="generateSelectedAutomaticProgram()">Opret træningspas</button>
+            </div>
           </div>
-          <p class="generator-helper">Vælg hvor mange øvelser dagens program skal indeholde.</p>
-          <button class="generator-create" type="button" onclick="generateSelectedAutomaticProgram()">Opret træningspas</button>
         </div>
+        <button class="sidebar-item" id="newWorkoutNavItem" type="button" onclick="setActiveSidebarItem(this); openBlankWorkoutDialog()">➕ Opret tomt Træningspas</button>
+        <button class="sidebar-item" id="savedWorkoutsNavItem" type="button" onclick="setActiveSidebarItem(this); toggleSavedDropdown()">📂 Gemte Træningspas</button>
+        <div class="saved-dropdown" id="savedDropdown">
+          <div class="nested-box">
+            <div class="mini-title">Vælg et gemt træningspas</div>
+            <select class="sidebar-select" id="savedSelect" onchange="loadSavedProgram(this.value)"></select>
+            <div class="mini-title" id="savedEmpty" style="margin-top:8px;">Gem et træningspas for at se det her.</div>
+          </div>
+        </div>
+        <button class="sidebar-item" id="screenshotImportNavItem" type="button" onclick="setActiveSidebarItem(this); openScreenshotImportInfo()">📷 Importér fra screenshot</button>
       </div>
-    </div>
+    </section>
 
-    <div class="sidebar-item" id="newWorkoutNavItem" onclick="openBlankWorkoutDialog()">➕ Opret tomt Træningspas</div>
-    <div class="sidebar-item" id="savedWorkoutsNavItem" onclick="toggleSavedDropdown()">📂 Gemte Træningspas</div>
-    <div class="saved-dropdown" id="savedDropdown">
-      <div class="nested-box">
-        <div class="mini-title">Vælg et gemt træningspas</div>
-        <select class="sidebar-select" id="savedSelect" onchange="loadSavedProgram(this.value)"></select>
-        <div class="mini-title" id="savedEmpty" style="margin-top:8px;">Gem et træningspas for at se det her.</div>
+    <section class="sidebar-accordion" data-accordion="statistics">
+      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('statistics')" aria-expanded="false">
+        <span>📊 Statistik</span><span class="sidebar-accordion-chevron">⌄</span>
+      </button>
+      <div class="sidebar-accordion-panel">
+        <button class="sidebar-item" id="historyNavItem" type="button" onclick="setActiveSidebarItem(this); openDashboard()">📜 Historik / Dashboard</button>
+        <button class="sidebar-item" id="calorieNavItem" type="button" onclick="setActiveSidebarItem(this); openCalorieView()">🔥 Kalorie-estimat</button>
+        <button class="sidebar-item" id="progressNavItem" type="button" onclick="setActiveSidebarItem(this); openPremiumFeature('progress', openProgressView)">📈 Min udvikling <span class="premium-indicator">Premium</span></button>
       </div>
-    </div>
-    <div class="sidebar-item" id="historyNavItem" onclick="openDashboard()">📜 Historik / Dashboard</div>
-    <div class="sidebar-item" id="calorieNavItem" onclick="openCalorieView()">🔥 Kalorie-estimat</div>
-    <div class="sidebar-item" id="progressNavItem" onclick="openPremiumFeature('progress', openProgressView)">📈 Min udvikling <span class="premium-indicator">Premium</span></div>
-    <div class="sidebar-item" id="trashNavItem" onclick="toggleTrashDropdown()">🗑 Papirkurv</div>
-    <div class="saved-dropdown" id="trashDropdown">
-      <div class="nested-box">
-        <div class="mini-title" id="trashTitle">Slettede træningspas</div>
-        <div class="trash-list" id="trashItems"></div>
-        <div class="mini-title" id="trashEmpty" style="margin-top:8px;">Papirkurven er tom.</div>
+    </section>
+
+    <section class="sidebar-accordion" data-accordion="more">
+      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('more')" aria-expanded="false">
+        <span>⚙️ Mere</span><span class="sidebar-accordion-chevron">⌄</span>
+      </button>
+      <div class="sidebar-accordion-panel">
+        <button class="sidebar-item" id="trashNavItem" type="button" onclick="setActiveSidebarItem(this); toggleTrashDropdown()">🗑 Papirkurv</button>
+        <div class="saved-dropdown" id="trashDropdown">
+          <div class="nested-box">
+            <div class="mini-title" id="trashTitle">Slettede træningspas</div>
+            <div class="trash-list" id="trashItems"></div>
+            <div class="mini-title" id="trashEmpty" style="margin-top:8px;">Papirkurven er tom.</div>
+          </div>
+        </div>
+        <button class="sidebar-item" id="exportDataNavItem" type="button" onclick="setActiveSidebarItem(this); exportDataFromMenu()">↗ Eksportér data</button>
+        <button class="sidebar-item" id="helpNavItem" type="button" onclick="setActiveSidebarItem(this); openHelpAboutDialog()">? Hjælp / Om appen</button>
       </div>
-    </div>
-    <div class="sidebar-item" id="contactNavItem" onclick="openContactDialog()">✉ Kontakt</div>
+    </section>
+    <div class="sidebar-menu-spacer"></div>
   </nav>
 
   <main class="canvas" id="programCanvas">
@@ -1626,7 +1707,7 @@
       $("progressNavItem").childNodes[0].textContent = `${t("myProgress")} `;
       $("membershipNavItem").childNodes[0].textContent = `${t("membership")} `;
       $("historyNavItem").textContent = t("history");
-      $("contactNavItem").textContent = "✉ Kontakt";
+      if ($("helpNavItem")) $("helpNavItem").textContent = "? Hjælp / Om appen";
 
       document.querySelector("#programType option[value='']").textContent = t("chooseType");
       document.querySelector("#programType option[value='fullbody']").textContent = tp("fullbody");
@@ -1680,6 +1761,56 @@
     }
 
     function toggleSidebar() { $("sidebar").classList.toggle("open"); $("overlay").classList.toggle("show"); }
+
+    function toggleSidebarAccordion(sectionName) {
+      document.querySelectorAll(".sidebar-accordion").forEach(section => {
+        const shouldOpen = section.dataset.accordion === sectionName && !section.classList.contains("open");
+        section.classList.toggle("open", shouldOpen);
+        section.querySelector(":scope > .sidebar-accordion-toggle")?.setAttribute("aria-expanded", String(shouldOpen));
+      });
+    }
+
+    function setActiveSidebarItem(item) {
+      document.querySelectorAll(".sidebar-item.active").forEach(active => active.classList.remove("active"));
+      item?.classList.add("active");
+    }
+
+    function toggleGeneratorMenu() {
+      const generator = $("programGeneratorAccess");
+      if (!generator) return;
+      generator.hidden = !generator.hidden;
+    }
+
+    function openProfileWizardFromMenu() {
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.ProfileWizard?.open?.({ mode: "edit" });
+    }
+
+    function exportDataFromMenu() {
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.exportProfileData?.();
+    }
+
+    function openScreenshotImportInfo() {
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      $("modalTitle").textContent = "Importér fra screenshot";
+      $("modalContent").innerHTML = `
+        <p class="helper-text">Screenshot-import er endnu ikke aktiveret. Dine nuværende træningspas og data er ikke ændret.</p>
+        <button class="small-btn" type="button" onclick="closeModal()">Luk</button>`;
+      $("modal").style.display = "flex";
+    }
+
+    function openHelpAboutDialog() {
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      $("modalTitle").textContent = "Hjælp / Om appen";
+      $("modalContent").innerHTML = `
+        <p class="helper-text">AI Training Canvas hjælper dig med at planlægge, gennemføre og følge din træning.</p>
+        <div class="row">
+          <button class="small-btn" type="button" onclick="closeModal(); openContactDialog();">Kontakt</button>
+          <button class="small-btn" type="button" onclick="closeModal()">Luk</button>
+        </div>`;
+      $("modal").style.display = "flex";
+    }
     function openTodayWorkout() {
       if ($("sidebar").classList.contains("open")) toggleSidebar();
       if (hasActiveWorkoutSession()) {
@@ -4980,13 +5111,13 @@
   <script src="wizard-store.js"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-copilot-actions.js"></script>
-  <script src="profile-account.js"></script>
+  <script src="profile-account.js?v=20260613-auth1"></script>
   <script src="profile-wizard.js"></script>
   <script src="daily-start-wizard.js"></script>
   <script src="wizard-controller.js"></script>
   <script src="membership.js"></script>
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="auth-service.js"></script>
+  <script type="module" src="firebase-config.js?v=20260613-auth1"></script>
+  <script type="module" src="auth-service.js?v=20260613-auth1"></script>
 </body>
 </html>
 
