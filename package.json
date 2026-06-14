@@ -1,8 +1,8 @@
 {
-  "name": "ai-training-canvas",
+  "name": "work4it",
   "version": "1.0.0",
   "private": true,
-  "description": "Dansk browserbaseret træningsplanlægger og tracker",
+  "description": "Work4it - dansk browserbaseret træningsplanlægger og tracker",
   "scripts": {
     "start": "node serve.cjs"
   },

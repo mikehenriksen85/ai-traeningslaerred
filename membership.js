@@ -1,6 +1,11 @@
 (function () {
   "use strict";
 
+  // DEMO ONLY: Medlemskab og Premium-status er klientstyret og må ikke
+  // bruges som produktionssikker adgangskontrol.
+  // TODO: Flyt autoritativ medlemskabsstatus til backend/Cloud Functions,
+  // og håndhæv den med serverudstedte claims og Firestore Rules.
+  const CLIENT_MANAGED_DEMO = true;
   const STORAGE_KEY = "ai_training_membership_v1";
   const TRIAL_DAYS = 10;
   const POPUP_INTERVAL_DAYS = 30;
@@ -284,6 +289,7 @@
   }
 
   window.Membership = {
+    CLIENT_MANAGED_DEMO,
     STORAGE_KEY,
     TRIAL_DAYS,
     POPUP_INTERVAL_DAYS,

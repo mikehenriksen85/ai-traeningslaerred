@@ -1,0 +1,11 @@
+{
+  "name": "Work4it",
+  "short_name": "Work4it",
+  "description": "Planlæg, gennemfør og følg din træning med Work4it.",
+  "lang": "da",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1e252b",
+  "theme_color": "#252e36"
+}

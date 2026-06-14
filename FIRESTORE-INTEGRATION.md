@@ -2,9 +2,10 @@
 
 ## Status
 
-Firestore er primær datakilde for brugere, som har accepteret migrationen.
-`localStorage` bevares som lokal backup og fallback. Lokale data slettes
-aldrig automatisk.
+Firestore er primær datakilde for autentificerede brugere.
+`localStorage` bruges som UID-opdelt cache og fallback med nøgler i formatet
+`workit:{uid}:...`. En brugers lokale data kan derfor ikke læses af en anden
+bruger på samme enhed.
 
 ## Firestore-struktur
 
@@ -15,6 +16,7 @@ users/{uid}
   profile/membership
   profile/appState
   profile/syncMetadata
+  activeWorkout/current
   programs/{programId}
     days/{dayId}
   workoutSessions/{sessionId}
@@ -31,35 +33,38 @@ felter. Dashboard og Min udvikling beregnes fortsat ud fra
 
 ## Migration
 
-Efter første login kontrollerer `firestore-service.js`, om der findes lokale
-data. Brugeren vælger mellem:
+Efter første login kontrollerer `firestore-cloud-service.js`, om der findes
+gamle globale data fra før kontoadskillelsen. Tilbuddet vises kun én gang.
+Brugeren vælger mellem:
 
-- `Ja, flyt data`
-- `Nej, behold kun lokalt`
+- `Ja, knyt data til min konto`
+- `Nej, spring gamle data over`
 
 Ved accept kopieres data til brugerens eget `users/{uid}`-område.
 `migrationCompleted` og `migrationCompletedAt` gemmes både på brugerroden og
 i `profile/syncMetadata`. LocalStorage-data beholdes.
 
-Ved afvisning gemmes status `local_only`, og appen fortsætter med lokal
-lagring. Migration kan senere startes programmatisk med:
-
-```javascript
-window.FirestoreDataService.requestMigration()
-```
+Firestore fortsætter som primær datakilde for nye data, selv hvis de gamle
+globale data springes over.
 
 ## Synkronisering og fallback
 
-Når migrationen er gennemført:
+Ved login:
 
-1. Firestore hydreres til appens eksisterende lokale datamodel ved login.
-2. Eksisterende UI opdateres via `firestore:data-hydrated`.
-3. Efterfølgende lokale ændringer synkroniseres automatisk til Firestore.
-4. Hvis Firestore fejler, fortsætter appen med de lokale data.
+1. Firestore hentes før UID-cachen bruges.
+2. Nyeste `updatedAt` vinder ved konflikt.
+3. Dokumenter opdateres enkeltvis med merge; collections erstattes ikke blindt.
+4. Aktiv træning gemmes i `activeWorkout/current` og fjernes ved afslutning.
+5. Hvis Firestore fejler, fortsætter appen med den aktive brugers UID-cache.
+
+## Medlemskab
+
+Medlemskab er fortsat klientstyret demo-data. Det er ikke produktionssikker
+adgangskontrol. Autoritativ Premium-status skal senere flyttes til backend
+eller Cloud Functions og håndhæves med serverudstedte claims.
 
 ## Security Rules
 
 Forslaget ligger i `firestore.rules`. Reglerne tillader kun en autentificeret
 bruger at læse og skrive under sit eget `users/{uid}`-område. Filen er ikke
 automatisk deployet.
-

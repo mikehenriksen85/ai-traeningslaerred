@@ -6,7 +6,7 @@ Senest opdateret: 12. juni 2026
 ## 1. Formål
 
 Dette dokument beskriver den fremtidige Firebase Authentication- og Cloud
-Firestore-struktur for AI Training Canvas. Modellen tager udgangspunkt i
+Firestore-struktur for Work4it. Modellen tager udgangspunkt i
 appens nuværende funktioner og localStorage-data.
 
 Målet er:

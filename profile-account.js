@@ -289,26 +289,16 @@
   }
 
   function exportProfileData() {
-    const data = {};
-    for (let index = 0; index < localStorage.length; index++) {
-      const key = localStorage.key(index);
-      if (!key) continue;
-      const raw = localStorage.getItem(key);
-      try {
-        data[key] = JSON.parse(raw);
-      } catch {
-        data[key] = raw;
-      }
-    }
+    const data = window.WorkitStorageScope?.exportCurrentUserData?.() || {};
     const blob = new Blob([JSON.stringify({
       exportedAt: new Date().toISOString(),
-      app: "AI Training Canvas",
+      app: "Work4it",
       data
     }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `ai-training-canvas-data-${window.TrainingWizardStore?.localDateString?.() || "export"}.json`;
+    link.download = `work4it-data-${window.TrainingWizardStore?.localDateString?.() || "export"}.json`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -320,7 +310,7 @@
       "Vil du rydde alle lokale data? Træningspas, historik, profil og indstillinger fjernes fra denne browser."
     );
     if (!confirmed) return;
-    localStorage.clear();
+    window.WorkitStorageScope?.clearCurrentUserCache?.();
     window.location.reload();
   }
 

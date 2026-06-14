@@ -1,0 +1,516 @@
+import { db } from "./firebase-config.js?v=20260614-auth2";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  serverTimestamp,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const MIGRATION_VERSION = 2;
+const KEYS = {
+  profile: "training_profile_v1",
+  daily: "daily_start_v1",
+  membership: "ai_training_membership_v1",
+  programs: "saved_workout_programs",
+  sessions: "training_analytics_history",
+  measurements: "body_measurement_history",
+  aiHistory: "ai_copilot_history",
+  imports: "screenshot_imports",
+  customExercises: "custom_exercises",
+  trash: "deleted_workout_programs",
+  activeWorkout: "active_workout_autosave",
+  lastProgram: "last_active_program_id"
+};
+const COLLECTIONS = {
+  sessions: "workoutSessions",
+  measurements: "bodyMeasurements",
+  aiHistory: "aiCopilotHistory",
+  imports: "imports",
+  customExercises: "customExercises",
+  trash: "deletedPrograms"
+};
+const storageScope = window.WorkitStorageScope;
+let activeUid = "";
+let cloudEnabled = false;
+let syncTimer = null;
+let syncInProgress = false;
+let syncQueued = false;
+let migrationDialogRoot = null;
+let localFingerprint = "";
+
+function parseLocal(key, fallback = null) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw == null) return fallback;
+    if (key === KEYS.lastProgram) return raw;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function writeLocal(key, value) {
+  if (storageScope?.writeCurrentRaw?.(key, value)) return;
+  if (value == null) localStorage.removeItem(key);
+  else localStorage.setItem(key, key === KEYS.lastProgram ? String(value) : JSON.stringify(value));
+}
+
+function serializable(value) {
+  return JSON.parse(JSON.stringify(value ?? null, (_key, item) => {
+    if (item?.toDate instanceof Function) return item.toDate().toISOString();
+    return item;
+  }));
+}
+
+function cleanDocument(value) {
+  const clean = serializable(value) || {};
+  delete clean.firestoreUpdatedAt;
+  return clean;
+}
+
+function stableId(value, prefix = "item", index = 0) {
+  const source = value?.id || value?.sessionId || value?.date || value?.timestamp;
+  return String(source || `${prefix}_${index + 1}`)
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .slice(0, 180);
+}
+
+function timestampMillis(value) {
+  const candidate = value?.updatedAt ??
+    value?.firestoreUpdatedAt ??
+    value?.savedAt ??
+    value?.completedAt ??
+    value?.date ??
+    value?.createdAt;
+  if (candidate?.toMillis instanceof Function) return candidate.toMillis();
+  if (candidate?.toDate instanceof Function) return candidate.toDate().getTime();
+  const milliseconds = new Date(candidate || 0).getTime();
+  return Number.isFinite(milliseconds) ? milliseconds : 0;
+}
+
+function newest(localValue, cloudValue) {
+  if (cloudValue == null) return localValue;
+  if (localValue == null) return cloudValue;
+  const localTime = timestampMillis(localValue);
+  const cloudTime = timestampMillis(cloudValue);
+  if (!localTime && cloudTime) return cloudValue;
+  if (!cloudTime && localTime) return localValue;
+  return cloudTime >= localTime ? cloudValue : localValue;
+}
+
+function mergeLists(localValues, cloudValues, prefix) {
+  const merged = new Map();
+  (Array.isArray(localValues) ? localValues : []).forEach((value, index) => {
+    merged.set(stableId(value, prefix, index), value);
+  });
+  (Array.isArray(cloudValues) ? cloudValues : []).forEach((value, index) => {
+    const id = stableId(value, prefix, index);
+    merged.set(id, newest(merged.get(id), value));
+  });
+  return [...merged.values()];
+}
+
+function syncReference(uid) {
+  return doc(db, "users", uid, "profile", "syncMetadata");
+}
+
+async function getSyncMetadata(uid) {
+  const snapshot = await getDoc(syncReference(uid));
+  return snapshot.exists() ? snapshot.data() : {};
+}
+
+async function setSyncMetadata(uid, data) {
+  await setDoc(syncReference(uid), {
+    migrationVersion: MIGRATION_VERSION,
+    ...data,
+    updatedAt: new Date().toISOString(),
+    firestoreUpdatedAt: serverTimestamp()
+  }, { merge: true });
+  if (Object.prototype.hasOwnProperty.call(data, "migrationCompleted")) {
+    await setDoc(doc(db, "users", uid), {
+      migrationCompleted: Boolean(data.migrationCompleted),
+      migrationCompletedAt: data.migrationCompletedAt || null,
+      updatedAt: new Date().toISOString(),
+      firestoreUpdatedAt: serverTimestamp()
+    }, { merge: true });
+  }
+}
+
+async function readCollection(pathSegments) {
+  const snapshot = await getDocs(collection(db, ...pathSegments));
+  return snapshot.docs.map(item => ({ ...cleanDocument(item.data()), id: item.id }));
+}
+
+async function upsertDocument(reference, localValue) {
+  if (!localValue || typeof localValue !== "object") return false;
+  const snapshot = await getDoc(reference);
+  const remote = snapshot.exists() ? cleanDocument(snapshot.data()) : null;
+  if (remote && timestampMillis(remote) > timestampMillis(localValue)) return false;
+  await setDoc(reference, {
+    ...cleanDocument(localValue),
+    updatedAt: localValue.updatedAt || new Date().toISOString(),
+    firestoreUpdatedAt: serverTimestamp()
+  }, { merge: true });
+  return true;
+}
+
+async function upsertCollection(pathSegments, values, prefix, fallbackUpdatedAt = "") {
+  const reference = collection(db, ...pathSegments);
+  const existing = await getDocs(reference);
+  const remote = new Map(existing.docs.map(snapshot => [
+    snapshot.id,
+    cleanDocument(snapshot.data())
+  ]));
+  for (const [index, value] of (Array.isArray(values) ? values : []).entries()) {
+    const id = stableId(value, prefix, index);
+    const remoteValue = remote.get(id);
+    const localUpdatedAt = value?.updatedAt || fallbackUpdatedAt;
+    if (remoteValue && timestampMillis(remoteValue) > timestampMillis({ ...value, updatedAt: localUpdatedAt })) continue;
+    await setDoc(doc(reference, id), {
+      ...cleanDocument(value),
+      id,
+      updatedAt: localUpdatedAt || value?.savedAt || value?.date || new Date().toISOString(),
+      firestoreUpdatedAt: serverTimestamp()
+    }, { merge: true });
+  }
+}
+
+async function syncPrograms(uid) {
+  const localPrograms = parseLocal(KEYS.programs, []);
+  const trashIds = new Set((parseLocal(KEYS.trash, []) || []).map(program => String(program?.id || "")));
+  const programCollection = collection(db, "users", uid, "programs");
+  for (const [programIndex, program] of (Array.isArray(localPrograms) ? localPrograms : []).entries()) {
+    const programId = stableId(program, "program", programIndex);
+    if (trashIds.has(programId)) continue;
+    const programReference = doc(programCollection, programId);
+    const remoteSnapshot = await getDoc(programReference);
+    const remoteProgram = remoteSnapshot.exists() ? cleanDocument(remoteSnapshot.data()) : null;
+    if (!remoteProgram || timestampMillis(program) >= timestampMillis(remoteProgram)) {
+      const programData = cleanDocument(program);
+      const days = Array.isArray(programData.days) ? programData.days : [];
+      delete programData.days;
+      await setDoc(programReference, {
+        ...programData,
+        id: programId,
+        dayCount: days.length,
+        updatedAt: program.updatedAt || program.savedAt || new Date().toISOString(),
+        firestoreUpdatedAt: serverTimestamp()
+      }, { merge: true });
+      await upsertCollection(
+        ["users", uid, "programs", programId, "days"],
+        days,
+        "day",
+        program.updatedAt || program.savedAt || new Date().toISOString()
+      );
+    }
+  }
+
+  // Et program slettes kun målrettet, når det findes i brugerens papirkurv.
+  for (const programId of trashIds) {
+    if (!programId) continue;
+    const daySnapshots = await getDocs(collection(db, "users", uid, "programs", programId, "days"));
+    for (const daySnapshot of daySnapshots.docs) await deleteDoc(daySnapshot.ref);
+    await deleteDoc(doc(programCollection, programId));
+  }
+}
+
+function activeSessionFromAutosave() {
+  const autosave = parseLocal(KEYS.activeWorkout, null);
+  const session = autosave?.session;
+  return session && ["in_progress", "paused"].includes(session.sessionStatus) ? autosave : null;
+}
+
+async function syncActiveWorkout(uid) {
+  const reference = doc(db, "users", uid, "activeWorkout", "current");
+  const autosave = activeSessionFromAutosave();
+  if (!autosave) {
+    await deleteDoc(reference).catch(() => {});
+    return;
+  }
+  await upsertDocument(reference, {
+    ...cleanDocument(autosave),
+    status: autosave.session.sessionStatus,
+    sessionId: autosave.session.sessionId || "",
+    updatedAt: autosave.session.updatedAt || new Date().toISOString()
+  });
+}
+
+async function syncAllLocalData(uid = activeUid) {
+  if (!uid || !cloudEnabled) return false;
+  if (syncInProgress) {
+    syncQueued = true;
+    return false;
+  }
+  syncInProgress = true;
+  try {
+    const profile = parseLocal(KEYS.profile, {});
+    const daily = parseLocal(KEYS.daily, {});
+    const membership = parseLocal(KEYS.membership, {});
+    const appState = {
+      lastActiveProgramId: parseLocal(KEYS.lastProgram, ""),
+      updatedAt: new Date().toISOString()
+    };
+    await Promise.all([
+      upsertDocument(doc(db, "users", uid, "profile", "main"), profile),
+      upsertDocument(doc(db, "users", uid, "profile", "daily"), daily),
+      upsertDocument(doc(db, "users", uid, "profile", "membership"), membership),
+      upsertDocument(doc(db, "users", uid, "profile", "appState"), appState),
+      syncPrograms(uid),
+      upsertCollection(["users", uid, COLLECTIONS.sessions], parseLocal(KEYS.sessions, []), "session"),
+      upsertCollection(["users", uid, COLLECTIONS.measurements], parseLocal(KEYS.measurements, []), "measurement"),
+      upsertCollection(["users", uid, COLLECTIONS.aiHistory], parseLocal(KEYS.aiHistory, []), "message"),
+      upsertCollection(["users", uid, COLLECTIONS.imports], parseLocal(KEYS.imports, []), "import"),
+      upsertCollection(["users", uid, COLLECTIONS.customExercises], parseLocal(KEYS.customExercises, []), "exercise"),
+      upsertCollection(["users", uid, COLLECTIONS.trash], parseLocal(KEYS.trash, []), "deleted"),
+      syncActiveWorkout(uid)
+    ]);
+    await setSyncMetadata(uid, {
+      lastSyncAt: new Date().toISOString(),
+      cacheStrategy: "uid_scoped",
+      conflictStrategy: "newest_updatedAt_wins",
+      localStorageRole: "cache_fallback",
+      status: "synced"
+    });
+    window.dispatchEvent(new CustomEvent("firestore:sync-completed"));
+    return true;
+  } catch (error) {
+    console.error("Firestore-synkronisering mislykkedes. UID-cachen er bevaret.", error);
+    await setSyncMetadata(uid, {
+      status: "failed",
+      lastError: error?.code || error?.message || "unknown"
+    }).catch(() => {});
+    window.dispatchEvent(new CustomEvent("firestore:sync-failed", { detail: { error } }));
+    return false;
+  } finally {
+    syncInProgress = false;
+    if (syncQueued) {
+      syncQueued = false;
+      queueSync();
+    }
+  }
+}
+
+async function hydratePrograms(uid) {
+  const programSnapshots = await getDocs(collection(db, "users", uid, "programs"));
+  const programs = [];
+  for (const snapshot of programSnapshots.docs) {
+    const data = cleanDocument(snapshot.data());
+    const days = await readCollection(["users", uid, "programs", snapshot.id, "days"]);
+    days.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    programs.push({ ...data, id: snapshot.id, days });
+  }
+  return programs;
+}
+
+async function hydrateFromFirestore(uid = activeUid) {
+  if (!uid) return false;
+  try {
+    const [
+      profile,
+      daily,
+      membership,
+      appState,
+      activeWorkout,
+      programs,
+      sessions,
+      measurements,
+      aiHistory,
+      imports,
+      customExercises,
+      trash
+    ] = await Promise.all([
+      getDoc(doc(db, "users", uid, "profile", "main")),
+      getDoc(doc(db, "users", uid, "profile", "daily")),
+      getDoc(doc(db, "users", uid, "profile", "membership")),
+      getDoc(doc(db, "users", uid, "profile", "appState")),
+      getDoc(doc(db, "users", uid, "activeWorkout", "current")),
+      hydratePrograms(uid),
+      readCollection(["users", uid, COLLECTIONS.sessions]),
+      readCollection(["users", uid, COLLECTIONS.measurements]),
+      readCollection(["users", uid, COLLECTIONS.aiHistory]),
+      readCollection(["users", uid, COLLECTIONS.imports]),
+      readCollection(["users", uid, COLLECTIONS.customExercises]),
+      readCollection(["users", uid, COLLECTIONS.trash])
+    ]);
+
+    if (profile.exists()) writeLocal(KEYS.profile, newest(parseLocal(KEYS.profile, null), cleanDocument(profile.data())));
+    if (daily.exists()) writeLocal(KEYS.daily, newest(parseLocal(KEYS.daily, null), cleanDocument(daily.data())));
+    if (membership.exists()) writeLocal(KEYS.membership, newest(parseLocal(KEYS.membership, null), cleanDocument(membership.data())));
+    if (appState.exists()) {
+      const state = cleanDocument(appState.data());
+      if (state.lastActiveProgramId) writeLocal(KEYS.lastProgram, state.lastActiveProgramId);
+    }
+
+    const mergedPrograms = mergeLists(parseLocal(KEYS.programs, []), programs, "program")
+      .sort((a, b) => timestampMillis(b) - timestampMillis(a));
+    const mergedSessions = mergeLists(parseLocal(KEYS.sessions, []), sessions, "session")
+      .sort((a, b) => new Date(a.date || a.completedAt || 0) - new Date(b.date || b.completedAt || 0));
+    const mergedMeasurements = mergeLists(parseLocal(KEYS.measurements, []), measurements, "measurement")
+      .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    writeLocal(KEYS.programs, mergedPrograms);
+    writeLocal(KEYS.sessions, mergedSessions);
+    writeLocal(KEYS.measurements, mergedMeasurements);
+    writeLocal(KEYS.aiHistory, mergeLists(parseLocal(KEYS.aiHistory, []), aiHistory, "message").slice(-200));
+    writeLocal(KEYS.imports, mergeLists(parseLocal(KEYS.imports, []), imports, "import"));
+    writeLocal(KEYS.customExercises, mergeLists(parseLocal(KEYS.customExercises, []), customExercises, "exercise"));
+    writeLocal(KEYS.trash, mergeLists(parseLocal(KEYS.trash, []), trash, "deleted"));
+
+    if (activeWorkout.exists()) {
+      const remoteAutosave = cleanDocument(activeWorkout.data());
+      writeLocal(KEYS.activeWorkout, newest(parseLocal(KEYS.activeWorkout, null), remoteAutosave));
+    } else {
+      const localAutosave = activeSessionFromAutosave();
+      if (!localAutosave) localStorage.removeItem(KEYS.activeWorkout);
+    }
+
+    localFingerprint = currentLocalFingerprint();
+    window.dispatchEvent(new CustomEvent("firestore:data-hydrated"));
+    return true;
+  } catch (error) {
+    console.warn("Firestore kunne ikke hentes. Appen fortsætter med den aktive brugers UID-cache.", error);
+    window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
+    return false;
+  }
+}
+
+function showLegacyMigrationDialog() {
+  return new Promise(resolve => {
+    migrationDialogRoot?.remove();
+    const root = document.createElement("div");
+    migrationDialogRoot = root;
+    root.className = "migration-dialog";
+    root.innerHTML = `
+      <div class="migration-dialog-panel" role="dialog" aria-modal="true" aria-labelledby="migrationTitle">
+        <h2 id="migrationTitle">Gamle lokale træningsdata fundet</h2>
+        <p>Dataene er fra appens tidligere, ikke-kontoopdelte lager. Vil du knytte dem til den konto, du er logget ind med nu?</p>
+        <p class="migration-note">Valget tilbydes kun én gang. Ved accept gemmes også en lokal backup under denne konto.</p>
+        <div class="migration-actions">
+          <button type="button" data-choice="yes">Ja, knyt data til min konto</button>
+          <button type="button" data-choice="no">Nej, spring gamle data over</button>
+        </div>
+      </div>`;
+    root.addEventListener("click", event => {
+      const choice = event.target.closest("[data-choice]")?.dataset.choice;
+      if (!choice) return;
+      root.remove();
+      migrationDialogRoot = null;
+      resolve(choice === "yes");
+    });
+    document.body.appendChild(root);
+    root.querySelector('[data-choice="yes"]')?.focus();
+  });
+}
+
+function currentLocalFingerprint() {
+  return Object.values(KEYS).map(key => `${key}:${localStorage.getItem(key) || ""}`).join("|");
+}
+
+function queueSync() {
+  if (!activeUid || !cloudEnabled) return;
+  window.clearTimeout(syncTimer);
+  syncTimer = window.setTimeout(() => syncAllLocalData(), 900);
+}
+
+async function initializeUser(user) {
+  activeUid = user.uid;
+  storageScope?.setActiveUid(activeUid);
+  cloudEnabled = true;
+  const metadata = await getSyncMetadata(activeUid).catch(() => ({}));
+  const legacyAvailable = storageScope?.hasLegacyData?.() &&
+    !storageScope?.legacyResolution?.();
+
+  // Firestore læses altid først. UID-cachen er kun fallback og konfliktbuffer.
+  await hydrateFromFirestore(activeUid);
+
+  if (legacyAvailable) {
+    const accepted = await showLegacyMigrationDialog();
+    storageScope.resolveLegacyMigration(accepted ? "accepted" : "declined", activeUid);
+    if (accepted) storageScope.importLegacyToCurrent();
+  }
+
+  const migrationCompletedAt = metadata.migrationCompletedAt || new Date().toISOString();
+  await setSyncMetadata(activeUid, {
+    migrationCompleted: true,
+    migrationCompletedAt,
+    legacyMigrationStatus: storageScope?.legacyResolution?.()?.status || "none",
+    cacheStrategy: "uid_scoped",
+    status: "ready"
+  });
+  await syncAllLocalData(activeUid);
+  localFingerprint = currentLocalFingerprint();
+}
+
+function clearRuntimeForLogout() {
+  window.clearTimeout(syncTimer);
+  syncTimer = null;
+  migrationDialogRoot?.remove();
+  migrationDialogRoot = null;
+  activeUid = "";
+  cloudEnabled = false;
+  localFingerprint = "";
+  storageScope?.setActiveUid("");
+  window.dispatchEvent(new CustomEvent("firestore:user-cache-cleared"));
+}
+
+window.addEventListener("workit-storage:changed", queueSync);
+window.setInterval(() => {
+  if (!activeUid) return;
+  const next = currentLocalFingerprint();
+  if (next === localFingerprint) return;
+  localFingerprint = next;
+  queueSync();
+}, 2000);
+
+window.FirestoreDataService = {
+  keys: { ...KEYS },
+  syncAllLocalData,
+  hydrateFromFirestore,
+  requestMigration: async () => {
+    if (!activeUid || !storageScope?.hasLegacyData?.() || storageScope?.legacyResolution?.()) return false;
+    const accepted = await showLegacyMigrationDialog();
+    storageScope.resolveLegacyMigration(accepted ? "accepted" : "declined", activeUid);
+    if (!accepted) return false;
+    storageScope.importLegacyToCurrent();
+    return syncAllLocalData(activeUid);
+  },
+  saveImportData(payload) {
+    const imports = parseLocal(KEYS.imports, []);
+    const entry = {
+      id: `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      sourceType: "screenshot",
+      ...cleanDocument(payload)
+    };
+    localStorage.setItem(KEYS.imports, JSON.stringify([
+      ...(Array.isArray(imports) ? imports : []),
+      entry
+    ]));
+    return entry;
+  },
+  deleteDeletedProgram: async programId => {
+    if (!activeUid || !programId) return false;
+    await deleteDoc(doc(db, "users", activeUid, COLLECTIONS.trash, String(programId)));
+    return true;
+  },
+  isCloudPrimary: () => cloudEnabled,
+  getActiveUid: () => activeUid
+};
+
+window.addEventListener("firebase-auth:changed", () => {
+  const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+  if (!user) {
+    clearRuntimeForLogout();
+    return;
+  }
+  initializeUser(user).catch(error => {
+    console.error("Kunne ikke initialisere brugerens cloud-data.", error);
+    window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
+  });
+});
+
+const existingUser = window.FirebaseAuthService?.getCurrentUser?.();
+if (existingUser) initializeUser(existingUser);

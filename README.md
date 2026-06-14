@@ -1,6 +1,6 @@
-# AI Training Canvas
+# Work4it
 
-En statisk dansk træningsapp til planlægning, registrering og analyse af træning.
+Work4it er en dansk træningsapp til planlægning, registrering og analyse af træning.
 
 ## Funktioner
 
@@ -115,7 +115,7 @@ træningsvinduet. Hver dag har egne øvelser, sæt, reps, pauser og timer.
 enkeltpas bagudkompatible ved at behandle dem som programmer med én dag.
 Eksisterende data migreres først til det nye format, når brugeren gemmer.
 
-Canvas Copilot understøtter blandt andet:
+AI Copilot understøtter blandt andet:
 
 - `Vis Dag 2`
 - `Næste dag`

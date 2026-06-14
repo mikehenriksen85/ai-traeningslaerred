@@ -2,17 +2,92 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function ownsUserData(userId) {
-      return request.auth != null && request.auth.uid == userId;
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isKnownProfileDocument(profileId) {
+      return profileId in [
+        "main",
+        "daily",
+        "membership",
+        "appState",
+        "syncMetadata"
+      ];
     }
 
     match /users/{userId} {
-      allow read, create, update, delete: if ownsUserData(userId);
+      allow read, create, update, delete: if isOwner(userId);
 
-      match /{document=**} {
-        allow read, create, update, delete: if ownsUserData(userId);
+      match /profile/{profileId} {
+        allow read, create, update, delete: if
+          isOwner(userId) &&
+          isKnownProfileDocument(profileId);
+      }
+
+      match /programs/{programId} {
+        allow read, create, update, delete: if isOwner(userId);
+
+        match /days/{dayId} {
+          allow read, create, update, delete: if isOwner(userId);
+        }
+      }
+
+      match /workoutSessions/{sessionId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /activeWorkout/{activeWorkoutId} {
+        allow read, create, update, delete: if
+          isOwner(userId) &&
+          activeWorkoutId == "current";
+      }
+
+      match /bodyMeasurements/{measurementId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      // Aktiv app-path. "trash" beholdes som fremtidigt alias.
+      match /deletedPrograms/{itemId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /trash/{itemId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /customExercises/{exerciseId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      // Aktiv app-path. "aiHistory" beholdes som fremtidigt alias.
+      match /aiCopilotHistory/{eventId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /aiHistory/{eventId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      // Appen bruger profile/appState i dag. Denne path er klar til en
+      // senere selvstændig appState-collection.
+      match /appState/{stateId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /imports/{importId} {
+        allow read, create, update, delete: if isOwner(userId);
       }
     }
+
+    // Medlemskab og AI-grænser er klientdata i demoen. Reglerne ovenfor
+    // beskytter kun ejerskab; de er ikke produktionssikker adgangskontrol.
+    // Senere backend/Cloud Functions skal skrive serverbeskyttede felter
+    // eller custom claims, som klienten ikke selv kan ændre.
 
     match /{document=**} {
       allow read, write: if false;

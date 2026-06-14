@@ -21,6 +21,7 @@ http.createServer((request, response) => {
     ".css": "text/css; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
     ".json": "application/json; charset=utf-8",
+    ".webmanifest": "application/manifest+json; charset=utf-8",
     ".png": "image/png",
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
@@ -33,5 +34,5 @@ http.createServer((request, response) => {
   });
   fs.createReadStream(filePath).pipe(response);
 }).listen(port, "127.0.0.1", () => {
-  console.log(`AI Training Canvas: http://127.0.0.1:${port}/index.html`);
+  console.log(`Work4it: http://127.0.0.1:${port}/index.html`);
 });

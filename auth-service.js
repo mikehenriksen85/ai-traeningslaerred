@@ -35,8 +35,6 @@ function publicUser(user) {
 async function ensureUserDocument(user) {
   const reference = doc(db, "users", user.uid);
   const snapshot = await getDoc(reference);
-  if (snapshot.exists()) return;
-
   await setDoc(reference, {
     uid: user.uid,
     email: user.email || "",
@@ -44,8 +42,10 @@ async function ensureUserDocument(user) {
     photoURL: user.photoURL || "",
     emailVerified: Boolean(user.emailVerified),
     providerIds: user.providerData.map(provider => provider.providerId),
-    createdAt: serverTimestamp()
-  });
+    ...(snapshot.exists() ? {} : { createdAt: serverTimestamp() }),
+    lastLoginAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
 }
 
 function emitAuthState(error = null) {

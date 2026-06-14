@@ -3,8 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Work4it hjælper dig med at planlægge, gennemføre og følge din træning.">
+  <meta name="application-name" content="Work4it">
+  <meta name="theme-color" content="#252e36">
+  <meta name="apple-mobile-web-app-title" content="Work4it">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Work4it">
+  <meta property="og:site_name" content="Work4it">
+  <meta property="og:description" content="Planlæg, gennemfør og følg din træning med Work4it.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Work4it">
+  <meta name="twitter:description" content="Planlæg, gennemfør og følg din træning med Work4it.">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="data:,">
-  <title>AI Training Canvas</title>
+  <title>Work4it</title>
   <style>
     :root {
       --bg: #1e252b;
@@ -1100,7 +1113,7 @@
 <body class="auth-locked">
   <section class="auth-gate" id="authGate" aria-label="Log ind" aria-live="polite">
     <div class="auth-gate-panel">
-      <div class="auth-gate-brand">AI Training Canvas</div>
+      <div class="auth-gate-brand">Work4it</div>
       <h1 class="auth-gate-title">Velkommen</h1>
       <p class="auth-gate-copy" id="authGateCopy">Log ind eller opret en konto for at fortsætte.</p>
       <form class="auth-gate-form" onsubmit="loginFromAuthGate(event)">
@@ -1124,7 +1137,7 @@
     <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
     <button class="nav-btn" onclick="goBackSafe()">Tilbage</button>
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
-    <div class="app-title">AI Training Canvas</div>
+    <div class="app-title">Work4it</div>
   </header>
 
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
@@ -1672,7 +1685,7 @@
 
     const translations = {
       da: {
-        appTitle: "AI Training Canvas",
+        appTitle: "Work4it",
         back: "Tilbage",
         home: "Hovedmenu",
         profile: "Trænings Profil",
@@ -1930,7 +1943,7 @@
       if ($("sidebar").classList.contains("open")) toggleSidebar();
       $("modalTitle").textContent = "Hjælp / Om appen";
       $("modalContent").innerHTML = `
-        <p class="helper-text">AI Training Canvas hjælper dig med at planlægge, gennemføre og følge din træning.</p>
+        <p class="helper-text">Work4it hjælper dig med at planlægge, gennemføre og følge din træning.</p>
         <div class="row">
           <button class="small-btn" type="button" onclick="closeModal(); openContactDialog();">Kontakt</button>
           <button class="small-btn" type="button" onclick="closeModal()">Luk</button>
@@ -3492,7 +3505,18 @@
       if (list.length !== raw.length) setTrash(list);
       return list;
     }
-    function setTrash(p) { return writeLocalJson("deleted_workout_programs", p); }
+    function setTrash(p) {
+      const previous = readLocalJson("deleted_workout_programs", []);
+      const next = Array.isArray(p) ? p : [];
+      const nextIds = new Set(next.map(program => String(program?.id || "")));
+      (Array.isArray(previous) ? previous : []).forEach(program => {
+        const id = String(program?.id || "");
+        if (id && !nextIds.has(id)) {
+          window.FirestoreDataService?.deleteDeletedProgram?.(id).catch(() => {});
+        }
+      });
+      return writeLocalJson("deleted_workout_programs", next);
+    }
     function renderSaved() {
       const list = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
       $("savedSelect").innerHTML = list.length ? `<option value="">${t("selectProgram")}</option>` + list.map(p => `<option value="${p.id}">${esc(p.title)} - ${new Date(p.savedAt).toLocaleDateString("da-DK")}</option>`).join("") : `<option value="">${t("noSavedPrograms")}</option>`;
@@ -4290,7 +4314,7 @@
       const sender = String(name || "").trim() || "Ikke oplyst";
       const replyTo = String(email || "").trim() || "Ikke oplyst";
       const body = `Navn: ${sender}\nE-mail: ${replyTo}\n\nBesked:\n${String(message || "").trim()}`;
-      return `mailto:Mikehenriksen85@gmail.com?subject=${encodeURIComponent("Kontakt fra AI Training Canvas")}&body=${encodeURIComponent(body)}`;
+      return `mailto:Mikehenriksen85@gmail.com?subject=${encodeURIComponent("Kontakt fra Work4it")}&body=${encodeURIComponent(body)}`;
     }
 
     function sendContactMessage(event) {
@@ -5224,6 +5248,14 @@
     window.addEventListener("firestore:fallback-active", () => {
       $("autosaveStatus").textContent = "Offline: bruger lokale data";
     });
+    window.addEventListener("firestore:user-cache-cleared", () => {
+      resetWorkoutCanvas("Log ind for at se dine træningsdata");
+      renderSaved();
+      renderTrash();
+      updateDailyMotivationDisplay();
+      updateEstimatedCalories();
+      window.refreshProfileAccountView?.();
+    });
 
     window.onload = function() {
       currentLanguage = "da";
@@ -5249,6 +5281,7 @@
     window.ENABLE_PROFILE_WIZARD = true;
     window.ENABLE_DAILY_START_WIZARD = true;
   </script>
+  <script src="storage-scope.js?v=20260614-cloud2"></script>
   <script src="training-goal-engine.js"></script>
   <script src="workout-program-store.js"></script>
   <script src="wizard-store.js"></script>
@@ -5262,7 +5295,7 @@
   <script src="membership.js"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
   <script type="module" src="auth-service.js?v=20260614-auth2"></script>
-  <script type="module" src="firestore-service.js?v=20260614-firestore1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260614-cloud2"></script>
 </body>
 </html>
 
