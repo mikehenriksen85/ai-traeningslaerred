@@ -522,11 +522,23 @@
     .progress-view.open { display: block; }
     .profile-account-view { display: none; position: fixed; inset: 60px 0 0; z-index: 310; overflow-y: auto; background: var(--bg); padding: 20px; }
     .profile-account-view.open { display: block; }
-    .profile-account-shell { width: min(980px, 100%); margin: 0 auto; }
+    .profile-account-shell { width: min(1180px, 100%); margin: 0 auto; }
     .profile-account-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
     .profile-account-title { font-size: var(--font-size-h1); font-weight: var(--font-weight-bold); line-height: var(--line-height-heading); }
     .profile-account-intro { margin: 0 0 20px; color: var(--text-secondary); }
+    .profile-account-columns {
+      display: grid;
+      grid-template-columns: minmax(300px, .8fr) minmax(0, 1.2fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .profile-account-column { min-width: 0; }
+    .profile-account-column.account {
+      padding-right: 24px;
+      border-right: 1px solid var(--border);
+    }
     .profile-account-section { padding: 20px 0; border-top: 1px solid var(--border); }
+    .profile-account-column .profile-account-section:first-child { padding-top: 0; border-top: 0; }
     .profile-account-section h2 { margin: 0 0 5px; font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); }
     .profile-section-copy { margin: 0 0 14px; color: var(--text-secondary); font-size: var(--font-size-small); }
     .profile-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -586,6 +598,87 @@
     .profile-account-status span { margin-top: 3px; color: var(--text-secondary); font-size: var(--font-size-small); }
     .profile-ready-badge { flex: 0 0 auto; color: var(--text-warning); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); }
     .profile-save-feedback { min-height: 20px; margin-top: 10px; color: var(--text-success); font-size: var(--font-size-small); }
+    .auth-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      overflow-y: auto;
+      background: rgba(10,14,18,.98);
+    }
+    .auth-gate[hidden] { display: none; }
+    .auth-gate-panel {
+      width: min(460px, 100%);
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      box-shadow: 0 24px 70px rgba(0,0,0,.5);
+    }
+    .auth-gate-brand { color: var(--text-accent); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); }
+    .auth-gate-title { margin: 8px 0 6px; font-size: var(--font-size-h1); line-height: var(--line-height-heading); }
+    .auth-gate-copy { margin: 0 0 18px; color: var(--text-secondary); }
+    .auth-gate-form { display: grid; gap: 12px; }
+    .auth-gate-field { display: grid; gap: 6px; color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .auth-gate-field input {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      font: inherit;
+    }
+    .auth-gate-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+    .auth-gate-button {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-weight: var(--font-weight-semibold);
+    }
+    .auth-gate-button.primary { border-color: var(--blue); background: var(--blue); }
+    .auth-gate-button.google, .auth-gate-button.reset { grid-column: 1 / -1; }
+    .auth-gate-button:disabled { cursor: wait; opacity: .55; }
+    .auth-gate-feedback { min-height: 22px; margin-top: 12px; color: var(--text-secondary); font-size: var(--font-size-small); }
+    body.auth-locked { overflow: hidden; }
+    body.auth-locked > :not(.auth-gate):not(script) { pointer-events: none; user-select: none; }
+    .migration-dialog {
+      position: fixed;
+      inset: 0;
+      z-index: 11000;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(0,0,0,.72);
+    }
+    .migration-dialog-panel {
+      width: min(500px, 100%);
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      box-shadow: 0 24px 70px rgba(0,0,0,.5);
+    }
+    .migration-dialog-panel h2 { margin: 0 0 8px; font-size: var(--font-size-h2); }
+    .migration-dialog-panel p { color: var(--text-secondary); }
+    .migration-note { font-size: var(--font-size-small); }
+    .migration-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+    .migration-actions button {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-weight: var(--font-weight-semibold);
+    }
+    .migration-actions button:first-child { border-color: var(--blue); background: var(--blue); }
     .progress-shell { width: min(980px, 100%); margin: 0 auto; }
     .progress-view-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
     .progress-view-title { font-size: var(--font-size-h1); font-weight: var(--font-weight-bold); }
@@ -904,6 +997,8 @@
 
     @media (max-width: 900px) {
       .membership-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .profile-account-columns { grid-template-columns: 1fr; }
+      .profile-account-column.account { padding-right: 0; border-right: 0; }
     }
 
     @media (max-width: 560px) {
@@ -936,6 +1031,10 @@
       .profile-form-field.wide { grid-column: auto; }
       .profile-account-status { align-items: flex-start; flex-direction: column; }
       .profile-account-actions .profile-account-button { width: 100%; }
+      .auth-gate-panel { padding: 18px; }
+      .auth-gate-actions { grid-template-columns: 1fr; }
+      .auth-gate-button.google, .auth-gate-button.reset { grid-column: auto; }
+      .migration-actions { grid-template-columns: 1fr; }
       .development-grid, .measure-form { grid-template-columns: 1fr; }
       .development-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .measure-field.goal { grid-column: auto; }
@@ -998,7 +1097,29 @@
     }
   </style>
 </head>
-<body>
+<body class="auth-locked">
+  <section class="auth-gate" id="authGate" aria-label="Log ind" aria-live="polite">
+    <div class="auth-gate-panel">
+      <div class="auth-gate-brand">AI Training Canvas</div>
+      <h1 class="auth-gate-title">Velkommen</h1>
+      <p class="auth-gate-copy" id="authGateCopy">Log ind eller opret en konto for at fortsætte.</p>
+      <form class="auth-gate-form" onsubmit="loginFromAuthGate(event)">
+        <label class="auth-gate-field">E-mail
+          <input id="authGateEmail" type="email" autocomplete="email" placeholder="email@example.com" required>
+        </label>
+        <label class="auth-gate-field">Adgangskode
+          <input id="authGatePassword" type="password" autocomplete="current-password" placeholder="Mindst 6 tegn" minlength="6" required>
+        </label>
+        <div class="auth-gate-actions">
+          <button class="auth-gate-button primary" id="authGateLoginBtn" type="submit" disabled>Log ind</button>
+          <button class="auth-gate-button" id="authGateCreateBtn" type="button" onclick="createFromAuthGate()" disabled>Opret bruger</button>
+          <button class="auth-gate-button google" id="authGateGoogleBtn" type="button" onclick="googleFromAuthGate()" disabled>Log ind med Google</button>
+          <button class="auth-gate-button reset" id="authGateResetBtn" type="button" onclick="resetFromAuthGate()" disabled>Nulstil adgangskode</button>
+        </div>
+      </form>
+      <div class="auth-gate-feedback" id="authGateFeedback">Firebase indlæses...</div>
+    </div>
+  </section>
   <header class="app-header">
     <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
     <button class="nav-btn" onclick="goBackSafe()">Tilbage</button>
@@ -1010,7 +1131,7 @@
   <nav class="sidebar" id="sidebar" aria-label="Hovedmenu">
     <div class="profile">
       <div class="avatar">👤</div>
-      <div><b>Trænings Profil</b><br><span class="profile-login">Log ind</span></div>
+      <div><b id="sidebarProfileName">Min profil</b><br><span class="profile-login" id="sidebarProfileSubtitle">Profil og konto</span></div>
     </div>
 
     <section class="sidebar-accordion open" data-accordion="profile">
@@ -1196,7 +1317,52 @@
       </div>
       <p class="profile-account-intro">Administrér personlige oplysninger, træningsopsætning, konto og lokale data.</p>
 
-      <form id="profileAccountForm" onsubmit="saveProfileAccount(event)">
+      <div class="profile-account-columns">
+        <div class="profile-account-column account">
+          <section class="profile-account-section">
+            <h2>Konto & login</h2>
+            <p class="profile-section-copy">Din Firebase-session gendannes automatisk på denne enhed.</p>
+            <div class="profile-account-status">
+              <div><strong id="profileLoginStatus">Ikke logget ind</strong><span id="profileActiveEmail">Ingen aktiv e-mail</span></div>
+              <div class="profile-ready-badge" id="profileFirebaseStatus">Firebase indlæses</div>
+            </div>
+            <div class="profile-form-grid" style="margin-top:12px;">
+              <label class="profile-form-field">E-mail<input id="profileLoginEmail" type="email" autocomplete="email" disabled placeholder="email@example.com"></label>
+              <label class="profile-form-field">Adgangskode<input id="profileLoginPassword" type="password" autocomplete="current-password" disabled placeholder="••••••••"></label>
+            </div>
+            <div class="profile-account-actions">
+              <button class="profile-account-button" id="profileEmailLoginBtn" type="button" onclick="loginProfileWithEmail()" disabled>Log ind med e-mail</button>
+              <button class="profile-account-button" id="profileCreateAccountBtn" type="button" onclick="createProfileAccount()" disabled>Opret bruger</button>
+              <button class="profile-account-button" id="profileGoogleLoginBtn" type="button" onclick="loginProfileWithGoogle()" disabled>Log ind med Google</button>
+              <button class="profile-account-button" id="profileLogoutBtn" type="button" onclick="logoutProfileAccount()" disabled>Log ud</button>
+            </div>
+            <div class="profile-save-feedback" id="profileAuthFeedback" aria-live="polite"></div>
+          </section>
+
+          <section class="profile-account-section">
+            <h2>Sikkerhed</h2>
+            <p class="profile-section-copy">Få tilsendt et sikkert link til nulstilling af adgangskoden.</p>
+            <div class="profile-account-actions">
+              <button class="profile-account-button" type="button" disabled>Skift adgangskode</button>
+              <button class="profile-account-button" id="profileResetPasswordBtn" type="button" onclick="resetProfilePassword()" disabled>Nulstil adgangskode</button>
+              <button class="profile-account-button" type="button" disabled>Skift e-mail senere</button>
+            </div>
+          </section>
+
+          <section class="profile-account-section">
+            <h2>Data & privatliv</h2>
+            <p class="profile-section-copy">Dine nuværende data ligger lokalt i denne browser.</p>
+            <div class="profile-account-actions">
+              <button class="profile-account-button" type="button" onclick="exportProfileData()">Eksportér mine data</button>
+              <button class="profile-account-button danger" type="button" onclick="clearAllLocalData()">Ryd lokale data</button>
+              <button class="profile-account-button" type="button" disabled>Slet konto senere</button>
+              <button class="profile-account-button" type="button" disabled>Privatliv / GDPR-info senere</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="profile-account-column training">
+          <form id="profileAccountForm" onsubmit="saveProfileAccount(event)">
         <section class="profile-account-section">
           <h2>Personlige oplysninger</h2>
           <p class="profile-section-copy">Oplysningerne gemmes lokalt og kan senere synkroniseres med Firebase.</p>
@@ -1267,48 +1433,9 @@
           </div>
           <div class="profile-save-feedback" id="profileSaveFeedback" aria-live="polite"></div>
         </section>
-      </form>
-
-      <section class="profile-account-section">
-        <h2>Konto & login</h2>
-        <p class="profile-section-copy">Log ind for at knytte din konto til Firebase.</p>
-        <div class="profile-account-status">
-          <div><strong id="profileLoginStatus">Ikke logget ind</strong><span id="profileActiveEmail">Ingen aktiv e-mail</span></div>
-          <div class="profile-ready-badge" id="profileFirebaseStatus">Firebase indlæses</div>
+          </form>
         </div>
-        <div class="profile-form-grid" style="margin-top:12px;">
-          <label class="profile-form-field">E-mail<input id="profileLoginEmail" type="email" autocomplete="email" disabled placeholder="email@example.com"></label>
-          <label class="profile-form-field">Adgangskode<input id="profileLoginPassword" type="password" autocomplete="current-password" disabled placeholder="••••••••"></label>
-        </div>
-        <div class="profile-account-actions">
-          <button class="profile-account-button" id="profileEmailLoginBtn" type="button" onclick="loginProfileWithEmail()" disabled>Log ind med e-mail</button>
-          <button class="profile-account-button" id="profileCreateAccountBtn" type="button" onclick="createProfileAccount()" disabled>Opret bruger</button>
-          <button class="profile-account-button" id="profileGoogleLoginBtn" type="button" onclick="loginProfileWithGoogle()" disabled>Log ind med Google</button>
-          <button class="profile-account-button" id="profileLogoutBtn" type="button" onclick="logoutProfileAccount()" disabled>Log ud</button>
-        </div>
-        <div class="profile-save-feedback" id="profileAuthFeedback" aria-live="polite"></div>
-      </section>
-
-      <section class="profile-account-section">
-        <h2>Sikkerhed</h2>
-        <p class="profile-section-copy">Få tilsendt et sikkert link til nulstilling af adgangskoden.</p>
-        <div class="profile-account-actions">
-          <button class="profile-account-button" type="button" disabled>Skift adgangskode</button>
-          <button class="profile-account-button" id="profileResetPasswordBtn" type="button" onclick="resetProfilePassword()" disabled>Nulstil adgangskode</button>
-          <button class="profile-account-button" type="button" disabled>Skift e-mail senere</button>
-        </div>
-      </section>
-
-      <section class="profile-account-section">
-        <h2>Data & privatliv</h2>
-        <p class="profile-section-copy">Dine nuværende data ligger lokalt i denne browser.</p>
-        <div class="profile-account-actions">
-          <button class="profile-account-button" type="button" onclick="exportProfileData()">Eksportér mine data</button>
-          <button class="profile-account-button danger" type="button" onclick="clearAllLocalData()">Ryd lokale data</button>
-          <button class="profile-account-button" type="button" disabled>Slet konto senere</button>
-          <button class="profile-account-button" type="button" disabled>Privatliv / GDPR-info senere</button>
-        </div>
-      </section>
+      </div>
     </div>
   </section>
 
@@ -1696,8 +1823,7 @@
       if (navButtons[0]) navButtons[0].textContent = t("back");
       if (navButtons[1]) navButtons[1].textContent = t("home");
       document.querySelector(".app-title").textContent = t("appTitle");
-      document.querySelector(".profile b").textContent = t("profile");
-      document.querySelector(".profile span").textContent = t("login");
+      window.updateSidebarProfileIdentity?.();
 
       $("generatorSectionTitle").textContent = "✨ Vælg træningstype";
       $("todayWorkoutNavItem").textContent = "▶ Dagens træning";
@@ -5081,6 +5207,23 @@
     window.addEventListener("daily-wizard:generate", openDailyProgramGenerator);
     window.addEventListener("daily-motivation:changed", updateDailyMotivationDisplay);
     window.addEventListener("training-profile:updated", updateEstimatedCalories);
+    window.addEventListener("firestore:data-hydrated", () => {
+      loadCustom();
+      renderSaved();
+      renderTrash();
+      loadAutosave();
+      updateDailyMotivationDisplay();
+      updateEstimatedCalories();
+      window.refreshProfileAccountView?.();
+      window.Membership?.render?.();
+      $("autosaveStatus").textContent = "Data synkroniseret fra Firebase";
+    });
+    window.addEventListener("firestore:sync-completed", () => {
+      $("autosaveStatus").textContent = "Gemt lokalt og i Firebase";
+    });
+    window.addEventListener("firestore:fallback-active", () => {
+      $("autosaveStatus").textContent = "Offline: bruger lokale data";
+    });
 
     window.onload = function() {
       currentLanguage = "da";
@@ -5111,13 +5254,15 @@
   <script src="wizard-store.js"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-copilot-actions.js"></script>
-  <script src="profile-account.js?v=20260613-auth1"></script>
+  <script src="auth-gate.js?v=20260614-auth2"></script>
+  <script src="profile-account.js?v=20260614-auth2"></script>
   <script src="profile-wizard.js"></script>
   <script src="daily-start-wizard.js"></script>
-  <script src="wizard-controller.js"></script>
+  <script src="wizard-controller.js?v=20260614-auth2"></script>
   <script src="membership.js"></script>
-  <script type="module" src="firebase-config.js?v=20260613-auth1"></script>
-  <script type="module" src="auth-service.js?v=20260613-auth1"></script>
+  <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
+  <script type="module" src="auth-service.js?v=20260614-auth2"></script>
+  <script type="module" src="firestore-service.js?v=20260614-firestore1"></script>
 </body>
 </html>
 

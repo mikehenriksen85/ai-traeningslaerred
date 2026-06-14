@@ -1,9 +1,11 @@
-import { auth, db } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js?v=20260614-auth2";
 import {
   GoogleAuthProvider,
+  browserLocalPersistence,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut
@@ -103,23 +105,6 @@ async function resetPassword(email) {
   return sendPasswordResetEmail(auth, validateEmail(targetEmail));
 }
 
-onAuthStateChanged(auth, async user => {
-  currentUser = user;
-  initialized = true;
-
-  if (user) {
-    try {
-      await ensureUserDocument(user);
-    } catch (error) {
-      console.error("Kunne ikke oprette Firebase-brugerdokumentet.", error);
-      emitAuthState(error);
-      return;
-    }
-  }
-
-  emitAuthState();
-});
-
 window.FirebaseAuthService = {
   loginWithEmail,
   createAccount,
@@ -131,6 +116,37 @@ window.FirebaseAuthService = {
 };
 
 window.dispatchEvent(new CustomEvent("firebase-auth:ready"));
+
+async function initializeAuthState() {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch (error) {
+    console.warn("Firebase kunne ikke bekræfte lokal login-persistens.", error);
+  }
+
+  onAuthStateChanged(auth, async user => {
+    currentUser = user;
+    initialized = true;
+    let userDocumentError = null;
+
+    if (user) {
+      try {
+        await ensureUserDocument(user);
+      } catch (error) {
+        userDocumentError = error;
+        console.error("Kunne ikke oprette Firebase-brugerdokumentet.", error);
+      }
+    }
+
+    emitAuthState(userDocumentError);
+  }, error => {
+    initialized = true;
+    currentUser = null;
+    emitAuthState(error);
+  });
+}
+
+initializeAuthState();
 
 export {
   createAccount,

@@ -324,7 +324,8 @@
 
   function start() {
     const store = window.TrainingWizardStore;
-    if (!store) return;
+    const authenticatedUser = window.FirebaseAuthService?.getCurrentUser?.();
+    if (!store || !authenticatedUser) return;
     if (document.getElementById("profile-wizard-root") || document.getElementById("daily-start-wizard-root")) return;
     const profile = store.getProfile();
     const profileEntry = document.querySelector(".profile");
@@ -350,6 +351,7 @@
 
   function openDailyAfterOnboarding() {
     if (
+      !window.FirebaseAuthService?.getCurrentUser?.() ||
       window.ENABLE_DAILY_START_WIZARD !== true ||
       window.Membership?.getMembership?.().isPremium === false ||
       window.TrainingWizardStore?.hasDailyMotivationForDate?.()
@@ -367,6 +369,9 @@
   }
 
   window.addEventListener("training-app:ready", startAfterLayout);
+  window.addEventListener("firebase-auth:changed", event => {
+    if (event.detail?.user) startAfterLayout();
+  });
   window.addEventListener("load", startAfterLayout, { once: true });
   window.addEventListener("onboarding:create-programs", openDailyAfterOnboarding);
   window.addEventListener("pageshow", event => {

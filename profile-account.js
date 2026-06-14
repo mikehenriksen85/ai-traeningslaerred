@@ -3,8 +3,6 @@
 
   const focusAreas = ["Bryst", "Skuldre", "Arme", "Ben", "Core", "Ryg"];
   const bodyHistoryKey = "body_measurement_history";
-  const accountKey = "training_account_v1";
-
   function byId(id) {
     return document.getElementById(id);
   }
@@ -88,6 +86,22 @@
     if (logoutButton) logoutButton.disabled = !ready || !loggedIn;
     const resetButton = byId("profileResetPasswordBtn");
     if (resetButton) resetButton.disabled = !ready;
+    updateSidebarProfileIdentity();
+  }
+
+  function updateSidebarProfileIdentity() {
+    const profile = window.TrainingWizardStore?.getProfile?.() || {};
+    const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+    const label = String(
+      profile.name ||
+      user?.displayName ||
+      user?.email ||
+      "Min profil"
+    ).trim();
+    const nameElement = byId("sidebarProfileName");
+    const subtitleElement = byId("sidebarProfileSubtitle");
+    if (nameElement) nameElement.textContent = label || "Min profil";
+    if (subtitleElement) subtitleElement.textContent = "Profil og konto";
   }
 
   function authErrorMessage(error) {
@@ -264,6 +278,7 @@
     };
     window.TrainingWizardStore?.saveProfile?.(profile);
     saveMeasurementSnapshot(profile);
+    updateSidebarProfileIdentity();
     const feedback = byId("profileSaveFeedback");
     if (feedback) feedback.textContent = "Profilen er gemt lokalt.";
   }
@@ -317,6 +332,7 @@
   window.clearAllLocalData = clearAllLocalData;
   window.refreshProfileAccountView = populateProfileAccount;
   window.saveProfileMeasurementSnapshot = saveMeasurementSnapshot;
+  window.updateSidebarProfileIdentity = updateSidebarProfileIdentity;
   window.loginProfileWithEmail = loginProfileWithEmail;
   window.createProfileAccount = createProfileAccount;
   window.loginProfileWithGoogle = loginProfileWithGoogle;
@@ -329,4 +345,5 @@
     const error = event.detail?.error;
     if (error) setAuthFeedback(authErrorMessage(error), true);
   });
+  window.addEventListener("training-profile:updated", updateSidebarProfileIdentity);
 })();

@@ -147,8 +147,18 @@ betalingssystem og Firebase.
 
 ## Data
 
-Træningspas, historik, kropsmål, profilvalg, wizard-status og medlemskabsdata gemmes i browserens `localStorage`.
-Data følger derfor ikke automatisk med mellem forskellige browsere eller enheder.
+Når brugeren er logget ind og har accepteret migrationen, er Firestore den
+primære datakilde. `localStorage` bevares som lokal backup og fallback.
+Eksisterende lokale data slettes ikke under migrationen.
+
+Firebase-filer:
+
+- `firebase-config.js`: initialiserer Firebase App, Authentication og Firestore.
+- `auth-service.js`: håndterer login og Firebase-sessionen.
+- `auth-gate.js`: låser appen, indtil en gyldig session er bekræftet.
+- `firestore-service.js`: migration, hydrering og løbende synkronisering.
+- `firestore.rules`: forslag til brugerafgrænsede Firestore Security Rules.
+- `FIRESTORE-INTEGRATION.md`: datastruktur og migrationsbeskrivelse.
 
 ## Licens
 
