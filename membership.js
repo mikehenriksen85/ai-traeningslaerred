@@ -17,6 +17,17 @@
     yearly: "Premium 12 måneder",
     lifetime: "Premium livstid"
   };
+  const PLAN_DETAILS = {
+    trial: { priceDkk: 0, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    free: { priceDkk: 0, aiRequestLimit: 3, aiRequestPeriod: "included" },
+    quarterly: { priceDkk: 59, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    yearly: { priceDkk: 149, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    lifetime: { priceDkk: 449, aiRequestLimit: 30, aiRequestPeriod: "monthly" }
+  };
+
+  function planDetails(plan) {
+    return PLAN_DETAILS[plan] || PLAN_DETAILS.free;
+  }
 
   function iso(date) {
     return date instanceof Date && Number.isFinite(date.getTime()) ? date.toISOString() : null;
@@ -42,6 +53,7 @@
   }
 
   function createTrial(now = new Date()) {
+    const details = planDetails("trial");
     return {
       membershipType: "trial",
       trialStartDate: iso(now),
@@ -50,6 +62,9 @@
       membershipEndDate: null,
       isPremium: true,
       selectedPlan: "trial",
+      priceDkk: details.priceDkk,
+      aiRequestLimit: details.aiRequestLimit,
+      aiRequestPeriod: details.aiRequestPeriod,
       lastMembershipPopupDate: null
     };
   }
@@ -58,6 +73,8 @@
     if (!value || typeof value !== "object") return createTrial(now);
     const allowed = ["trial", "free", "quarterly", "yearly", "lifetime"];
     const membershipType = allowed.includes(value.membershipType) ? value.membershipType : "free";
+    const selectedPlan = allowed.includes(value.selectedPlan) ? value.selectedPlan : membershipType;
+    const details = planDetails(selectedPlan);
     return {
       membershipType,
       trialStartDate: value.trialStartDate || null,
@@ -65,7 +82,10 @@
       membershipStartDate: value.membershipStartDate || null,
       membershipEndDate: value.membershipEndDate || null,
       isPremium: membershipType !== "free",
-      selectedPlan: allowed.includes(value.selectedPlan) ? value.selectedPlan : membershipType,
+      selectedPlan,
+      priceDkk: details.priceDkk,
+      aiRequestLimit: details.aiRequestLimit,
+      aiRequestPeriod: details.aiRequestPeriod,
       lastMembershipPopupDate: value.lastMembershipPopupDate || null
     };
   }
@@ -148,15 +168,15 @@
       statusDate.textContent = `Prøveperioden udløber ${formatDate(data.trialEndDate)}. Ingen betaling kræves.`;
       if (navStatus) navStatus.textContent = `${remaining} dage`;
     } else if (data.membershipType === "free") {
-      statusCopy.textContent = "Du kan fortsat gennemføre træning, se eksisterende data og gemme lokalt.";
+      statusCopy.textContent = "Gratis medlemskab med 3 AI Requests.";
       statusDate.textContent = "Dine brugerdata slettes aldrig, hvis du bruger gratisversionen.";
       if (navStatus) navStatus.textContent = "Gratis";
     } else if (data.membershipType === "lifetime") {
-      statusCopy.textContent = "Permanent adgang til alle Premium-funktioner.";
+      statusCopy.textContent = "Permanent Premium-adgang med 30 AI Requests pr. måned.";
       statusDate.textContent = `Medlemskabet blev valgt ${formatDate(data.membershipStartDate)}.`;
       if (navStatus) navStatus.textContent = "Livstid";
     } else {
-      statusCopy.textContent = "Fuld adgang til alle Premium-funktioner.";
+      statusCopy.textContent = "Fuld Premium-adgang med 15 AI Requests pr. måned.";
       statusDate.textContent = `${remaining} ${remaining === 1 ? "dag" : "dage"} tilbage. Udløber ${formatDate(data.membershipEndDate)}.`;
       if (navStatus) navStatus.textContent = "Premium";
     }
@@ -205,7 +225,14 @@
 
   function selectPlan(plan, now = new Date()) {
     const current = getMembership(now);
-    const next = { ...current, selectedPlan: plan };
+    const details = planDetails(plan);
+    const next = {
+      ...current,
+      selectedPlan: plan,
+      priceDkk: details.priceDkk,
+      aiRequestLimit: details.aiRequestLimit,
+      aiRequestPeriod: details.aiRequestPeriod
+    };
 
     if (plan === "free") {
       next.membershipType = "free";
@@ -293,6 +320,7 @@
     STORAGE_KEY,
     TRIAL_DAYS,
     POPUP_INTERVAL_DAYS,
+    PLAN_DETAILS,
     createTrial,
     normalize,
     evaluate,

@@ -58,6 +58,13 @@
     window.setTimeout(() => byId("authGateEmail")?.focus(), 0);
   }
 
+  function clearGateIdentity() {
+    const email = byId("authGateEmail");
+    const password = byId("authGatePassword");
+    if (email) email.value = "";
+    if (password) password.value = "";
+  }
+
   function hideGate() {
     const gate = byId("authGate");
     if (!gate) return;
@@ -135,6 +142,7 @@
       return;
     }
     if (detail.initialized) {
+      clearGateIdentity();
       showGate();
       setFeedback(detail.error ? authErrorMessage(detail.error) : "Log ind for at fortsætte.");
     }
@@ -147,10 +155,12 @@
   window.showAuthGate = showGate;
 
   window.addEventListener("firebase-auth:ready", () => {
-    setActionsEnabled(true);
-    setFeedback("Firebase er klar. Log ind for at fortsætte.");
+    setActionsEnabled(false);
+    clearGateIdentity();
+    setFeedback("Kontrollerer eksisterende login...");
   });
   window.addEventListener("firebase-auth:changed", event => handleAuthState(event.detail));
 
+  clearGateIdentity();
   showGate("Kontrollerer eksisterende login...");
 })();

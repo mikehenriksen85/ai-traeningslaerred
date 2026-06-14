@@ -3,6 +3,7 @@
 
   const PREFIX = "workit";
   const LEGACY_RESOLUTION_KEY = `${PREFIX}:legacyMigrationResolution`;
+  const legacyResolutionKey = uid => `${PREFIX}:${String(uid || "")}:legacyMigrationResolution`;
   const KEY_ALIASES = {
     training_profile_v1: "profile",
     daily_start_v1: "daily",
@@ -158,16 +159,38 @@
     });
   }
 
-  function legacyResolution() {
-    return parse(original.getItem(LEGACY_RESOLUTION_KEY), null);
+  function legacyResolution(uid = activeUid) {
+    const normalizedUid = String(uid || "");
+    if (!normalizedUid) return null;
+    const scopedResolution = parse(original.getItem(legacyResolutionKey(normalizedUid)), null);
+    if (scopedResolution) return scopedResolution;
+
+    // Flyt den tidligere globale markør til den aktuelle bruger én gang.
+    const previousResolution = parse(original.getItem(LEGACY_RESOLUTION_KEY), null);
+    if (!previousResolution || (previousResolution.uid && previousResolution.uid !== normalizedUid)) {
+      return null;
+    }
+    const migratedResolution = {
+      ...previousResolution,
+      uid: normalizedUid
+    };
+    original.setItem(legacyResolutionKey(normalizedUid), JSON.stringify(migratedResolution));
+    original.removeItem(LEGACY_RESOLUTION_KEY);
+    return migratedResolution;
   }
 
-  function resolveLegacyMigration(status, uid) {
-    original.setItem(LEGACY_RESOLUTION_KEY, JSON.stringify({
+  function resolveLegacyMigration(status, uid = activeUid) {
+    const normalizedUid = String(uid || "");
+    if (!normalizedUid) return;
+    original.setItem(legacyResolutionKey(normalizedUid), JSON.stringify({
       status,
-      uid: status === "accepted" ? String(uid || "") : "",
+      uid: normalizedUid,
       resolvedAt: new Date().toISOString()
     }));
+    const previousResolution = parse(original.getItem(LEGACY_RESOLUTION_KEY), null);
+    if (!previousResolution?.uid || previousResolution.uid === normalizedUid) {
+      original.removeItem(LEGACY_RESOLUTION_KEY);
+    }
   }
 
   function importLegacyToCurrent() {

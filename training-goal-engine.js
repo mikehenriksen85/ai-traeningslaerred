@@ -33,6 +33,14 @@
       setRange: [2, 3],
       exerciseCount: [5, 7],
       workSeconds: 40
+    },
+    cardio: {
+      label: "Cardio",
+      structure: "Kondition, kredsløb og udholdenhed",
+      defaultSplit: "cardio_rotation",
+      setRange: [1, 1],
+      exerciseCount: [1, 5],
+      workSeconds: 60
     }
   };
 
@@ -75,7 +83,8 @@
       conditioning: includesAny(text, conditioningTerms),
       stability: isCoreMuscle || includesAny(text, stabilityTerms),
       unilateral: includesAny(text, unilateralTerms),
-      largeMuscle: ["Bryst", "Øvre ryg", "Skuldre", "Forside lår", "Bagside lår & baller"].includes(muscle)
+      largeMuscle: ["Bryst", "Øvre ryg", "Skuldre", "Forside lår", "Bagside lår & baller"].includes(muscle),
+      cardio: muscle === "Cardio"
     };
   }
 
@@ -93,7 +102,10 @@
     const traits = classifyExercise(exercise.name, exercise.muscle);
     let score = 10;
 
-    if (goal === "muscle_gain") {
+    if (goal === "cardio") {
+      score += traits.cardio ? 30 : -30;
+      score += traits.conditioning ? 8 : 0;
+    } else if (goal === "muscle_gain") {
       score += traits.compound ? 8 : 0;
       score += traits.isolation ? 6 : 0;
       score += traits.largeMuscle ? 4 : 0;
@@ -140,7 +152,11 @@
     let targetReps;
     let pauseSeconds;
 
-    if (goal === "muscle_gain") {
+    if (goal === "cardio") {
+      sets = 1;
+      targetReps = "";
+      pauseSeconds = 0;
+    } else if (goal === "muscle_gain") {
       sets = role === "primary" || role === "compound" ? (experienced ? 5 : beginner ? 3 : 4) : 3;
       targetReps = traits.isolation ? "10-15" : role === "primary" ? "6-10" : "8-12";
       pauseSeconds = role === "primary" ? 120 : traits.isolation ? 60 : 90;
@@ -159,10 +175,24 @@
     }
 
     if (position >= 5 && goal !== "muscle_gain") sets = Math.max(2, sets - 1);
-    return { sets, targetReps, pauseSeconds, role, goal };
+    return {
+      sets,
+      targetReps,
+      pauseSeconds,
+      role: goal === "cardio" ? "cardio" : role,
+      goal,
+      ...(goal === "cardio" ? { exerciseType: "cardio", durationMinutes: 30 } : {})
+    };
   }
 
   function splitFor(goal, days) {
+    if (goal === "cardio") {
+      const cardioDays = ["Kondition", "Intervaller", "Udholdenhed", "Aktiv restitution"];
+      return Array.from({ length: days }, (_, index) => ({
+        key: "cardio",
+        title: `${cardioDays[index % cardioDays.length]} cardio`
+      }));
+    }
     if (goal === "weight_loss") {
       return Array.from({ length: days }, (_, index) => ({
         key: "fullbody",
@@ -210,6 +240,7 @@
     if (goal === "muscle_gain") return `${p.label}: prioritér muskelstimulering, 6-15 reps og moderat til høj volumen.`;
     if (goal === "weight_loss") return `${p.label}: prioritér helkrop, store bevægelser, korte pauser og høj træningstæthed.`;
     if (goal === "strength") return `${p.label}: prioritér tunge basisløft, lave reps, lavere volumen og lange pauser.`;
+    if (goal === "cardio") return `${p.label}: prioritér kondition, kredsløb, udholdenhed og varierede cardioformer.`;
     return `${p.label}: prioritér balance mellem styrke, stabilitet, funktion og bæredygtig progression.`;
   }
 

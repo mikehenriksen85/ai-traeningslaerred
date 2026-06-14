@@ -40,6 +40,7 @@ let syncInProgress = false;
 let syncQueued = false;
 let migrationDialogRoot = null;
 let localFingerprint = "";
+const initializationByUid = new Map();
 
 function parseLocal(key, fallback = null) {
   try {
@@ -414,13 +415,18 @@ function queueSync() {
   syncTimer = window.setTimeout(() => syncAllLocalData(), 900);
 }
 
-async function initializeUser(user) {
+async function initializeUserData(user) {
   activeUid = user.uid;
   storageScope?.setActiveUid(activeUid);
   cloudEnabled = true;
   const metadata = await getSyncMetadata(activeUid).catch(() => ({}));
+  const localMigrationDecision = storageScope?.legacyResolution?.(activeUid);
+  const cloudMigrationDecision = ["accepted", "declined"].includes(metadata.legacyMigrationStatus)
+    ? metadata.legacyMigrationStatus
+    : "";
   const legacyAvailable = storageScope?.hasLegacyData?.() &&
-    !storageScope?.legacyResolution?.();
+    !localMigrationDecision &&
+    !cloudMigrationDecision;
 
   // Firestore læses altid først. UID-cachen er kun fallback og konfliktbuffer.
   await hydrateFromFirestore(activeUid);
@@ -431,16 +437,30 @@ async function initializeUser(user) {
     if (accepted) storageScope.importLegacyToCurrent();
   }
 
+  const migrationDecision = storageScope?.legacyResolution?.(activeUid)?.status ||
+    cloudMigrationDecision ||
+    "none";
   const migrationCompletedAt = metadata.migrationCompletedAt || new Date().toISOString();
   await setSyncMetadata(activeUid, {
     migrationCompleted: true,
     migrationCompletedAt,
-    legacyMigrationStatus: storageScope?.legacyResolution?.()?.status || "none",
+    legacyMigrationStatus: migrationDecision,
     cacheStrategy: "uid_scoped",
     status: "ready"
   });
   await syncAllLocalData(activeUid);
   localFingerprint = currentLocalFingerprint();
+}
+
+function initializeUser(user) {
+  const uid = String(user?.uid || "");
+  if (!uid) return Promise.resolve();
+  if (initializationByUid.has(uid)) return initializationByUid.get(uid);
+  const initialization = initializeUserData(user).finally(() => {
+    if (initializationByUid.get(uid) === initialization) initializationByUid.delete(uid);
+  });
+  initializationByUid.set(uid, initialization);
+  return initialization;
 }
 
 function clearRuntimeForLogout() {
@@ -469,7 +489,7 @@ window.FirestoreDataService = {
   syncAllLocalData,
   hydrateFromFirestore,
   requestMigration: async () => {
-    if (!activeUid || !storageScope?.hasLegacyData?.() || storageScope?.legacyResolution?.()) return false;
+    if (!activeUid || !storageScope?.hasLegacyData?.() || storageScope?.legacyResolution?.(activeUid)) return false;
     const accepted = await showLegacyMigrationDialog();
     storageScope.resolveLegacyMigration(accepted ? "accepted" : "declined", activeUid);
     if (!accepted) return false;

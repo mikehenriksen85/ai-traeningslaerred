@@ -166,6 +166,10 @@
       text-align: left;
       font: inherit;
     }
+    .sidebar-accordion-panel .sidebar-subitem {
+      padding-left: 30px;
+      border-left: 2px solid rgba(58,147,255,.35);
+    }
     .sidebar-item.active {
       color: var(--text-primary);
       background: rgba(58,147,255,.16);
@@ -392,14 +396,63 @@
     .square { width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border); background: var(--input); color: var(--text-primary); cursor: pointer; font-weight: var(--font-weight-bold); }
 
     .add-zone { position: relative; z-index: 10; margin: 20px 0 24px; }
-    .movement-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
-    .movement-btn { background: var(--input); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 9px 6px; font-weight: var(--font-weight-bold); cursor: pointer; }
+    .movement-picker {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-auto-rows: 44px;
+      gap: 8px;
+      width: 100%;
+      margin: 0 0 10px;
+    }
+    .movement-btn {
+      width: 100%;
+      height: 44px;
+      min-width: 0;
+      margin: 0;
+      padding: 0 6px;
+      box-sizing: border-box;
+      background: var(--input);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font: inherit;
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-bold);
+      line-height: 1;
+      white-space: nowrap;
+      cursor: pointer;
+    }
     .movement-btn.active { color: var(--text-primary); border-color: var(--text-success); background: rgba(74,222,128,.12); }
     .add-btn { width: 100%; background: rgba(74,222,128,.08); border: 1px dashed var(--green); color: var(--text-success); border-radius: 8px; padding: 13px; font-weight: var(--font-weight-bold); cursor: pointer; }
     .muscle-menu { display: none; position: absolute; z-index: 20; bottom: 105%; left: 0; right: 0; isolation: isolate; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 -8px 24px rgba(0,0,0,.4); }
     .muscle-item { padding: 12px 14px; cursor: pointer; }
     .muscle-item small { color: var(--text-secondary); font-size: var(--font-size-small); margin-left: 6px; }
     .muscle-item:hover { background: rgba(58,147,255,.12); color: var(--text-accent); }
+    .muscle-item.selected { background: rgba(74,222,128,.12); color: var(--text-success); }
+    .exercise-picker-heading { display: flex; align-items: center; gap: 8px; }
+    .exercise-picker-back {
+      border: 0;
+      background: transparent;
+      color: var(--text-accent);
+      cursor: pointer;
+      font: inherit;
+      font-weight: var(--font-weight-bold);
+      padding: 0;
+    }
+    .exercise-picker-list { max-height: 42vh; overflow-y: auto; }
+    .exercise-picker-actions { padding: 10px 14px; border-top: 1px solid var(--border); }
+    .exercise-picker-add {
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--green);
+      color: #102018;
+      cursor: pointer;
+      font: inherit;
+      font-weight: var(--font-weight-bold);
+    }
+    .exercise-picker-add:disabled { cursor: not-allowed; opacity: .45; }
     .copilot { border-top: 1px dashed var(--border); padding-top: 18px; }
     .copilot-title { color: var(--text-accent); font-weight: var(--font-weight-bold); margin-bottom: 10px; }
     .copilot-bar { display: flex; gap: 8px; }
@@ -1118,7 +1171,7 @@
       <p class="auth-gate-copy" id="authGateCopy">Log ind eller opret en konto for at fortsætte.</p>
       <form class="auth-gate-form" onsubmit="loginFromAuthGate(event)">
         <label class="auth-gate-field">E-mail
-          <input id="authGateEmail" type="email" autocomplete="email" placeholder="email@example.com" required>
+          <input id="authGateEmail" type="email" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="email@example.com" required>
         </label>
         <label class="auth-gate-field">Adgangskode
           <input id="authGatePassword" type="password" autocomplete="current-password" placeholder="Mindst 6 tegn" minlength="6" required>
@@ -1152,9 +1205,9 @@
         <span>👤 Profil</span><span class="sidebar-accordion-chevron">⌄</span>
       </button>
       <div class="sidebar-accordion-panel">
-        <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
         <button class="sidebar-item" id="profileAccountNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileSetup()">Profil og konto</button>
-        <button class="sidebar-item" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">10 dage</span></button>
+        <button class="sidebar-item sidebar-subitem" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">10 dage</span></button>
+        <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
       </div>
     </section>
 
@@ -1164,7 +1217,7 @@
       </button>
       <div class="sidebar-accordion-panel">
         <button class="sidebar-item" id="todayWorkoutNavItem" type="button" onclick="setActiveSidebarItem(this); openTodayWorkout()">▶ Dagens træning</button>
-        <button class="sidebar-item" type="button" onclick="setActiveSidebarItem(this); toggleGeneratorMenu()"><span id="generatorSectionTitle">✨ Vælg træningstype</span></button>
+        <button class="sidebar-item" type="button" onclick="setActiveSidebarItem(this); toggleGeneratorMenu()"><span id="generatorSectionTitle">✨ AI-genereret træningsplan</span></button>
         <div class="sidebar-box" id="programGeneratorAccess" hidden>
           <select class="sidebar-select" id="programType" onchange="chooseProgramType(this.value)">
             <option value="" selected disabled>✨ Vælg træningstype...</option>
@@ -1284,15 +1337,11 @@
           <button class="movement-btn active" data-movement="Alle" onclick="setMovementFilter('Alle', event)">Alle</button>
           <button class="movement-btn" data-movement="Push" onclick="setMovementFilter('Push', event)">Push</button>
           <button class="movement-btn" data-movement="Pull" onclick="setMovementFilter('Pull', event)">Pull</button>
-        </div>
-        <div class="movement-picker" style="grid-template-columns:1fr;">
           <button class="movement-btn" data-movement="Stabilitet" onclick="setMovementFilter('Stabilitet', event)">Stabilitet</button>
-        </div>
-        <div class="movement-picker" style="grid-template-columns:1fr;">
-          <button class="movement-btn" data-movement="Cardio" onclick="setMovementFilter('Cardio', event)">❤️ Cardio</button>
+          <button class="movement-btn" data-movement="Cardio" onclick="setMovementFilter('Cardio', event)">Cardio</button>
         </div>
         <div class="muscle-menu" id="muscleMenu">
-          <div class="mini-title" style="padding:10px 14px;margin:0;border-bottom:1px solid var(--border);">Hvilken muskelgruppe?</div>
+          <div class="mini-title" id="exercisePickerTitle" style="padding:10px 14px;margin:0;border-bottom:1px solid var(--border);">Hvilken muskelgruppe?</div>
           <div id="muscleMenuItems"></div>
         </div>
         <button class="add-btn" onclick="toggleMuscleMenu(event)">➕ Tilføj ny øvelse</button>
@@ -1408,6 +1457,7 @@
                 <option value="weight_loss">Vægttab</option>
                 <option value="strength">Styrke</option>
                 <option value="general_health">Generel sundhed</option>
+                <option value="cardio">Cardio</option>
               </select>
             </label>
             <label class="profile-form-field">Erfaring
@@ -1549,7 +1599,7 @@
         <article class="membership-plan">
           <div class="membership-plan-name">Gratis version</div>
           <div class="membership-price">0 kr.</div>
-          <div class="membership-price-note">Altid tilgængelig</div>
+          <div class="membership-price-note">3 AI Requests</div>
           <ul>
             <li>Eksisterende træningspas og historik</li>
             <li>Gennemfør træning og gem lokalt</li>
@@ -1561,8 +1611,8 @@
 
         <article class="membership-plan">
           <div class="membership-plan-name">Premium 3 måneder</div>
-          <div class="membership-price">25 kr.</div>
-          <div class="membership-price-note">Premium-adgang i 3 måneder</div>
+          <div class="membership-price">59 kr.</div>
+          <div class="membership-price-note">15 AI Requests/md.</div>
           <ul>
             <li>Alle Premium-funktioner</li>
             <li>Ingen automatisk betaling i demoen</li>
@@ -1573,8 +1623,8 @@
         <article class="membership-plan best">
           <div class="membership-best-badge">Bedste værdi</div>
           <div class="membership-plan-name">Premium 12 måneder</div>
-          <div class="membership-price">79 kr.</div>
-          <div class="membership-price-note">Premium-adgang i 12 måneder</div>
+          <div class="membership-price">149 kr.</div>
+          <div class="membership-price-note">15 AI Requests/md.</div>
           <ul>
             <li>Alle Premium-funktioner</li>
             <li>Laveste pris pr. måned</li>
@@ -1584,8 +1634,8 @@
 
         <article class="membership-plan">
           <div class="membership-plan-name">Livstid</div>
-          <div class="membership-price">199 kr.</div>
-          <div class="membership-price-note">Én betaling, permanent adgang</div>
+          <div class="membership-price">449 kr.</div>
+          <div class="membership-price-note">30 AI Requests/md.</div>
           <ul>
             <li>Permanent Premium-adgang</li>
             <li>Alle nuværende Premium-funktioner</li>
@@ -1607,11 +1657,11 @@
         Din gratis prøveperiode er udløbet. Du kan fortsætte gratis med begrænsede funktioner eller vælge et medlemskab for at få adgang til alle Premium-funktioner.
       </div>
       <div class="membership-popup-plans">
-        <button class="membership-popup-option" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span>25 kr.</span></button>
-        <button class="membership-popup-option best" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span>79 kr. · Bedste værdi</span></button>
-        <button class="membership-popup-option" onclick="selectMembershipPlan('lifetime')"><strong>🥇 Livstid</strong><span>199 kr.</span></button>
+        <button class="membership-popup-option" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span>59 kr. · 15 AI Requests/md.</span></button>
+        <button class="membership-popup-option best" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span>149 kr. · 15 AI Requests/md. · Bedste værdi</span></button>
+        <button class="membership-popup-option" onclick="selectMembershipPlan('lifetime')"><strong>🥇 Livstid</strong><span>449 kr. · 30 AI Requests/md.</span></button>
       </div>
-      <button class="membership-plan-btn membership-popup-free" onclick="selectMembershipPlan('free')">📘 Fortsæt gratis</button>
+      <button class="membership-plan-btn membership-popup-free" onclick="selectMembershipPlan('free')">📘 Fortsæt gratis · 3 AI Requests</button>
     </div>
   </div>
 
@@ -1637,6 +1687,8 @@
     ];
     const muscleGroupKeys = muscleGroups.map(group => group.key);
     let activeMovementFilter = "Alle";
+    let exercisePickerMuscle = "";
+    let exercisePickerSelection = "";
 
     const exerciseLibrary = {
       "Bryst": ["Barbell Bench Press","Dumbbell Bench Press","Incline Barbell Bench Press","Incline Dumbbell Press","Machine Chest Press","Push-ups","Weighted Push-ups","Chest Dips","Cable Fly","Dumbbell Fly","Pec Deck","Decline Bench Press","Close-Grip Bench Press","Landmine Press","Svend Press"],
@@ -1838,7 +1890,7 @@
       document.querySelector(".app-title").textContent = t("appTitle");
       window.updateSidebarProfileIdentity?.();
 
-      $("generatorSectionTitle").textContent = "✨ Vælg træningstype";
+      $("generatorSectionTitle").textContent = "✨ AI-genereret træningsplan";
       $("todayWorkoutNavItem").textContent = "▶ Dagens træning";
       $("newWorkoutNavItem").textContent = t("newWorkout");
       $("savedWorkoutsNavItem").textContent = t("savedWorkouts");
@@ -2467,6 +2519,8 @@
     function setMovementFilter(movement, event = null) {
       if (event) event.stopPropagation();
       activeMovementFilter = movement;
+      exercisePickerMuscle = "";
+      exercisePickerSelection = "";
       document.querySelectorAll(".movement-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.movement === movement));
       renderMuscleMenu();
       $("muscleMenu").style.display = "block";
@@ -2474,19 +2528,102 @@
 
     function renderMuscleMenu() {
       const container = $("muscleMenuItems");
-      if (!container) return;
-      container.innerHTML = movementMuscles().map(muscle => {
-        const meta = muscleGroupMeta(muscle);
-        return `<div class="muscle-item" data-muscle="${esc(muscle)}" onclick="selectMuscle('${esc(muscle)}')">${meta.emoji} ${esc(tm(muscle))}<small>${esc(tc(meta.category))}</small></div>`;
-      }).join("");
+      const title = $("exercisePickerTitle");
+      if (!container || !title) return;
+      if (!exercisePickerMuscle) {
+        title.textContent = "Vælg muskelgruppe";
+        container.className = "";
+        container.innerHTML = movementMuscles().map(muscle => {
+          const meta = muscleGroupMeta(muscle);
+          return `<div class="muscle-item" data-muscle="${esc(muscle)}" onclick="selectMuscle('${encodeURIComponent(muscle)}', event)">${meta.emoji} ${esc(tm(muscle))}<small>${esc(tc(meta.category))}</small></div>`;
+        }).join("");
+        return;
+      }
+
+      title.innerHTML = `<div class="exercise-picker-heading"><button class="exercise-picker-back" type="button" onclick="showMuscleGroups(event)">←</button><span>${esc(tm(exercisePickerMuscle))}: Vælg øvelse</span></div>`;
+      const exercises = catalog.filter(exercise => exercise.muscle === exercisePickerMuscle);
+      container.className = "exercise-picker-list";
+      container.innerHTML = `
+        ${exercises.map(exercise => `
+          <div class="muscle-item ${exercise.name === exercisePickerSelection ? "selected" : ""}"
+               data-exercise="${esc(exercise.name)}"
+               onclick="selectExerciseCandidate('${encodeURIComponent(exercise.name)}', event)">
+            ${esc(exercise.name)}<small>${esc(exercise.type)}</small>
+          </div>`).join("")}
+        <div class="exercise-picker-actions">
+          <button class="exercise-picker-add" type="button" onclick="addSelectedExercise(event)" ${exercisePickerSelection ? "" : "disabled"}>
+            Tilføj øvelse
+          </button>
+        </div>`;
     }
 
-    function toggleMuscleMenu(e) { e.stopPropagation(); renderMuscleMenu(); $("muscleMenu").style.display = $("muscleMenu").style.display === "block" ? "none" : "block"; }
-    function selectMuscle(muscle) { $("muscleMenu").style.display = "none"; addExercise(`${t("chooseExercisePrefix")} ${tm(muscle)} ${t("chooseExerciseSuffix")}`, muscle); autoSave(); }
-    document.addEventListener("click", () => { if ($("muscleMenu")) $("muscleMenu").style.display = "none"; });
+    function closeExercisePicker() {
+      if ($("muscleMenu")) $("muscleMenu").style.display = "none";
+      exercisePickerMuscle = "";
+      exercisePickerSelection = "";
+    }
+
+    function toggleMuscleMenu(event) {
+      event.stopPropagation();
+      const opening = $("muscleMenu").style.display !== "block";
+      if (!opening) {
+        closeExercisePicker();
+        return;
+      }
+      exercisePickerMuscle = "";
+      exercisePickerSelection = "";
+      renderMuscleMenu();
+      $("muscleMenu").style.display = "block";
+    }
+
+    function selectMuscle(encodedMuscle, event = null) {
+      event?.stopPropagation?.();
+      const muscle = decodeURIComponent(encodedMuscle);
+      if (!muscleGroupKeys.includes(muscle)) return;
+      exercisePickerMuscle = muscle;
+      exercisePickerSelection = "";
+      renderMuscleMenu();
+      $("muscleMenu").style.display = "block";
+    }
+
+    function showMuscleGroups(event = null) {
+      event?.stopPropagation?.();
+      exercisePickerMuscle = "";
+      exercisePickerSelection = "";
+      renderMuscleMenu();
+    }
+
+    function selectExerciseCandidate(encodedName, event = null) {
+      event?.stopPropagation?.();
+      const name = decodeURIComponent(encodedName);
+      const exercise = catalog.find(candidate =>
+        candidate.muscle === exercisePickerMuscle && candidate.name === name
+      );
+      if (!exercise) return;
+      exercisePickerSelection = exercise.name;
+      renderMuscleMenu();
+    }
+
+    function addSelectedExercise(event = null) {
+      event?.stopPropagation?.();
+      const exercise = catalog.find(candidate =>
+        candidate.muscle === exercisePickerMuscle &&
+        candidate.name === exercisePickerSelection
+      );
+      if (!exercise) return;
+      addExercise(exercise.name, exercise.muscle);
+      closeExercisePicker();
+      autoSave();
+    }
+
+    document.addEventListener("click", closeExercisePicker);
 
     function addExercise(name = null, muscle = "Ryg", savedSets = null, metadata = null) {
       if (!name) name = `${t("chooseExercisePrefix")} ${t("exerciseHeader").toLowerCase()}...`;
+      if (muscleGroupKeys.includes(name)) {
+        console.warn("En muskelgruppe kan ikke bruges som øvelsesnavn.", { name, muscle });
+        return null;
+      }
       const plan = metadata || goalPrescription(name, muscle, document.querySelectorAll(".exercise").length);
       const isCardio = plan.exerciseType === "cardio" || muscle === "Cardio";
       slotCounter++;
@@ -5281,21 +5418,21 @@
     window.ENABLE_PROFILE_WIZARD = true;
     window.ENABLE_DAILY_START_WIZARD = true;
   </script>
-  <script src="storage-scope.js?v=20260614-cloud2"></script>
+  <script src="storage-scope.js?v=20260614-migration1"></script>
   <script src="training-goal-engine.js"></script>
   <script src="workout-program-store.js"></script>
   <script src="wizard-store.js"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-copilot-actions.js"></script>
-  <script src="auth-gate.js?v=20260614-auth2"></script>
-  <script src="profile-account.js?v=20260614-auth2"></script>
+  <script src="auth-gate.js?v=20260614-identity1"></script>
+  <script src="profile-account.js?v=20260614-identity1"></script>
   <script src="profile-wizard.js"></script>
   <script src="daily-start-wizard.js"></script>
   <script src="wizard-controller.js?v=20260614-auth2"></script>
-  <script src="membership.js"></script>
+  <script src="membership.js?v=20260614-pricing1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
   <script type="module" src="auth-service.js?v=20260614-auth2"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260614-cloud2"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260614-migration1"></script>
 </body>
 </html>
 

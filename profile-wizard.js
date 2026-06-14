@@ -2,10 +2,11 @@
   "use strict";
 
   const goals = [
-    { value: "muscle_gain", label: "Muskelopbygning" },
-    { value: "weight_loss", label: "Vægttab" },
-    { value: "strength", label: "Styrke" },
-    { value: "general_health", label: "Generel sundhed" }
+    { value: "muscle_gain", label: "💪 Muskelopbygning" },
+    { value: "weight_loss", label: "🔥 Vægttab" },
+    { value: "strength", label: "🏋️ Styrke" },
+    { value: "general_health", label: "🌿 Generel sundhed" },
+    { value: "cardio", label: "❤️ Cardio" }
   ];
   const genders = [
     { value: "man", label: "Mand" },
@@ -69,6 +70,16 @@
       ["Chest-Supported Row", "Øvre ryg"], ["Barbell Row", "Øvre ryg"],
       ["Seated Cable Row", "Øvre ryg"], ["One-Arm Dumbbell Row", "Øvre ryg"],
       ["Inverted Row", "Øvre ryg"]
+    ],
+    Cardio: [
+      ["Løbebånd", "Cardio"], ["Udendørs løb", "Cardio"],
+      ["Stairmaster / Stair Climber", "Cardio"], ["Romaskine", "Cardio"],
+      ["Crosstrainer", "Cardio"], ["Motionscykel", "Cardio"],
+      ["Air Bike", "Cardio"], ["Spinning", "Cardio"],
+      ["Sjipning", "Cardio"], ["Svømning", "Cardio"],
+      ["Rask gang", "Cardio"], ["Hiking / Vandring", "Cardio"],
+      ["Trappeløb", "Cardio"], ["Roning på vand", "Cardio"],
+      ["Assault Runner", "Cardio"]
     ]
   };
 
@@ -127,6 +138,7 @@
   }
 
   function selectedFocus() {
+    if (state.goal === "cardio") return ["Cardio"];
     const selected = state.focusAreas.length ? state.focusAreas : ["Bryst", "Ryg", "Ben", "Core"];
     const support = ["Bryst", "Ryg", "Ben", "Skuldre", "Arme", "Core"];
     return [...selected, ...support.filter(area => !selected.includes(area))];
@@ -150,7 +162,8 @@
         squat: ["Ben", "Core", "Ryg"],
         press: ["Bryst", "Skuldre", "Arme", "Core"],
         deadlift: ["Ben", "Ryg", "Core"],
-        stability: ["Core", "Ben", "Ryg", "Skuldre"]
+        stability: ["Core", "Ben", "Ryg", "Skuldre"],
+        cardio: ["Cardio"]
       };
       const preferred = maps[splitKey] || areas;
       return [...preferred.filter(area => exercisePools[area]), ...areas.filter(area => !preferred.includes(area))];
@@ -189,7 +202,23 @@
           state.experience,
           slot
         ) || { sets: setCount(), targetReps: "8-12", pauseSeconds: 90, role: "accessory", goal: state.goal };
-        exercises.push({ ...candidate, ...prescription });
+        exercises.push({
+          ...candidate,
+          ...prescription,
+          ...(state.goal === "cardio" ? {
+            exerciseType: "cardio",
+            cardio: {
+              durationMinutes: prescription.durationMinutes || 30,
+              distanceKm: "",
+              calories: "",
+              averageHeartRate: "",
+              maxHeartRate: "",
+              speedKmh: "",
+              notes: "",
+              completed: false
+            }
+          } : {})
+        });
       }
       programs.push({
         title: `Dag ${day + 1}: ${split.title}`,
@@ -205,6 +234,9 @@
   }
 
   function estimatedMinutes(exercises) {
+    if (state.goal === "cardio") {
+      return exercises.reduce((sum, exercise) => sum + (Number(exercise.cardio?.durationMinutes) || 30), 0);
+    }
     const workSeconds = window.TrainingGoalEngine?.profile?.(state.goal).workSeconds || 45;
     const setTotal = exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
     const work = setTotal * workSeconds;

@@ -55,14 +55,15 @@
       };
     }
 
-    let match = text.match(/(?:skift|sæt|ændr|opdater)?\s*(?:mit\s+)?(?:træningsmål|mål)\s+(?:til\s+)?(muskelopbygning|muskelvækst|vægttab|styrke|generel sundhed)/i);
+    let match = text.match(/(?:skift|sæt|ændr|opdater)?\s*(?:mit\s+)?(?:træningsmål|mål)\s+(?:til\s+)?(muskelopbygning|muskelvækst|vægttab|styrke|generel sundhed|cardio)/i);
     if (match) {
       const goals = {
         muskelopbygning: "muscle_gain",
         muskelvækst: "muscle_gain",
         vægttab: "weight_loss",
         styrke: "strength",
-        "generel sundhed": "general_health"
+        "generel sundhed": "general_health",
+        cardio: "cardio"
       };
       return { action: "updateTrainingPreference", field: "goal", value: goals[match[1]] };
     }

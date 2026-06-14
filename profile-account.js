@@ -57,8 +57,8 @@
 
   function renderAccountStatus() {
     const service = window.FirebaseAuthService;
-    const user = service?.getCurrentUser?.() || null;
-    const ready = Boolean(service);
+    const ready = Boolean(service?.isInitialized?.());
+    const user = ready ? service?.getCurrentUser?.() || null : null;
     const loggedIn = Boolean(user);
     const status = byId("profileLoginStatus");
     const email = byId("profileActiveEmail");
@@ -71,11 +71,11 @@
     if (firebaseStatus) firebaseStatus.textContent = loggedIn ? "Forbundet" : ready ? "Firebase klar" : "Firebase indlæses";
     if (emailInput) {
       emailInput.disabled = !ready || loggedIn;
-      if (loggedIn) emailInput.value = user.email || "";
+      emailInput.value = loggedIn ? user.email || "" : "";
     }
     if (passwordInput) {
       passwordInput.disabled = !ready || loggedIn;
-      if (loggedIn) passwordInput.value = "";
+      passwordInput.value = "";
     }
 
     ["profileEmailLoginBtn", "profileCreateAccountBtn", "profileGoogleLoginBtn"].forEach(id => {
@@ -90,10 +90,12 @@
   }
 
   function updateSidebarProfileIdentity() {
-    const profile = window.TrainingWizardStore?.getProfile?.() || {};
-    const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+    const service = window.FirebaseAuthService;
+    const ready = Boolean(service?.isInitialized?.());
+    const user = ready ? service?.getCurrentUser?.() || null : null;
+    const profile = user ? window.TrainingWizardStore?.getProfile?.() || {} : {};
     const label = String(
-      profile.name ||
+      (user && profile.name) ||
       user?.displayName ||
       user?.email ||
       "Min profil"
@@ -335,5 +337,10 @@
     const error = event.detail?.error;
     if (error) setAuthFeedback(authErrorMessage(error), true);
   });
+  window.addEventListener("firestore:data-hydrated", () => {
+    renderAccountStatus();
+    if (byId("profileAccountView")?.classList.contains("open")) populateProfileAccount();
+  });
+  window.addEventListener("firestore:user-cache-cleared", renderAccountStatus);
   window.addEventListener("training-profile:updated", updateSidebarProfileIdentity);
 })();
