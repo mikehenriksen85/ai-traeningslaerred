@@ -450,6 +450,9 @@ async function initializeUserData(user) {
   });
   await syncAllLocalData(activeUid);
   localFingerprint = currentLocalFingerprint();
+  window.dispatchEvent(new CustomEvent("firestore:user-ready", {
+    detail: { uid: activeUid, fallback: false }
+  }));
 }
 
 function initializeUser(user) {
@@ -520,17 +523,24 @@ window.FirestoreDataService = {
   getActiveUid: () => activeUid
 };
 
+function beginAuthenticatedUser(user) {
+  initializeUser(user).catch(error => {
+    console.error("Kunne ikke initialisere brugerens cloud-data.", error);
+    window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
+    window.dispatchEvent(new CustomEvent("firestore:user-ready", {
+      detail: { uid: user.uid, fallback: true }
+    }));
+  });
+}
+
 window.addEventListener("firebase-auth:changed", () => {
   const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
   if (!user) {
     clearRuntimeForLogout();
     return;
   }
-  initializeUser(user).catch(error => {
-    console.error("Kunne ikke initialisere brugerens cloud-data.", error);
-    window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
-  });
+  beginAuthenticatedUser(user);
 });
 
 const existingUser = window.FirebaseAuthService?.getCurrentUser?.();
-if (existingUser) initializeUser(existingUser);
+if (existingUser) beginAuthenticatedUser(existingUser);

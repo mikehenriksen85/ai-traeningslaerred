@@ -120,6 +120,7 @@
   function close() {
     document.getElementById("daily-start-wizard-root")?.remove();
     state = null;
+    window.WorkitWindowManager?.notifyClosed?.("daily-wizard");
   }
 
   function finish(action) {
@@ -163,6 +164,7 @@
 
   function open(options = {}) {
     if (!window.TrainingWizardStore || document.getElementById("daily-start-wizard-root")) return false;
+    if (!window.WorkitWindowManager?.canOpen?.("daily-wizard")) return false;
     if (!options.forceMotivation && window.TrainingWizardStore.hasDailyMotivationForDate?.()) return false;
     window.WizardUI?.ensureStyles?.();
     const dailyState = window.TrainingWizardStore.getDailyState();

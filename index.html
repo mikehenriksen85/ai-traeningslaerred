@@ -424,7 +424,22 @@
     }
     .movement-btn.active { color: var(--text-primary); border-color: var(--text-success); background: rgba(74,222,128,.12); }
     .add-btn { width: 100%; background: rgba(74,222,128,.08); border: 1px dashed var(--green); color: var(--text-success); border-radius: 8px; padding: 13px; font-weight: var(--font-weight-bold); cursor: pointer; }
-    .muscle-menu { display: none; position: absolute; z-index: 20; bottom: 105%; left: 0; right: 0; isolation: isolate; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 -8px 24px rgba(0,0,0,.4); }
+    .muscle-menu {
+      display: none;
+      position: fixed;
+      z-index: 650;
+      flex-direction: column;
+      min-height: 0;
+      max-height: calc(100vh - 24px);
+      isolation: isolate;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0,0,0,.48);
+    }
+    #exercisePickerTitle { flex: 0 0 auto; }
+    #muscleMenuItems { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
     .muscle-item { padding: 12px 14px; cursor: pointer; }
     .muscle-item small { color: var(--text-secondary); font-size: var(--font-size-small); margin-left: 6px; }
     .muscle-item:hover { background: rgba(58,147,255,.12); color: var(--text-accent); }
@@ -439,8 +454,8 @@
       font-weight: var(--font-weight-bold);
       padding: 0;
     }
-    .exercise-picker-list { max-height: 42vh; overflow-y: auto; }
-    .exercise-picker-actions { padding: 10px 14px; border-top: 1px solid var(--border); }
+    .exercise-picker-list { min-height: 0; overflow-y: auto; }
+    .exercise-picker-actions { position: sticky; bottom: 0; padding: 10px 14px; border-top: 1px solid var(--border); background: var(--panel); }
     .exercise-picker-add {
       width: 100%;
       min-height: 44px;
@@ -714,6 +729,13 @@
     .auth-gate-feedback { min-height: 22px; margin-top: 12px; color: var(--text-secondary); font-size: var(--font-size-small); }
     body.auth-locked { overflow: hidden; }
     body.auth-locked > :not(.auth-gate):not(script) { pointer-events: none; user-select: none; }
+    body.auth-locked .modal,
+    body.auth-locked .membership-popup,
+    body.auth-locked .migration-dialog,
+    body.auth-locked #profile-wizard-root,
+    body.auth-locked #daily-start-wizard-root {
+      display: none !important;
+    }
     .migration-dialog {
       position: fixed;
       inset: 0;
@@ -890,6 +912,55 @@
     }
     .feedback-success { display: none; color: var(--text-success); margin-top: 8px; }
     .helper-text { color: var(--text-secondary); }
+    .about-intro {
+      margin: 0 0 16px;
+      color: var(--text-primary);
+      font-size: var(--font-size-body);
+      line-height: 1.6;
+    }
+    .about-intro strong { color: var(--text-success); }
+    .about-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .about-feature {
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(0,0,0,.12);
+    }
+    .about-feature h3 {
+      margin: 0 0 6px;
+      color: var(--text-primary);
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-semibold);
+    }
+    .about-feature p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: var(--font-size-body);
+      line-height: 1.5;
+    }
+    .about-feature.future {
+      grid-column: 1 / -1;
+      border-color: rgba(58,147,255,.45);
+      background: rgba(58,147,255,.08);
+    }
+    .about-closing {
+      margin: 0 0 16px;
+      padding: 12px;
+      border-left: 3px solid var(--green);
+      color: var(--text-primary);
+      background: rgba(74,222,128,.07);
+      line-height: 1.5;
+    }
+    @media (max-width: 620px) {
+      .about-feature-grid { grid-template-columns: 1fr; }
+      .about-feature.future { grid-column: auto; }
+    }
     .mobile-action-label { display: none; }
     .mobile-table-label { display: none; }
     .day-navigation {
@@ -1995,7 +2066,51 @@
       if ($("sidebar").classList.contains("open")) toggleSidebar();
       $("modalTitle").textContent = "Hjælp / Om appen";
       $("modalContent").innerHTML = `
-        <p class="helper-text">Work4it hjælper dig med at planlægge, gennemføre og følge din træning.</p>
+        <p class="about-intro">
+          <strong>Work4it samler hele din træningsrejse ét sted.</strong>
+          Appen hjælper dig med at skabe struktur, gennemføre gode træningspas og se den fremgang,
+          som ellers let forsvinder i løse noter og hukommelse. Du bestemmer retningen, mens Work4it
+          gør data, planlægning og opfølgning lettere.
+        </p>
+        <div class="about-feature-grid">
+          <section class="about-feature">
+            <h3>Træningsprogrammer</h3>
+            <p>Opret egne træningspas eller få genereret målrettede planer med flere træningsdage. Tilføj, erstat og flyt øvelser, og registrér sæt, reps, vægt, pauser og cardio-data.</p>
+          </section>
+          <section class="about-feature">
+            <h3>AI-funktioner</h3>
+            <p>AI Træningsassistenten kan hjælpe med programforslag, øvelsesvalg og ændringer via naturlige kommandoer. Forslagene tager højde for mål, erfaring, fokusområder og dagens motivation.</p>
+          </section>
+          <section class="about-feature">
+            <h3>Historik</h3>
+            <p>Afsluttede træningssessioner gemmes som historik, så du kan genfinde tidligere præstationer og følge kontinuiteten uden at ændre selve programskabelonen.</p>
+          </section>
+          <section class="about-feature">
+            <h3>Statistik</h3>
+            <p>Dashboardet samler blandt andet estimeret 1RM, træningsvolumen, kalorieestimat, gennemførte sæt og cardio-statistik. Det gør udviklingen synlig og lettere at handle på.</p>
+          </section>
+          <section class="about-feature">
+            <h3>Cloud-backup</h3>
+            <p>Når du er logget ind, synkroniseres understøttede brugerdata med Firebase. Lokal lagring fungerer fortsat som cache og fallback, så appen er robust ved midlertidige forbindelsesproblemer.</p>
+          </section>
+          <section class="about-feature">
+            <h3>Kropsmålinger</h3>
+            <p>Registrér højde, vægt, fedtprocent, muskelmasse og kropsmål. BMI beregnes automatisk, og historikken gør det muligt at se ændringer over tid.</p>
+          </section>
+          <section class="about-feature">
+            <h3>Personlige rekorder</h3>
+            <p>Work4it fremhæver dine bedste løft, højeste estimerede 1RM og stærkeste træningsresultater. Hver registrering kan blive et konkret bevis på, at indsatsen flytter noget.</p>
+          </section>
+          <section class="about-feature">
+            <h3>Medlemskab</h3>
+            <p>Gratisversionen indeholder de grundlæggende træningsfunktioner og 3 AI Requests. Premium-planerne giver flere AI Requests og adgang til de udvidede analyse- og planlægningsfunktioner.</p>
+          </section>
+          <section class="about-feature future">
+            <h3>Fremtidige funktioner</h3>
+            <p>Work4it er bygget til at kunne vokse med blandt andet forbedret screenshot-import, mere avancerede AI-anbefalinger, stærkere cloud-synkronisering, flere diagrammer og senere sikker betalingsintegration. Nye funktioner skal gøre træningen enklere, ikke mere kompliceret.</p>
+          </section>
+        </div>
+        <p class="about-closing">Fremgang behøver ikke være perfekt. Den skal bare kunne fortsætte. Work4it hjælper dig med at se næste skridt og huske, hvor langt du allerede er kommet.</p>
         <div class="row">
           <button class="small-btn" type="button" onclick="closeModal(); openContactDialog();">Kontakt</button>
           <button class="small-btn" type="button" onclick="closeModal()">Luk</button>
@@ -2523,7 +2638,48 @@
       exercisePickerSelection = "";
       document.querySelectorAll(".movement-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.movement === movement));
       renderMuscleMenu();
-      $("muscleMenu").style.display = "block";
+      openExercisePickerMenu();
+    }
+
+    function positionExercisePickerMenu() {
+      const menu = $("muscleMenu");
+      const trigger = document.querySelector(".add-zone .add-btn");
+      if (!menu || !trigger || menu.style.display === "none") return;
+
+      const margin = 12;
+      const gap = 8;
+      const viewportWidth = document.documentElement.clientWidth;
+      const viewportHeight = document.documentElement.clientHeight;
+      const triggerRect = trigger.getBoundingClientRect();
+      const availableAbove = Math.max(0, triggerRect.top - margin - gap);
+      const availableBelow = Math.max(0, viewportHeight - triggerRect.bottom - margin - gap);
+      const openBelow = availableBelow >= 280 || availableBelow >= availableAbove;
+      const availableHeight = openBelow ? availableBelow : availableAbove;
+      const maxHeight = Math.max(96, Math.min(560, availableHeight));
+      const width = Math.min(triggerRect.width, viewportWidth - margin * 2);
+      const left = Math.min(
+        Math.max(margin, triggerRect.left),
+        Math.max(margin, viewportWidth - width - margin)
+      );
+
+      menu.style.width = `${width}px`;
+      menu.style.left = `${left}px`;
+      menu.style.right = "auto";
+      menu.style.maxHeight = `${maxHeight}px`;
+      if (openBelow) {
+        menu.style.top = `${Math.min(viewportHeight - margin - maxHeight, triggerRect.bottom + gap)}px`;
+        menu.style.bottom = "auto";
+      } else {
+        menu.style.top = "auto";
+        menu.style.bottom = `${Math.max(margin, viewportHeight - triggerRect.top + gap)}px`;
+      }
+    }
+
+    function openExercisePickerMenu() {
+      const menu = $("muscleMenu");
+      if (!menu) return;
+      menu.style.display = "flex";
+      window.requestAnimationFrame(positionExercisePickerMenu);
     }
 
     function renderMuscleMenu() {
@@ -2565,7 +2721,7 @@
 
     function toggleMuscleMenu(event) {
       event.stopPropagation();
-      const opening = $("muscleMenu").style.display !== "block";
+      const opening = $("muscleMenu").style.display !== "flex";
       if (!opening) {
         closeExercisePicker();
         return;
@@ -2573,7 +2729,7 @@
       exercisePickerMuscle = "";
       exercisePickerSelection = "";
       renderMuscleMenu();
-      $("muscleMenu").style.display = "block";
+      openExercisePickerMenu();
     }
 
     function selectMuscle(encodedMuscle, event = null) {
@@ -2583,7 +2739,7 @@
       exercisePickerMuscle = muscle;
       exercisePickerSelection = "";
       renderMuscleMenu();
-      $("muscleMenu").style.display = "block";
+      openExercisePickerMenu();
     }
 
     function showMuscleGroups(event = null) {
@@ -2591,6 +2747,7 @@
       exercisePickerMuscle = "";
       exercisePickerSelection = "";
       renderMuscleMenu();
+      window.requestAnimationFrame(positionExercisePickerMenu);
     }
 
     function selectExerciseCandidate(encodedName, event = null) {
@@ -2602,6 +2759,7 @@
       if (!exercise) return;
       exercisePickerSelection = exercise.name;
       renderMuscleMenu();
+      window.requestAnimationFrame(positionExercisePickerMenu);
     }
 
     function addSelectedExercise(event = null) {
@@ -2617,6 +2775,8 @@
     }
 
     document.addEventListener("click", closeExercisePicker);
+    window.addEventListener("resize", positionExercisePickerMenu);
+    window.addEventListener("scroll", positionExercisePickerMenu, true);
 
     function addExercise(name = null, muscle = "Ryg", savedSets = null, metadata = null) {
       if (!name) name = `${t("chooseExercisePrefix")} ${t("exerciseHeader").toLowerCase()}...`;
@@ -4517,6 +4677,10 @@
       const context = trainingContext();
       const profile = window.TrainingGoalEngine?.profile?.(context.goal);
       const focus = context.focusAreas || [];
+      if (context.goal === "cardio") {
+        generateCardioProgram(Math.min(5, selectedAutomaticExerciseCount), "conditioning");
+        return;
+      }
       const type = context.goal === "weight_loss" || context.goal === "general_health" || context.goal === "strength"
         ? "fullbody"
         : focus.includes("Ben") && !focus.includes("Bryst") && !focus.includes("Ryg")
@@ -4717,7 +4881,7 @@
         const updates = {};
         let message = "";
         if (action.field === "goal") {
-          if (!["muscle_gain", "weight_loss", "strength", "general_health"].includes(action.value)) return { success: false, message: "Træningsmålet blev ikke genkendt." };
+          if (!["muscle_gain", "weight_loss", "strength", "general_health", "cardio"].includes(action.value)) return { success: false, message: "Træningsmålet blev ikke genkendt." };
           updates.goal = action.value;
           message = `Dit træningsmål er opdateret til ${window.TrainingGoalEngine?.profile?.(action.value)?.label || action.value}. Fremtidige forslag tilpasses målet.`;
         } else if (action.field === "experience") {
@@ -5048,6 +5212,27 @@
       const days = generated.map((day, dayIndex) => {
         const title = day.title || `Wizard træningspas ${dayIndex + 1}`;
         const exercises = (day.exercises || []).map((exercise, exerciseIndex) => {
+          const isCardio = exercise.exerciseType === "cardio" || exercise.muscle === "Cardio";
+          if (isCardio) {
+            return {
+              name: exercise.name,
+              muscle: "Cardio",
+              goal: exercise.goal || day.goal || event.detail?.goal || "cardio",
+              role: "cardio",
+              exerciseType: "cardio",
+              cardio: {
+                durationMinutes: Number(exercise.cardio?.durationMinutes || exercise.durationMinutes) || 30,
+                distanceKm: exercise.cardio?.distanceKm || "",
+                calories: exercise.cardio?.calories || "",
+                averageHeartRate: exercise.cardio?.averageHeartRate || "",
+                maxHeartRate: exercise.cardio?.maxHeartRate || "",
+                speedKmh: exercise.cardio?.speedKmh || "",
+                notes: exercise.cardio?.notes || "",
+                completed: false
+              },
+              sets: []
+            };
+          }
           const setCount = Math.max(1, Number(exercise.sets) || 3);
           const plan = {
             ...goalPrescription(exercise.name, exercise.muscle, exerciseIndex),
@@ -5346,6 +5531,10 @@
     function openDailyProgramGenerator() {
       if (!openPremiumFeature("generator")) return;
       const context = window.TrainingWizardStore?.getContext?.() || {};
+      if (context.goal === "cardio") {
+        generateCardioProgram(Math.min(5, selectedAutomaticExerciseCount), "conditioning");
+        return;
+      }
       const focus = context.focusAreas || [];
       const type = ["weight_loss", "strength", "general_health"].includes(context.goal)
         ? "fullbody"
@@ -5419,20 +5608,20 @@
     window.ENABLE_DAILY_START_WIZARD = true;
   </script>
   <script src="storage-scope.js?v=20260614-migration1"></script>
-  <script src="training-goal-engine.js"></script>
+  <script src="training-goal-engine.js?v=20260615-cardio-goal1"></script>
   <script src="workout-program-store.js"></script>
   <script src="wizard-store.js"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-copilot-actions.js"></script>
-  <script src="auth-gate.js?v=20260614-identity1"></script>
+  <script src="ai-copilot-actions.js?v=20260615-cardio-goal1"></script>
+  <script src="auth-gate.js?v=20260615-window1"></script>
   <script src="profile-account.js?v=20260614-identity1"></script>
-  <script src="profile-wizard.js"></script>
-  <script src="daily-start-wizard.js"></script>
-  <script src="wizard-controller.js?v=20260614-auth2"></script>
-  <script src="membership.js?v=20260614-pricing1"></script>
+  <script src="profile-wizard.js?v=20260615-window1"></script>
+  <script src="daily-start-wizard.js?v=20260615-window1"></script>
+  <script src="wizard-controller.js?v=20260615-window1"></script>
+  <script src="membership.js?v=20260615-window1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
   <script type="module" src="auth-service.js?v=20260614-auth2"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260614-migration1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260615-window1"></script>
 </body>
 </html>
 

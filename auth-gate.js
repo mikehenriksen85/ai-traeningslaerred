@@ -5,6 +5,53 @@
     return document.getElementById(id);
   }
 
+  function isVisible(element) {
+    if (!element) return false;
+    if (element.hidden) return false;
+    const style = window.getComputedStyle(element);
+    return style.display !== "none" && style.visibility !== "hidden";
+  }
+
+  function closeNonAuthWindows() {
+    document.getElementById("profile-wizard-root")?.remove();
+    document.getElementById("daily-start-wizard-root")?.remove();
+    document.getElementById("membershipPopup")?.classList.remove("open");
+    const modal = byId("modal");
+    if (modal) modal.style.display = "none";
+    ["progressView", "profileAccountView", "membershipView", "calorieView"].forEach(id => {
+      byId(id)?.classList.remove("open");
+    });
+    const exerciseMenu = byId("muscleMenu");
+    if (exerciseMenu) exerciseMenu.style.display = "none";
+  }
+
+  function activeWindow(except = "") {
+    const candidates = [
+      ["migration", document.querySelector(".migration-dialog")],
+      ["profile-wizard", byId("profile-wizard-root")],
+      ["daily-wizard", byId("daily-start-wizard-root")],
+      ["membership-popup", byId("membershipPopup")],
+      ["modal", byId("modal")],
+      ["profile-view", byId("profileAccountView")],
+      ["membership-view", byId("membershipView")],
+      ["progress-view", byId("progressView")],
+      ["calorie-view", byId("calorieView")]
+    ];
+    return candidates.find(([name, element]) => name !== except && isVisible(element))?.[0] || "";
+  }
+
+  window.WorkitWindowManager = {
+    closeNonAuthWindows,
+    activeWindow,
+    canOpen(name) {
+      const service = window.FirebaseAuthService;
+      return Boolean(service?.isInitialized?.() && service?.getCurrentUser?.() && !activeWindow(name));
+    },
+    notifyClosed(name) {
+      window.dispatchEvent(new CustomEvent("workit:window-closed", { detail: { name } }));
+    }
+  };
+
   function authErrorMessage(error) {
     const messages = {
       "auth/email-already-in-use": "E-mailadressen er allerede i brug.",
@@ -49,6 +96,7 @@
   function showGate(message = "Log ind eller opret en konto for at fortsætte.") {
     const gate = byId("authGate");
     if (!gate) return;
+    closeNonAuthWindows();
     gate.hidden = false;
     gate.setAttribute("aria-hidden", "false");
     document.body.classList.add("auth-locked");

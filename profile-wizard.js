@@ -281,6 +281,14 @@
         <div class="wizard-days">${optionButtons(days, String(state.trainingDaysPerWeek), "days")}</div>`;
     }
     if (state.step === 5) {
+      if (state.goal === "cardio") {
+        return `<h2 class="wizard-step-title">Cardio er valgt som fokus</h2>
+          <p class="wizard-help">Programmet sammensættes af forskellige cardioformer med fokus på kondition, kredsløb og udholdenhed.</p>
+          <div class="wizard-information" role="status">
+            <strong>❤️ Selvstændigt Cardio-mål</strong>
+            <span>Du behøver ikke vælge muskelgrupper. Tryk på Næste for at fortsætte.</span>
+          </div>`;
+      }
       return `<h2 class="wizard-step-title">Vælg dine fokusområder</h2>
         <p class="wizard-help">Vælg gerne flere områder. Tryk derefter på Næste.</p>
         <div class="wizard-options">${optionButtons(focusAreas, state.focusAreas, "focus", true)}</div>`;
@@ -315,7 +323,7 @@
     }
     if (state.step === 3) return Boolean(state.experience);
     if (state.step === 4) return state.trainingDaysPerWeek > 0;
-    if (state.step === 5) return state.focusAreas.length > 0;
+    if (state.step === 5) return state.goal === "cardio" || state.focusAreas.length > 0;
     if (state.step === 6) return Boolean(state.exercisePreference);
     return true;
   }
@@ -348,6 +356,7 @@
   function close() {
     document.getElementById("profile-wizard-root")?.remove();
     state = null;
+    window.WorkitWindowManager?.notifyClosed?.("profile-wizard");
   }
 
   function moveTo(step) {
@@ -439,6 +448,7 @@
 
   function open(options = {}) {
     if (!window.TrainingWizardStore || document.getElementById("profile-wizard-root")) return;
+    if (!window.WorkitWindowManager?.canOpen?.("profile-wizard")) return;
     window.WizardUI?.ensureStyles?.();
     state = freshState(options.mode === "edit" ? "edit" : "new");
     const root = document.createElement("div");

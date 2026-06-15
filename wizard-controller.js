@@ -326,6 +326,7 @@
     const store = window.TrainingWizardStore;
     const authenticatedUser = window.FirebaseAuthService?.getCurrentUser?.();
     if (!store || !authenticatedUser) return;
+    if (!window.WorkitWindowManager?.canOpen?.("wizard-startup")) return;
     if (document.getElementById("profile-wizard-root") || document.getElementById("daily-start-wizard-root")) return;
     const profile = store.getProfile();
     const profileEntry = document.querySelector(".profile");
@@ -368,11 +369,7 @@
     window.requestAnimationFrame(start);
   }
 
-  window.addEventListener("training-app:ready", startAfterLayout);
-  window.addEventListener("firebase-auth:changed", event => {
-    if (event.detail?.user) startAfterLayout();
-  });
-  window.addEventListener("load", startAfterLayout, { once: true });
+  window.addEventListener("firestore:user-ready", startAfterLayout);
   window.addEventListener("onboarding:create-programs", openDailyAfterOnboarding);
   window.addEventListener("pageshow", event => {
     if (event.persisted) startAfterLayout();

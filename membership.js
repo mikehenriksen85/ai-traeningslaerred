@@ -214,11 +214,13 @@
   function closePopup() {
     const popup = document.getElementById("membershipPopup");
     popup?.classList.remove("open");
+    window.WorkitWindowManager?.notifyClosed?.("membership-popup");
   }
 
   function showPopup(force = false) {
     const data = getMembership();
     if (!force && !popupIsDue(data)) return false;
+    if (!window.WorkitWindowManager?.canOpen?.("membership-popup")) return false;
     document.getElementById("membershipPopup")?.classList.add("open");
     return true;
   }
@@ -312,7 +314,10 @@
   function initialize() {
     const data = getMembership();
     render(data);
-    if (popupIsDue(data)) showPopup();
+  }
+
+  function showStartupPopupWhenFree() {
+    window.setTimeout(() => showPopup(), 120);
   }
 
   window.Membership = {
@@ -343,4 +348,6 @@
   window.openPremiumFeature = requireFeature;
 
   window.addEventListener("training-app:ready", initialize, { once: true });
+  window.addEventListener("firestore:user-ready", showStartupPopupWhenFree);
+  window.addEventListener("workit:window-closed", showStartupPopupWhenFree);
 }());
