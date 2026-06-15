@@ -8,6 +8,8 @@ import {
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
@@ -93,7 +95,25 @@ async function createAccount(email, password) {
 async function loginWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  return signInWithPopup(auth, provider);
+  const userAgent = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches ||
+    window.navigator.standalone === true;
+  const isMobile = isIOS || /Android|Mobile/i.test(userAgent);
+
+  if (isMobile || isStandalone) {
+    return signInWithRedirect(auth, provider);
+  }
+
+  try {
+    return await signInWithPopup(auth, provider);
+  } catch (error) {
+    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(error?.code)) {
+      return signInWithRedirect(auth, provider);
+    }
+    throw error;
+  }
 }
 
 async function logout() {
@@ -122,6 +142,14 @@ async function initializeAuthState() {
     await setPersistence(auth, browserLocalPersistence);
   } catch (error) {
     console.warn("Firebase kunne ikke bekræfte lokal login-persistens.", error);
+  }
+
+  try {
+    await getRedirectResult(auth);
+  } catch (error) {
+    console.error("Google-login via redirect kunne ikke gennemføres.", error);
+    initialized = true;
+    emitAuthState(error);
   }
 
   onAuthStateChanged(auth, async user => {

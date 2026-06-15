@@ -19,11 +19,51 @@
     last_active_program_id: "lastProgram"
   };
   const managedKeys = new Set(Object.keys(KEY_ALIASES));
+  const memoryFallback = new Map();
+  let nativeStorage = null;
+  try {
+    nativeStorage = window.localStorage;
+  } catch (error) {
+    console.warn("Browserens lokale lager er ikke tilgængeligt. Work4it bruger midlertidig hukommelse.", error);
+  }
+  const nativeMethods = nativeStorage ? {
+    getItem: nativeStorage.getItem.bind(nativeStorage),
+    setItem: nativeStorage.setItem.bind(nativeStorage),
+    removeItem: nativeStorage.removeItem.bind(nativeStorage),
+    clear: nativeStorage.clear.bind(nativeStorage)
+  } : null;
   const original = {
-    getItem: localStorage.getItem.bind(localStorage),
-    setItem: localStorage.setItem.bind(localStorage),
-    removeItem: localStorage.removeItem.bind(localStorage),
-    clear: localStorage.clear.bind(localStorage)
+    getItem(key) {
+      try {
+        const value = nativeMethods?.getItem(String(key));
+        return value == null ? memoryFallback.get(String(key)) ?? null : value;
+      } catch {
+        return memoryFallback.get(String(key)) ?? null;
+      }
+    },
+    setItem(key, value) {
+      const normalizedKey = String(key);
+      const normalizedValue = String(value);
+      memoryFallback.set(normalizedKey, normalizedValue);
+      try {
+        nativeMethods?.setItem(normalizedKey, normalizedValue);
+      } catch (error) {
+        console.warn("Work4it kunne ikke skrive til browserens lokale lager.", error);
+      }
+    },
+    removeItem(key) {
+      const normalizedKey = String(key);
+      memoryFallback.delete(normalizedKey);
+      try {
+        nativeMethods?.removeItem(normalizedKey);
+      } catch {}
+    },
+    clear() {
+      memoryFallback.clear();
+      try {
+        nativeMethods?.clear();
+      } catch {}
+    }
   };
   const pendingWrites = new Map();
   let activeUid = "";
@@ -90,13 +130,13 @@
     }));
   }
 
-  localStorage.getItem = function getScopedItem(key) {
+  function getScopedItem(key) {
     if (!managedKeys.has(String(key))) return original.getItem(key);
     if (!activeUid) return null;
     return original.getItem(scopedKey(String(key)));
-  };
+  }
 
-  localStorage.setItem = function setScopedItem(key, value) {
+  function setScopedItem(key, value) {
     const logicalKey = String(key);
     if (!managedKeys.has(logicalKey)) {
       original.setItem(logicalKey, value);
@@ -108,9 +148,9 @@
     }
     original.setItem(scopedKey(logicalKey), stampValue(logicalKey, value));
     notify(logicalKey, "set");
-  };
+  }
 
-  localStorage.removeItem = function removeScopedItem(key) {
+  function removeScopedItem(key) {
     const logicalKey = String(key);
     if (!managedKeys.has(logicalKey)) {
       original.removeItem(logicalKey);
@@ -120,14 +160,25 @@
     if (!activeUid) return;
     original.removeItem(scopedKey(logicalKey));
     notify(logicalKey, "remove");
-  };
+  }
 
   // Ryd kun den aktive brugers cache. Globale, ikke-personlige indstillinger bevares.
-  localStorage.clear = function clearActiveUserCache() {
+  function clearActiveUserCache() {
     if (!activeUid) return;
     for (const key of managedKeys) original.removeItem(scopedKey(key));
     notify("*", "clear");
-  };
+  }
+
+  if (nativeStorage) {
+    try {
+      nativeStorage.getItem = getScopedItem;
+      nativeStorage.setItem = setScopedItem;
+      nativeStorage.removeItem = removeScopedItem;
+      nativeStorage.clear = clearActiveUserCache;
+    } catch (error) {
+      console.warn("Browseren tillod ikke UID-opdeling af localStorage.", error);
+    }
+  }
 
   function setActiveUid(uid) {
     activeUid = String(uid || "");
