@@ -10,23 +10,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isKnownProfileDocument(profileId) {
-      return profileId in [
-        "main",
-        "daily",
-        "membership",
-        "appState",
-        "syncMetadata"
-      ];
-    }
-
     match /users/{userId} {
       allow read, create, update, delete: if isOwner(userId);
 
       match /profile/{profileId} {
-        allow read, create, update, delete: if
-          isOwner(userId) &&
-          isKnownProfileDocument(profileId);
+        allow read, create, update, delete: if isOwner(userId);
       }
 
       match /programs/{programId} {

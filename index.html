@@ -701,6 +701,7 @@
       inset: 0;
       z-index: 10000;
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       place-items: center;
       padding: 18px;
       padding-top: max(18px, env(safe-area-inset-top, 0px));
@@ -712,7 +713,8 @@
     }
     .auth-gate[hidden] { display: none; }
     .auth-gate-panel {
-      width: min(460px, 100%);
+      width: 100%;
+      max-width: 460px;
       padding: 24px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -748,6 +750,19 @@
     .auth-gate-button.google, .auth-gate-button.reset { grid-column: 1 / -1; }
     .auth-gate-button:disabled { cursor: wait; opacity: .55; }
     .auth-gate-feedback { min-height: 22px; margin-top: 12px; color: var(--text-secondary); font-size: var(--font-size-small); }
+    .auth-gate.loading .auth-gate-form { display: none; }
+    .auth-gate.loading .auth-gate-title::after {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-left: 8px;
+      border: 2px solid rgba(255,255,255,.25);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: authSpin .8s linear infinite;
+    }
+    @keyframes authSpin { to { transform: rotate(360deg); } }
     body.auth-locked { overflow: hidden; }
     body.auth-locked > :not(.auth-gate):not(script) { pointer-events: none; user-select: none; }
     body.auth-locked .modal,
@@ -1191,7 +1206,8 @@
       .profile-form-field.wide { grid-column: auto; }
       .profile-account-status { align-items: flex-start; flex-direction: column; }
       .profile-account-actions .profile-account-button { width: 100%; }
-      .auth-gate-panel { padding: 18px; }
+      .auth-gate { place-items: start center; }
+      .auth-gate-panel { width: calc(100vw - 36px); max-width: calc(100vw - 36px); padding: 18px; }
       .auth-gate-actions { grid-template-columns: 1fr; }
       .auth-gate-button.google, .auth-gate-button.reset { grid-column: auto; }
       .migration-actions { grid-template-columns: 1fr; }
@@ -1258,11 +1274,11 @@
   </style>
 </head>
 <body class="auth-locked">
-  <section class="auth-gate" id="authGate" aria-label="Log ind" aria-live="polite">
+  <section class="auth-gate loading" id="authGate" aria-label="Logger ind" aria-live="polite">
     <div class="auth-gate-panel">
       <div class="auth-gate-brand">Work4it</div>
       <h1 class="auth-gate-title">Velkommen</h1>
-      <p class="auth-gate-copy" id="authGateCopy">Log ind eller opret en konto for at fortsætte.</p>
+      <p class="auth-gate-copy" id="authGateCopy">Kontrollerer eksisterende login...</p>
       <form class="auth-gate-form" onsubmit="loginFromAuthGate(event)">
         <label class="auth-gate-field">E-mail
           <input id="authGateEmail" type="email" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="email@example.com" required>
@@ -2060,6 +2076,10 @@
       item?.classList.add("active");
     }
 
+    function saveLastActiveView(view) {
+      window.WorkitViewState?.save?.(view);
+    }
+
     function toggleGeneratorMenu() {
       const generator = $("programGeneratorAccess");
       if (!generator) return;
@@ -2141,6 +2161,7 @@
       $("modal").style.display = "flex";
     }
     function openTodayWorkout() {
+      saveLastActiveView("today");
       if ($("sidebar").classList.contains("open")) toggleSidebar();
       if (hasActiveWorkoutSession()) {
         showTrainingSession();
@@ -2193,6 +2214,7 @@
       return `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "index.html")}`;
     }
     function goHome() {
+      saveLastActiveView("program");
       if (currentWorkoutView === "session" && hasActiveWorkoutSession()) {
         closeTrainingWindow();
         return;
@@ -2504,6 +2526,7 @@
     }
 
     function openCalorieView() {
+      saveLastActiveView("calorie");
       if ($("sidebar").classList.contains("open")) toggleSidebar();
       $("progressView")?.classList.remove("open");
       $("membershipView")?.classList.remove("open");
@@ -4292,6 +4315,7 @@
     }
 
     function openProgressView() {
+      saveLastActiveView("progress");
       $("calorieView")?.classList.remove("open");
       renderProgressView();
       $("progressView").classList.add("open");
@@ -4550,6 +4574,7 @@
       return keys.map((k,i) => ({ key:k, volume:g[k], change:pct(g[k], i ? g[keys[i-1]] : 0) }));
     }
     function openDashboard(slot = null, improve = 5) {
+      saveLastActiveView("dashboard");
       const hist = history(), current = collectAnalyticsEntry();
       const hasPremium = window.Membership?.getMembership?.().isPremium !== false;
       const allSets = hist.flatMap(e => e.exercises || []).flatMap(e => e.sets || []);
@@ -5636,12 +5661,12 @@
   <script src="wizard-store.js"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-copilot-actions.js?v=20260615-cardio-goal1"></script>
-  <script src="auth-gate.js?v=20260615-window1"></script>
-  <script src="profile-account.js?v=20260614-identity1"></script>
+  <script src="auth-gate.js?v=20260618-authflow1"></script>
+  <script src="profile-account.js?v=20260618-authflow1"></script>
   <script src="profile-wizard.js?v=20260615-window1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260615-window1"></script>
-  <script src="membership.js?v=20260615-window1"></script>
+  <script src="membership.js?v=20260618-authflow1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
   <script type="module" src="auth-service.js?v=20260614-auth2"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260615-window1"></script>

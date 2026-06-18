@@ -54,6 +54,13 @@
     };
     write(PROFILE_KEY, next);
     window.dispatchEvent(new CustomEvent("training-profile:updated", { detail: { ...next } }));
+    if (window.FirestoreDataService?.saveProfileToCloud) {
+      window.FirestoreDataService.saveProfileToCloud(next).catch(error => {
+        window.dispatchEvent(new CustomEvent("training-profile:cloud-save-failed", {
+          detail: { error, profile: { ...next } }
+        }));
+      });
+    }
     return next;
   }
 

@@ -210,6 +210,7 @@
   }
 
   function openProfileAccountView() {
+    window.WorkitViewState?.save?.("profile");
     document.getElementById("progressView")?.classList.remove("open");
     document.getElementById("membershipView")?.classList.remove("open");
     document.getElementById("calorieView")?.classList.remove("open");
@@ -259,7 +260,7 @@
     writeJson(bodyHistoryKey, [...(Array.isArray(entries) ? entries : []), entry]);
   }
 
-  function saveProfileAccount(event) {
+  async function saveProfileAccount(event) {
     event?.preventDefault?.();
     const profile = {
       hasCompletedProfileWizard: true,
@@ -278,11 +279,19 @@
       exercisePreference: byId("profileExercisePreference").value,
       preferredExerciseCount: Number(byId("profilePreferredExerciseCount").value) || 5
     };
-    window.TrainingWizardStore?.saveProfile?.(profile);
+    const savedProfile = window.TrainingWizardStore?.saveProfile?.(profile);
     saveMeasurementSnapshot(profile);
     updateSidebarProfileIdentity();
     const feedback = byId("profileSaveFeedback");
-    if (feedback) feedback.textContent = "Profilen er gemt lokalt.";
+    if (!feedback) return;
+    try {
+      await window.FirestoreDataService?.saveProfileToCloud?.(savedProfile);
+      feedback.textContent = "Profil gemt i Cloud ☁️";
+      feedback.style.color = "";
+    } catch (error) {
+      feedback.textContent = "Profil gemt lokalt – Cloud ikke tilgængelig";
+      feedback.style.color = "#fbbf24";
+    }
   }
 
   function openProfileWizardAgain() {

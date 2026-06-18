@@ -35,17 +35,19 @@ function publicUser(user) {
 }
 
 async function ensureUserDocument(user) {
-  const reference = doc(db, "users", user.uid);
+  const reference = doc(db, "users", user.uid, "profile", "main");
   const snapshot = await getDoc(reference);
   await setDoc(reference, {
-    uid: user.uid,
-    email: user.email || "",
-    displayName: user.displayName || "",
-    photoURL: user.photoURL || "",
-    emailVerified: Boolean(user.emailVerified),
-    providerIds: user.providerData.map(provider => provider.providerId),
+    account: {
+      uid: user.uid,
+      email: user.email || "",
+      displayName: user.displayName || "",
+      photoURL: user.photoURL || "",
+      emailVerified: Boolean(user.emailVerified),
+      providerIds: user.providerData.map(provider => provider.providerId),
+      lastLoginAt: new Date().toISOString()
+    },
     ...(snapshot.exists() ? {} : { createdAt: serverTimestamp() }),
-    lastLoginAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   }, { merge: true });
 }
@@ -155,18 +157,23 @@ async function initializeAuthState() {
   onAuthStateChanged(auth, async user => {
     currentUser = user;
     initialized = true;
-    let userDocumentError = null;
 
     if (user) {
       try {
         await ensureUserDocument(user);
       } catch (error) {
-        userDocumentError = error;
-        console.error("Kunne ikke oprette Firebase-brugerdokumentet.", error);
+        console.error("Kunne ikke oprette Firebase-profilmetadata på users/{uid}/profile/main.", error);
+        window.dispatchEvent(new CustomEvent("firebase-auth:profile-metadata-error", {
+          detail: {
+            path: `users/${user.uid}/profile/main`,
+            operation: "setDoc",
+            error
+          }
+        }));
       }
     }
 
-    emitAuthState(userDocumentError);
+    emitAuthState();
   }, error => {
     initialized = true;
     currentUser = null;

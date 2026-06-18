@@ -276,6 +276,7 @@
   }
 
   function openView() {
+    window.WorkitViewState?.save?.("membership");
     render();
     document.getElementById("progressView")?.classList.remove("open");
     document.getElementById("calorieView")?.classList.remove("open");

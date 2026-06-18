@@ -72,6 +72,24 @@ function cleanDocument(value) {
   return clean;
 }
 
+function hasProfileFields(value) {
+  if (!value || typeof value !== "object") return false;
+  return [
+    "hasCompletedProfileWizard",
+    "name",
+    "goal",
+    "heightCm",
+    "weightKg",
+    "age",
+    "gender",
+    "experience",
+    "trainingDaysPerWeek",
+    "focusAreas",
+    "exercisePreference",
+    "preferredExerciseCount"
+  ].some(field => Object.prototype.hasOwnProperty.call(value, field));
+}
+
 function stableId(value, prefix = "item", index = 0) {
   const source = value?.id || value?.sessionId || value?.date || value?.timestamp;
   return String(source || `${prefix}_${index + 1}`)
@@ -118,25 +136,51 @@ function syncReference(uid) {
   return doc(db, "users", uid, "profile", "syncMetadata");
 }
 
+function firestorePath(pathSegments) {
+  return Array.isArray(pathSegments) ? pathSegments.join("/") : String(pathSegments || "");
+}
+
+function reportFirestoreError(operation, pathSegments, error) {
+  console.error(`Firestore ${operation} fejlede på ${firestorePath(pathSegments)}.`, error);
+}
+
 async function getSyncMetadata(uid) {
-  const snapshot = await getDoc(syncReference(uid));
-  return snapshot.exists() ? snapshot.data() : {};
+  const path = ["users", uid, "profile", "syncMetadata"];
+  try {
+    const snapshot = await getDoc(syncReference(uid));
+    return snapshot.exists() ? snapshot.data() : {};
+  } catch (error) {
+    reportFirestoreError("getDoc", path, error);
+    throw error;
+  }
 }
 
 async function setSyncMetadata(uid, data) {
-  await setDoc(syncReference(uid), {
-    migrationVersion: MIGRATION_VERSION,
-    ...data,
-    updatedAt: new Date().toISOString(),
-    firestoreUpdatedAt: serverTimestamp()
-  }, { merge: true });
-  if (Object.prototype.hasOwnProperty.call(data, "migrationCompleted")) {
-    await setDoc(doc(db, "users", uid), {
-      migrationCompleted: Boolean(data.migrationCompleted),
-      migrationCompletedAt: data.migrationCompletedAt || null,
+  const syncPath = ["users", uid, "profile", "syncMetadata"];
+  try {
+    await setDoc(syncReference(uid), {
+      migrationVersion: MIGRATION_VERSION,
+      ...data,
       updatedAt: new Date().toISOString(),
       firestoreUpdatedAt: serverTimestamp()
     }, { merge: true });
+  } catch (error) {
+    reportFirestoreError("setDoc", syncPath, error);
+    throw error;
+  }
+  if (Object.prototype.hasOwnProperty.call(data, "migrationCompleted")) {
+    const appStatePath = ["users", uid, "profile", "appState"];
+    try {
+      await setDoc(doc(db, ...appStatePath), {
+        migrationCompleted: Boolean(data.migrationCompleted),
+        migrationCompletedAt: data.migrationCompletedAt || null,
+        updatedAt: new Date().toISOString(),
+        firestoreUpdatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      reportFirestoreError("setDoc", appStatePath, error);
+      throw error;
+    }
   }
 }
 
@@ -156,6 +200,33 @@ async function upsertDocument(reference, localValue) {
     firestoreUpdatedAt: serverTimestamp()
   }, { merge: true });
   return true;
+}
+
+async function saveProfileToCloud(profile) {
+  if (!activeUid || !cloudEnabled) {
+    throw new Error("Cloud er ikke klar. Log ind igen eller prøv senere.");
+  }
+  const path = ["users", activeUid, "profile", "main"];
+  const nextProfile = {
+    ...cleanDocument(profile),
+    updatedAt: profile?.updatedAt || new Date().toISOString(),
+    firestoreUpdatedAt: serverTimestamp()
+  };
+  try {
+    await setDoc(doc(db, ...path), nextProfile, { merge: true });
+    localFingerprint = currentLocalFingerprint();
+    window.dispatchEvent(new CustomEvent("firestore:profile-saved", {
+      detail: { uid: activeUid, path: firestorePath(path) }
+    }));
+    queueSync();
+    return true;
+  } catch (error) {
+    reportFirestoreError("setDoc", path, error);
+    window.dispatchEvent(new CustomEvent("firestore:profile-save-failed", {
+      detail: { uid: activeUid, path: firestorePath(path), error }
+    }));
+    throw error;
+  }
 }
 
 async function upsertCollection(pathSegments, values, prefix, fallbackUpdatedAt = "") {
@@ -337,7 +408,12 @@ async function hydrateFromFirestore(uid = activeUid) {
       readCollection(["users", uid, COLLECTIONS.trash])
     ]);
 
-    if (profile.exists()) writeLocal(KEYS.profile, newest(parseLocal(KEYS.profile, null), cleanDocument(profile.data())));
+    if (profile.exists()) {
+      const cloudProfile = cleanDocument(profile.data());
+      if (hasProfileFields(cloudProfile)) {
+        writeLocal(KEYS.profile, cloudProfile);
+      }
+    }
     if (daily.exists()) writeLocal(KEYS.daily, newest(parseLocal(KEYS.daily, null), cleanDocument(daily.data())));
     if (membership.exists()) writeLocal(KEYS.membership, newest(parseLocal(KEYS.membership, null), cleanDocument(membership.data())));
     if (appState.exists()) {
@@ -489,6 +565,7 @@ window.setInterval(() => {
 
 window.FirestoreDataService = {
   keys: { ...KEYS },
+  saveProfileToCloud,
   syncAllLocalData,
   hydrateFromFirestore,
   requestMigration: async () => {

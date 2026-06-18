@@ -1,6 +1,19 @@
 (function authGateModule() {
   "use strict";
 
+  const LAST_VIEW_KEY = "work4it:lastActiveView";
+  const restoreableViews = new Set([
+    "program",
+    "today",
+    "profile",
+    "membership",
+    "progress",
+    "calorie",
+    "dashboard"
+  ]);
+  let appReady = false;
+  let restoreAttempted = false;
+
   function byId(id) {
     return document.getElementById(id);
   }
@@ -85,6 +98,25 @@
     setActionsEnabled(!busy && Boolean(window.FirebaseAuthService));
   }
 
+  function readLastActiveView() {
+    try {
+      return sessionStorage.getItem(LAST_VIEW_KEY) ||
+        localStorage.getItem(LAST_VIEW_KEY) ||
+        "program";
+    } catch {
+      return "program";
+    }
+  }
+
+  function saveLastActiveView(view) {
+    const normalized = String(view || "program");
+    if (!restoreableViews.has(normalized)) return;
+    try {
+      sessionStorage.setItem(LAST_VIEW_KEY, normalized);
+      localStorage.setItem(LAST_VIEW_KEY, normalized);
+    } catch {}
+  }
+
   function setAppInert(locked) {
     [...document.body.children].forEach(element => {
       if (element.id === "authGate" || element.tagName === "SCRIPT") return;
@@ -93,12 +125,26 @@
     });
   }
 
+  function showLoading(message = "Kontrollerer eksisterende login...") {
+    const gate = byId("authGate");
+    if (!gate) return;
+    gate.hidden = false;
+    gate.setAttribute("aria-hidden", "false");
+    gate.classList.add("loading");
+    document.body.classList.add("auth-locked");
+    setAppInert(true);
+    const copy = byId("authGateCopy");
+    if (copy) copy.textContent = message;
+    setActionsEnabled(false);
+  }
+
   function showGate(message = "Log ind eller opret en konto for at fortsætte.") {
     const gate = byId("authGate");
     if (!gate) return;
     closeNonAuthWindows();
     gate.hidden = false;
     gate.setAttribute("aria-hidden", "false");
+    gate.classList.remove("loading");
     document.body.classList.add("auth-locked");
     setAppInert(true);
     const copy = byId("authGateCopy");
@@ -118,6 +164,7 @@
     if (!gate) return;
     gate.hidden = true;
     gate.setAttribute("aria-hidden", "true");
+    gate.classList.remove("loading");
     document.body.classList.remove("auth-locked");
     setAppInert(false);
     const password = byId("authGatePassword");
@@ -187,14 +234,43 @@
     if (verifiedUser) {
       hideGate();
       setFeedback("");
+      restoreLastActiveViewWhenReady();
       return;
     }
     if (detail.initialized) {
+      restoreAttempted = false;
       clearGateIdentity();
       showGate();
       setFeedback(detail.error ? authErrorMessage(detail.error) : "Log ind for at fortsætte.");
     }
   }
+
+  function restoreLastActiveViewWhenReady() {
+    if (restoreAttempted || !appReady) return;
+    const verifiedUser = window.FirebaseAuthService?.getCurrentUser?.() || null;
+    if (!verifiedUser) return;
+    restoreAttempted = true;
+    const view = readLastActiveView();
+    window.setTimeout(() => {
+      if (!window.FirebaseAuthService?.getCurrentUser?.()) return;
+      if (view === "profile") window.openProfileAccountView?.();
+      else if (view === "membership") window.openMembershipView?.();
+      else if (view === "progress") window.openPremiumFeature?.("progress", window.openProgressView);
+      else if (view === "calorie") window.openCalorieView?.();
+      else if (view === "dashboard") window.openDashboard?.();
+      else if (view === "today") window.openTodayWorkout?.();
+    }, 0);
+  }
+
+  window.WorkitViewState = {
+    key: LAST_VIEW_KEY,
+    save: saveLastActiveView,
+    get: readLastActiveView,
+    restore: () => {
+      restoreAttempted = false;
+      restoreLastActiveViewWhenReady();
+    }
+  };
 
   window.loginFromAuthGate = loginFromAuthGate;
   window.createFromAuthGate = createFromAuthGate;
@@ -203,12 +279,18 @@
   window.showAuthGate = showGate;
 
   window.addEventListener("firebase-auth:ready", () => {
-    setActionsEnabled(false);
     clearGateIdentity();
+    showLoading();
     setFeedback("Kontrollerer eksisterende login...");
   });
   window.addEventListener("firebase-auth:changed", event => handleAuthState(event.detail));
+  window.addEventListener("training-app:ready", () => {
+    appReady = true;
+    restoreLastActiveViewWhenReady();
+  });
+  window.addEventListener("firestore:data-hydrated", restoreLastActiveViewWhenReady);
+  window.addEventListener("firestore:user-ready", restoreLastActiveViewWhenReady);
 
   clearGateIdentity();
-  showGate("Kontrollerer eksisterende login...");
+  showLoading();
 })();
