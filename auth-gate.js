@@ -2,6 +2,8 @@
   "use strict";
 
   const LAST_VIEW_KEY = "work4it:lastActiveView";
+  const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
+  const PRIVACY_VERSION = "2026-06-19";
   const restoreableViews = new Set([
     "program",
     "today",
@@ -178,6 +180,30 @@
     };
   }
 
+  function recordPrivacyConsent(source) {
+    const payload = {
+      accepted: true,
+      version: PRIVACY_VERSION,
+      acceptedAt: new Date().toISOString(),
+      source
+    };
+    try {
+      localStorage.setItem(PRIVACY_CONSENT_KEY, JSON.stringify(payload));
+    } catch {}
+    return payload;
+  }
+
+  function requirePrivacyConsent(source) {
+    const checkbox = byId("authPrivacyConsent");
+    if (!checkbox?.checked) {
+      setFeedback("Accepter privatlivspolitikken for at oprette eller forbinde en konto.", true);
+      checkbox?.focus();
+      return false;
+    }
+    recordPrivacyConsent(source);
+    return true;
+  }
+
   async function run(action, successMessage) {
     const service = window.FirebaseAuthService;
     if (!service?.[action]) {
@@ -203,10 +229,12 @@
   }
 
   function createFromAuthGate() {
+    if (!requirePrivacyConsent("email_create")) return;
     return run("createAccount", "Din konto er oprettet. Appen åbnes...");
   }
 
   function googleFromAuthGate() {
+    if (!requirePrivacyConsent("google_auth")) return;
     return run("loginWithGoogle", "Google-login gennemført. Appen åbnes...");
   }
 

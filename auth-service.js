@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   browserLocalPersistence,
   createUserWithEmailAndPassword,
+  deleteUser,
   onAuthStateChanged,
   sendPasswordResetEmail,
   setPersistence,
@@ -21,6 +22,15 @@ import {
 
 let currentUser = null;
 let initialized = false;
+const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
+
+function readPrivacyConsent() {
+  try {
+    return JSON.parse(localStorage.getItem(PRIVACY_CONSENT_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
 
 function publicUser(user) {
   if (!user) return null;
@@ -37,6 +47,7 @@ function publicUser(user) {
 async function ensureUserDocument(user) {
   const reference = doc(db, "users", user.uid, "profile", "main");
   const snapshot = await getDoc(reference);
+  const privacyConsent = readPrivacyConsent();
   await setDoc(reference, {
     account: {
       uid: user.uid,
@@ -47,6 +58,7 @@ async function ensureUserDocument(user) {
       providerIds: user.providerData.map(provider => provider.providerId),
       lastLoginAt: new Date().toISOString()
     },
+    ...(privacyConsent?.accepted ? { privacyConsent } : {}),
     ...(snapshot.exists() ? {} : { createdAt: serverTimestamp() }),
     updatedAt: serverTimestamp()
   }, { merge: true });
@@ -127,12 +139,22 @@ async function resetPassword(email) {
   return sendPasswordResetEmail(auth, validateEmail(targetEmail));
 }
 
+async function deleteAccountAndData() {
+  if (!currentUser) throw new Error("Du er ikke logget ind.");
+  if (!window.FirestoreDataService?.deleteCurrentUserData) {
+    throw new Error("Datasletning er ikke klar endnu. Prøv igen om et øjeblik.");
+  }
+  await window.FirestoreDataService.deleteCurrentUserData(currentUser.uid);
+  await deleteUser(currentUser);
+}
+
 window.FirebaseAuthService = {
   loginWithEmail,
   createAccount,
   loginWithGoogle,
   logout,
   resetPassword,
+  deleteAccountAndData,
   getCurrentUser: () => publicUser(currentUser),
   isInitialized: () => initialized
 };
@@ -188,5 +210,6 @@ export {
   loginWithEmail,
   loginWithGoogle,
   logout,
-  resetPassword
+  resetPassword,
+  deleteAccountAndData
 };

@@ -115,6 +115,7 @@
       "auth/popup-blocked": "Browseren blokerede Google-login-vinduet.",
       "auth/too-many-requests": "For mange forsøg. Vent lidt og prøv igen.",
       "auth/user-disabled": "Denne konto er deaktiveret.",
+      "auth/requires-recent-login": "Log ind igen, før kontoen kan slettes af sikkerhedshensyn.",
       "auth/weak-password": "Adgangskoden skal være på mindst 6 tegn."
     };
     return messages[error?.code] || error?.message || "Firebase-handlingen kunne ikke gennemføres.";
@@ -299,30 +300,62 @@
     window.ProfileWizard?.open?.({ mode: "edit" });
   }
 
-  function exportProfileData() {
-    const data = window.WorkitStorageScope?.exportCurrentUserData?.() || {};
-    const blob = new Blob([JSON.stringify({
-      exportedAt: new Date().toISOString(),
-      app: "Work4it",
-      data
-    }, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `work4it-data-${window.TrainingWizardStore?.localDateString?.() || "export"}.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  async function exportProfileData() {
+    setAuthFeedback("Eksporterer dine data...");
+    try {
+      const cloudExport = await window.FirestoreDataService?.exportCurrentUserData?.();
+      const data = cloudExport || {
+        source: "localStorage",
+        exportedAt: new Date().toISOString(),
+        localCache: window.WorkitStorageScope?.exportCurrentUserData?.() || {}
+      };
+      const blob = new Blob([JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        app: "Work4it",
+        data
+      }, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `work4it-data-${window.TrainingWizardStore?.localDateString?.() || "export"}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      setAuthFeedback(data.source === "firestore" ? "Cloud-dataeksport er klar." : "Lokal dataeksport er klar.");
+    } catch (error) {
+      setAuthFeedback(`Data kunne ikke eksporteres: ${authErrorMessage(error)}`, true);
+    }
   }
 
   function clearAllLocalData() {
     const confirmed = window.confirm(
-      "Vil du rydde alle lokale data? Træningspas, historik, profil og indstillinger fjernes fra denne browser."
+      "Vil du rydde alle lokale data på denne enhed? Cloud-data slettes ikke."
     );
     if (!confirmed) return;
     window.WorkitStorageScope?.clearCurrentUserCache?.();
     window.location.reload();
+  }
+
+  async function deleteProfileAccountAndData() {
+    const confirmed = window.confirm(
+      "Dette sletter din Work4it-konto og alle tilhørende cloud-data permanent. Eksportér dine data først, hvis du vil gemme en kopi. Vil du fortsætte?"
+    );
+    if (!confirmed) return;
+    const service = window.FirebaseAuthService;
+    if (!service?.deleteAccountAndData) {
+      setAuthFeedback("Konto- og datasletning er ikke klar endnu.", true);
+      return;
+    }
+    setAuthFeedback("Sletter konto og cloud-data...");
+    try {
+      await service.deleteAccountAndData();
+      window.WorkitStorageScope?.clearCurrentUserCache?.();
+      setAuthFeedback("Konto og data er slettet.");
+      window.showAuthGate?.("Kontoen er slettet. Log ind eller opret en ny konto for at fortsætte.");
+    } catch (error) {
+      setAuthFeedback(authErrorMessage(error), true);
+    }
   }
 
   window.openProfileAccountView = openProfileAccountView;
@@ -331,6 +364,7 @@
   window.openProfileWizardAgain = openProfileWizardAgain;
   window.exportProfileData = exportProfileData;
   window.clearAllLocalData = clearAllLocalData;
+  window.deleteProfileAccountAndData = deleteProfileAccountAndData;
   window.refreshProfileAccountView = populateProfileAccount;
   window.saveProfileMeasurementSnapshot = saveMeasurementSnapshot;
   window.updateSidebarProfileIdentity = updateSidebarProfileIdentity;

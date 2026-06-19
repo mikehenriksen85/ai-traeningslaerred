@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Work4it hjælper dig med at planlægge, gennemføre og følge din træning.">
   <meta name="application-name" content="Work4it">
   <meta name="theme-color" content="#252e36">
@@ -1286,6 +1286,10 @@
         <label class="auth-gate-field">Adgangskode
           <input id="authGatePassword" type="password" autocomplete="current-password" placeholder="Mindst 6 tegn" minlength="6" required>
         </label>
+        <label class="auth-consent">
+          <input id="authPrivacyConsent" type="checkbox">
+          <span>Jeg accepterer Work4its privatlivspolitik og lokal/cloud-lagring af mine træningsdata. <button class="auth-link-button" type="button" onclick="openPrivacyPolicyDialog()">Læs privatlivspolitik</button></span>
+        </label>
         <div class="auth-gate-actions">
           <button class="auth-gate-button primary" id="authGateLoginBtn" type="submit" disabled>Log ind</button>
           <button class="auth-gate-button" id="authGateCreateBtn" type="button" onclick="createFromAuthGate()" disabled>Opret bruger</button>
@@ -1395,6 +1399,7 @@
         </div>
         <button class="sidebar-item" id="exportDataNavItem" type="button" onclick="setActiveSidebarItem(this); exportDataFromMenu()">↗ Eksportér data</button>
         <button class="sidebar-item" id="helpNavItem" type="button" onclick="setActiveSidebarItem(this); openHelpAboutDialog()">? Hjælp / Om appen</button>
+        <button class="sidebar-item" id="privacyNavItem" type="button" onclick="setActiveSidebarItem(this); openPrivacyPolicyDialog()">🔒 Privatliv / GDPR</button>
       </div>
     </section>
     <div class="sidebar-menu-spacer"></div>
@@ -1523,12 +1528,12 @@
 
           <section class="profile-account-section">
             <h2>Data & privatliv</h2>
-            <p class="profile-section-copy">Dine nuværende data ligger lokalt i denne browser.</p>
+            <p class="profile-section-copy">Dine data gemmes i Firebase, når du er logget ind, og localStorage bruges som lokal cache/fallback.</p>
             <div class="profile-account-actions">
               <button class="profile-account-button" type="button" onclick="exportProfileData()">Eksportér mine data</button>
-              <button class="profile-account-button danger" type="button" onclick="clearAllLocalData()">Ryd lokale data</button>
-              <button class="profile-account-button" type="button" disabled>Slet konto senere</button>
-              <button class="profile-account-button" type="button" disabled>Privatliv / GDPR-info senere</button>
+              <button class="profile-account-button danger" type="button" onclick="clearAllLocalData()">Ryd lokal cache</button>
+              <button class="profile-account-button danger" type="button" onclick="deleteProfileAccountAndData()">Slet konto og data</button>
+              <button class="profile-account-button" type="button" onclick="openPrivacyPolicyDialog()">Privatliv / GDPR-info</button>
             </div>
           </section>
         </div>
@@ -2102,7 +2107,31 @@
       $("modalContent").innerHTML = `
         <p class="helper-text">Screenshot-import er endnu ikke aktiveret. Dine nuværende træningspas og data er ikke ændret.</p>
         <button class="small-btn" type="button" onclick="closeModal()">Luk</button>`;
-      $("modal").style.display = "flex";
+      openModal();
+    }
+
+    function openPrivacyPolicyDialog() {
+      if ($("sidebar")?.classList.contains("open")) toggleSidebar();
+      $("modalTitle").textContent = "Privatliv og GDPR";
+      $("modalContent").innerHTML = `
+        <p class="about-intro"><strong>Work4it behandler persondata for at kunne gemme din profil, dine træningspas og din udvikling.</strong> Denne side er praktisk information i appen og skal juridisk gennemgås, før Work4it bruges kommercielt.</p>
+        <div class="about-feature-grid">
+          <section class="about-feature"><h3>Data vi gemmer</h3><p>Kontakt/login-data fra Firebase, profiloplysninger, alder, køn, højde, vægt, kropsmålinger, mål, træningsopsætning, programmer, øvelser, sæt, reps, kg, pauser, historik, kalorieestimater, AI Copilot-kommandoer, imports, medlemskabsstatus og lokale appindstillinger.</p></section>
+          <section class="about-feature"><h3>Hvor data gemmes</h3><p>Når du er logget ind, gemmes understøttede data i Firebase/Firestore under <code>users/{uid}</code>. Browserens localStorage bruges som cache og fallback, så appen kan fortsætte ved midlertidige forbindelsesproblemer.</p></section>
+          <section class="about-feature"><h3>AI og tredjepart</h3><p>Den nuværende AI Copilot kører primært som app-logik og gemmer kommandohistorik. Hvis Work4it senere sender tekst til eksterne AI-modeller, skal dataminimering, formål, samtykke og databehandleraftale opdateres først. Firebase/Google bruges til login, hosting og database. Demo-knappen kan åbne en Google-videosøgning.</p></section>
+          <section class="about-feature"><h3>Dine rettigheder</h3><p>Du kan eksportere dine data og slette konto samt tilhørende cloud-data fra Profil og konto. Du kan også rydde den lokale cache på enheden. Ret profiloplysninger direkte på profilsiden.</p></section>
+          <section class="about-feature"><h3>Opbevaring</h3><p>Data opbevares, indtil du sletter dem eller kontoen. Papirkurv-data er tænkt til automatisk sletning efter 30 dage. Aktive træningssessioner er midlertidige og flyttes til historik, når træningen afsluttes.</p></section>
+          <section class="about-feature"><h3>Cookies og lokal lagring</h3><p>Work4it bruger Firebase-login, PWA/offline-cache og localStorage til nødvendige appfunktioner. Der er ikke tilføjet marketing-cookies i appkoden. Hvis Analytics eller betaling tilføjes senere, skal cookie-/samtykketeksten opdateres.</p></section>
+        </div>
+        <p class="about-closing">Kontakt: <a href="mailto:Mikehenriksen85@gmail.com">Mikehenriksen85@gmail.com</a>. Ved kommerciel lancering skal dataansvarlig, databehandlere, retsgrundlag, opbevaringsfrister og internationale overførsler juridisk valideres.</p>
+        <div class="row">
+          <button class="small-btn" type="button" onclick="exportProfileData()">Eksportér mine data</button>
+          <button class="small-btn danger" type="button" onclick="closeModal(); deleteProfileAccountAndData();">Slet konto og data</button>
+          <button class="small-btn" type="button" onclick="closeModal()">Luk</button>
+        </div>`;
+      openModal();
+      $("modal").inert = false;
+      $("modal").setAttribute("aria-hidden", "false");
     }
 
     function openHelpAboutDialog() {
@@ -2158,7 +2187,7 @@
           <button class="small-btn" type="button" onclick="closeModal(); openContactDialog();">Kontakt</button>
           <button class="small-btn" type="button" onclick="closeModal()">Luk</button>
         </div>`;
-      $("modal").style.display = "flex";
+      openModal();
     }
     function openTodayWorkout() {
       saveLastActiveView("today");
@@ -2674,7 +2703,7 @@
           <button class="small-btn" onclick="closeModal();newWorkout('strength')">🏋️ Styrketræning</button>
           <button class="small-btn" onclick="closeModal();newWorkout('cardio')">❤️ Cardio</button>
         </div>`;
-      $("modal").style.display = "flex";
+      openModal();
     }
 
     function setMovementFilter(movement, event = null) {
@@ -2950,7 +2979,7 @@
           <button class="replacement-mode" type="button" onclick="showReplacementSearch()">🔍 Søg selv<br><span class="helper-text">Filtrér og vælg fra øvelsesarkivet</span></button>
           <button class="replacement-mode" type="button" onclick="showReplacementAi()">🤖 Spørg AI<br><span class="helper-text">Få tre relevante alternativer</span></button>
         </div>`;
-      $("modal").style.display = "flex";
+      openModal();
     }
 
     function replacementMuscleOptions(selected = "Alle") {
@@ -4136,7 +4165,7 @@
           <button class="small-btn" type="button" onclick="minimizeWorkoutSession()">Minimer træning</button>
           <button class="small-btn red" type="button" onclick="closeModal();finishWorkout({ skipConfirm: true })">Afslut træning</button>
         </div>`;
-      $("modal").style.display = "flex";
+      openModal();
     }
 
     function minimizeWorkoutSession() {
@@ -4621,7 +4650,7 @@
         ${hasPremium ? `<div class="section">${t("volumePerMonth")}</div>${table([t("monthHeader"),t("volumeHeader"),t("changeHeader")], aggregate(hist,"month").map(x => [x.key, vol(x.volume), x.change]))}` : ""}
         <div class="section">${t("personalRecords")}</div>${table([t("typeHeader"),t("resultHeader")], [[t("bestOneRm"), bestOne ? kg(bestOne) : "-"], [t("heaviestWeight"), bestLift ? kg(bestLift) : "-"]])}
       `;
-      $("modal").style.display = "flex";
+      openModal();
     }
     function table(headers, rows) { return `<table><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr>${rows.length ? rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("") : `<tr><td colspan="${headers.length}">${t("noData")}</td></tr>`}</table>`; }
     function simulationHtml(slot, improve) {
@@ -4632,7 +4661,20 @@
       const newOne = best * factor;
       return `<div class="section">${t("simulation")}</div><div class="row"><input class="field" id="simPercent" type="number" step="0.5" value="${numberValue(improve)}"><button class="small-btn" onclick="openDashboard('${slot}', $('simPercent').value)">${t("simulateBtn")}</button><button class="small-btn" onclick="openDashboard('${slot}',5)">5%</button><button class="small-btn" onclick="openDashboard('${slot}',10)">10%</button></div>${table([t("measureHeader"),t("resultHeader")], [[t("newEstimatedOneRm"), kg(newOne)], [t("workingWeight5"), kg(newOne/(1+5/30))], [t("workingWeight8"), kg(newOne/(1+8/30))], [t("workingWeight12"), kg(newOne/(1+12/30))], [t("expectedVolume"), vol(sets.reduce((a,s)=>a+volume(s.w,s.r),0)*factor)]])}`;
     }
-    function closeModal() { $("modal").style.display = "none"; }
+    function openModal() {
+      const modal = $("modal");
+      if (!modal) return;
+      modal.style.display = "flex";
+      modal.inert = false;
+      modal.setAttribute("aria-hidden", "false");
+      window.requestAnimationFrame(() => modal.querySelector("button, input, select, textarea")?.focus?.());
+    }
+    function closeModal() {
+      const modal = $("modal");
+      if (!modal) return;
+      modal.style.display = "none";
+      modal.setAttribute("aria-hidden", "true");
+    }
 
     function openContactDialog() {
       if ($("sidebar").classList.contains("open")) toggleSidebar();
@@ -4651,7 +4693,7 @@
           </label>
           <button class="small-btn" type="submit">Åbn mail til afsendelse</button>
         </form>`;
-      $("modal").style.display = "flex";
+      openModal();
       window.requestAnimationFrame(() => $("contactMessage")?.focus());
     }
 
@@ -5540,7 +5582,7 @@
         <div class="daily-muscle-actions">
           <button class="small-btn" type="button" onclick="createMotivationWorkoutFromMuscles()">Opret dagens træning</button>
         </div>`;
-      $("modal").style.display = "flex";
+      openModal();
     }
 
     function createMotivationWorkoutFromMuscles() {
@@ -5661,15 +5703,15 @@
   <script src="wizard-store.js"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-copilot-actions.js?v=20260615-cardio-goal1"></script>
-  <script src="auth-gate.js?v=20260618-authflow1"></script>
-  <script src="profile-account.js?v=20260618-authflow1"></script>
+  <script src="auth-gate.js?v=20260619-gdpr1"></script>
+  <script src="profile-account.js?v=20260619-gdpr1"></script>
   <script src="profile-wizard.js?v=20260615-window1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260615-window1"></script>
   <script src="membership.js?v=20260618-authflow1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
-  <script type="module" src="auth-service.js?v=20260614-auth2"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260615-window1"></script>
+  <script type="module" src="auth-service.js?v=20260619-gdpr1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260619-gdpr1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
@@ -5681,6 +5723,7 @@
   </script>
 </body>
 </html>
+
 
 
 

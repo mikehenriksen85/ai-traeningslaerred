@@ -563,11 +563,142 @@ window.setInterval(() => {
   queueSync();
 }, 2000);
 
+async function exportPrograms(uid) {
+  const programSnapshots = await getDocs(collection(db, "users", uid, "programs"));
+  const programs = [];
+  for (const snapshot of programSnapshots.docs) {
+    const program = { ...cleanDocument(snapshot.data()), id: snapshot.id };
+    const days = await readCollection(["users", uid, "programs", snapshot.id, "days"]);
+    days.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    programs.push({ ...program, days });
+  }
+  return programs;
+}
+
+async function exportCurrentUserData(uid = activeUid) {
+  if (!uid || !cloudEnabled) {
+    return {
+      source: "localStorage",
+      exportedAt: new Date().toISOString(),
+      note: "Bruger er ikke logget ind eller cloud er ikke klar. Eksporten er lavet fra lokal cache.",
+      localCache: storageScope?.exportCurrentUserData?.() || {}
+    };
+  }
+
+  const readDoc = async (...segments) => {
+    const snapshot = await getDoc(doc(db, ...segments));
+    return snapshot.exists() ? cleanDocument(snapshot.data()) : null;
+  };
+
+  const [
+    profile,
+    daily,
+    membership,
+    appState,
+    syncMetadata,
+    activeWorkout,
+    programs,
+    workoutSessions,
+    bodyMeasurements,
+    aiCopilotHistory,
+    aiHistoryAlias,
+    imports,
+    customExercises,
+    deletedPrograms,
+    trashAlias,
+    records
+  ] = await Promise.all([
+    readDoc("users", uid, "profile", "main"),
+    readDoc("users", uid, "profile", "daily"),
+    readDoc("users", uid, "profile", "membership"),
+    readDoc("users", uid, "profile", "appState"),
+    readDoc("users", uid, "profile", "syncMetadata"),
+    readDoc("users", uid, "activeWorkout", "current"),
+    exportPrograms(uid),
+    readCollection(["users", uid, "workoutSessions"]),
+    readCollection(["users", uid, "bodyMeasurements"]),
+    readCollection(["users", uid, "aiCopilotHistory"]),
+    readCollection(["users", uid, "aiHistory"]),
+    readCollection(["users", uid, "imports"]),
+    readCollection(["users", uid, "customExercises"]),
+    readCollection(["users", uid, "deletedPrograms"]),
+    readCollection(["users", uid, "trash"]),
+    readCollection(["users", uid, "records"])
+  ]);
+
+  return {
+    source: "firestore",
+    exportedAt: new Date().toISOString(),
+    uid,
+    profile: { main: profile, daily, membership, appState, syncMetadata },
+    programs,
+    workoutSessions,
+    bodyMeasurements,
+    activeWorkout,
+    aiCopilotHistory,
+    aiHistoryAlias,
+    imports,
+    customExercises,
+    trash: { deletedPrograms, trashAlias },
+    records,
+    localCacheBackup: storageScope?.exportCurrentUserData?.() || {}
+  };
+}
+
+async function deleteCollectionDocuments(pathSegments, nestedDelete = null) {
+  const snapshot = await getDocs(collection(db, ...pathSegments));
+  for (const item of snapshot.docs) {
+    if (nestedDelete) await nestedDelete(item.id);
+    await deleteDoc(item.ref);
+  }
+}
+
+async function deleteAllPrograms(uid) {
+  await deleteCollectionDocuments(["users", uid, "programs"], async programId => {
+    await deleteCollectionDocuments(["users", uid, "programs", programId, "days"]);
+  });
+}
+
+async function deleteCurrentUserData(uid = activeUid) {
+  if (!uid || !cloudEnabled) throw new Error("Cloud er ikke klar til datasletning.");
+
+  await deleteAllPrograms(uid);
+  await Promise.all([
+    deleteCollectionDocuments(["users", uid, "workoutSessions"]),
+    deleteCollectionDocuments(["users", uid, "bodyMeasurements"]),
+    deleteCollectionDocuments(["users", uid, "aiCopilotHistory"]),
+    deleteCollectionDocuments(["users", uid, "aiHistory"]),
+    deleteCollectionDocuments(["users", uid, "imports"]),
+    deleteCollectionDocuments(["users", uid, "customExercises"]),
+    deleteCollectionDocuments(["users", uid, "deletedPrograms"]),
+    deleteCollectionDocuments(["users", uid, "trash"]),
+    deleteCollectionDocuments(["users", uid, "records"]),
+    deleteCollectionDocuments(["users", uid, "appState"])
+  ]);
+
+  await Promise.all([
+    deleteDoc(doc(db, "users", uid, "activeWorkout", "current")).catch(() => {}),
+    deleteDoc(doc(db, "users", uid, "profile", "main")).catch(() => {}),
+    deleteDoc(doc(db, "users", uid, "profile", "daily")).catch(() => {}),
+    deleteDoc(doc(db, "users", uid, "profile", "membership")).catch(() => {}),
+    deleteDoc(doc(db, "users", uid, "profile", "appState")).catch(() => {}),
+    deleteDoc(doc(db, "users", uid, "profile", "syncMetadata")).catch(() => {}),
+    deleteDoc(doc(db, "users", uid)).catch(() => {})
+  ]);
+
+  storageScope?.clearCurrentUserCache?.();
+  localStorage.removeItem("work4it:privacyConsent");
+  window.dispatchEvent(new CustomEvent("firestore:user-data-deleted", { detail: { uid } }));
+  return true;
+}
+
 window.FirestoreDataService = {
   keys: { ...KEYS },
   saveProfileToCloud,
   syncAllLocalData,
   hydrateFromFirestore,
+  exportCurrentUserData,
+  deleteCurrentUserData,
   requestMigration: async () => {
     if (!activeUid || !storageScope?.hasLegacyData?.() || storageScope?.legacyResolution?.(activeUid)) return false;
     const accepted = await showLegacyMigrationDialog();

@@ -70,6 +70,22 @@ service cloud.firestore {
       match /imports/{importId} {
         allow read, create, update, delete: if isOwner(userId);
       }
+
+      match /records/{recordId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /workouts/{workoutId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /history/{historyId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /measurements/{measurementId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
     }
 
     // Medlemskab og AI-grænser er klientdata i demoen. Reglerne ovenfor
