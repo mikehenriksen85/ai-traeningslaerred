@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v3-design-system1";
+const CACHE_NAME = "work4it-shell-v5-exercise-flow1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -15,7 +15,8 @@ const APP_SHELL = [
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260615-window1",
   "./membership.js?v=20260618-authflow1",
-  "./ai-copilot-actions.js?v=20260615-cardio-goal1",
+  "./ai-system.js?v=20260619-ai-audit1",
+  "./ai-copilot-actions.js?v=20260619-ai-audit1",
   "./auth-gate.js?v=20260619-gdpr1",
   "./profile-account.js?v=20260619-gdpr1",
   "./profile-wizard.js?v=20260615-window1",

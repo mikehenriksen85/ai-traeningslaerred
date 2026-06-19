@@ -472,7 +472,7 @@
     }
     #exercisePickerTitle { flex: 0 0 auto; }
     #muscleMenuItems { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-    .muscle-item { padding: 12px 14px; cursor: pointer; }
+    .muscle-item { display: block; width: 100%; min-height: 44px; padding: 12px 14px; border: 0; background: transparent; color: var(--text-primary); font: inherit; text-align: left; cursor: pointer; }
     .muscle-item small { color: var(--text-secondary); font-size: var(--font-size-small); margin-left: 6px; }
     .muscle-item:hover { background: rgba(58,147,255,.12); color: var(--text-accent); }
     .muscle-item.selected { background: rgba(74,222,128,.12); color: var(--text-success); }
@@ -487,19 +487,6 @@
       padding: 0;
     }
     .exercise-picker-list { min-height: 0; overflow-y: auto; }
-    .exercise-picker-actions { position: sticky; bottom: 0; padding: 10px 14px; border-top: 1px solid var(--border); background: var(--panel); }
-    .exercise-picker-add {
-      width: 100%;
-      min-height: 44px;
-      border: 0;
-      border-radius: 6px;
-      background: var(--green);
-      color: #102018;
-      cursor: pointer;
-      font: inherit;
-      font-weight: var(--font-weight-bold);
-    }
-    .exercise-picker-add:disabled { cursor: not-allowed; opacity: .45; }
     .copilot { border-top: 1px dashed var(--border); padding-top: 18px; }
     .copilot-title { color: var(--text-accent); font-weight: var(--font-weight-bold); margin-bottom: 10px; }
     .copilot-bar { display: flex; gap: 8px; }
@@ -1240,7 +1227,7 @@
       .profile-account-status { align-items: flex-start; flex-direction: column; }
       .profile-account-actions .profile-account-button { width: 100%; }
       .auth-gate { place-items: start center; }
-      .auth-gate-panel { width: calc(100vw - 36px); max-width: calc(100vw - 36px); padding: 18px; }
+      .auth-gate-panel { width: 100%; max-width: 100%; padding: 18px; }
       .auth-gate-actions { grid-template-columns: 1fr; }
       .auth-gate-button.google, .auth-gate-button.reset { grid-column: auto; }
       .migration-actions { grid-template-columns: 1fr; }
@@ -1836,8 +1823,8 @@
     ];
     const muscleGroupKeys = muscleGroups.map(group => group.key);
     let activeMovementFilter = "Alle";
+    let exercisePickerMuscleScope = null;
     let exercisePickerMuscle = "";
-    let exercisePickerSelection = "";
 
     const exerciseLibrary = {
       "Bryst": ["Barbell Bench Press","Dumbbell Bench Press","Incline Barbell Bench Press","Incline Dumbbell Press","Machine Chest Press","Push-ups","Weighted Push-ups","Chest Dips","Cable Fly","Dumbbell Fly","Pec Deck","Decline Bench Press","Close-Grip Bench Press","Landmine Press","Svend Press"],
@@ -2334,11 +2321,19 @@
     }
 
     function trainingContext() {
-      return window.TrainingWizardStore?.getContext?.() || {
+      const wizardContext = window.TrainingWizardStore?.getContext?.() || {
         goal: "general_health",
         experience: "intermediate",
         focusAreas: [],
         exercisePreference: "mixed"
+      };
+      const aiContext = window.Work4itAISystem?.buildContext?.();
+      return {
+        ...wizardContext,
+        priorityGoal: aiContext?.profile?.priorityGoal || "",
+        availableEquipment: aiContext?.profile?.availableEquipment || [],
+        body: aiContext?.profile?.body || {},
+        historySummary: aiContext?.history || { sessionCount: 0, recentSessions: [] }
       };
     }
 
@@ -2663,6 +2658,9 @@
         legs: ["Forside lår", "Bagside lår & baller"]
       };
       const muscles = types[pendingProgram] || ["Ryg"];
+      const pickerMovement = pendingProgram === "push" ? "Push" : pendingProgram === "pull" ? "Pull" : "Alle";
+      const pickerScope = pendingProgram === "legs" ? ["Forside lår", "Bagside lår & baller"] : null;
+      setExercisePickerContext(pickerMovement, pickerScope);
       const context = trainingContext();
       const goalProfile = window.TrainingGoalEngine?.profile?.(context.goal);
       $("workoutTitle").textContent = `${goalProfile?.label || "Auto"}: ${tp(pendingProgram)} (${count} ${t("exerciseCountSuffix")})`;
@@ -2704,6 +2702,7 @@
       const plan = cardioGoalPlans[goal] || cardioGoalPlans.general_health;
       const duration = Math.max(count * 5, Number(totalMinutes) || plan.totalMinutes);
       const pool = catalog.filter(exercise => exercise.muscle === "Cardio");
+      setExercisePickerContext("Cardio", ["Cardio"]);
       const shuffled = [...pool].sort(() => Math.random() - .5).slice(0, count);
       $("workoutTitle").textContent = `❤️ Cardio: ${plan.label} (${count} ${count === 1 ? "øvelse" : "øvelser"})`;
       $("exercises").innerHTML = "";
@@ -2742,14 +2741,40 @@
       openModal();
     }
 
+    function availablePickerMuscles() {
+      return Array.isArray(exercisePickerMuscleScope) && exercisePickerMuscleScope.length
+        ? [...exercisePickerMuscleScope]
+        : movementMuscles();
+    }
+
+    function setExercisePickerContext(movement = "Alle", muscles = null) {
+      activeMovementFilter = ["Alle", "Push", "Pull", "Stabilitet", "Cardio"].includes(movement) ? movement : "Alle";
+      exercisePickerMuscleScope = Array.isArray(muscles) && muscles.length
+        ? muscles.filter(muscle => muscleGroupKeys.includes(muscle))
+        : null;
+      exercisePickerMuscle = "";
+      document.querySelectorAll(".movement-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.movement === activeMovementFilter));
+    }
+
     function setMovementFilter(movement, event = null) {
       if (event) event.stopPropagation();
-      activeMovementFilter = movement;
-      exercisePickerMuscle = "";
-      exercisePickerSelection = "";
-      document.querySelectorAll(".movement-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.movement === movement));
+      setExercisePickerContext(movement);
+      const muscles = availablePickerMuscles();
+      if (muscles.length === 1) exercisePickerMuscle = muscles[0];
       renderMuscleMenu();
       openExercisePickerMenu();
+    }
+
+    function inferExercisePickerContext(exercises = []) {
+      const muscles = [...new Set((exercises || []).map(exercise => exercise?.muscle).filter(muscle => muscleGroupKeys.includes(muscle)))];
+      if (!muscles.length) return setExercisePickerContext("Alle");
+      if (muscles.every(muscle => muscle === "Cardio")) return setExercisePickerContext("Cardio", ["Cardio"]);
+      if (muscles.every(muscle => ["Forside lår", "Bagside lår & baller"].includes(muscle))) {
+        return setExercisePickerContext("Alle", ["Forside lår", "Bagside lår & baller"]);
+      }
+      const categories = [...new Set(muscles.map(muscle => muscleGroupMeta(muscle).category))];
+      if (categories.length === 1 && categories[0] !== "Cardio") return setExercisePickerContext(categories[0]);
+      setExercisePickerContext("Alle");
     }
 
     function positionExercisePickerMenu() {
@@ -2800,34 +2825,28 @@
       if (!exercisePickerMuscle) {
         title.textContent = "Vælg muskelgruppe";
         container.className = "";
-        container.innerHTML = movementMuscles().map(muscle => {
+        container.innerHTML = availablePickerMuscles().map(muscle => {
           const meta = muscleGroupMeta(muscle);
-          return `<div class="muscle-item" data-muscle="${esc(muscle)}" onclick="selectMuscle('${encodeURIComponent(muscle)}', event)">${meta.emoji} ${esc(tm(muscle))}<small>${esc(tc(meta.category))}</small></div>`;
+          return `<button class="muscle-item" type="button" data-muscle="${esc(muscle)}" onclick="selectMuscle('${encodeURIComponent(muscle)}', event)">${meta.emoji} ${esc(tm(muscle))}<small>${esc(tc(meta.category))}</small></button>`;
         }).join("");
         return;
       }
 
-      title.innerHTML = `<div class="exercise-picker-heading"><button class="exercise-picker-back" type="button" onclick="showMuscleGroups(event)">←</button><span>${esc(tm(exercisePickerMuscle))}: Vælg øvelse</span></div>`;
+      const canGoBack = availablePickerMuscles().length > 1;
+      title.innerHTML = `<div class="exercise-picker-heading">${canGoBack ? '<button class="exercise-picker-back" type="button" onclick="showMuscleGroups(event)">←</button>' : ""}<span>${esc(tm(exercisePickerMuscle))}: Vælg øvelse</span></div>`;
       const exercises = catalog.filter(exercise => exercise.muscle === exercisePickerMuscle);
       container.className = "exercise-picker-list";
-      container.innerHTML = `
-        ${exercises.map(exercise => `
-          <div class="muscle-item ${exercise.name === exercisePickerSelection ? "selected" : ""}"
+      container.innerHTML = exercises.map(exercise => `
+          <button class="muscle-item" type="button"
                data-exercise="${esc(exercise.name)}"
                onclick="selectExerciseCandidate('${encodeURIComponent(exercise.name)}', event)">
-            ${esc(exercise.name)}<small>${esc(exercise.type)}</small>
-          </div>`).join("")}
-        <div class="exercise-picker-actions">
-          <button class="exercise-picker-add" type="button" onclick="addSelectedExercise(event)" ${exercisePickerSelection ? "" : "disabled"}>
-            Tilføj øvelse
-          </button>
-        </div>`;
+            ${esc(exercise.name)}<small>${esc(exercise.type)} · Tilføj</small>
+          </button>`).join("");
     }
 
     function closeExercisePicker() {
       if ($("muscleMenu")) $("muscleMenu").style.display = "none";
       exercisePickerMuscle = "";
-      exercisePickerSelection = "";
     }
 
     function toggleMuscleMenu(event) {
@@ -2837,8 +2856,8 @@
         closeExercisePicker();
         return;
       }
-      exercisePickerMuscle = "";
-      exercisePickerSelection = "";
+      const muscles = availablePickerMuscles();
+      exercisePickerMuscle = muscles.length === 1 ? muscles[0] : "";
       renderMuscleMenu();
       openExercisePickerMenu();
     }
@@ -2848,7 +2867,6 @@
       const muscle = decodeURIComponent(encodedMuscle);
       if (!muscleGroupKeys.includes(muscle)) return;
       exercisePickerMuscle = muscle;
-      exercisePickerSelection = "";
       renderMuscleMenu();
       openExercisePickerMenu();
     }
@@ -2856,7 +2874,6 @@
     function showMuscleGroups(event = null) {
       event?.stopPropagation?.();
       exercisePickerMuscle = "";
-      exercisePickerSelection = "";
       renderMuscleMenu();
       window.requestAnimationFrame(positionExercisePickerMenu);
     }
@@ -2866,18 +2883,6 @@
       const name = decodeURIComponent(encodedName);
       const exercise = catalog.find(candidate =>
         candidate.muscle === exercisePickerMuscle && candidate.name === name
-      );
-      if (!exercise) return;
-      exercisePickerSelection = exercise.name;
-      renderMuscleMenu();
-      window.requestAnimationFrame(positionExercisePickerMenu);
-    }
-
-    function addSelectedExercise(event = null) {
-      event?.stopPropagation?.();
-      const exercise = catalog.find(candidate =>
-        candidate.muscle === exercisePickerMuscle &&
-        candidate.name === exercisePickerSelection
       );
       if (!exercise) return;
       addExercise(exercise.name, exercise.muscle);
@@ -3142,15 +3147,22 @@
       const currentName = $(`name-${slot}`)?.textContent || "";
       const muscle = $(`name-${slot}`)?.dataset.muscle || "Ryg";
       const current = resolveExerciseDefinition(currentName) || { name: currentName, muscle, type: "Center" };
-      const input = normalizedExerciseSearch($("replacementAiInput")?.value);
+      const rawInput = $("replacementAiInput")?.value || "";
+      const input = normalizedExerciseSearch(rawInput);
+      const guard = mode === "free" ? window.Work4itAISystem?.guardInput?.(rawInput) : null;
+      if (guard && !guard.allowed) {
+        const container = $("replacementResults");
+        if (container) container.innerHTML = `<div class="progress-empty">${esc(guard.message)}</div>`;
+        return;
+      }
       const query = mode === "free" ? input : mode;
       let pool = catalog.filter(exercise => exercise.muscle === muscle && normalizedExerciseSearch(exercise.name) !== normalizedExerciseSearch(currentName));
-      if (mode === "home" || /hjemme/.test(query)) pool = pool.filter(exercise => exercise.type === "Hjemme");
-      if (mode === "center") pool = pool.filter(exercise => exercise.type === "Center");
-      if (mode === "no-machines" || /(uden maskiner|ingen maskiner)/.test(query)) {
+      if (mode === "home" || /(hjemme|at home|home workout)/.test(query)) pool = pool.filter(exercise => exercise.type === "Hjemme");
+      if (mode === "center" || /(center|gym)/.test(query)) pool = pool.filter(exercise => exercise.type === "Center");
+      if (mode === "no-machines" || /(uden maskiner|ingen maskiner|no machines|without machines)/.test(query)) {
         pool = pool.filter(exercise => !["Maskine","Kabel"].includes(equipmentCategory(exercise)));
       }
-      if (/(håndvægt|håndvægte|dumbbell)/.test(query)) pool = pool.filter(exercise => equipmentCategory(exercise) === "Håndvægte");
+      if (/(håndvægt|håndvægte|dumbbell|dumbbells)/.test(query)) pool = pool.filter(exercise => equipmentCategory(exercise) === "Håndvægte");
       if (/(ondt i skulder|skuldersmerte|skulderen)/.test(query)) {
         pool = pool.filter(exercise => !/(overhead|shoulder press|upright row|dip)/i.test(exercise.name));
       }
@@ -3589,6 +3601,7 @@
       activeExerciseCountPreference = Number.isInteger(state.desiredExerciseCount)
         ? normalizeAutomaticExerciseCount(state.desiredExerciseCount)
         : null;
+      inferExercisePickerContext(state.exercises || []);
       $("workoutTitle").textContent = state.title || trainingDayHeading(currentProgramSession?.days?.length || 1, state.dayIndex || 0);
       $("exercises").innerHTML = "";
       (state.exercises || []).forEach(exercise => addExercise(exercise.name, exercise.muscle, exercise.sets, exercise));
@@ -4158,10 +4171,17 @@
       resetWorkoutCanvas(t("ready"));
       if (type === "cardio") {
         $("workoutTitle").textContent = "Mit nye cardio-pas";
-        activeMovementFilter = "Cardio";
-        document.querySelectorAll(".movement-btn").forEach(button => button.classList.toggle("active", button.dataset.movement === "Cardio"));
+        setExercisePickerContext("Cardio", ["Cardio"]);
+      } else {
+        setExercisePickerContext("Alle");
       }
       if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.requestAnimationFrame(() => {
+        const muscles = availablePickerMuscles();
+        exercisePickerMuscle = muscles.length === 1 ? muscles[0] : "";
+        renderMuscleMenu();
+        openExercisePickerMenu();
+      });
     }
 
     function toggleWorkoutTimer() {
@@ -4975,7 +4995,7 @@
 
     function executeCopilotAction(action) {
       if (!action?.action) return { success: false, message: "Kommandoen kunne ikke behandles." };
-      if (action.action === "blockedSecurity" || action.action === "clarify") {
+      if (["blockedSecurity", "healthBoundary", "clarify"].includes(action.action)) {
         return { success: action.action === "clarify", message: action.message, changed: false };
       }
 
@@ -5186,11 +5206,12 @@
       if (!openPremiumFeature("copilot")) return;
       const cmd = $("copilotInput").value.trim();
       if (!cmd) return;
+      const aiContext = window.Work4itAISystem?.buildContext?.() || null;
       pendingCopilotHistory = {
         command: cmd,
         action: { action: "legacyCopilotCommand" }
       };
-      const structuredAction = window.AICopilotActions?.parse?.(cmd);
+      const structuredAction = window.AICopilotActions?.parse?.(cmd, aiContext);
       if (structuredAction) {
         const result = executeCopilotAction(structuredAction);
         window.AICopilotActions?.log?.(cmd, structuredAction, result);
@@ -5738,7 +5759,8 @@
   <script src="workout-program-store.js"></script>
   <script src="wizard-store.js"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-copilot-actions.js?v=20260615-cardio-goal1"></script>
+  <script src="ai-system.js?v=20260619-ai-audit1"></script>
+  <script src="ai-copilot-actions.js?v=20260619-ai-audit1"></script>
   <script src="auth-gate.js?v=20260619-gdpr1"></script>
   <script src="profile-account.js?v=20260619-gdpr1"></script>
   <script src="profile-wizard.js?v=20260615-window1"></script>
