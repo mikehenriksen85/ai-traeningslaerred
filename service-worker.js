@@ -1,11 +1,12 @@
-const CACHE_NAME = "work4it-shell-v2-20260619";
+const CACHE_NAME = "work4it-shell-v3-design-system1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./work4it-icon.svg",
-  "./work4it-icon-192.png",
-  "./work4it-icon-512.png",
+  "./work4it-app-icon-192.png",
+  "./work4it-app-icon-512.png",
+  "./work4it-logo-v1.png",
+  "./work4it-hero-logo-v1.png",
   "./storage-scope.js?v=20260618-authflow1",
   "./calorie-estimator.js?v=20260615-cardio1",
   "./training-goal-engine.js?v=20260615-cardio-goal1",
@@ -74,3 +75,5 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+
+

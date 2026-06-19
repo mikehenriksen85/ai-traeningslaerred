@@ -1,177 +1,141 @@
 # Work4it - platforms- og browserkompatibilitet
 
-Dato: 18. juni 2026
+Dato: 19. juni 2026
 
 ## Formål
 
 Denne gennemgang kontrollerer Work4it på tværs af Android, iOS, Safari,
 Chrome og Edge med fokus på login, Firebase, Firestore, PWA-installation,
 navigation, modals, formularer, touch, dropdown-menuer, eksport,
-AI-funktioner, localStorage og responsivt design.
+AI-funktioner, localStorage, responsivt design og service worker/PWA-cache.
 
-## Rettelser udført
+## Fundne kompatibilitetsproblemer
 
-### Firebase Authentication
-
-Problem:
-
-- Google-login brugte kun popup-login.
-- Popups er ustabile eller blokeres ofte på iOS, Safari og installerede
-  PWA'er.
-
-Rettelse:
-
-- Mobil, iOS og standalone-PWA bruger nu `signInWithRedirect`.
-- Desktop bruger fortsat popup først.
-- Hvis popup blokeres på desktop, falder appen tilbage til redirect.
-- `getRedirectResult` håndteres ved app-start.
-
-Berørte filer:
-
-- `auth-service.js`
-
-### PWA-installation
+### 1. PWA-cache kunne fastholde gammel app-shell
 
 Problem:
 
-- Manifestet manglede installationsikoner og mere komplet PWA-metadata.
-- Der fandtes ingen service worker.
+- Service workeren brugte stadig `work4it-shell-v1`.
+- Installerede PWA'er på Android/iOS/Edge/Chrome kunne derfor risikere at holde fast i gamle frontend-filer efter deploy.
+- App-shell-listen cachede primært HTML/manifest/ikoner, men ikke de centrale lokale JavaScript-filer.
 
 Rettelse:
 
-- Tilføjet `service-worker.js`.
-- Tilføjet `work4it-icon.svg`.
-- Tilføjet `work4it-icon-192.png`.
-- Tilføjet `work4it-icon-512.png`.
-- Manifestet har nu app-id, kategorier, display fallback, orientation og
-  maskable ikon.
-- `index.html` registrerer service workeren automatisk på sikre origins.
-- Tilføjet Apple touch icon og iOS web app metadata.
+- Cache-navnet er opdateret til `work4it-shell-v2-20260619`.
+- Centrale Work4it-scripts er tilføjet til app-shell cachelisten med nuværende cache-busting query strings.
+- Aktiv service worker sletter gamle caches under `activate`.
 
-Berørte filer:
+Berørt fil:
 
-- `index.html`
-- `manifest.webmanifest`
 - `service-worker.js`
-- `work4it-icon.svg`
-- `work4it-icon-192.png`
-- `work4it-icon-512.png`
 
-### iOS, Safari og mobil layout
+### 2. Modal/popups havde inkonsistent åbne-logik
 
 Problem:
 
-- Klassisk `100vh` kan være ustabil i Safari, når adresselinjen åbner og
-  lukker.
-- Notch/statusbar/home-indikator kan overlappe fixed views.
-- Safari zoomer formularfelter under 16 px.
-- Nogle touch-kontroller var små på mobil.
+- Flere funktioner satte `$("modal").style.display = "flex"` direkte.
+- Det kan give forskellig `aria-hidden`, focus og inert-adfærd på især Safari/iOS og Edge.
+- Privatlivsmodalen havde ekstra særlogik, fordi login-gaten låser resten af appen.
 
 Rettelse:
 
-- Tilføjet `100dvh` med fallback.
-- Tilføjet `env(safe-area-inset-*)` på header, fuldskærmsvisninger,
-  login-gate og bundafstande.
-- Mobilformularer bruger mindst 16 px.
-- Touchmål på centrale mobile knapper er forstørret.
-- Loginpanelet har mere robust viewport-baseret bredde.
+- Tilføjet central `openModal()`.
+- Alle almindelige modalåbninger bruger nu `openModal()`.
+- `openModal()` sætter `display:flex`, `aria-hidden=false`, `inert=false` og flytter fokus til første relevante kontrol.
+- `closeModal()` sætter `display:none` og `aria-hidden=true`.
 
 Berørt fil:
 
 - `index.html`
 
-### localStorage og private/stramme browsermiljøer
+### 3. iOS safe-area kunne forbedres yderligere
 
 Problem:
 
-- Browserens lokale lager kan fejle i private modes, ved fuld kvote eller
-  stramme storage-politikker.
+- Siden brugte allerede `env(safe-area-inset-*)`, men viewport-meta manglede `viewport-fit=cover`.
+- På iOS/Safari kan det betyde mindre forudsigelig placering omkring notch/statusbar i standalone/PWA.
 
 Rettelse:
 
-- `storage-scope.js` bruger nu defensive storage wrappers.
-- Midlertidig memory-fallback er tilføjet.
-- UID-opdeling og eksisterende localStorage fallback er bevaret.
+- Viewport-meta er opdateret til `width=device-width, initial-scale=1.0, viewport-fit=cover`.
 
 Berørt fil:
 
-- `storage-scope.js`
+- `index.html`
 
 ## Kontrollerede områder
 
 | Område | Status | Kommentar |
 |---|---|---|
-| Login | Rettet | E-mail/password og Google-flow er kompatibilitetsforbedret |
-| Firebase Authentication | Rettet | Redirect-fallback for mobil/PWA |
-| Firestore | OK | Eksisterende Firestore/localStorage-model er bevaret |
-| PWA-installation | Rettet | Manifest, ikoner og service worker tilføjet |
-| Navigation | OK | Eksisterende interne funktioner bevares |
-| Modals/popups | OK | Login-gate ligger øverst og skjuler andre vinduer |
-| Formularer | Rettet | Mobilfont min. 16 px |
-| Touch-funktioner | Rettet | Centrale mobilknapper har større flader |
-| Dropdown-menuer | OK | Eksisterende fixed/scroll-løsning bevares |
-| PDF-eksport | Ikke implementeret | Appen har JSON-eksport, ikke PDF-eksport |
-| AI-funktioner | OK | Ingen platformsspecifikke blokeringer fundet |
-| localStorage | Rettet | Defensive wrappers og memory-fallback |
-| Responsivt design | Delvist testet | Headless Chrome/Edge testet; fysisk mobiltest anbefales |
+| Login | OK | Login-gate loader uden syntaksfejl; Google-flow bruger redirect på mobil/PWA |
+| Firebase Authentication | OK | Popup/redirect-fallback er kompatibilitetsforbedret |
+| Firestore | OK | Ejerbeskyttede regler og cloud/localStorage fallback bevares |
+| PWA-installation | Rettet | Cache-version og app-shell opdateret |
+| Navigation | OK | Ingen nye navigation-fejl fundet i statisk gennemgang |
+| Modals og popups | Rettet | Central modalåbning og fokus/ARIA håndtering |
+| Formularer | OK | Mobilfont og inputflow bevares; auth-samtykke er synligt |
+| Touch-funktioner | OK | Touch-action og større mobile flader bevares |
+| Dropdown-menuer | OK | Fixed/scroll-løsning bevares; exercise picker bruger viewportpositionering |
+| PDF-eksport | Ikke implementeret | Appen har JSON-dataeksport; egentlig PDF-eksport findes ikke endnu |
+| AI-funktioner | OK | Ingen platformsspecifikke API'er fundet; AI-logik er lokal/regelbaseret |
+| localStorage | OK | Defensive wrappers og memory-fallback |
+| Responsivt design | OK efter statisk kontrol | Fysisk enhedstest anbefales stadig |
+| Service worker/PWA-cache | Rettet | Cache bump og script-assets tilføjet |
 
-## Tests udført
+## Tests udført 19. juni 2026
 
 Automatisk/kodebaseret:
 
+- `node --check auth-gate.js`
 - `node --check auth-service.js`
-- `node --check storage-scope.js`
+- `node --check firestore-cloud-service.js`
+- `node --check profile-account.js`
 - `node --check service-worker.js`
+- Inline JavaScript i `index.html` valideret med `new Function(...)`
 - `manifest.webmanifest` valideret som JSON
-- Lokal server startede på `http://localhost:8767/`
-- `index.html` svarede med HTTP 200
-- PWA-filer blev leveret fra serveren
-- Ikoner verificeret:
-  - `work4it-icon-192.png`: 192x192
-  - `work4it-icon-512.png`: 512x512
-- Chrome headless screenshots:
-  - 360 px
-  - 390 px
-  - 430 px
-  - 768 px
-  - 1366 px
-- Edge headless screenshot:
-  - 1366 px
+- Lokal server på `http://localhost:8767/` svarede HTTP 200
+- Følgende assets svarede HTTP 200:
+  - `/`
+  - `/index.html`
+  - `/manifest.webmanifest`
+  - `/service-worker.js`
+  - `/auth-gate.js?v=20260619-gdpr1`
+  - `/profile-account.js?v=20260619-gdpr1`
+  - `/auth-service.js?v=20260619-gdpr1`
+  - `/firestore-cloud-service.js?v=20260619-gdpr1`
+  - `/work4it-icon-192.png`
+  - `/work4it-icon-512.png`
 
-## Vigtige noter om test
+## Testbegrænsninger
 
-- Det indbyggede browserstyringsværktøj kunne ikke bruges i denne
-  Windows-session på grund af en adgangsfejl i browser-runtime.
-- Chrome headless kan på meget smalle screenshots opføre sig som en
-  croppet desktopvisning frem for ægte mobil-emulering. Derfor bør iOS og
-  Android stadig testes fysisk.
-- Der er ikke testet med rigtige Firebase-loginoplysninger i denne runde.
+- Codex' in-app browser automation fejlede i denne Windows-session med en adgangsfejl.
+- Den bundtede Playwright-installation kunne ikke starte, fordi `playwright-core` ikke var tilgængelig via runtime-resolution.
+- Der er derfor ikke udført fuld automatisk visuel screenshot-test i denne runde.
+- iOS/Safari og Android/Chrome skal stadig fysisk accepttestes for login, Google redirect, PWA-installation og touchadfærd.
+- Der er ikke brugt rigtige Firebase-loginoplysninger i testen.
 
 ## Anbefalet fysisk accepttest
 
-Test disse flows på rigtige enheder:
-
 1. iPhone Safari:
-   - Åbn appen
-   - Login med e-mail
-   - Google-login
-   - Fokus i formularfelter uden uønsket zoom
+   - Åbn Work4it
+   - Opret/log ind med e-mail
+   - Google-login via redirect
+   - Åbn Privatliv/GDPR modal fra login
    - Føj til hjemmeskærm
-   - Åbn appen fra hjemmeskærmen
+   - Åbn standalone PWA og kontroller login-gendannelse
 
 2. Android Chrome:
-   - Login
-   - Google-login via redirect
-   - PWA-installation
-   - Dropdown-menuer og modals
+   - Login og Google-login
+   - Installer PWA
+   - Åbn/luk menu, dropdowns og modals
+   - Opret og gem et træningspas
 
 3. Desktop Chrome og Edge:
-   - Login
-   - Logout
-   - PWA-installation
-   - Navigation
+   - Login, logout, refresh-login
+   - Firestore sync efter profilændring
    - JSON-eksport
-   - Firestore sync efter refresh
+   - Privatliv/GDPR-side
+   - Konto-/datasletning med testkonto
 
 4. Layoutbredder:
    - 360 px
@@ -184,16 +148,14 @@ Test disse flows på rigtige enheder:
 
 ## Kendte begrænsninger
 
-- PDF-eksport findes ikke endnu.
+- PDF-eksport findes ikke endnu; kun JSON-dataeksport er implementeret.
 - Firebase-login og cloud-sync kræver internet.
-- Offline PWA fungerer som app-shell/cache efter første indlæsning, men
-  clouddata kan ikke synkroniseres offline.
-- Medlemskab og AI request-grænser er stadig klientstyrede demo-funktioner
-  og må ikke bruges som produktionssikker adgangskontrol.
+- Offline PWA fungerer som app-shell/cache efter første indlæsning, men clouddata kan ikke synkroniseres offline.
+- Medlemskab og AI request-grænser er stadig klientstyrede demo-funktioner og må ikke bruges som produktionssikker adgangskontrol.
+- Fuld bekræftelse af Safari/iOS og Android kræver fysisk test på enheder, fordi headless-test ikke var tilgængelig i denne session.
 
 ## Samlet status
 
-Work4it er nu væsentligt bedre forberedt til Chrome, Edge, Android og
-iOS/Safari. De største browserkompatibilitetsrisici er rettet i koden.
-Næste naturlige skridt er fysisk test på iPhone og Android samt en rigtig
-Firebase-loginrunde med en testkonto.
+Work4it er rettet for de kompatibilitetsproblemer, der kunne identificeres og løses direkte i koden: PWA-cache, modal/popups og iOS safe-area/viewport. Appen loader lokalt, centrale assets svarer korrekt, manifest/service worker er gyldige, og centrale scripts har ingen syntaksfejl.
+
+Teknisk vurdering: Work4it er kompatibilitetsforbedret og forventes at fungere på Android, iOS, Safari, Chrome og Edge, men endelig bekræftelse kræver fysisk accepttest på især iPhone Safari og Android Chrome med rigtig Firebase-login.

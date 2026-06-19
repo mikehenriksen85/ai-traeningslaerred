@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Work4it hjælper dig med at planlægge, gennemføre og følge din træning.">
+  <meta name="description" content="Work4it er en professionel AI-træningsplatform til programmer, træningsdata, kropsmålinger og cloud-backup.">
   <meta name="application-name" content="Work4it">
-  <meta name="theme-color" content="#252e36">
+  <meta name="theme-color" content="#0F172A">
   <meta name="apple-mobile-web-app-title" content="Work4it">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,28 +13,31 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Work4it">
   <meta property="og:site_name" content="Work4it">
-  <meta property="og:description" content="Planlæg, gennemfør og følg din træning med Work4it.">
+  <meta property="og:description" content="Planlæg, gennemfør og følg din træning med Work4it - en professionel AI-træningsplatform.">
+  <meta property="og:image" content="work4it-hero-logo-v1.png">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Work4it">
-  <meta name="twitter:description" content="Planlæg, gennemfør og følg din træning med Work4it.">
+  <meta name="twitter:description" content="Planlæg, gennemfør og følg din træning med Work4it - en professionel AI-træningsplatform.">
+  <meta name="twitter:image" content="work4it-hero-logo-v1.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="work4it-icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" sizes="192x192" href="work4it-icon-192.png">
+  <link rel="icon" href="work4it-app-icon-192.png" type="image/png" sizes="192x192">
+  <link rel="icon" href="work4it-app-icon-512.png" type="image/png" sizes="512x512">
+  <link rel="apple-touch-icon" sizes="192x192" href="work4it-app-icon-192.png">
   <title>Work4it</title>
   <style>
     :root {
-      --bg: #1e252b;
-      --card: #252e36;
-      --panel: #151a1e;
-      --input: #1a2026;
-      --border: #313d49;
-      --text: #fff;
-      --muted: #a0aab2;
-      --blue: #3a93ff;
-      --green: #4ade80;
-      --orange: #fb923c;
-      --purple: #a855f7;
-      --red: #ef4444;
+      --bg: #0F172A;
+      --card: #1E293B;
+      --panel: #111827;
+      --input: #0B1220;
+      --border: #334155;
+      --text: #FFFFFF;
+      --muted: #CBD5E1;
+      --blue: #3B82F6;
+      --green: #22C55E;
+      --orange: #3B82F6;
+      --purple: #3B82F6;
+      --red: #EF4444;
       --font-primary: "Segoe UI", Arial, sans-serif;
       --font-size-h1: 1.5rem;
       --font-size-h2: 1.125rem;
@@ -109,7 +112,19 @@
     }
     .menu-toggle-btn { font-size: var(--font-size-icon); padding: 5px 10px; }
     .nav-btn { padding: 7px 12px; font-size: var(--font-size-body); }
-    .app-title { font-weight: var(--font-weight-bold); margin-left: 4px; }
+    .app-title { display: flex; align-items: center; min-width: 0; margin-left: 4px; font-weight: var(--font-weight-bold); }
+    .brand-header-logo { display: none; width: auto; max-width: 176px; height: 38px; object-fit: contain; }
+    .brand-header-mobile { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand-header-icon { width: 28px; height: 28px; object-fit: contain; flex: 0 0 auto; }
+    .brand-header-text { color: var(--text-primary); font-weight: var(--font-weight-bold); line-height: 1; white-space: nowrap; }
+    .brand-logo { display: block; width: min(220px, 72vw); height: auto; object-fit: contain; }
+    .brand-hero-logo { display: block; width: min(420px, 88vw); max-height: 220px; height: auto; object-fit: contain; }
+    .brand-fade-in { animation: work4itFadeIn .55s ease both; }
+    @keyframes work4itFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (min-width: 760px) {
+      .brand-header-logo { display: block; }
+      .brand-header-mobile { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    }
 
     .sidebar {
       position: fixed;
@@ -184,7 +199,7 @@
     }
     .sidebar-accordion-panel .sidebar-subitem {
       padding-left: 30px;
-      border-left: 2px solid rgba(58,147,255,.35);
+      border-left: 2px solid rgba(59,130,246,.35);
     }
     .sidebar-item.active {
       color: var(--text-primary);
@@ -249,7 +264,7 @@
     #workoutTitle { font-size: var(--font-size-h1); font-weight: var(--font-weight-semibold); margin-bottom: 12px; }
     .top-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .top-btn { border: 0; border-radius: 6px; color: var(--text-primary); padding: 11px; font-weight: var(--font-weight-semibold); cursor: pointer; }
-    .save-btn { background: #22c55e; }
+    .save-btn { background: var(--green); }
     .start-btn { background: var(--blue); }
     .start-btn.active { background: var(--orange); }
     .stop-btn { background: var(--red); display: none; grid-column: 1 / -1; }
@@ -283,7 +298,7 @@
       gap: 10px;
       margin-top: 8px;
       padding: 9px 12px;
-      border: 1px solid rgba(74,222,128,.35);
+      border: 1px solid rgba(34,197,94,.35);
       border-radius: 6px;
       background: rgba(74,222,128,.07);
     }
@@ -326,7 +341,7 @@
     #progressPercent { position: relative; z-index: 1; color: var(--text-primary); font-size: var(--font-size-body); font-weight: var(--font-weight-bold); }
     #progressComplete { display: none; max-width: 92px; color: var(--text-success); font-size: var(--font-size-small); line-height: var(--line-height-control); font-weight: var(--font-weight-bold); }
     #progressComplete.show { display: block; }
-    .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--purple); color: var(--text-primary); border: 0; border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+    .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--blue); color: var(--text-primary); border: 0; border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
 
     .exercise { background: rgba(0,0,0,.12); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 18px; }
     .exercise-transition { display: none; color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); margin-bottom: 9px; }
@@ -356,7 +371,7 @@
       font: inherit;
       font-weight: var(--font-weight-semibold);
     }
-    .replacement-mode:hover, .replacement-mode.active { border-color: var(--green); background: rgba(74,222,128,.08); }
+    .replacement-mode:hover, .replacement-mode.active { border-color: var(--green); background: rgba(34,197,94,.08); }
     .replacement-toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
     .replacement-toolbar .wide { grid-column: 1 / -1; }
     .replacement-filter { display: grid; gap: 5px; min-width: 0; }
@@ -407,7 +422,7 @@
     .timer-btn.running { color: var(--orange); border-color: var(--orange); }
     .set-analytics { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0 28px; font-size: var(--font-size-small); }
     .pill { color: var(--text-accent); background: rgba(58,147,255,.08); border: 1px solid rgba(58,147,255,.25); border-radius: 4px; padding: 3px 7px; }
-    .pill.green { color: var(--text-success); border-color: rgba(74,222,128,.25); background: rgba(74,222,128,.08); }
+    .pill.green { color: var(--text-success); border-color: rgba(74,222,128,.25); background: rgba(34,197,94,.08); }
     .set-controls { margin-top: 12px; display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: var(--font-size-body); }
     .square { width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border); background: var(--input); color: var(--text-primary); cursor: pointer; font-weight: var(--font-weight-bold); }
 
@@ -439,7 +454,7 @@
       cursor: pointer;
     }
     .movement-btn.active { color: var(--text-primary); border-color: var(--text-success); background: rgba(74,222,128,.12); }
-    .add-btn { width: 100%; background: rgba(74,222,128,.08); border: 1px dashed var(--green); color: var(--text-success); border-radius: 8px; padding: 13px; font-weight: var(--font-weight-bold); cursor: pointer; }
+    .add-btn { width: 100%; background: rgba(34,197,94,.08); border: 1px dashed var(--green); color: var(--text-success); border-radius: 8px; padding: 13px; font-weight: var(--font-weight-bold); cursor: pointer; }
     .muscle-menu {
       display: none;
       position: fixed;
@@ -499,7 +514,7 @@
     }
     .program-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
     .program-action-btn { border-radius: 6px; padding: 10px; font-weight: var(--font-weight-bold); cursor: pointer; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); }
-    .program-action-btn.share { color: var(--text-accent); border-color: rgba(58,147,255,.7); }
+    .program-action-btn.share { color: var(--text-accent); border-color: rgba(59,130,246,.7); }
     .program-action-btn.delete { color: var(--text-danger); border-color: rgba(239,68,68,.7); }
     .program-action-btn:hover { background: rgba(255,255,255,.05); }
     .contact-form { display: grid; gap: 10px; }
@@ -665,7 +680,7 @@
       color: var(--text-primary);
       cursor: pointer;
     }
-    .profile-focus-option:has(input:checked) { border-color: var(--green); background: rgba(74,222,128,.1); }
+    .profile-focus-option:has(input:checked) { border-color: var(--green); background: rgba(34,197,94,.1); }
     .profile-focus-option input { width: 18px; height: 18px; accent-color: var(--green); }
     .profile-account-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
     .profile-account-button {
@@ -721,7 +736,11 @@
       background: var(--card);
       box-shadow: 0 24px 70px rgba(0,0,0,.5);
     }
-    .auth-gate-brand { color: var(--text-accent); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); }
+    .auth-gate-brand { display: flex; justify-content: center; margin-bottom: 10px; }
+    .auth-gate-brand .brand-logo { width: min(240px, 76vw); }
+    .auth-gate.loading .auth-gate-brand .brand-logo { display: none; }
+    .auth-gate.loading .auth-hero-logo { display: block; margin: 0 auto 12px; width: min(280px, 76vw); max-height: 170px; object-fit: contain; }
+    .auth-hero-logo { display: none; }
     .auth-gate-title { margin: 8px 0 6px; font-size: var(--font-size-h1); line-height: var(--line-height-heading); }
     .auth-gate-copy { margin: 0 0 18px; color: var(--text-secondary); }
     .auth-gate-form { display: grid; gap: 12px; }
@@ -817,7 +836,7 @@
     .development-stat b { font-size: var(--font-size-body); }
     .development-change { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
     .change-badge { border-radius: 4px; padding: 4px 7px; font-size: var(--font-size-small); font-weight: var(--font-weight-bold); }
-    .change-badge.up { color: var(--text-success); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.3); }
+    .change-badge.up { color: var(--text-success); background: rgba(34,197,94,.1); border: 1px solid rgba(74,222,128,.3); }
     .change-badge.down { color: var(--text-warning); background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); }
     .change-badge.neutral { color: var(--text-secondary); background: rgba(255,255,255,.05); border: 1px solid var(--border); }
     .progress-panel { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
@@ -1052,6 +1071,14 @@
       font-weight: var(--font-weight-bold);
       pointer-events: none;
     }
+    .work4it-landing-hero { display: flex; justify-content: center; margin: 0 0 12px; }
+    .work4it-landing-hero .brand-hero-logo { width: min(360px, 86vw); max-height: 170px; }
+    .profile-account-title-group { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .profile-account-logo { width: min(180px, 42vw); max-height: 54px; object-fit: contain; flex: 0 0 auto; }
+    .membership-title-group { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .membership-hero-logo { width: min(190px, 40vw); max-height: 92px; object-fit: contain; flex: 0 0 auto; }
+    .about-brand { display: flex; justify-content: center; margin-bottom: 16px; }
+    .about-brand .brand-logo { width: min(260px, 78vw); }
     .membership-view { display: none; position: fixed; inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0; z-index: 305; overflow-y: auto; background: var(--bg); padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
     .membership-view.open { display: block; }
     .membership-shell { width: min(1080px, 100%); margin: 0 auto; }
@@ -1070,8 +1097,8 @@
       padding: 16px;
     }
     .membership-status-card {
-      border-color: rgba(58,147,255,.55);
-      background: linear-gradient(135deg, rgba(58,147,255,.14), rgba(74,222,128,.07));
+      border-color: rgba(59,130,246,.55);
+      background: linear-gradient(135deg, rgba(59,130,246,.16), rgba(34,197,94,.08));
     }
     .membership-eyebrow { color: var(--text-accent); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); margin-bottom: 6px; }
     .membership-status-name { font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); margin-bottom: 6px; }
@@ -1090,7 +1117,7 @@
       border-radius: 8px;
       padding: 16px;
     }
-    .membership-plan.best { border-color: var(--green); box-shadow: 0 0 0 1px rgba(74,222,128,.16); }
+    .membership-plan.best { border-color: var(--green); box-shadow: 0 0 0 1px rgba(34,197,94,.16); }
     .membership-best-badge {
       position: absolute;
       top: 10px;
@@ -1134,7 +1161,7 @@
       max-height: 92vh;
       overflow-y: auto;
       background: var(--card);
-      border: 1px solid rgba(58,147,255,.55);
+      border: 1px solid rgba(59,130,246,.55);
       border-radius: 8px;
       padding: 20px;
       box-shadow: 0 20px 60px rgba(0,0,0,.45);
@@ -1161,10 +1188,10 @@
       display: none;
       margin-top: 12px;
       padding: 10px;
-      border: 1px solid rgba(74,222,128,.35);
+      border: 1px solid rgba(34,197,94,.35);
       border-radius: 6px;
       color: var(--text-success);
-      background: rgba(74,222,128,.08);
+      background: rgba(34,197,94,.08);
     }
     .membership-confirmation.show { display: block; }
 
@@ -1175,6 +1202,12 @@
     }
 
     @media (max-width: 560px) {
+            .brand-header-icon { width: 30px; height: 30px; }
+      .brand-header-text { font-size: 1rem; }
+      .work4it-landing-hero .brand-hero-logo { width: min(300px, 86vw); max-height: 150px; }
+      .profile-account-title-group, .membership-title-group { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .profile-account-logo { width: min(190px, 70vw); }
+      .membership-hero-logo { width: min(220px, 76vw); max-height: 130px; }
       input, select, textarea { font-size: 16px !important; }
       .canvas { padding: 12px; }
       .top-controls { grid-template-columns: 1fr; }
@@ -1276,7 +1309,7 @@
 <body class="auth-locked">
   <section class="auth-gate loading" id="authGate" aria-label="Logger ind" aria-live="polite">
     <div class="auth-gate-panel">
-      <div class="auth-gate-brand">Work4it</div>
+      <div class="auth-gate-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="Work4it"><img class="auth-hero-logo brand-fade-in" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
       <h1 class="auth-gate-title">Velkommen</h1>
       <p class="auth-gate-copy" id="authGateCopy">Kontrollerer eksisterende login...</p>
       <form class="auth-gate-form" onsubmit="loginFromAuthGate(event)">
@@ -1304,7 +1337,7 @@
     <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
     <button class="nav-btn" onclick="goBackSafe()">Tilbage</button>
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
-    <div class="app-title">Work4it</div>
+    <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="work4it-logo-v1.png" alt="Work4it"><span class="brand-header-mobile"><img class="brand-header-icon" src="work4it-app-icon-192.png" alt=""><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
   </header>
 
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
@@ -1407,6 +1440,7 @@
 
   <main class="canvas" id="programCanvas">
     <section class="card">
+      <div class="work4it-landing-hero program-only brand-fade-in"><img class="brand-hero-logo" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
       <div id="workoutTitle">Mit nye træningspas</div>
       <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
       <div class="top-controls program-only">
@@ -1489,7 +1523,7 @@
   <section class="profile-account-view" id="profileAccountView" aria-hidden="true">
     <div class="profile-account-shell">
       <div class="profile-account-head">
-        <div class="profile-account-title">Træningsprofil</div>
+        <div class="profile-account-title-group"><img class="profile-account-logo" src="work4it-logo-v1.png" alt="Work4it"><div class="profile-account-title">Profil og konto</div></div>
         <button class="close" onclick="closeProfileAccountView()" aria-label="Luk">×</button>
       </div>
       <p class="profile-account-intro">Administrér personlige oplysninger, træningsopsætning, konto og lokale data.</p>
@@ -1684,7 +1718,7 @@
   <section class="membership-view" id="membershipView" aria-hidden="true">
     <div class="membership-shell">
       <div class="membership-head">
-        <div class="membership-title">Medlemskab</div>
+        <div class="membership-title-group"><img class="membership-hero-logo brand-fade-in" src="work4it-hero-logo-v1.png" alt="Work4it"><div class="membership-title">Medlemskab</div></div>
         <button class="close" onclick="closeMembershipView()" aria-label="Luk">×</button>
       </div>
 
@@ -2002,7 +2036,8 @@
       const navButtons = document.querySelectorAll(".nav-btn");
       if (navButtons[0]) navButtons[0].textContent = t("back");
       if (navButtons[1]) navButtons[1].textContent = t("home");
-      document.querySelector(".app-title").textContent = t("appTitle");
+      const appTitleText = $("appTitleText");
+      if (appTitleText) appTitleText.textContent = t("appTitle");
       window.updateSidebarProfileIdentity?.();
 
       $("generatorSectionTitle").textContent = "✨ AI-genereret træningsplan";
@@ -2138,6 +2173,7 @@
       if ($("sidebar").classList.contains("open")) toggleSidebar();
       $("modalTitle").textContent = "Hjælp / Om appen";
       $("modalContent").innerHTML = `
+        <div class="about-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="Work4it"></div>
         <p class="about-intro">
           <strong>Work4it samler hele din træningsrejse ét sted.</strong>
           Appen hjælper dig med at skabe struktur, gennemføre gode træningspas og se den fremgang,
@@ -4429,12 +4465,12 @@
       }).join("");
       const points = exercise.points.map((point, index) => {
         const date = new Date(point.date).toLocaleDateString("da-DK", { day:"2-digit", month:"2-digit" });
-        return `<circle cx="${x(index)}" cy="${y(point.weight)}" r="4" fill="#4ade80" stroke="#1e252b" stroke-width="2"><title>${date}: ${point.weight} kg</title></circle><text class="chart-axis-text" x="${x(index)}" y="${height-17}" text-anchor="middle">${date}</text>`;
+        return `<circle cx="${x(index)}" cy="${y(point.weight)}" r="4" fill="#22C55E" stroke="#0F172A" stroke-width="2"><title>${date}: ${point.weight} kg</title></circle><text class="chart-axis-text" x="${x(index)}" y="${height-17}" text-anchor="middle">${date}</text>`;
       }).join("");
       container.innerHTML = `
         <svg class="line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Vægtudvikling for ${esc(exercise.name)}">
           ${grid}
-          <polyline points="${coordinates}" fill="none" stroke="#3a93ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="${coordinates}" fill="none" stroke="#3B82F6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
           ${points}
           <text class="chart-axis-text" x="14" y="${top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90 14 ${top + plotHeight / 2})">kg</text>
         </svg>
@@ -4469,9 +4505,9 @@
       const coordinates = points.map((point, index) => `${x(index)},${y(point.value)}`).join(" ");
       const dots = points.map((point, index) => {
         const date = new Date(point.date).toLocaleDateString("da-DK", { day:"2-digit", month:"2-digit" });
-        return `<circle cx="${x(index)}" cy="${y(point.value)}" r="4" fill="#4ade80"><title>${date}: ${point.value} ${metricMeta.unit}</title></circle><text class="chart-axis-text" x="${x(index)}" y="${height-17}" text-anchor="middle">${date}</text>`;
+        return `<circle cx="${x(index)}" cy="${y(point.value)}" r="4" fill="#22C55E"><title>${date}: ${point.value} ${metricMeta.unit}</title></circle><text class="chart-axis-text" x="${x(index)}" y="${height-17}" text-anchor="middle">${date}</text>`;
       }).join("");
-      container.innerHTML = `<svg class="line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${metricMeta.label} over tid for ${esc(exercise.name)}"><polyline points="${coordinates}" fill="none" stroke="#3a93ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}<text class="chart-axis-text" x="14" y="${top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90 14 ${top + plotHeight / 2})">${metricMeta.unit}</text></svg>`;
+      container.innerHTML = `<svg class="line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${metricMeta.label} over tid for ${esc(exercise.name)}"><polyline points="${coordinates}" fill="none" stroke="#3B82F6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}<text class="chart-axis-text" x="14" y="${top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90 14 ${top + plotHeight / 2})">${metricMeta.unit}</text></svg>`;
     }
 
     const bodyMeasurementFields = {
@@ -5723,6 +5759,11 @@
   </script>
 </body>
 </html>
+
+
+
+
+
 
 
 
