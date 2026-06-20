@@ -212,6 +212,17 @@
       padding-right: 14px;
     }
     .sidebar-menu-spacer { height: 12px; }
+    .sidebar-bottom-action {
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      background: transparent;
+      color: var(--text-secondary);
+      font: inherit;
+      text-align: left;
+      text-decoration: none;
+    }
+    .sidebar-bottom-action:hover { color: var(--text-primary); background: rgba(58,147,255,.12); }
     .sidebar-box { padding: 6px 24px 14px; display: flex; flex-direction: column; gap: 8px; }
     .sidebar-select, .field {
       width: 100%;
@@ -416,8 +427,51 @@
     .set-row input { width: 92%; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 5px 3px; text-align: center; font-size: var(--font-size-small); }
     .set-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--text-success); cursor: pointer; }
     .previous { color: var(--text-secondary); font-size: var(--font-size-small); word-break: break-word; }
-    .pause-control { display: flex; gap: 4px; justify-content: center; align-items: center; }
-    .pause-control input { width: 58px; }
+    .pause-control {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 32px 32px;
+      gap: 4px;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+    }
+    .pause-control input { width: 100%; min-width: 0; }
+    .pause-progress {
+      position: relative;
+      grid-column: 1 / -1;
+      width: 100%;
+      height: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: rgba(255,255,255,.07);
+      opacity: 0;
+      transition: opacity .15s ease, border-color .2s ease, background .2s ease;
+    }
+    .pause-control.started .pause-progress { opacity: 1; }
+    .pause-progress-fill {
+      display: block;
+      width: 100%;
+      height: 100%;
+      transform: scaleX(var(--pause-progress, 1));
+      transform-origin: left center;
+      background: var(--blue);
+      transition: transform .95s linear, background .2s ease;
+    }
+    .pause-control.paused .pause-progress-fill { background: #f59e0b; }
+    .pause-control.complete .pause-progress { border-color: var(--green); background: rgba(34,197,94,.18); }
+    .pause-control.complete .pause-progress-fill { background: var(--green); }
+    .pause-control.complete .pause-progress::after {
+      content: "Færdig";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--text-primary);
+      font-size: 8px;
+      font-weight: var(--font-weight-bold);
+      line-height: 1;
+    }
     .timer-btn { width: 25px; height: 25px; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; cursor: pointer; }
     .timer-btn.running { color: var(--orange); border-color: var(--orange); }
     .set-analytics { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0 28px; font-size: var(--font-size-small); }
@@ -429,7 +483,7 @@
     .add-zone { position: relative; z-index: 10; margin: 20px 0 24px; }
     .movement-picker {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       grid-auto-rows: 44px;
       gap: 8px;
       width: 100%;
@@ -1213,8 +1267,8 @@
       }
       .table-head { font-size: var(--font-size-compact); }
       .set-row input { width: 100%; min-width: 0; }
-      .pause-control { gap: 2px; }
-      .pause-control input { width: 44px; }
+      .pause-control { grid-template-columns: minmax(0, 1fr) 32px 32px; gap: 2px; }
+      .pause-control input { width: 100%; }
       .timer-btn { width: 32px; height: 36px; padding: 0; }
       .square, .close { min-width: 40px; min-height: 40px; }
       .dash-grid { grid-template-columns: 1fr; }
@@ -1245,6 +1299,7 @@
       .replacement-ai-row .small-btn { min-height: 44px; }
       .replacement-confirm-actions { flex-direction: column-reverse; }
       .replacement-confirm-actions button { width: 100%; min-height: 44px; }
+      .movement-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     .cardio-fields {
@@ -1360,6 +1415,7 @@
             <option value="pull">Pull Pas</option>
             <option value="legs">Legs Pas</option>
             <option value="cardio">❤️ Cardio</option>
+            <option value="calisthenics">🤸 Calisthenics</option>
           </select>
           <div class="count-picker" id="countPicker">
             <div class="nested-box">
@@ -1373,6 +1429,19 @@
                 <select class="sidebar-select" id="cardioGoalMode">
                   <option value="weight_loss">Vægttab</option><option value="conditioning">Kondition</option>
                   <option value="general_health">Generel sundhed</option><option value="recovery">Restitution</option>
+                </select>
+              </div>
+              <div id="calisthenicsTemplatePicker" style="display:none;margin-top:10px;">
+                <label class="generator-count-label" for="calisthenicsTemplateMode">Programskabelon</label>
+                <select class="sidebar-select" id="calisthenicsTemplateMode">
+                  <option value="beginner">Begynder Calisthenics</option>
+                  <option value="muscle_gain">Calisthenics Muskelopbygning</option>
+                  <option value="strength">Calisthenics Styrke</option>
+                  <option value="no_equipment">Hjemmetræning uden udstyr</option>
+                  <option value="pullup_mastery">Pull-up Mastery</option>
+                  <option value="dip_mastery">Dip Mastery</option>
+                  <option value="muscleup_progression">Muscle-up Progression</option>
+                  <option value="street_workout">Avanceret Street Workout</option>
                 </select>
               </div>
               <p class="generator-helper">Vælg hvor mange øvelser dagens program skal indeholde.</p>
@@ -1423,6 +1492,12 @@
       </div>
     </section>
     <div class="sidebar-menu-spacer"></div>
+    <a class="sidebar-item sidebar-bottom-action" id="feedbackNavItem"
+      href="https://docs.google.com/forms/d/e/1FAIpQLScIi1YE2x3pzRQI7dmztC3kWgjysDFkcUfKJtZXcOzAeIV7Tg/viewform"
+      target="_blank" rel="noopener noreferrer"
+      title="Send fejl, forslag eller feedback til Work4it"
+      onclick="if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar()">📝 Feedback</a>
+    <button class="sidebar-item sidebar-bottom-action" id="sidebarLogoutBtn" type="button" onclick="logoutProfileAccount()">↪ Log ud</button>
   </nav>
 
   <main class="canvas" id="programCanvas">
@@ -1475,6 +1550,7 @@
           <button class="movement-btn" data-movement="Pull" onclick="setMovementFilter('Pull', event)">Pull</button>
           <button class="movement-btn" data-movement="Stabilitet" onclick="setMovementFilter('Stabilitet', event)">Stabilitet</button>
           <button class="movement-btn" data-movement="Cardio" onclick="setMovementFilter('Cardio', event)">Cardio</button>
+          <button class="movement-btn" data-movement="Calisthenics" onclick="setMovementFilter('Calisthenics', event)">Calisthenics</button>
         </div>
         <div class="muscle-menu" id="muscleMenu">
           <div class="mini-title" id="exercisePickerTitle" style="padding:10px 14px;margin:0;border-bottom:1px solid var(--border);">Hvilken muskelgruppe?</div>
@@ -1587,13 +1663,40 @@
           <h2>Træningsopsætning</h2>
           <p class="profile-section-copy">Disse valg bruges af programgeneratoren, AI Copilot og fremtidige anbefalinger.</p>
           <div class="profile-form-grid">
-            <label class="profile-form-field">Træningsmål
-              <select id="profileGoal">
+            <label class="profile-form-field">🥇 Primært mål
+              <select id="profileGoalPrimary" onchange="syncProfileGoalOptions()">
                 <option value="muscle_gain">Muskelopbygning</option>
                 <option value="weight_loss">Vægttab</option>
                 <option value="strength">Styrke</option>
                 <option value="general_health">Generel sundhed</option>
                 <option value="cardio">Cardio</option>
+              </select>
+            </label>
+            <label class="profile-form-field">🥈 Sekundært mål
+              <select id="profileGoalSecondary" onchange="syncProfileGoalOptions()">
+                <option value="">Ikke valgt</option>
+                <option value="muscle_gain">Muskelopbygning</option>
+                <option value="weight_loss">Vægttab</option>
+                <option value="strength">Styrke</option>
+                <option value="general_health">Generel sundhed</option>
+                <option value="cardio">Cardio</option>
+              </select>
+            </label>
+            <label class="profile-form-field">🥉 Tertiært mål
+              <select id="profileGoalTertiary" onchange="syncProfileGoalOptions()">
+                <option value="">Ikke valgt</option>
+                <option value="muscle_gain">Muskelopbygning</option>
+                <option value="weight_loss">Vægttab</option>
+                <option value="strength">Styrke</option>
+                <option value="general_health">Generel sundhed</option>
+                <option value="cardio">Cardio</option>
+              </select>
+            </label>
+            <label class="profile-form-field">Foretrukken træningsstil
+              <select id="profilePreferredTrainingStyle">
+                <option value="gym">🏋️ Fitnesscenter</option>
+                <option value="calisthenics">🤸 Calisthenics</option>
+                <option value="hybrid">🔄 Begge dele</option>
               </select>
             </label>
             <label class="profile-form-field">Erfaring
@@ -1848,6 +1951,41 @@
       }))
     );
 
+    const calisthenicsExerciseDefinitions = [
+      ["Incline Push-up", "Bryst"], ["Knee Push-up", "Bryst"], ["Push-ups", "Bryst"],
+      ["Diamond Push-up", "Triceps"], ["Decline Push-up", "Bryst"], ["Archer Push-up", "Bryst"],
+      ["Pseudo Planche Push-up", "Bryst"], ["Ring Push-up", "Bryst"], ["Australian Pull-up", "Øvre ryg"],
+      ["Scapular Pull-up", "Øvre ryg"], ["Negative Pull-up", "Øvre ryg"], ["Band-Assisted Pull-up", "Øvre ryg"],
+      ["Pull-ups", "Øvre ryg"], ["Chin-ups", "Øvre ryg"], ["Archer Pull-up", "Øvre ryg"],
+      ["Chest-to-Bar Pull-up", "Øvre ryg"], ["Explosive Pull-up", "Øvre ryg"], ["Muscle-up Transition", "Øvre ryg"],
+      ["Bar Muscle-up", "Øvre ryg"], ["Pike Push-up", "Skuldre"], ["Wall Handstand Hold", "Skuldre"],
+      ["Handstand Push-up Progression", "Skuldre"], ["Wall Handstand Push-up", "Skuldre"], ["Planche Lean", "Skuldre"],
+      ["Bodyweight Squat", "Forside lår"], ["Assisted Pistol Squat", "Forside lår"], ["Pistol Squat", "Forside lår"],
+      ["Walking Lunge", "Forside lår"], ["Bulgarian Split Squat", "Forside lår"], ["Single-Leg Glute Bridge", "Bagside lår & baller"],
+      ["Nordic Curl Progression", "Bagside lår & baller"], ["Bench Dip", "Triceps"], ["Parallel Bar Dip", "Triceps"],
+      ["Straight Bar Dip", "Triceps"], ["Ring Dip", "Triceps"], ["Korean Dip", "Triceps"], ["Negative Dip", "Triceps"],
+      ["Negative Muscle-up", "Øvre ryg"],
+      ["Hollow Body Hold", "Mave"], ["Hanging Knee Raise", "Mave"], ["Hanging Leg Raise", "Mave"],
+      ["L-Sit Tuck", "Mave"], ["L-Sit", "Mave"], ["Dragon Flag Progression", "Mave"],
+      ["Toes-to-Bar", "Mave"], ["Superman Hold", "Nedre ryg / lænd"], ["Arch Body Hold", "Nedre ryg / lænd"]
+    ];
+    calisthenicsExerciseDefinitions.forEach(([name, muscle]) => {
+      const existing = catalog.find(exercise => exercise.name === name && exercise.muscle === muscle);
+      if (existing) {
+        existing.trainingStyle = "calisthenics";
+        existing.type = "Hjemme";
+        existing.tags = [...new Set([...(existing.tags || []), "calisthenics", "kropsvægt"])];
+      } else {
+        catalog.push({
+          name,
+          muscle,
+          type: "Hjemme",
+          trainingStyle: "calisthenics",
+          tags: [muscle.toLowerCase(), name.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase(), "calisthenics", "kropsvægt"]
+        });
+      }
+    });
+
     let slotCounter = 0;
     let totalSeconds = 0;
     let timerInterval = null;
@@ -1870,6 +2008,7 @@
     let currentLanguage = "da";
     let autosaveDebounce = null;
     const pauseTimers = {};
+    let pauseAudioContext = null;
 
     const translations = {
       da: {
@@ -2010,6 +2149,11 @@
     function muscleGroupMeta(muscle) { return muscleGroups.find(group => group.key === muscle) || { key: muscle, category: "Pull", emoji: "•" }; }
     function muscleDisplay(muscle) { const meta = muscleGroupMeta(muscle); return `${meta.emoji} ${tm(muscle)} – ${tc(meta.category)}`; }
     function movementMuscles(movement = activeMovementFilter) {
+      if (movement === "Calisthenics") {
+        return muscleGroups
+          .filter(group => catalog.some(exercise => exercise.muscle === group.key && exercise.trainingStyle === "calisthenics"))
+          .map(group => group.key);
+      }
       return muscleGroups.filter(group => movement === "Alle" || group.category === movement).map(group => group.key);
     }
     function optionList(values, selected, mapper = v => v) {
@@ -2079,6 +2223,7 @@
           goal: block.dataset.goal || currentTrainingGoal(),
           role: block.dataset.role || "accessory",
           exerciseType: block.dataset.exerciseType || "strength",
+          trainingStyle: block.dataset.trainingStyle || "gym",
           sets: collectSetData(slot),
           cardio: collectCardioData(slot)
         };
@@ -2341,9 +2486,27 @@
       return trainingContext().goal || "general_health";
     }
 
+    function currentTrainingGoals() {
+      const context = trainingContext();
+      return window.TrainingGoalEngine?.normalizeGoalPriorities?.(
+        context.trainingGoals,
+        context.goal || "general_health"
+      ) || {
+        primary: context.goal || "general_health",
+        secondary: "",
+        tertiary: ""
+      };
+    }
+
     function goalPrescription(name, muscle, position = 0) {
       const context = trainingContext();
-      return window.TrainingGoalEngine?.prescription?.(
+      return window.TrainingGoalEngine?.prescriptionForGoals?.(
+        name,
+        muscle,
+        currentTrainingGoals(),
+        context.experience || "intermediate",
+        position
+      ) || window.TrainingGoalEngine?.prescription?.(
         name,
         muscle,
         context.goal || "general_health",
@@ -2626,12 +2789,14 @@
       pendingProgram = type;
       $("countTitle").textContent = "Antal øvelser";
       const cardio = type === "cardio";
+      const calisthenics = type === "calisthenics";
       document.querySelectorAll("#automaticExerciseCount option").forEach(option => {
         const unavailable = cardio && Number(option.value) > 5;
         option.hidden = unavailable;
         option.disabled = unavailable;
       });
       $("cardioGoalPicker").style.display = cardio ? "block" : "none";
+      $("calisthenicsTemplatePicker").style.display = calisthenics ? "block" : "none";
       setAutomaticExerciseCount(cardio
         ? Math.min(5, Number($("automaticExerciseCount")?.value || selectedAutomaticExerciseCount))
         : ($("automaticExerciseCount")?.value || selectedAutomaticExerciseCount));
@@ -2651,6 +2816,10 @@
         generateCardioProgram(count, $("cardioGoalMode")?.value || "general_health");
         return;
       }
+      if (pendingProgram === "calisthenics") {
+        generateCalisthenicsProgram($("calisthenicsTemplateMode")?.value || "beginner", count);
+        return;
+      }
       const types = {
         fullbody: muscleGroupKeys.filter(muscle => muscle !== "Cardio"),
         push: movementMuscles("Push"),
@@ -2663,7 +2832,11 @@
       setExercisePickerContext(pickerMovement, pickerScope);
       const context = trainingContext();
       const goalProfile = window.TrainingGoalEngine?.profile?.(context.goal);
-      $("workoutTitle").textContent = `${goalProfile?.label || "Auto"}: ${tp(pendingProgram)} (${count} ${t("exerciseCountSuffix")})`;
+      const goalSummary = Object.values(currentTrainingGoals())
+        .filter(Boolean)
+        .map(goal => window.TrainingGoalEngine?.profile?.(goal)?.label || goal)
+        .join(" + ") || goalProfile?.label || "Auto";
+      $("workoutTitle").textContent = `${goalSummary}: ${tp(pendingProgram)} (${count} ${t("exerciseCountSuffix")})`;
       $("exercises").innerHTML = "";
       currentSavedProgramId = "";
       currentProgramSession = null;
@@ -2672,15 +2845,18 @@
       renderDayNavigation();
       const used = new Set();
       for (let i = 0; i < count; i++) {
-        const muscle = muscles[i % muscles.length];
+        const includeCardio = pendingProgram === "fullbody" && i === count - 1 && window.TrainingGoalEngine?.shouldIncludeCardio?.(currentTrainingGoals(), 0, 1);
+        const muscle = includeCardio ? "Cardio" : muscles[i % muscles.length];
         const pool = catalog.filter(x => x.muscle === muscle);
-        const ranked = window.TrainingGoalEngine?.rankExercises?.(pool, context.goal, i) || pool;
+        const ranked = window.TrainingGoalEngine?.rankExercisesForGoals?.(pool, currentTrainingGoals(), i, context.preferredTrainingStyle || "hybrid")
+          || window.TrainingGoalEngine?.rankExercises?.(pool, context.goal, i)
+          || pool;
         const ex = ranked.find(item => !used.has(item.name)) || ranked[i % ranked.length] || {
           name: `${t("chooseExercisePrefix")} ${tm(muscle)} ${t("chooseExerciseSuffix")}`,
           muscle
         };
         used.add(ex.name);
-        const plan = goalPrescription(ex.name, muscle, i);
+        const plan = { ...goalPrescription(ex.name, muscle, i), trainingStyle: ex.trainingStyle || "gym" };
         addExercise(ex.name, muscle, plannedSetsForExercise(ex.name, muscle, i), plan);
       }
       $("programType").value = "";
@@ -2696,6 +2872,91 @@
       general_health: { label: "Generel sundhed", totalMinutes: 30, intensity: "medium" },
       recovery: { label: "Restitution", totalMinutes: 20, intensity: "low" }
     };
+
+    const calisthenicsProgramTemplates = {
+      beginner: { title: "Begynder Calisthenics", exercises: [
+        ["Incline Push-up","Bryst",3,"8-12",60], ["Australian Pull-up","Øvre ryg",3,"6-10",75],
+        ["Bodyweight Squat","Forside lår",3,"12-20",60], ["Bench Dip","Triceps",2,"8-12",60],
+        ["Assisted Pistol Squat","Forside lår",2,"6-8",75], ["Hollow Body Hold","Mave",3,"20-30 sek.",45],
+        ["Scapular Pull-up","Øvre ryg",2,"8-12",60], ["Superman Hold","Nedre ryg / lænd",2,"20-30 sek.",45]
+      ]},
+      muscle_gain: { title: "Calisthenics Muskelopbygning", exercises: [
+        ["Decline Push-up","Bryst",4,"8-15",75], ["Pull-ups","Øvre ryg",4,"6-12",90],
+        ["Parallel Bar Dip","Triceps",4,"6-12",90], ["Bulgarian Split Squat","Forside lår",4,"10-15",75],
+        ["Chin-ups","Øvre ryg",3,"6-12",90], ["Ring Push-up","Bryst",3,"10-15",60],
+        ["Single-Leg Glute Bridge","Bagside lår & baller",3,"12-20",60], ["Hanging Knee Raise","Mave",3,"10-15",60]
+      ]},
+      strength: { title: "Calisthenics Styrke", exercises: [
+        ["Archer Push-up","Bryst",4,"4-8",120], ["Chest-to-Bar Pull-up","Øvre ryg",5,"3-6",150],
+        ["Ring Dip","Triceps",4,"4-8",120], ["Pistol Squat","Forside lår",4,"4-8",120],
+        ["Wall Handstand Push-up","Skuldre",4,"3-6",150], ["Nordic Curl Progression","Bagside lår & baller",3,"4-8",120],
+        ["L-Sit","Mave",4,"10-25 sek.",75], ["Dragon Flag Progression","Mave",3,"4-8",90]
+      ]},
+      no_equipment: { title: "Hjemmetræning uden udstyr", exercises: [
+        ["Push-ups","Bryst",3,"8-20",45], ["Bodyweight Squat","Forside lår",4,"15-25",45],
+        ["Pike Push-up","Skuldre",3,"6-12",60], ["Walking Lunge","Forside lår",3,"10-16",45],
+        ["Single-Leg Glute Bridge","Bagside lår & baller",3,"12-20",45], ["Diamond Push-up","Triceps",3,"6-12",60],
+        ["Hollow Body Hold","Mave",3,"20-40 sek.",30], ["Arch Body Hold","Nedre ryg / lænd",3,"20-40 sek.",30]
+      ]},
+      pullup_mastery: { title: "Pull-up Mastery", exercises: [
+        ["Scapular Pull-up","Øvre ryg",3,"8-12",60], ["Australian Pull-up","Øvre ryg",3,"10-15",60],
+        ["Negative Pull-up","Øvre ryg",4,"3-6",90], ["Band-Assisted Pull-up","Øvre ryg",4,"5-8",90],
+        ["Pull-ups","Øvre ryg",5,"3-8",120], ["Chin-ups","Øvre ryg",3,"5-10",90],
+        ["Chest-to-Bar Pull-up","Øvre ryg",3,"3-6",120], ["Hanging Knee Raise","Mave",3,"8-15",60]
+      ]},
+      dip_mastery: { title: "Dip Mastery", exercises: [
+        ["Bench Dip","Triceps",3,"10-15",60], ["Negative Dip","Triceps",3,"4-8",90],
+        ["Parallel Bar Dip","Triceps",5,"3-10",120], ["Straight Bar Dip","Triceps",4,"5-10",90],
+        ["Ring Dip","Triceps",4,"3-8",120], ["Korean Dip","Triceps",3,"3-6",120],
+        ["Diamond Push-up","Triceps",3,"8-15",60], ["Hollow Body Hold","Mave",3,"20-40 sek.",45]
+      ]},
+      muscleup_progression: { title: "Muscle-up Progression", exercises: [
+        ["Scapular Pull-up","Øvre ryg",3,"8-12",60], ["Explosive Pull-up","Øvre ryg",5,"3-5",150],
+        ["Chest-to-Bar Pull-up","Øvre ryg",4,"3-6",120], ["Muscle-up Transition","Øvre ryg",4,"3-6",120],
+        ["Straight Bar Dip","Triceps",4,"5-10",90], ["Negative Muscle-up","Øvre ryg",3,"3-5",150],
+        ["Bar Muscle-up","Øvre ryg",5,"1-5",180], ["Toes-to-Bar","Mave",3,"6-12",75]
+      ]},
+      street_workout: { title: "Avanceret Street Workout", exercises: [
+        ["Bar Muscle-up","Øvre ryg",5,"2-6",180], ["Wall Handstand Push-up","Skuldre",5,"3-8",150],
+        ["Archer Pull-up","Øvre ryg",4,"3-6",150], ["Pseudo Planche Push-up","Bryst",4,"5-10",120],
+        ["Ring Dip","Triceps",4,"4-10",120], ["Pistol Squat","Forside lår",4,"6-10",90],
+        ["L-Sit","Mave",4,"15-30 sek.",75], ["Dragon Flag Progression","Mave",4,"4-8",90]
+      ]}
+    };
+
+    function generateCalisthenicsProgram(templateKey = "beginner", count = 5) {
+      const template = calisthenicsProgramTemplates[templateKey] || calisthenicsProgramTemplates.beginner;
+      const selected = template.exercises.slice(0, normalizeAutomaticExerciseCount(count));
+      $("workoutTitle").textContent = `🤸 ${template.title} (${selected.length} ${selected.length === 1 ? "øvelse" : "øvelser"})`;
+      $("exercises").innerHTML = "";
+      currentSavedProgramId = "";
+      currentProgramSession = null;
+      currentProgramDayIndex = 0;
+      activeExerciseCountPreference = selected.length;
+      setExercisePickerContext("Calisthenics");
+      selected.forEach(([name, muscle, sets, targetReps, pauseSeconds], position) => {
+        const plan = {
+          ...goalPrescription(name, muscle, position),
+          sets,
+          targetReps,
+          pauseSeconds,
+          trainingStyle: "calisthenics",
+          template: templateKey
+        };
+        const savedSets = Array.from({ length: sets }, () => ({
+          prev: "-", completed: false, weight: "", reps: "", targetReps,
+          pause: formatPause(pauseSeconds), pauseManual: false
+        }));
+        addExercise(name, muscle, savedSets, plan);
+      });
+      renderDayNavigation();
+      $("programType").value = "";
+      $("countPicker").style.display = "none";
+      $("calisthenicsTemplatePicker").style.display = "none";
+      pendingProgram = "";
+      autoSave();
+      if ($("sidebar").classList.contains("open")) toggleSidebar();
+    }
 
     function generateCardioProgram(count = 1, goal = "general_health", totalMinutes = null) {
       count = Math.max(1, Math.min(5, Number(count) || 1));
@@ -2736,6 +2997,7 @@
         <p class="helper-text">Vælg hvilken type træningspas du vil oprette.</p>
         <div class="row">
           <button class="small-btn" onclick="closeModal();newWorkout('strength')">🏋️ Styrketræning</button>
+          <button class="small-btn" onclick="closeModal();newWorkout('calisthenics')">🤸 Calisthenics</button>
           <button class="small-btn" onclick="closeModal();newWorkout('cardio')">❤️ Cardio</button>
         </div>`;
       openModal();
@@ -2748,7 +3010,7 @@
     }
 
     function setExercisePickerContext(movement = "Alle", muscles = null) {
-      activeMovementFilter = ["Alle", "Push", "Pull", "Stabilitet", "Cardio"].includes(movement) ? movement : "Alle";
+      activeMovementFilter = ["Alle", "Push", "Pull", "Stabilitet", "Cardio", "Calisthenics"].includes(movement) ? movement : "Alle";
       exercisePickerMuscleScope = Array.isArray(muscles) && muscles.length
         ? muscles.filter(muscle => muscleGroupKeys.includes(muscle))
         : null;
@@ -2768,6 +3030,7 @@
     function inferExercisePickerContext(exercises = []) {
       const muscles = [...new Set((exercises || []).map(exercise => exercise?.muscle).filter(muscle => muscleGroupKeys.includes(muscle)))];
       if (!muscles.length) return setExercisePickerContext("Alle");
+      if (exercises.length && exercises.every(exercise => exercise.trainingStyle === "calisthenics")) return setExercisePickerContext("Calisthenics");
       if (muscles.every(muscle => muscle === "Cardio")) return setExercisePickerContext("Cardio", ["Cardio"]);
       if (muscles.every(muscle => ["Forside lår", "Bagside lår & baller"].includes(muscle))) {
         return setExercisePickerContext("Alle", ["Forside lår", "Bagside lår & baller"]);
@@ -2834,14 +3097,27 @@
 
       const canGoBack = availablePickerMuscles().length > 1;
       title.innerHTML = `<div class="exercise-picker-heading">${canGoBack ? '<button class="exercise-picker-back" type="button" onclick="showMuscleGroups(event)">←</button>' : ""}<span>${esc(tm(exercisePickerMuscle))}: Vælg øvelse</span></div>`;
-      const exercises = catalog.filter(exercise => exercise.muscle === exercisePickerMuscle);
+      const exercises = catalog.filter(exercise =>
+        exercise.muscle === exercisePickerMuscle &&
+        (activeMovementFilter !== "Calisthenics" || exercise.trainingStyle === "calisthenics")
+      );
       container.className = "exercise-picker-list";
       container.innerHTML = exercises.map(exercise => `
           <button class="muscle-item" type="button"
                data-exercise="${esc(exercise.name)}"
                onclick="selectExerciseCandidate('${encodeURIComponent(exercise.name)}', event)">
             ${esc(exercise.name)}<small>${esc(exercise.type)} · Tilføj</small>
-          </button>`).join("");
+          </button>`).join("") + `
+        <details class="custom-box" style="margin:10px;">
+          <summary class="custom-title">Opret egen ${activeMovementFilter === "Calisthenics" ? "Calisthenics-øvelse" : "øvelse"}</summary>
+          <div class="replacement-toolbar" style="margin-top:10px;">
+            <input class="field wide" id="pickerCustomExerciseName" placeholder="Navn på øvelse" onkeyup="if(event.key==='Enter') addCustomExerciseFromPicker(event)">
+            <select class="field" id="pickerCustomExerciseType">
+              ${optionList(["Hjemme","Center"], activeMovementFilter === "Calisthenics" ? "Hjemme" : "Center", tt)}
+            </select>
+            <button class="small-btn wide" type="button" onclick="addCustomExerciseFromPicker(event)">Tilføj til program og arkiv</button>
+          </div>
+        </details>`;
     }
 
     function closeExercisePicker() {
@@ -2885,7 +3161,35 @@
         candidate.muscle === exercisePickerMuscle && candidate.name === name
       );
       if (!exercise) return;
-      addExercise(exercise.name, exercise.muscle);
+      addExercise(exercise.name, exercise.muscle, null, {
+        ...goalPrescription(exercise.name, exercise.muscle, document.querySelectorAll(".exercise").length),
+        trainingStyle: exercise.trainingStyle || "gym"
+      });
+      closeExercisePicker();
+      autoSave();
+    }
+
+    function addCustomExerciseFromPicker(event = null) {
+      event?.stopPropagation?.();
+      const name = $("pickerCustomExerciseName")?.value.trim();
+      const type = $("pickerCustomExerciseType")?.value || "Hjemme";
+      const muscle = exercisePickerMuscle;
+      if (!name || !muscle) return alert("Skriv et navn på øvelsen.");
+      if (catalog.some(exercise => normalizedExerciseSearch(exercise.name) === normalizedExerciseSearch(name) && exercise.muscle === muscle)) {
+        return alert(t("exerciseExists"));
+      }
+      const trainingStyle = activeMovementFilter === "Calisthenics" ? "calisthenics" : "gym";
+      const customExercise = {
+        name,
+        muscle,
+        type,
+        trainingStyle,
+        tags: [name.toLowerCase(), muscle.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase(), trainingStyle],
+        custom: true
+      };
+      catalog.push(customExercise);
+      saveCustomExercises();
+      addExercise(name, muscle, null, { ...goalPrescription(name, muscle, document.querySelectorAll(".exercise").length), trainingStyle });
       closeExercisePicker();
       autoSave();
     }
@@ -2910,6 +3214,7 @@
       block.dataset.goal = plan.goal || currentTrainingGoal();
       block.dataset.role = plan.role || window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory";
       block.dataset.exerciseType = isCardio ? "cardio" : "strength";
+      block.dataset.trainingStyle = plan.trainingStyle || catalog.find(exercise => exercise.name === name && exercise.muscle === muscle)?.trainingStyle || "gym";
       block.dataset.pauseInitialized = savedSets || !name.toLowerCase().startsWith(t("chooseExercisePrefix").toLowerCase()) ? "true" : "false";
       block.innerHTML = `
         <div class="exercise-transition" id="transition-${slot}"></div>
@@ -3118,7 +3423,8 @@
       if (catalog.some(exercise => normalizedExerciseSearch(exercise.name) === normalizedExerciseSearch(name) && exercise.muscle === muscle)) {
         return alert(t("exerciseExists"));
       }
-      const customExercise = { name, muscle, type, tags: [name.toLowerCase(), muscle.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase()], custom: true };
+      const trainingStyle = $(`block-${replacementState.slot}`)?.dataset.trainingStyle === "calisthenics" ? "calisthenics" : "gym";
+      const customExercise = { name, muscle, type, trainingStyle, tags: [name.toLowerCase(), muscle.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase(), trainingStyle], custom: true };
       catalog.push(customExercise);
       saveCustomExercises();
       confirmExerciseReplacement(replacementState.slot, encodeURIComponent(name), encodeURIComponent(muscle));
@@ -3222,6 +3528,7 @@
       const exerciseBlock = $(`block-${slot}`);
       const isCardio = muscle === "Cardio";
       const plan = goalPrescription(name, muscle, slotIds().indexOf(slot));
+      const definition = catalog.find(exercise => exercise.name === name && exercise.muscle === muscle);
       if (exerciseBlock?.dataset.pauseInitialized !== "true") {
         const suggestedPause = formatPause(plan.pauseSeconds);
         data.forEach(set => {
@@ -3236,6 +3543,7 @@
         exerciseBlock.dataset.goal = plan.goal;
         exerciseBlock.dataset.role = plan.role;
         exerciseBlock.dataset.exerciseType = isCardio ? "cardio" : "strength";
+        exerciseBlock.dataset.trainingStyle = definition?.trainingStyle || "gym";
       }
       $(`name-${slot}`).textContent = name;
       $(`name-${slot}`).dataset.muscle = muscle;
@@ -3281,7 +3589,12 @@
             <div class="previous">${esc(data.prev || "-")}</div>
             <div><input class="weight" placeholder="kg" value="${esc(data.weight || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
-            <div class="pause-control"><input class="pause" id="pause-${slot}-${i}" placeholder="0m00s" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="markPauseManual(this)"><button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})">▶</button><button class="timer-btn" onclick="resetPause('${slot}',${i})">↺</button></div>
+            <div class="pause-control" id="pause-control-${slot}-${i}">
+              <div class="pause-progress" id="pause-progress-${slot}-${i}" role="progressbar" aria-label="Pause" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="pause-progress-fill"></span></div>
+              <input class="pause" id="pause-${slot}-${i}" placeholder="0m00s" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="markPauseManual(this)">
+              <button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})" aria-label="Start eller pause pausetimer">▶</button>
+              <button class="timer-btn" onclick="resetPause('${slot}',${i})" aria-label="Nulstil pausetimer">↺</button>
+            </div>
           </div>
           <div class="set-analytics"><span class="pill" id="orm-${slot}-${i}">1RM: -</span><span class="pill green" id="vol-${slot}-${i}">Volumen: -</span></div>
         `;
@@ -3326,6 +3639,17 @@
 
     function markPauseManual(input) {
       input.dataset.pauseManual = "true";
+      const match = input.id.match(/^pause-(.+)-(\d+)$/);
+      if (match) {
+        const key = pauseKey(match[1], Number(match[2]));
+        const timer = pauseTimers[key];
+        if (timer && !timer.running) {
+          const seconds = parsePause(input.value);
+          timer.total = seconds;
+          timer.remaining = seconds;
+          updatePauseProgress(key, { reset: true });
+        }
+      }
       updateEstimatedTime();
       scheduleAutoSave();
     }
@@ -3371,6 +3695,23 @@
     }
 
     function pauseKey(slot, set) { return `${slot}-${set}`; }
+    function updatePauseProgress(key, options = {}) {
+      const timer = pauseTimers[key];
+      if (!timer) return;
+      const control = $(timer.control);
+      const progress = $(timer.progress);
+      if (!control || !progress) return;
+      const total = Math.max(1, Number(timer.total) || 1);
+      const remaining = Math.max(0, Math.min(total, Number(timer.remaining) || 0));
+      const ratio = remaining / total;
+      control.classList.add("started");
+      control.classList.toggle("paused", !timer.running && remaining > 0 && !options.reset);
+      control.classList.toggle("complete", options.complete === true || remaining === 0);
+      progress.style.setProperty("--pause-progress", String(ratio));
+      progress.setAttribute("aria-valuenow", String(Math.round(ratio * 100)));
+      progress.setAttribute("aria-label", remaining > 0 ? `Pause: ${formatPause(remaining)} tilbage` : "Pause færdig");
+    }
+
     function clearPauseTimers(slot = "") {
       Object.keys(pauseTimers).forEach(key => {
         if (!slot || key.startsWith(`${slot}-`)) {
@@ -3384,24 +3725,46 @@
       const input = $(`pause-${slot}-${set}`);
       const btn = $(`pause-btn-${slot}-${set}`);
       if (pauseTimers[key]?.running) return stopPause(key);
-      const seconds = pauseTimers[key]?.remaining || parsePause(input.value);
+      ensurePauseAudioContext();
+      const existing = pauseTimers[key];
+      const inputSeconds = parsePause(input.value);
+      const seconds = existing?.remaining > 0
+        ? existing.remaining
+        : inputSeconds > 0
+          ? inputSeconds
+          : existing?.total || 0;
       if (!seconds) return;
-      pauseTimers[key] = { remaining: seconds, total: seconds, running: true, interval: null, btn: btn.id, input: input.id };
+      const total = existing?.total > 0 ? existing.total : seconds;
+      pauseTimers[key] = {
+        remaining: Math.min(seconds, total), total, running: true, interval: null,
+        btn: btn.id, input: input.id,
+        control: `pause-control-${slot}-${set}`,
+        progress: `pause-progress-${slot}-${set}`
+      };
       btn.textContent = "⏸";
       btn.classList.add("running");
-      input.value = formatPause(seconds);
+      input.value = formatPause(pauseTimers[key].remaining);
+      updatePauseProgress(key);
       pauseTimers[key].interval = setInterval(() => {
         pauseTimers[key].remaining--;
         input.value = formatPause(pauseTimers[key].remaining);
-        if (pauseTimers[key].remaining <= 0) { stopPause(key); beep(); }
+        updatePauseProgress(key);
+        if (pauseTimers[key].remaining <= 0) {
+          pauseTimers[key].remaining = 0;
+          input.value = formatPause(0);
+          stopPause(key, { complete: true });
+          missionCompleteSound();
+        }
       }, 1000);
     }
-    function stopPause(key) {
+    function stopPause(key, options = {}) {
       if (!pauseTimers[key]) return;
       clearInterval(pauseTimers[key].interval);
+      pauseTimers[key].interval = null;
       const btn = $(pauseTimers[key].btn);
       if (btn) { btn.textContent = "▶"; btn.classList.remove("running"); }
       pauseTimers[key].running = false;
+      updatePauseProgress(key, options);
     }
     function resetPause(slot, set) {
       const key = pauseKey(slot, set);
@@ -3409,20 +3772,42 @@
       const total = pauseTimers[key]?.total || parsePause(input.value);
       stopPause(key);
       input.value = total ? formatPause(total) : "";
-      if (pauseTimers[key]) pauseTimers[key].remaining = total;
+      if (pauseTimers[key]) {
+        pauseTimers[key].total = total;
+        pauseTimers[key].remaining = total;
+        updatePauseProgress(key, { reset: true });
+      }
       updateEstimatedTime();
       autoSave();
     }
-    function beep() {
+
+    function ensurePauseAudioContext() {
       const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) return;
-      const ctx = new Ctx(), osc = ctx.createOscillator(), gain = ctx.createGain();
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(660, ctx.currentTime + .12);
-      gain.gain.setValueAtTime(.001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(.18, ctx.currentTime + .02);
-      gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .32);
-      osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + .34); osc.onended = () => ctx.close();
+      if (!Ctx) return null;
+      if (!pauseAudioContext || pauseAudioContext.state === "closed") pauseAudioContext = new Ctx();
+      if (pauseAudioContext.state === "suspended") pauseAudioContext.resume().catch(() => {});
+      return pauseAudioContext;
+    }
+
+    function missionCompleteSound() {
+      const ctx = ensurePauseAudioContext();
+      if (!ctx) return;
+      const start = ctx.currentTime + .02;
+      [523.25, 659.25, 783.99].forEach((frequency, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const noteStart = start + index * .14;
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(frequency, noteStart);
+        gain.gain.setValueAtTime(.001, noteStart);
+        gain.gain.exponentialRampToValueAtTime(.16, noteStart + .02);
+        gain.gain.exponentialRampToValueAtTime(.001, noteStart + .22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(noteStart);
+        osc.stop(noteStart + .24);
+      });
+      navigator.vibrate?.([80, 40, 120]);
     }
 
     function activeProgramDay() {
@@ -3542,6 +3927,7 @@
         muscle: exercise.muscle,
         role: exercise.role,
         exerciseType: exercise.exerciseType || "strength",
+        trainingStyle: exercise.trainingStyle || "gym",
         cardio: exercise.cardio ? {
           durationMinutes: exercise.cardio.durationMinutes || "",
           distanceKm: exercise.cardio.distanceKm || "",
@@ -3771,6 +4157,7 @@
             goal: block.dataset.goal || currentTrainingGoal(),
             role: block.dataset.role || "accessory",
             exerciseType: block.dataset.exerciseType || "strength",
+            trainingStyle: block.dataset.trainingStyle || "gym",
             sets: collectSetData(slot),
             cardio: collectCardioData(slot)
           };
@@ -4172,6 +4559,9 @@
       if (type === "cardio") {
         $("workoutTitle").textContent = "Mit nye cardio-pas";
         setExercisePickerContext("Cardio", ["Cardio"]);
+      } else if (type === "calisthenics") {
+        $("workoutTitle").textContent = "Mit nye calisthenics-pas";
+        setExercisePickerContext("Calisthenics");
       } else {
         setExercisePickerContext("Alle");
       }
@@ -4868,7 +5258,9 @@
       }
       const existing = new Set(slotIds().map(slot => $(`name-${slot}`).textContent));
       const pool = catalog.filter(exercise => exercise.muscle === muscle && !existing.has(exercise.name));
-      const ranked = window.TrainingGoalEngine?.rankExercises?.(pool, currentTrainingGoal()) || pool;
+      const ranked = window.TrainingGoalEngine?.rankExercisesForGoals?.(pool, currentTrainingGoals(), 0, trainingContext().preferredTrainingStyle || "hybrid")
+        || window.TrainingGoalEngine?.rankExercises?.(pool, currentTrainingGoal())
+        || pool;
       const exercise = ranked[0];
       if (!exercise) return "none";
       const position = slotIds().length;
@@ -5225,7 +5617,9 @@
         return;
       }
       const normalized = cmd.toLowerCase();
-      const goalRecommendation = window.TrainingGoalEngine?.recommendation?.(currentTrainingGoal()) || "";
+      const goalRecommendation = window.TrainingGoalEngine?.recommendationForGoals?.(currentTrainingGoals())
+        || window.TrainingGoalEngine?.recommendation?.(currentTrainingGoal())
+        || "";
       let dayMatch = normalized.match(/^vis\s+dag\s+(\d+)$/i);
       if (dayMatch) {
         feedback(showProgramDay(dayMatch[1]) ? `Dag ${dayMatch[1]} er åbnet.` : `Dag ${dayMatch[1]} findes ikke.`, !currentProgramSession?.days?.[Number(dayMatch[1]) - 1]);
@@ -5755,17 +6149,17 @@
     window.ENABLE_DAILY_START_WIZARD = true;
   </script>
   <script src="storage-scope.js?v=20260614-migration1"></script>
-  <script src="training-goal-engine.js?v=20260615-cardio-goal1"></script>
+  <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
-  <script src="wizard-store.js"></script>
+  <script src="wizard-store.js?v=20260620-calisthenics1"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-system.js?v=20260619-ai-audit1"></script>
+  <script src="ai-system.js?v=20260620-calisthenics1"></script>
   <script src="ai-copilot-actions.js?v=20260619-ai-audit1"></script>
   <script src="auth-gate.js?v=20260619-gdpr1"></script>
-  <script src="profile-account.js?v=20260619-gdpr1"></script>
-  <script src="profile-wizard.js?v=20260615-window1"></script>
+  <script src="profile-account.js?v=20260620-calisthenics1"></script>
+  <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
-  <script src="wizard-controller.js?v=20260615-window1"></script>
+  <script src="wizard-controller.js?v=20260619-priority-goals1"></script>
   <script src="membership.js?v=20260618-authflow1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
   <script type="module" src="auth-service.js?v=20260619-gdpr1"></script>

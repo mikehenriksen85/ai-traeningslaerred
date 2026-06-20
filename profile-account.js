@@ -45,6 +45,30 @@
     if (element) element.value = value ?? "";
   }
 
+  const profileGoalFields = {
+    primary: "profileGoalPrimary",
+    secondary: "profileGoalSecondary",
+    tertiary: "profileGoalTertiary"
+  };
+
+  function selectedProfileGoals() {
+    return Object.fromEntries(Object.entries(profileGoalFields).map(([rank, id]) => [rank, byId(id)?.value || ""]));
+  }
+
+  function syncProfileGoalOptions() {
+    const selected = selectedProfileGoals();
+    Object.entries(profileGoalFields).forEach(([rank, id]) => {
+      const select = byId(id);
+      if (!select) return;
+      const usedElsewhere = new Set(Object.entries(selected)
+        .filter(([otherRank, value]) => otherRank !== rank && value)
+        .map(([, value]) => value));
+      [...select.options].forEach(option => {
+        option.disabled = Boolean(option.value && usedElsewhere.has(option.value));
+      });
+    });
+  }
+
   function renderFocusAreas(selected = []) {
     const root = byId("profileFocusAreas");
     if (!root) return;
@@ -199,7 +223,16 @@
     setValue("profileBodyFat", profile.bodyFat || measurement.fat);
     setValue("profileMuscleMass", profile.muscleMass || measurement.muscle);
     setValue("profilePersonalGoal", profile.personalGoal || measurement.goal);
-    setValue("profileGoal", profile.goal || "general_health");
+    const trainingGoals = window.TrainingWizardStore?.normalizeTrainingGoals?.(profile.trainingGoals, profile.goal || "general_health") || {
+      primary: profile.goal || "general_health",
+      secondary: "",
+      tertiary: ""
+    };
+    setValue("profileGoalPrimary", trainingGoals.primary);
+    setValue("profileGoalSecondary", trainingGoals.secondary);
+    setValue("profileGoalTertiary", trainingGoals.tertiary);
+    syncProfileGoalOptions();
+    setValue("profilePreferredTrainingStyle", profile.preferredTrainingStyle || "hybrid");
     setValue("profileExperience", profile.experience || "intermediate");
     setValue("profileTrainingDays", profile.trainingDaysPerWeek || 3);
     setValue("profileExercisePreference", profile.exercisePreference || "mixed");
@@ -263,6 +296,17 @@
 
   async function saveProfileAccount(event) {
     event?.preventDefault?.();
+    const trainingGoals = selectedProfileGoals();
+    const selectedGoalValues = Object.values(trainingGoals).filter(Boolean);
+    const feedback = byId("profileSaveFeedback");
+    if (!trainingGoals.primary) {
+      if (feedback) feedback.textContent = "Vælg et primært træningsmål.";
+      return;
+    }
+    if (new Set(selectedGoalValues).size !== selectedGoalValues.length) {
+      if (feedback) feedback.textContent = "Det samme træningsmål kan kun vælges én gang.";
+      return;
+    }
     const profile = {
       hasCompletedProfileWizard: true,
       name: byId("profileName").value.trim(),
@@ -273,7 +317,11 @@
       bodyFat: inputNumber("profileBodyFat"),
       muscleMass: inputNumber("profileMuscleMass"),
       personalGoal: byId("profilePersonalGoal").value.trim(),
-      goal: byId("profileGoal").value,
+      goal: trainingGoals.primary,
+      trainingGoals,
+      preferredTrainingStyle: ["gym", "calisthenics", "hybrid"].includes(byId("profilePreferredTrainingStyle")?.value)
+        ? byId("profilePreferredTrainingStyle").value
+        : "hybrid",
       experience: byId("profileExperience").value,
       trainingDaysPerWeek: Number(byId("profileTrainingDays").value) || 3,
       focusAreas: selectedFocusAreas(),
@@ -283,7 +331,6 @@
     const savedProfile = window.TrainingWizardStore?.saveProfile?.(profile);
     saveMeasurementSnapshot(profile);
     updateSidebarProfileIdentity();
-    const feedback = byId("profileSaveFeedback");
     if (!feedback) return;
     try {
       await window.FirestoreDataService?.saveProfileToCloud?.(savedProfile);
@@ -361,6 +408,7 @@
   window.openProfileAccountView = openProfileAccountView;
   window.closeProfileAccountView = closeProfileAccountView;
   window.saveProfileAccount = saveProfileAccount;
+  window.syncProfileGoalOptions = syncProfileGoalOptions;
   window.openProfileWizardAgain = openProfileWizardAgain;
   window.exportProfileData = exportProfileData;
   window.clearAllLocalData = clearAllLocalData;

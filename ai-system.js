@@ -129,10 +129,18 @@
       version: VERSION,
       profile: {
         goal: profile.goal || "general_health",
+        trainingGoals: window.TrainingWizardStore?.normalizeTrainingGoals?.(profile.trainingGoals, profile.goal || "general_health") || {
+          primary: profile.goal || "general_health",
+          secondary: "",
+          tertiary: ""
+        },
         priorityGoal: profile.personalGoal || "",
         experience: profile.experience || "intermediate",
         focusAreas: Array.isArray(profile.focusAreas) ? [...profile.focusAreas] : [],
         exercisePreference: profile.exercisePreference || "mixed",
+        preferredTrainingStyle: ["gym", "calisthenics", "hybrid"].includes(profile.preferredTrainingStyle)
+          ? profile.preferredTrainingStyle
+          : "hybrid",
         trainingDaysPerWeek: Number(profile.trainingDaysPerWeek) || 3,
         preferredExerciseCount: Number(profile.preferredExerciseCount) || 5,
         availableEquipment: Array.isArray(profile.availableEquipment) ? [...profile.availableEquipment] : [],
@@ -160,7 +168,7 @@
       capabilities: {
         externalModelConnected: false,
         screenshotImportEnabled: false,
-        dedicatedCalisthenicsGenerator: false,
+        dedicatedCalisthenicsGenerator: true,
         requestUsageEnforced: false
       }
     };
@@ -171,9 +179,11 @@
     return {
       profile: {
         goal: context.profile.goal,
+        trainingGoals: context.profile.trainingGoals,
         experience: context.profile.experience,
         focusAreas: context.profile.focusAreas,
         exercisePreference: context.profile.exercisePreference,
+        preferredTrainingStyle: context.profile.preferredTrainingStyle,
         trainingDaysPerWeek: context.profile.trainingDaysPerWeek,
         preferredExerciseCount: context.profile.preferredExerciseCount,
         availableEquipment: context.profile.availableEquipment,

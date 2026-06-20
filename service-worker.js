@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v5-exercise-flow1";
+const CACHE_NAME = "work4it-shell-v9-pause-progress1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,17 +9,17 @@ const APP_SHELL = [
   "./work4it-hero-logo-v1.png",
   "./storage-scope.js?v=20260618-authflow1",
   "./calorie-estimator.js?v=20260615-cardio1",
-  "./training-goal-engine.js?v=20260615-cardio-goal1",
+  "./training-goal-engine.js?v=20260620-calisthenics1",
   "./workout-program-store.js?v=20260615-days1",
-  "./wizard-store.js?v=20260615-daily1",
+  "./wizard-store.js?v=20260620-calisthenics1",
   "./daily-start-wizard.js?v=20260615-window1",
-  "./wizard-controller.js?v=20260615-window1",
+  "./wizard-controller.js?v=20260619-priority-goals1",
   "./membership.js?v=20260618-authflow1",
-  "./ai-system.js?v=20260619-ai-audit1",
+  "./ai-system.js?v=20260620-calisthenics1",
   "./ai-copilot-actions.js?v=20260619-ai-audit1",
   "./auth-gate.js?v=20260619-gdpr1",
-  "./profile-account.js?v=20260619-gdpr1",
-  "./profile-wizard.js?v=20260615-window1",
+  "./profile-account.js?v=20260620-calisthenics1",
+  "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260614-auth2",
   "./auth-service.js?v=20260619-gdpr1",
   "./firestore-cloud-service.js?v=20260619-gdpr1"

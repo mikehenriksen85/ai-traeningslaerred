@@ -4,6 +4,7 @@
   const PROFILE_KEY = "training_profile_v1";
   const DAILY_KEY = "daily_start_v1";
   const LAST_PROGRAM_KEY = "last_active_program_id";
+  const VALID_GOALS = ["muscle_gain", "weight_loss", "strength", "general_health", "cardio"];
 
   function read(key, fallback) {
     try {
@@ -23,11 +24,28 @@
     }
   }
 
+  function normalizeTrainingGoals(value = {}, fallbackPrimary = "") {
+    const source = value && typeof value === "object" ? value : {};
+    const result = { primary: "", secondary: "", tertiary: "" };
+    const used = new Set();
+    ["primary", "secondary", "tertiary"].forEach((rank, index) => {
+      const candidate = String(source[rank] || (index === 0 ? fallbackPrimary : "") || "");
+      if (VALID_GOALS.includes(candidate) && !used.has(candidate)) {
+        result[rank] = candidate;
+        used.add(candidate);
+      }
+    });
+    return result;
+  }
+
   function getProfile() {
+    const stored = read(PROFILE_KEY, {});
+    const trainingGoals = normalizeTrainingGoals(stored.trainingGoals, stored.goal);
     return {
       hasCompletedProfileWizard: false,
       name: "",
       goal: "",
+      trainingGoals: { primary: "", secondary: "", tertiary: "" },
       heightCm: "",
       weightKg: "",
       bodyFat: "",
@@ -39,17 +57,34 @@
       trainingDaysPerWeek: 3,
       focusAreas: [],
       exercisePreference: "",
+      preferredTrainingStyle: "hybrid",
       preferredExerciseCount: 5,
       updatedAt: "",
-      ...read(PROFILE_KEY, {})
+      ...stored,
+      goal: trainingGoals.primary || stored.goal || "",
+      trainingGoals,
+      preferredTrainingStyle: ["gym", "calisthenics", "hybrid"].includes(stored.preferredTrainingStyle)
+        ? stored.preferredTrainingStyle
+        : "hybrid"
     };
   }
 
   function saveProfile(profile) {
+    const current = getProfile();
+    const hasLegacyGoalUpdate = Object.prototype.hasOwnProperty.call(profile, "goal");
+    const requestedGoals = profile.trainingGoals || (hasLegacyGoalUpdate
+      ? { ...current.trainingGoals, primary: profile.goal }
+      : current.trainingGoals);
+    const trainingGoals = normalizeTrainingGoals(requestedGoals, profile.goal || current.goal);
     const next = {
-      ...getProfile(),
+      ...current,
       ...profile,
-      focusAreas: Array.isArray(profile.focusAreas) ? [...profile.focusAreas] : getProfile().focusAreas,
+      goal: trainingGoals.primary,
+      trainingGoals,
+      preferredTrainingStyle: ["gym", "calisthenics", "hybrid"].includes(profile.preferredTrainingStyle)
+        ? profile.preferredTrainingStyle
+        : current.preferredTrainingStyle,
+      focusAreas: Array.isArray(profile.focusAreas) ? [...profile.focusAreas] : current.focusAreas,
       updatedAt: new Date().toISOString()
     };
     write(PROFILE_KEY, next);
@@ -143,9 +178,13 @@
     const daily = getDailyState();
     return {
       goal: profile.goal,
+      trainingGoals: { ...profile.trainingGoals },
       experience: profile.experience,
       focusAreas: [...profile.focusAreas],
       exercisePreference: profile.exercisePreference,
+      preferredTrainingStyle: ["gym", "calisthenics", "hybrid"].includes(profile.preferredTrainingStyle)
+        ? profile.preferredTrainingStyle
+        : "hybrid",
       trainingDaysPerWeek: profile.trainingDaysPerWeek,
       motivation: daily.dailyMotivation,
       dailyMotivation: daily.dailyMotivation,
@@ -155,6 +194,8 @@
   }
 
   window.TrainingWizardStore = {
+    VALID_GOALS,
+    normalizeTrainingGoals,
     getProfile,
     saveProfile,
     localDateString,

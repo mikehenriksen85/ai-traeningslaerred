@@ -43,6 +43,8 @@
       workSeconds: 60
     }
   };
+  const goalRanks = ["primary", "secondary", "tertiary"];
+  const goalWeights = { primary: 0.65, secondary: 0.25, tertiary: 0.10 };
 
   const compoundTerms = [
     "squat", "deadlift", "bench press", "chest press", "overhead press", "shoulder press",
@@ -68,6 +70,16 @@
   const unilateralTerms = [
     "single-leg", "single-arm", "one-arm", "split squat", "lunge", "step-up", "step up"
   ];
+  const calisthenicsTerms = [
+    "push-up", "push up", "pull-up", "pull up", "chin-up", "chin up", "bodyweight", "dip",
+    "handstand", "planche", "muscle-up", "muscle up", "l-sit", "pistol squat", "hollow body",
+    "hanging knee", "hanging leg", "toes-to-bar", "dragon flag", "australian pull", "scapular pull",
+    "archer pull", "archer push", "superman hold", "arch body", "glute bridge", "nordic curl"
+  ];
+  const gymEquipmentTerms = [
+    "barbell", "dumbbell", "machine", "cable", "ez-bar", "smith", "leg press", "lat pulldown",
+    "pec deck", "t-bar", "kettlebell"
+  ];
 
   function includesAny(text, terms) {
     return terms.some(term => text.includes(term));
@@ -83,9 +95,27 @@
       conditioning: includesAny(text, conditioningTerms),
       stability: isCoreMuscle || includesAny(text, stabilityTerms),
       unilateral: includesAny(text, unilateralTerms),
+      calisthenics: exerciseStyleHint(name) === "calisthenics" || includesAny(text, calisthenicsTerms),
+      gymEquipment: includesAny(text, gymEquipmentTerms),
       largeMuscle: ["Bryst", "Øvre ryg", "Skuldre", "Forside lår", "Bagside lår & baller"].includes(muscle),
       cardio: muscle === "Cardio"
     };
+  }
+
+  function exerciseStyleHint(name) {
+    const text = String(name || "").toLowerCase();
+    return includesAny(text, calisthenicsTerms) ? "calisthenics" : includesAny(text, gymEquipmentTerms) ? "gym" : "neutral";
+  }
+
+  function scoreTrainingStyle(exercise, preferredTrainingStyle = "hybrid") {
+    const explicitStyle = exercise?.trainingStyle || exerciseStyleHint(exercise?.name);
+    if (preferredTrainingStyle === "calisthenics") {
+      return explicitStyle === "calisthenics" ? 24 : explicitStyle === "gym" ? -24 : -6;
+    }
+    if (preferredTrainingStyle === "gym") {
+      return explicitStyle === "gym" ? 10 : explicitStyle === "calisthenics" ? -8 : 2;
+    }
+    return explicitStyle === "neutral" ? 0 : 3;
   }
 
   function exerciseRole(name, muscle) {
@@ -133,11 +163,46 @@
     return score;
   }
 
+  function normalizeGoalPriorities(value, fallback = "general_health") {
+    const source = value && typeof value === "object" ? value : {};
+    const normalized = { primary: "", secondary: "", tertiary: "" };
+    const used = new Set();
+    goalRanks.forEach((rank, index) => {
+      const candidate = source[rank] || (index === 0 ? fallback : "");
+      if (profiles[candidate] && !used.has(candidate)) {
+        normalized[rank] = candidate;
+        used.add(candidate);
+      }
+    });
+    if (!normalized.primary) normalized.primary = profiles[fallback] ? fallback : "general_health";
+    return normalized;
+  }
+
+  function scoreExerciseForGoals(exercise, trainingGoals, position = 0) {
+    const goals = normalizeGoalPriorities(trainingGoals);
+    return goalRanks.reduce((total, rank) => {
+      const goal = goals[rank];
+      return total + (goal ? scoreExercise(exercise, goal, position) * goalWeights[rank] : 0);
+    }, 0);
+  }
+
   function rankExercises(exercises, goal, seed = 0) {
     return [...exercises]
       .map((exercise, index) => ({
         exercise,
         score: scoreExercise(exercise, goal, index) + ((index + seed) % 5) * .05
+      }))
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.exercise);
+  }
+
+  function rankExercisesForGoals(exercises, trainingGoals, seed = 0, preferredTrainingStyle = "hybrid") {
+    return [...exercises]
+      .map((exercise, index) => ({
+        exercise,
+        score: scoreExerciseForGoals(exercise, trainingGoals, index)
+          + scoreTrainingStyle(exercise, preferredTrainingStyle)
+          + ((index + seed) % 5) * .05
       }))
       .sort((a, b) => b.score - a.score)
       .map(item => item.exercise);
@@ -182,6 +247,34 @@
       role: goal === "cardio" ? "cardio" : role,
       goal,
       ...(goal === "cardio" ? { exerciseType: "cardio", durationMinutes: 30 } : {})
+    };
+  }
+
+  function prescriptionForGoals(name, muscle, trainingGoals, experience = "intermediate", position = 0) {
+    const goals = normalizeGoalPriorities(trainingGoals);
+    if (muscle === "Cardio") return prescription(name, muscle, "cardio", experience, position);
+    const primary = prescription(name, muscle, goals.primary, experience, position);
+    const influences = [
+      [goals.secondary, 0.25],
+      [goals.tertiary, 0.10]
+    ].filter(([goal]) => goal && goal !== "cardio");
+    if (!influences.length) return { ...primary, trainingGoals: goals };
+
+    let sets = primary.sets;
+    let pauseSeconds = primary.pauseSeconds;
+    let appliedWeight = 1;
+    influences.forEach(([goal, weight]) => {
+      const suggestion = prescription(name, muscle, goal, experience, position);
+      sets += (suggestion.sets - primary.sets) * weight;
+      pauseSeconds += (suggestion.pauseSeconds - primary.pauseSeconds) * weight;
+      appliedWeight += weight;
+    });
+    return {
+      ...primary,
+      sets: Math.max(1, Math.min(6, Math.round(sets))),
+      pauseSeconds: Math.max(0, Math.round(pauseSeconds / 5) * 5),
+      trainingGoals: goals,
+      goalBlendWeight: appliedWeight
     };
   }
 
@@ -244,15 +337,39 @@
     return `${p.label}: prioritér balance mellem styrke, stabilitet, funktion og bæredygtig progression.`;
   }
 
+  function recommendationForGoals(trainingGoals) {
+    const goals = normalizeGoalPriorities(trainingGoals);
+    return goalRanks
+      .filter(rank => goals[rank])
+      .map(rank => `${rank === "primary" ? "Primært" : rank === "secondary" ? "Sekundært" : "Tertiært"}: ${profile(goals[rank]).label}`)
+      .join(" · ");
+  }
+
+  function shouldIncludeCardio(trainingGoals, dayIndex = 0, dayCount = 1) {
+    const goals = normalizeGoalPriorities(trainingGoals);
+    if (goals.primary === "cardio") return true;
+    if (goals.secondary === "cardio") return true;
+    if (goals.tertiary === "cardio") return Number(dayIndex) === Math.max(0, Number(dayCount) - 1);
+    return false;
+  }
+
   window.TrainingGoalEngine = {
     profiles,
     profile,
     classifyExercise,
+    exerciseStyleHint,
+    scoreTrainingStyle,
     exerciseRole,
     scoreExercise,
+    scoreExerciseForGoals,
     rankExercises,
+    rankExercisesForGoals,
     prescription,
+    prescriptionForGoals,
     splitFor,
-    recommendation
+    recommendation,
+    recommendationForGoals,
+    normalizeGoalPriorities,
+    shouldIncludeCardio
   };
 })();
