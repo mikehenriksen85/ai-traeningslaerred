@@ -420,12 +420,45 @@
     .item:hover { background: rgba(255,255,255,.06); }
     .badge { background: #313d49; color: var(--text-secondary); border-radius: 4px; padding: 2px 6px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
 
-    .table-head, .set-row { display: grid; grid-template-columns: 28px 38px 58px 50px 50px minmax(126px, 1fr); gap: 5px; align-items: center; text-align: center; }
+    .table-head, .set-row { display: grid; grid-template-columns: 28px 58px 50px 50px minmax(126px, 1fr) 48px; gap: 5px; align-items: center; text-align: center; }
     .table-head { color: var(--text-secondary); border-bottom: 1px solid var(--border); padding-bottom: 7px; margin-top: 12px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
     .set-block { border-bottom: 1px solid rgba(49,61,73,.45); padding: 7px 0; }
-    .set-block.completed { background: rgba(74,222,128,.07); border-radius: 6px; }
+    .set-block.completed { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.42); border-radius: 6px; box-shadow: inset 3px 0 0 var(--green); }
     .set-row input { width: 92%; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 5px 3px; text-align: center; font-size: var(--font-size-small); }
-    .set-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--text-success); cursor: pointer; }
+    .set-complete-control { position: relative; display: grid; place-items: center; width: 44px; height: 44px; margin-inline: auto; cursor: pointer; }
+    .set-complete-control input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .set-complete-icon {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 2px solid #64748b;
+      border-radius: 7px;
+      background: var(--input);
+      color: #94a3b8;
+      font-size: 24px;
+      font-weight: var(--font-weight-bold);
+      line-height: 1;
+      transition: color .18s ease, border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    .set-complete-control:hover .set-complete-icon { border-color: var(--green); color: var(--green); }
+    .set-complete-control input:focus-visible + .set-complete-icon { outline: 3px solid rgba(59,130,246,.45); outline-offset: 2px; }
+    .set-complete-control input:checked + .set-complete-icon {
+      border-color: var(--green);
+      background: var(--green);
+      color: #052e16;
+      box-shadow: 0 0 0 4px rgba(34,197,94,.14);
+      animation: set-complete-pop .28s ease-out;
+    }
+    @keyframes set-complete-pop {
+      0% { transform: scale(.78); }
+      65% { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .set-complete-icon { transition: none; }
+      .set-complete-control input:checked + .set-complete-icon { animation: none; }
+    }
     .previous { color: var(--text-secondary); font-size: var(--font-size-small); word-break: break-word; }
     .pause-control {
       display: grid;
@@ -582,6 +615,42 @@
     .modal-panel { width: min(780px, 100%); max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
     .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
     .modal-title { color: var(--text-success); font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); }
+    .screenshot-import, .screenshot-review { display: grid; gap: 14px; }
+    .screenshot-drop { border: 2px dashed #475569; border-radius: 8px; padding: 28px 18px; text-align: center; background: #17202b; transition: border-color .2s ease, background .2s ease; }
+    .screenshot-drop.dragging { border-color: var(--blue); background: rgba(59,130,246,.1); }
+    .screenshot-drop-icon { font-size: 36px; line-height: 1; }
+    .screenshot-drop h3 { margin: 10px 0 6px; font-size: var(--font-size-h3); }
+    .screenshot-drop p, .screenshot-privacy { margin: 0 0 12px; color: var(--muted); }
+    .screenshot-privacy { font-size: var(--font-size-small); }
+    .screenshot-file-summary { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: #17202b; }
+    .screenshot-file-summary img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; }
+    .screenshot-progress { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 10px; }
+    .screenshot-progress-track { height: 10px; overflow: hidden; border-radius: 999px; background: #334155; }
+    .screenshot-progress-track span { display: block; width: 0; height: 100%; background: var(--blue); transition: width .2s linear; }
+    .screenshot-review-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #17202b; }
+    .screenshot-review-summary div { display: flex; align-items: center; gap: 8px; }
+    .screenshot-review-summary p { margin: 0; color: var(--muted); font-size: var(--font-size-small); }
+    .confidence-badge { padding: 3px 7px; border-radius: 999px; color: #bbf7d0; background: rgba(34,197,94,.14); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .confidence-badge.uncertain { color: #fde68a; background: rgba(245,158,11,.14); }
+    .screenshot-warning { padding: 10px 12px; border: 1px solid #92400e; border-radius: 8px; color: #fde68a; background: rgba(245,158,11,.08); }
+    .screenshot-field { display: grid; gap: 5px; color: var(--muted); font-size: var(--font-size-small); }
+    .screenshot-day { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #17202b; }
+    .screenshot-exercise-list { display: grid; gap: 10px; }
+    .screenshot-exercise { display: grid; grid-template-columns: minmax(150px,2fr) repeat(4,minmax(70px,1fr)) minmax(140px,1.4fr) auto; align-items: end; gap: 8px; padding: 10px; border: 1px solid #334155; border-radius: 8px; }
+    .screenshot-exercise.uncertain { border-color: #a16207; background: rgba(245,158,11,.05); }
+    .screenshot-ocr-details { border-top: 1px solid var(--border); padding-top: 12px; }
+    .screenshot-ocr-details summary { cursor: pointer; color: var(--blue); font-weight: var(--font-weight-semibold); }
+    .screenshot-ocr-details textarea { width: 100%; margin: 10px 0; resize: vertical; }
+    .screenshot-review-actions { justify-content: flex-end; }
+    @media (max-width: 760px) {
+      .screenshot-drop { padding: 22px 12px; }
+      .screenshot-review-summary { align-items: flex-start; flex-direction: column; }
+      .screenshot-exercise { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .screenshot-exercise .wide { grid-column: 1 / -1; }
+      .import-remove-exercise { min-height: 44px; }
+      .screenshot-review-actions { display: grid; grid-template-columns: 1fr; }
+      .screenshot-review-actions .small-btn { width: 100%; min-height: 44px; }
+    }
     .close { width: 30px; height: 30px; background: var(--input); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
     .daily-muscle-copy { margin: 0 0 14px; color: var(--text-secondary); }
     .daily-muscle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -1262,14 +1331,17 @@
       .desktop-table-label { display: none; }
       .mobile-table-label { display: inline; }
       .table-head, .set-row {
-        grid-template-columns: 18px 26px 32px 34px 34px minmax(116px, 1fr);
+        grid-template-columns: 18px 32px 34px 34px minmax(116px, 1fr) 44px;
         gap: 3px;
       }
       .table-head { font-size: var(--font-size-compact); }
       .set-row input { width: 100%; min-width: 0; }
+      .set-complete-control input { width: 1px; min-width: 0; }
       .pause-control { grid-template-columns: minmax(0, 1fr) 32px 32px; gap: 2px; }
       .pause-control input { width: 100%; }
       .timer-btn { width: 32px; height: 36px; padding: 0; }
+      .set-complete-control { width: 44px; height: 44px; }
+      .set-complete-icon { width: 40px; height: 40px; font-size: 24px; }
       .square, .close { min-width: 40px; min-height: 40px; }
       .dash-grid { grid-template-columns: 1fr; }
       .calorie-view { padding: 12px; }
@@ -2270,11 +2342,11 @@
 
     function openScreenshotImportInfo() {
       if ($("sidebar").classList.contains("open")) toggleSidebar();
-      $("modalTitle").textContent = "Importér fra screenshot";
-      $("modalContent").innerHTML = `
-        <p class="helper-text">Screenshot-import er endnu ikke aktiveret. Dine nuværende træningspas og data er ikke ændret.</p>
-        <button class="small-btn" type="button" onclick="closeModal()">Luk</button>`;
-      openModal();
+      if (!window.Work4itScreenshotImport?.open) {
+        alert("Screenshot-importen kunne ikke indlæses. Genindlæs siden og prøv igen.");
+        return;
+      }
+      window.Work4itScreenshotImport.open();
     }
 
     function openPrivacyPolicyDialog() {
@@ -2451,7 +2523,10 @@
     function kg(v) { return `${v.toFixed(1).replace(".", ",")} kg`; }
     function vol(v) { return `${Math.round(v).toLocaleString("da-DK")} kg`; }
     function formatTime(s) { return [Math.floor(s/3600), Math.floor((s%3600)/60), s%60].map(x => String(x).padStart(2,"0")).join(":"); }
-    function formatPause(s) { return `${Math.floor(s/60)}m${String(s%60).padStart(2,"0")}s`; }
+    function formatPause(s) {
+      const seconds = Math.max(0, Math.floor(Number(s) || 0));
+      return `${String(Math.floor(seconds / 60)).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`;
+    }
     function parsePause(v) {
       const t = String(v || "").trim().toLowerCase();
       if (!t) return 0;
@@ -2463,6 +2538,17 @@
       const s = t.match(/(\d+)\s*s/);
       if (m || s) return (m ? parseInt(m[1])*60 : 0) + (s ? parseInt(s[1]) : 0);
       return parseInt(t) || 0;
+    }
+    function sanitizePauseInput(input) {
+      const cleaned = String(input?.value || "").replace(/[^0-9:]/g, "").replace(/(:.*):/g, "$1");
+      if (input && input.value !== cleaned) input.value = cleaned;
+      return cleaned;
+    }
+    function normalizePauseInput(input) {
+      if (!input) return;
+      sanitizePauseInput(input);
+      input.value = formatPause(parsePause(input.value));
+      markPauseManual(input);
     }
 
     function trainingContext() {
@@ -3229,11 +3315,11 @@
         </div>
         <div class="table-head">
           <div>${t("set")}</div>
-          <div>${t("ok")}</div>
           <div><span class="desktop-table-label">${t("previous")}</span><span class="mobile-table-label">Sidst</span></div>
           <div><span class="desktop-table-label">${t("weight")}</span><span class="mobile-table-label">Kg</span></div>
           <div>${t("reps")}</div>
           <div>${t("pauseLabel")}</div>
+          <div>${t("ok")}</div>
         </div>
         <div id="sets-${slot}"></div>
         <div class="set-controls"><span>${t("adjustSets")}</span><button class="square" onclick="changeSets('${slot}',-1)">-</button><b id="count-${slot}">2</b><button class="square" onclick="changeSets('${slot}',1)">+</button></div>
@@ -3577,7 +3663,7 @@
       container.innerHTML = "";
       for (let i = 1; i <= count; i++) {
         const data = saved?.[i-1] || {};
-        const pauseValue = data.pause || defaultPause;
+        const pauseValue = formatPause(parsePause(data.pause || defaultPause));
         const targetReps = data.targetReps || plan.targetReps || "";
         const pauseManual = data.pauseManual === true || (data.pauseManual === undefined && Boolean(data.pause));
         const block = document.createElement("div");
@@ -3585,16 +3671,19 @@
         block.innerHTML = `
           <div class="set-row">
             <div>${i}</div>
-            <div><input type="checkbox" ${data.completed ? "checked" : ""} onchange="toggleCompleted(this,'${slot}')"></div>
             <div class="previous">${esc(data.prev || "-")}</div>
             <div><input class="weight" placeholder="kg" value="${esc(data.weight || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div class="pause-control" id="pause-control-${slot}-${i}">
               <div class="pause-progress" id="pause-progress-${slot}-${i}" role="progressbar" aria-label="Pause" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="pause-progress-fill"></span></div>
-              <input class="pause" id="pause-${slot}-${i}" placeholder="0m00s" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="markPauseManual(this)">
+              <input class="pause" id="pause-${slot}-${i}" inputmode="numeric" pattern="[0-9:]*" autocomplete="off" placeholder="00:00" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="sanitizePauseInput(this); markPauseManual(this)" onblur="normalizePauseInput(this)">
               <button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})" aria-label="Start eller pause pausetimer">▶</button>
               <button class="timer-btn" onclick="resetPause('${slot}',${i})" aria-label="Nulstil pausetimer">↺</button>
             </div>
+            <label class="set-complete-control" title="Markér sæt ${i} som færdigt">
+              <input type="checkbox" ${data.completed ? "checked" : ""} onchange="toggleCompleted(this,'${slot}')" aria-label="Sæt ${i} færdigt">
+              <span class="set-complete-icon" aria-hidden="true">✓</span>
+            </label>
           </div>
           <div class="set-analytics"><span class="pill" id="orm-${slot}-${i}">1RM: -</span><span class="pill green" id="vol-${slot}-${i}">Volumen: -</span></div>
         `;
@@ -3638,6 +3727,7 @@
     }
 
     function markPauseManual(input) {
+      sanitizePauseInput(input);
       input.dataset.pauseManual = "true";
       const match = input.id.match(/^pause-(.+)-(\d+)$/);
       if (match) {
@@ -6092,11 +6182,85 @@
       $("autosaveStatus").textContent = "Vælg antal øvelser til dagens nye træningspas";
     }
 
+    function inferImportedMuscle(name) {
+      const known = resolveExerciseDefinition(name);
+      if (known?.muscle) return known.muscle;
+      const value = normalizedExerciseSearch(name);
+      if (/(løb|run|cykel|bike|rower|romaskine|stair|svøm|swim|cardio|walking|gang|hiking)/.test(value)) return "Cardio";
+      if (/(bench|bænk|chest|bryst|fly|push-up|pushup)/.test(value)) return "Bryst";
+      if (/(pulldown|pull-up|pullup|row|roning|lat |ryg)/.test(value)) return "Øvre ryg";
+      if (/(shoulder|skulder|lateral|arnold|overhead)/.test(value)) return "Skuldre";
+      if (/(squat|leg press|extension|lunge|quadriceps|forside lår)/.test(value)) return "Forside lår";
+      if (/(deadlift|dødløft|hamstring|leg curl|hip thrust|glute|baller)/.test(value)) return "Bagside lår & baller";
+      if (/(biceps|curl|chin-up|chinup)/.test(value)) return "Biceps";
+      if (/(triceps|pushdown|skull crusher)/.test(value)) return "Triceps";
+      if (/(plank|crunch|sit-up|mave|core)/.test(value)) return "Mave";
+      if (/(lower back|lænd|back extension|bird dog)/.test(value)) return "Nedre ryg / lænd";
+      return "Ryg";
+    }
+
+    function createProgramFromScreenshot(event) {
+      const imported = event.detail?.program;
+      if (!imported?.days?.length) return;
+      const programs = getPrograms();
+      if (programs.length >= 2 && !window.Membership?.getMembership?.().isPremium) {
+        openPremiumFeature("programs");
+        return;
+      }
+      const id = `program_${Date.now()}`;
+      const days = imported.days.map((day, dayIndex) => ({
+        id: day.id || `day_${dayIndex + 1}`,
+        title: day.title || `Dag ${dayIndex + 1}`,
+        goal: currentTrainingGoal(),
+        structure: "screenshot_import",
+        workoutIntensity: "medium",
+        exercises: (day.exercises || []).map(exercise => {
+          const muscle = inferImportedMuscle(exercise.name);
+          return {
+            ...exercise,
+            muscle,
+            goal: currentTrainingGoal(),
+            role: window.TrainingGoalEngine?.exerciseRole?.(exercise.name, muscle) || "accessory",
+            exerciseType: muscle === "Cardio" ? "cardio" : "strength",
+            trainingStyle: "gym"
+          };
+        })
+      }));
+      const program = window.WorkoutProgramStore.createProgram({
+        id,
+        title: imported.title || "Importeret træningspas",
+        goal: currentTrainingGoal(),
+        days
+      });
+      const importRecord = window.FirestoreDataService?.saveImportData?.({
+        ...event.detail.importMetadata,
+        programId: id,
+        programTitle: program.title,
+        dayCount: program.days.length,
+        exerciseCount: program.days.reduce((sum, day) => sum + day.exercises.length, 0),
+        status: "approved"
+      });
+      programs.push(program);
+      if (!setPrograms(programs)) {
+        alert("Det importerede træningspas kunne ikke gemmes lokalt.");
+        return;
+      }
+      renderSaved();
+      closeModal();
+      loadSavedProgram(id, false);
+      $("autosaveStatus").textContent = window.FirestoreDataService?.isCloudPrimary?.()
+        ? "Importeret og sendt til Cloud"
+        : "Importeret og gemt lokalt";
+      alert(`"${program.title}" er oprettet med ${program.days.length} ${program.days.length === 1 ? "dag" : "dage"}.`);
+      return importRecord;
+    }
+
     window.addEventListener("onboarding:create-programs", createOnboardingPrograms);
     window.addEventListener("daily-wizard:continue", continueDailyWorkout);
     window.addEventListener("daily-wizard:adapt", adaptDailyWorkout);
     window.addEventListener("daily-wizard:generate", openDailyProgramGenerator);
     window.addEventListener("daily-motivation:changed", updateDailyMotivationDisplay);
+    window.addEventListener("screenshot-import:approved", createProgramFromScreenshot);
     window.addEventListener("training-profile:updated", updateEstimatedCalories);
     window.addEventListener("firestore:data-hydrated", () => {
       loadCustom();
@@ -6151,6 +6315,7 @@
   <script src="storage-scope.js?v=20260614-migration1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
+  <script src="screenshot-import.js?v=20260620-import1"></script>
   <script src="wizard-store.js?v=20260620-calisthenics1"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-system.js?v=20260620-calisthenics1"></script>

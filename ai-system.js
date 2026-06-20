@@ -167,7 +167,9 @@
       },
       capabilities: {
         externalModelConnected: false,
-        screenshotImportEnabled: false,
+        screenshotImportEnabled: true,
+        screenshotOcrEngine: "Tesseract.js 5.1.1 eng+dan",
+        screenshotParser: "Work4it Structured Import Parser 1.0",
         dedicatedCalisthenicsGenerator: true,
         requestUsageEnforced: false
       }
