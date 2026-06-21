@@ -153,7 +153,8 @@
     .profile.profile-edit-enabled { cursor: default; }
     .avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--blue); display: grid; place-items: center; background: var(--card); }
     .section-title { padding: 16px 24px 6px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0; }
-    .sidebar-item { padding: 12px 24px; color: var(--text-secondary); cursor: pointer; display: flex; gap: 12px; align-items: center; }
+    .sidebar-item { min-width: 0; padding: 12px 24px; color: var(--text-secondary); cursor: pointer; display: flex; gap: 12px; align-items: center; white-space: normal; overflow-wrap: anywhere; }
+    .profile > div:last-child { min-width: 0; overflow-wrap: anywhere; }
     .sidebar-item:hover { color: var(--text-primary); background: rgba(58,147,255,.1); }
     .sidebar-accordion { border-bottom: 1px solid var(--border); }
     .sidebar-accordion:first-of-type { border-top: 1px solid var(--border); }
@@ -339,7 +340,7 @@
     }
     #globalTimer { color: var(--text-success); }
     #autosaveStatus { color: var(--text-accent); font-size: var(--font-size-small); margin-left: auto; }
-    #estimatedTime { color: var(--text-primary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; }
+    #estimatedTime { color: var(--text-primary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: normal; }
     .workout-progress { display: flex; align-items: center; gap: 8px; margin-left: 4px; }
     .progress-ring {
       --progress: 0%;
@@ -367,7 +368,7 @@
     .exercise-name { color: var(--text-success); font-size: var(--font-size-h3); font-weight: var(--font-weight-semibold); min-width: 0; line-height: var(--line-height-heading); overflow-wrap: anywhere; }
     .exercise-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; justify-content: stretch; align-items: stretch; }
     .exercise-actions .danger-slot { grid-column: auto; }
-    .small-btn { background: var(--input); border: 1px solid var(--border); color: var(--text-accent); border-radius: 5px; padding: 6px 6px; min-height: 32px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+    .small-btn { min-width: 0; max-width: 100%; background: var(--input); border: 1px solid var(--border); color: var(--text-accent); border-radius: 5px; padding: 6px 6px; min-height: 32px; cursor: pointer; white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; text-align: center; }
     .small-btn.orange { color: var(--orange); border-color: var(--orange); }
     .small-btn.red { color: var(--text-danger); border-color: var(--text-danger); }
     .small-btn:hover { background: rgba(255,255,255,.05); }
@@ -426,7 +427,8 @@
     .item:hover { background: rgba(255,255,255,.06); }
     .badge { background: #313d49; color: var(--text-secondary); border-radius: 4px; padding: 2px 6px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
 
-    .table-head, .set-row { display: grid; grid-template-columns: 28px 58px 50px 50px minmax(126px, 1fr) 48px; gap: 5px; align-items: center; text-align: center; }
+    .table-head, .set-row { display: grid; grid-template-columns: 28px 58px 50px 62px minmax(126px, 1fr) 48px; gap: 5px; align-items: center; text-align: center; }
+    .table-head > *, .set-row > * { min-width: 0; }
     .table-head { color: var(--text-secondary); border-bottom: 1px solid var(--border); padding-bottom: 7px; margin-top: 12px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
     .set-block { border-bottom: 1px solid rgba(49,61,73,.45); padding: 7px 0; }
     .set-block.completed { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.42); border-radius: 6px; box-shadow: inset 3px 0 0 var(--green); }
@@ -523,14 +525,14 @@
     .movement-picker {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
-      grid-auto-rows: 44px;
+      grid-auto-rows: 48px;
       gap: 8px;
       width: 100%;
       margin: 0 0 10px;
     }
     .movement-btn {
       width: 100%;
-      height: 44px;
+      height: 48px;
       min-width: 0;
       margin: 0;
       padding: 0 6px;
@@ -542,8 +544,9 @@
       font: inherit;
       font-size: var(--font-size-small);
       font-weight: var(--font-weight-bold);
-      line-height: 1;
-      white-space: nowrap;
+      line-height: 1.2;
+      white-space: normal;
+      overflow-wrap: anywhere;
       cursor: pointer;
     }
     .movement-btn.active { color: var(--text-primary); border-color: var(--text-success); background: rgba(74,222,128,.12); }
@@ -591,6 +594,17 @@
       border: 1px solid rgba(74, 222, 128, .45);
       background: rgba(74, 222, 128, .08);
       border-radius: 6px;
+    }
+    #copilotFeedback.proposal-open { color: var(--text-primary); }
+    .copilot-proposal { display: grid; gap: 10px; padding: 13px; border: 1px solid var(--blue); border-radius: 7px; background: rgba(59,130,246,.09); }
+    .copilot-proposal-title { color: var(--text-primary); font-weight: var(--font-weight-bold); }
+    .copilot-proposal-summary { color: var(--text-secondary); line-height: var(--line-height-body); }
+    .copilot-proposal-safety { padding: 9px; border-left: 3px solid var(--orange); background: rgba(245,158,11,.08); color: var(--text-primary); }
+    .copilot-proposal-actions { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 7px; }
+    .copilot-proposal-actions button { min-height: 42px; white-space: normal; }
+    @media (max-width: 560px) {
+      .copilot-proposal-actions { grid-template-columns: 1fr; }
+      .copilot-proposal-actions button { min-height: 44px; }
     }
     .program-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
     .program-action-btn { border-radius: 6px; padding: 10px; font-weight: var(--font-weight-bold); cursor: pointer; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); }
@@ -741,8 +755,8 @@
     .chart { height: 170px; display: flex; align-items: end; gap: 6px; background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin: 10px 0 14px; }
     .bar { flex: 1; min-width: 8px; background: linear-gradient(180deg, var(--green), var(--blue)); border-radius: 4px 4px 0 0; }
     .section { color: var(--text-accent); font-weight: var(--font-weight-bold); margin: 14px 0 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: var(--font-size-body); }
-    th, td { text-align: left; padding: 7px 5px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    table { width: 100%; max-width: 100%; border-collapse: collapse; font-size: var(--font-size-body); table-layout: auto; }
+    th, td { min-width: 0; text-align: left; padding: 7px 5px; border-bottom: 1px solid rgba(255,255,255,.06); overflow-wrap: anywhere; }
     th { color: var(--text-secondary); }
     .positive { color: var(--text-success); font-weight: var(--font-weight-bold); }
     .negative { color: var(--text-danger); font-weight: var(--font-weight-bold); }
@@ -1020,6 +1034,11 @@
       line-height: var(--line-height-control);
       letter-spacing: 0;
     }
+    button, input, select, textarea { min-width: 0; max-width: 100%; box-sizing: border-box; }
+    button, .membership-plan, .membership-status-card, .membership-benefits,
+    .about-feature, .profile-account-section, .wizard-information {
+      overflow-wrap: anywhere;
+    }
     .sidebar-item, .item, .stats, .set-controls, table, .sidebar-select, .field,
     .copilot-input, .set-row input {
       font-size: var(--font-size-body);
@@ -1247,18 +1266,21 @@
       font-size: var(--font-size-compact);
       font-weight: var(--font-weight-bold);
     }
-    .membership-plan-name { padding-right: 72px; font-size: var(--font-size-h3); font-weight: var(--font-weight-bold); }
+    .membership-plan-name { min-width: 0; padding-right: 88px; font-size: var(--font-size-h3); font-weight: var(--font-weight-bold); overflow-wrap: anywhere; }
     .membership-price { margin: 12px 0 2px; color: var(--text-primary); font-size: 1.65rem; font-weight: var(--font-weight-bold); line-height: 1; }
     .membership-price-note { min-height: 30px; color: var(--text-secondary); font-size: var(--font-size-small); }
     .membership-plan ul { flex: 1; margin: 12px 0 16px; }
     .membership-plan-btn {
       width: 100%;
+      min-width: 0;
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 10px;
       color: var(--text-primary);
       background: var(--input);
       cursor: pointer;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
     .membership-plan-btn.primary { border-color: var(--blue); background: var(--blue); }
     .membership-plan-btn.best { border-color: var(--green); background: var(--green); color: #07130c; }
@@ -1293,6 +1315,8 @@
       border: 1px solid var(--border);
       border-radius: 7px;
       padding: 12px;
+      white-space: normal;
+      overflow-wrap: anywhere;
       color: var(--text-primary);
       background: var(--input);
       cursor: pointer;
@@ -1339,15 +1363,26 @@
       .desktop-table-label { display: none; }
       .mobile-table-label { display: inline; }
       .table-head, .set-row {
-        grid-template-columns: 18px 32px 34px 34px minmax(116px, 1fr) 44px;
+        grid-template-columns: 22px 38px 44px minmax(62px, 1fr) 44px;
+        grid-template-areas:
+          "set previous weight reps complete"
+          "pause pause pause pause pause";
         gap: 3px;
       }
+      .table-head > :nth-child(1), .set-row > :nth-child(1) { grid-area: set; }
+      .table-head > :nth-child(2), .set-row > :nth-child(2) { grid-area: previous; }
+      .table-head > :nth-child(3), .set-row > :nth-child(3) { grid-area: weight; }
+      .table-head > :nth-child(4), .set-row > :nth-child(4) { grid-area: reps; }
+      .table-head > :nth-child(5), .set-row > :nth-child(5) { grid-area: pause; }
+      .table-head > :nth-child(6), .set-row > :nth-child(6) { grid-area: complete; }
       .table-head { font-size: var(--font-size-compact); }
       .set-row input { width: 100%; min-width: 0; }
+      .set-row .reps { padding-inline: 4px; font-size: 16px !important; }
       .set-complete-control input { width: 1px; min-width: 0; }
       .pause-control { grid-template-columns: minmax(0, 1fr) 32px 32px; gap: 2px; }
       .pause-control input { width: 100%; }
       .timer-btn { width: 32px; height: 36px; padding: 0; }
+      .set-analytics { margin-left: 0; }
       .set-complete-control { width: 44px; height: 44px; }
       .set-complete-icon { width: 40px; height: 40px; font-size: 24px; }
       .square, .close { min-width: 40px; min-height: 40px; }
@@ -1379,7 +1414,7 @@
       .replacement-ai-row .small-btn { min-height: 44px; }
       .replacement-confirm-actions { flex-direction: column-reverse; }
       .replacement-confirm-actions button { width: 100%; min-height: 44px; }
-      .movement-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .movement-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 48px; }
     }
 
     .cardio-fields {
@@ -1641,7 +1676,7 @@
       <div class="copilot program-only" id="copilotAccess">
         <div class="copilot-title">✨ AI Træningsassistent (Profil, programmer og træningspas)</div>
         <div class="copilot-bar">
-          <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'navn til Push dag', 'øvelse 1 til Pull-ups' eller 'pause til 1m30s'">
+          <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'Lav et styrkeprogram', 'Jeg har kun håndvægte' eller 'Opdater min vægt til 88 kg'">
           <button class="copilot-btn" onclick="runCopilot()">Kør</button>
         </div>
         <div id="copilotFeedback"></div>
@@ -2121,7 +2156,7 @@
         dashboard: "📊 Åbn træningsdashboard",
         addExercise: "➕ Tilføj ny øvelse",
         copilotTitle: "✨ AI Træningsassistent (Profil, programmer og træningspas)",
-        copilotPlaceholder: "F.eks. 'Jeg vejer 88 kg', 'tilføj biceps curls' eller 'sæt bænkpres til 4 sæt af 8 reps'",
+        copilotPlaceholder: "F.eks. 'Lav et styrkeprogram', 'Jeg har kun håndvægte' eller 'Opdater min vægt til 88 kg'",
         run: "Kør",
         chooseMuscle: "Hvilken muskelgruppe?",
         muscles: { Bryst: "Bryst", "Øvre ryg": "Øvre ryg", Skuldre: "Skuldre", "Forside lår": "Forside lår", "Bagside lår & baller": "Bagside lår & baller", Biceps: "Biceps", Triceps: "Triceps", Mave: "Mave", "Nedre ryg / lænd": "Nedre ryg / lænd" },
@@ -5356,12 +5391,104 @@
     }
 
     let pendingCopilotHistory = null;
+    let pendingCopilotProposal = null;
+    const COPILOT_MUTATING_ACTIONS = new Set([
+      "updateProfile", "updateTrainingPreference", "moveExercise", "moveExerciseByIndex",
+      "addCardioExercise", "generateCardioProgram", "suggestProgram", "addExercise",
+      "addMuscleExercise", "removeExercise", "replaceExercise", "replaceExerciseByIndex",
+      "updateExercise", "updatePause", "updatePauseSet", "updateWorkoutTime",
+      "optimizeWorkout", "renameProgram", "adaptWorkout"
+    ]);
+
+    function copilotActionSummary(action) {
+      const value = action.value ?? "";
+      const summaries = {
+        updateProfile: `${profileFieldLabel(action.field)} til ${profileFieldDisplay(action.field, value)}`,
+        updateTrainingPreference: `træningsindstillingen ${action.field} til ${String(value)}`,
+        moveExercise: `flytte ${action.exerciseName} til Dag ${action.day}`,
+        moveExerciseByIndex: `flytte øvelse ${action.exerciseIndex} til Dag ${action.day}`,
+        addCardioExercise: `tilføje ${action.exerciseName} som cardio`,
+        generateCardioProgram: `oprette et cardio-program på ${action.durationMinutes || 30} minutter`,
+        suggestProgram: `oprette det foreslåede ${action.style || "måltilpassede"} træningspas`,
+        addExercise: `tilføje ${action.exerciseName}`,
+        addMuscleExercise: `tilføje en relevant øvelse for ${action.muscle}`,
+        removeExercise: `fjerne ${action.exerciseName}`,
+        replaceExercise: `erstatte ${action.exerciseName} med ${action.replacementName}`,
+        replaceExerciseByIndex: `erstatte øvelse ${action.exerciseIndex} med ${action.replacementName}`,
+        updateExercise: `ændre ${action.exerciseName}${action.sets ? ` til ${action.sets} sæt` : ""}${action.reps ? ` og ${action.reps} reps` : ""}`,
+        updatePause: `ændre alle pauser til ${action.value}`,
+        updatePauseSet: `ændre pause for ${action.setNumber ? `sæt ${action.setNumber}` : "alle sæt"} til ${action.value}`,
+        updateWorkoutTime: `ændre den registrerede tid til ${action.value}`,
+        optimizeWorkout: `tilpasse ${action.mode || "træningspasset"} efter din profil`,
+        renameProgram: `omdøbe træningspasset til ${action.name}`,
+        adaptWorkout: `tilpasse træningspasset til begrænsningen: ${action.originalInput || action.constraint}`
+      };
+      return summaries[action.action] || "anvende den foreslåede ændring";
+    }
+
+    function proposeCopilotAction(command, action) {
+      pendingCopilotHistory = null;
+      pendingCopilotProposal = { command, action };
+      const el = $("copilotFeedback");
+      const safety = action.requiresSafetyNotice
+        ? `<div class="copilot-proposal-safety">${esc(action.safetyNotice || window.Work4itAISystem?.HEALTH_SAFETY_NOTICE)}</div>`
+        : "";
+      el.style.display = "block";
+      el.style.color = "var(--text-primary)";
+      el.classList.remove("ai-change");
+      el.classList.add("proposal-open");
+      el.innerHTML = `
+        <div class="copilot-proposal">
+          <div class="copilot-proposal-title">Jeg foreslår at ændre følgende...</div>
+          <div class="copilot-proposal-summary">${esc(copilotActionSummary(action))}</div>
+          ${safety}
+          <div class="copilot-alternatives" id="copilotAlternatives"></div>
+          <div class="copilot-proposal-actions">
+            <button class="small-btn save-btn" type="button" onclick="approveCopilotProposal()">Implementér ændring</button>
+            <button class="small-btn" type="button" onclick="showCopilotAlternatives()">Vis alternativer</button>
+            <button class="small-btn red" type="button" onclick="cancelCopilotProposal()">Annullér</button>
+          </div>
+        </div>`;
+      window.AICopilotActions?.log?.(command, action, { success: true, changed: false, status: "proposed" });
+      $("copilotInput").value = "";
+    }
+
+    function approveCopilotProposal() {
+      if (!pendingCopilotProposal) return;
+      const proposal = pendingCopilotProposal;
+      pendingCopilotProposal = null;
+      const result = executeCopilotAction(proposal.action);
+      window.AICopilotActions?.log?.(proposal.command, proposal.action, { ...result, status: result.success ? "approved" : "failed" });
+      feedback(result.changed ? `✓ Ændret af AI · ${result.message}` : result.message, !result.success, result.changed);
+    }
+
+    function cancelCopilotProposal() {
+      if (!pendingCopilotProposal) return;
+      window.AICopilotActions?.log?.(pendingCopilotProposal.command, pendingCopilotProposal.action, { success: true, changed: false, status: "cancelled" });
+      pendingCopilotProposal = null;
+      feedback("Forslaget blev annulleret. Ingen data blev ændret.");
+    }
+
+    function showCopilotAlternatives() {
+      const action = pendingCopilotProposal?.action;
+      const container = $("copilotAlternatives");
+      if (!action || !container) return;
+      const alternatives = action.action === "adaptWorkout"
+        ? "Alternativer: behold programmet uændret, tilpas kun dagens træning eller opret et separat skånsomt træningspas."
+        : action.action === "suggestProgram"
+          ? "Alternativer: kortere pas, færre øvelser eller et program med en anden træningsstil."
+          : action.action === "replaceExercise"
+            ? "Alternativer: vælg en lettere variant, en hjemmevariant eller behold den nuværende øvelse."
+            : "Alternativer: behold den nuværende værdi eller annullér og skriv et mere præcist ønske.";
+      container.textContent = alternatives;
+    }
 
     function feedback(msg, bad=false, aiChange=false) {
       const el = $("copilotFeedback");
       el.style.display = "block";
       el.style.color = bad ? "var(--red)" : "var(--green)";
       el.classList.toggle("ai-change", aiChange && !bad);
+      el.classList.remove("proposal-open");
       el.textContent = msg;
       if (pendingCopilotHistory) {
         window.AICopilotActions?.log?.(
@@ -5579,10 +5706,133 @@
       return value;
     }
 
+    function createCopilotProgram(action) {
+      const context = trainingContext();
+      const goal = action.goal || context.goal || "general_health";
+      const level = action.level || context.experience || "intermediate";
+      const style = action.style || context.preferredTrainingStyle || "hybrid";
+      const count = level === "beginner" ? 4 : level === "experienced" ? 7 : Math.max(4, Math.min(6, Number(context.preferredExerciseCount) || 5));
+      if (goal === "cardio") {
+        generateCardioProgram(Math.min(5, count), "conditioning");
+        return { success: true, changed: true, message: `Et cardio-program med ${Math.min(5, count)} øvelser er oprettet.` };
+      }
+      if (style === "calisthenics") {
+        const template = goal === "strength" ? "strength" : goal === "muscle_gain" ? "muscle_gain" : level === "experienced" ? "street_workout" : "beginner";
+        generateCalisthenicsProgram(template, count);
+        return { success: true, changed: true, message: `Et ${level === "beginner" ? "begynder" : "måltilpasset"} calisthenics-program er oprettet.` };
+      }
+      const focus = context.focusAreas || [];
+      const muscles = focus.length
+        ? muscleGroupKeys.filter(muscle => muscle !== "Cardio" && focus.some(area => muscle.includes(area) || (area === "Ben" && /lår|baller/.test(muscle)) || (area === "Ryg" && /ryg/.test(muscle))))
+        : muscleGroupKeys.filter(muscle => muscle !== "Cardio");
+      const used = new Set();
+      $("exercises").innerHTML = "";
+      currentSavedProgramId = "";
+      currentProgramSession = null;
+      currentProgramDayIndex = 0;
+      activeExerciseCountPreference = count;
+      for (let index = 0; index < count; index++) {
+        const muscle = muscles[index % Math.max(1, muscles.length)] || "Bryst";
+        let pool = catalog.filter(exercise => exercise.muscle === muscle && !used.has(exercise.name));
+        if (style === "home") pool = pool.filter(exercise => exercise.type === "Hjemme" || equipmentCategory(exercise) === "Kropsvægt");
+        if (style === "gym") pool = pool.filter(exercise => exercise.type === "Center");
+        const ranked = window.TrainingGoalEngine?.rankExercises?.(pool, goal, index) || pool;
+        const exercise = ranked[0] || catalog.find(item => item.muscle === muscle && !used.has(item.name));
+        if (!exercise) continue;
+        used.add(exercise.name);
+        const plan = window.TrainingGoalEngine?.prescription?.(exercise.name, exercise.muscle, goal, level, index)
+          || goalPrescription(exercise.name, exercise.muscle, index);
+        const sets = Array.from({ length: plan.sets || 3 }, () => ({
+          prev: "", completed: false, weight: "", reps: "", targetReps: plan.targetReps || "8-12",
+          pause: formatPause(plan.pauseSeconds || 60), pauseManual: false
+        }));
+        addExercise(exercise.name, exercise.muscle, sets, { ...plan, trainingStyle: exercise.trainingStyle || (style === "home" ? "calisthenics" : "gym") });
+      }
+      const goalLabel = window.TrainingGoalEngine?.profile?.(goal)?.label || "Måltilpasset";
+      $("workoutTitle").textContent = `${goalLabel}: AI-forslag`;
+      $("workoutTitle").dataset.customTitle = "true";
+      renderDayNavigation();
+      autoSave();
+      return { success: slotIds().length > 0, changed: slotIds().length > 0, message: `Et ${style === "home" ? "hjemmeprogram" : "træningspas"} med ${slotIds().length} øvelser er oprettet.` };
+    }
+
+    function adaptCurrentWorkout(action) {
+      let slots = slotIds();
+      if (!slots.length) {
+        const created = createCopilotProgram({
+          goal: action.constraint === "low_impact" ? "general_health" : null,
+          style: ["no_equipment", "arm_injury"].includes(action.constraint) ? "home" : null,
+          level: "beginner"
+        });
+        if (!created.success) return { success: false, changed: false, message: "Der kunne ikke oprettes et sikkert udgangspunkt for tilpasningen." };
+        slots = slotIds();
+      }
+      let changed = 0;
+      const removeSlots = [];
+      const replacementFor = (slot, predicate) => {
+        const currentName = $(`name-${slot}`)?.textContent || "";
+        const muscle = $(`name-${slot}`)?.dataset.muscle || "";
+        return catalog.find(exercise => exercise.muscle === muscle && normalizedExerciseSearch(exercise.name) !== normalizedExerciseSearch(currentName) && predicate(exercise));
+      };
+      slots.forEach(slot => {
+        const name = $(`name-${slot}`)?.textContent || "";
+        const muscle = $(`name-${slot}`)?.dataset.muscle || "";
+        const normalized = normalizedExerciseSearch(name);
+        if (action.constraint === "avoid_legs" && /lår|baller/.test(muscle)) removeSlots.push(slot);
+        if (action.constraint === "avoid_shoulder_press" && /(shoulder press|overhead press|arnold press|skulderpres)/.test(normalized)) {
+          const replacement = replacementFor(slot, exercise => !/(press|overhead|arnold)/i.test(exercise.name));
+          if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
+        }
+        if (action.constraint === "low_impact" && /(jump|hop|burpee|sprint|box jump|sjip)/.test(normalized)) {
+          const replacement = replacementFor(slot, exercise => !/(jump|hop|burpee|sprint|sjip)/i.test(exercise.name));
+          if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
+        }
+        if (["dumbbells_only", "no_equipment"].includes(action.constraint)) {
+          const predicate = action.constraint === "dumbbells_only"
+            ? exercise => equipmentCategory(exercise) === "Håndvægte"
+            : exercise => exercise.type === "Hjemme" && equipmentCategory(exercise) === "Kropsvægt";
+          if (!predicate(resolveExerciseDefinition(name) || {})) {
+            const replacement = replacementFor(slot, predicate);
+            if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
+          }
+        }
+        if (action.constraint === "arm_injury") {
+          const upperBody = ["Bryst", "Øvre ryg", "Skuldre", "Biceps", "Triceps"].includes(muscle);
+          const needsGrip = /(barbell|dumbbell|cable|pull-up|row|press|curl|dip|farmer)/.test(normalized);
+          if (upperBody || needsGrip) removeSlots.push(slot);
+        }
+      });
+      [...new Set(removeSlots)].forEach(slot => { removeExercise(slot); changed++; });
+      if (action.constraint === "time_limit") {
+        const duration = Math.max(10, Math.min(120, Number(action.durationMinutes) || 20));
+        const maximumExercises = Math.max(2, Math.min(slotIds().length, Math.floor(duration / 4)));
+        slotIds().slice(maximumExercises).forEach(slot => { removeExercise(slot); changed++; });
+        slotIds().forEach(slot => {
+          const sets = collectSetData(slot).slice(0, duration <= 20 ? 2 : 3);
+          renderSets(slot, Math.max(1, sets.length), sets);
+        });
+      }
+      if (action.constraint === "arm_injury" && !slotIds().length) {
+        ["Bodyweight Squat", "Glute Bridge", "Rask gang"].forEach(request => {
+          const exercise = resolveExerciseDefinition(request);
+          if (exercise) addExercise(exercise.name, exercise.muscle);
+        });
+      }
+      autoSave();
+      updateEstimatedTime();
+      return { success: true, changed: changed > 0, message: changed ? `${changed} programændring${changed === 1 ? "" : "er"} er implementeret.` : "Programmet opfyldte allerede begrænsningen." };
+    }
+
     function executeCopilotAction(action) {
       if (!action?.action) return { success: false, message: "Kommandoen kunne ikke behandles." };
       if (["blockedSecurity", "healthBoundary", "clarify"].includes(action.action)) {
         return { success: action.action === "clarify", message: action.message, changed: false };
+      }
+      if (action.action === "advice") {
+        return { success: true, changed: false, message: window.Work4itAISystem?.practicalAdvice?.(action.originalInput || action.topic) || "Beskriv dit mål lidt mere præcist." };
+      }
+      if (action.action === "healthGuidance") {
+        return { success: true, changed: false, message: action.message };
       }
 
       if (action.action === "updateProfile") {
@@ -5616,6 +5866,18 @@
           if (!["muscle_gain", "weight_loss", "strength", "general_health", "cardio"].includes(action.value)) return { success: false, message: "Træningsmålet blev ikke genkendt." };
           updates.goal = action.value;
           message = `Dit træningsmål er opdateret til ${window.TrainingGoalEngine?.profile?.(action.value)?.label || action.value}. Fremtidige forslag tilpasses målet.`;
+        } else if (action.field === "trainingGoalPriority") {
+          const priorities = ["primary", "secondary", "tertiary"];
+          const goals = ["muscle_gain", "weight_loss", "strength", "general_health", "cardio"];
+          if (!priorities.includes(action.priority) || !goals.includes(action.value)) return { success: false, message: "Det prioriterede mål blev ikke genkendt." };
+          const currentGoals = window.TrainingWizardStore?.normalizeTrainingGoals?.(profile.trainingGoals, profile.goal) || { primary: profile.goal || "general_health", secondary: "", tertiary: "" };
+          const duplicatePriority = priorities.find(priority => priority !== action.priority && currentGoals[priority] === action.value);
+          if (duplicatePriority) currentGoals[duplicatePriority] = currentGoals[action.priority] || "";
+          currentGoals[action.priority] = action.value;
+          updates.trainingGoals = currentGoals;
+          if (action.priority === "primary") updates.goal = action.value;
+          const priorityLabel = { primary: "primære", secondary: "sekundære", tertiary: "tertiære" }[action.priority];
+          message = `Dit ${priorityLabel} mål er opdateret til ${window.TrainingGoalEngine?.profile?.(action.value)?.label || action.value}.`;
         } else if (action.field === "experience") {
           if (!["beginner", "light_intermediate", "intermediate", "experienced"].includes(action.value)) return { success: false, message: "Erfaringsniveauet blev ikke genkendt." };
           updates.experience = action.value;
@@ -5637,6 +5899,11 @@
           updates.exercisePreference = action.value;
           const label = { variation: "variation", consistent: "faste øvelser", mixed: "lidt af begge dele" }[action.value];
           message = `Din øvelsespræference er opdateret til ${label}.`;
+        } else if (action.field === "preferredTrainingStyle") {
+          if (!["gym", "calisthenics", "hybrid"].includes(action.value)) return { success: false, message: "Træningsstilen blev ikke genkendt." };
+          updates.preferredTrainingStyle = action.value;
+          const label = { gym: "Fitnesscenter", calisthenics: "Calisthenics", hybrid: "Begge dele" }[action.value];
+          message = `Din foretrukne træningsstil er opdateret til ${label}.`;
         } else if (action.field === "preferredExerciseCount") {
           const count = Number(action.value);
           if (!Number.isInteger(count) || count < 1 || count > 8) return { success: false, message: "Foretrukket antal øvelser skal være mellem 1 og 8." };
@@ -5698,6 +5965,65 @@
         const count = Math.max(1, Math.min(5, Math.round(minutes / 10)));
         generateCardioProgram(count, "general_health", minutes);
         return { success: true, changed: true, message: `Et cardio-program på ${minutes} minutter er oprettet med ${count} øvelse${count === 1 ? "" : "r"}.` };
+      }
+
+      if (action.action === "suggestProgram") return createCopilotProgram(action);
+
+      if (action.action === "adaptWorkout") return adaptCurrentWorkout(action);
+
+      if (action.action === "optimizeWorkout") {
+        const success = optimizeCurrentWorkoutForGoal(action.mode || "all");
+        return { success, changed: success, message: success ? "Træningspasset er tilpasset efter din profil." : "Tilføj først mindst én øvelse." };
+      }
+
+      if (action.action === "renameProgram") {
+        const success = persistProgramName(action.name);
+        return { success, changed: success, message: success ? `Træningspasset hedder nu "${action.name}".` : "Navnet kunne ikke gemmes." };
+      }
+
+      if (action.action === "moveExerciseByIndex") {
+        const slot = slotIds()[Number(action.exerciseIndex) - 1];
+        const name = slot ? $(`name-${slot}`)?.textContent : "";
+        const moved = name ? moveExercisesToDay(exercise => exercise.name === name, action.day) : 0;
+        return { success: moved > 0, changed: moved > 0, message: moved ? `${name} er flyttet til Dag ${action.day}.` : "Øvelsen eller dagen blev ikke fundet." };
+      }
+
+      if (action.action === "addMuscleExercise") {
+        const result = addGoalExerciseForMuscle(action.muscle);
+        return { success: result === "added", changed: result === "added", message: result === "added" ? `${action.muscle} er tilføjet.` : result === "limit" ? "Det valgte antal øvelser er allerede nået." : "Ingen passende øvelse blev fundet." };
+      }
+
+      if (action.action === "replaceExerciseByIndex") {
+        const slot = slotIds()[Number(action.exerciseIndex) - 1];
+        const replacement = resolveExerciseDefinition(action.replacementName);
+        if (!slot || !replacement) return { success: false, changed: false, message: "Øvelsen eller erstatningen blev ikke fundet." };
+        const previous = $(`name-${slot}`)?.textContent || "Øvelsen";
+        setExercise(slot, replacement.name, replacement.muscle);
+        return { success: true, changed: true, message: `${previous} er erstattet med ${replacement.name}.` };
+      }
+
+      if (action.action === "updatePauseSet") {
+        const seconds = parsePause(action.value);
+        let changed = 0;
+        document.querySelectorAll(".pause").forEach(input => {
+          const setNumber = Number(input.id.split("-").pop());
+          if (!action.setNumber || setNumber === Number(action.setNumber)) {
+            input.value = formatPause(seconds);
+            input.dataset.pauseManual = "true";
+            changed++;
+          }
+        });
+        updateEstimatedTime();
+        autoSave();
+        return { success: changed > 0, changed: changed > 0, message: `${changed} pausefelt${changed === 1 ? "" : "er"} er opdateret.` };
+      }
+
+      if (action.action === "updateWorkoutTime") {
+        totalSeconds = parsePause(action.value);
+        $("globalTimer").textContent = formatTime(totalSeconds);
+        updateEstimatedCalories();
+        autoSave();
+        return { success: true, changed: true, message: `Træningstiden er opdateret til ${formatTime(totalSeconds)}.` };
       }
 
       if (action.action === "showCardioSummary") {
@@ -5788,10 +6114,41 @@
       return { success: false, message: "Kommandoen kunne ikke behandles." };
     }
 
+    function parseLegacyMutatingCommand(command) {
+      const normalized = command.toLowerCase();
+      let match = normalized.match(/^flyt\s+øvelse\s+(\d+)\s+til\s+dag\s+(\d+)$/i);
+      if (match) return { action: "moveExerciseByIndex", exerciseIndex: Number(match[1]), day: Number(match[2]) };
+      match = normalized.match(/^tilføj\s+mere\s+(ryg|bryst|biceps|triceps|skuldre|ben|mave)$/i);
+      if (match) {
+        const muscles = { ryg: "Øvre ryg", bryst: "Bryst", biceps: "Biceps", triceps: "Triceps", skuldre: "Skuldre", ben: "Forside lår", mave: "Mave" };
+        return { action: "addMuscleExercise", muscle: muscles[match[1]] };
+      }
+      if (/^(tilpas|optimer|optimér).*(mit mål|træningsmål|profil)/i.test(normalized)) return { action: "optimizeWorkout", mode: "all" };
+      if (/^(optimer|optimér).*(pause|pauser)/i.test(normalized)) return { action: "optimizeWorkout", mode: "pauses" };
+      if (/^(optimer|optimér).*(volumen|sæt)/i.test(normalized)) return { action: "optimizeWorkout", mode: "volume" };
+      if (/(lav|generér|generer|opret).*(program|træningspas).*(mit mål|træningsmål|profil)/i.test(normalized)) return { action: "suggestProgram", originalInput: command };
+      match = command.match(/(?:navn|titel|program|træningspas)\s*(?:til|=|:|hedder)\s*(.+)$/i);
+      if (match) return { action: "renameProgram", name: match[1].trim() };
+      match = command.match(/øvelse\s*(\d+)\s*(?:til|=|:|hedder)\s*(.+)$/i);
+      if (match) return { action: "replaceExerciseByIndex", exerciseIndex: Number(match[1]), replacementName: match[2].trim() };
+      match = command.match(/(?:sæt\s*(\d+)\s*)?pause\s*(?:til|=|:)?\s*([0-9:.,\smtimersekund]+s?)/i);
+      if (match) return { action: "updatePauseSet", setNumber: match[1] ? Number(match[1]) : null, value: match[2].trim() };
+      match = command.match(/(?:tid|timer|tid brugt)\s*(?:til|=|:)?\s*([0-9:.,\smtimersekund]+s?)/i);
+      if (match) return { action: "updateWorkoutTime", value: match[1].trim() };
+      match = command.match(/^(.+?)\s+til\s+(.+)$/i);
+      if (match) return { action: "replaceExercise", exerciseName: match[1].trim(), replacementName: match[2].trim() };
+      return null;
+    }
+
     function runCopilot() {
       if (!openPremiumFeature("copilot")) return;
       const cmd = $("copilotInput").value.trim();
       if (!cmd) return;
+      const requestUsage = window.Work4itAISystem?.requestUsage?.(window.Membership?.getMembership?.() || {}, true);
+      if (requestUsage && !requestUsage.allowed) {
+        feedback(`Du har brugt månedens ${requestUsage.limit} AI Requests. Grænsen nulstilles i næste kalendermåned.`, true);
+        return;
+      }
       const aiContext = window.Work4itAISystem?.buildContext?.() || null;
       pendingCopilotHistory = {
         command: cmd,
@@ -5799,6 +6156,10 @@
       };
       const structuredAction = window.AICopilotActions?.parse?.(cmd, aiContext);
       if (structuredAction) {
+        if (COPILOT_MUTATING_ACTIONS.has(structuredAction.action)) {
+          proposeCopilotAction(cmd, structuredAction);
+          return;
+        }
         const result = executeCopilotAction(structuredAction);
         window.AICopilotActions?.log?.(cmd, structuredAction, result);
         pendingCopilotHistory = null;
@@ -5808,6 +6169,11 @@
           result.changed
         );
         $("copilotInput").value = "";
+        return;
+      }
+      const legacyProposal = parseLegacyMutatingCommand(cmd);
+      if (legacyProposal) {
+        proposeCopilotAction(cmd, legacyProposal);
         return;
       }
       const normalized = cmd.toLowerCase();
@@ -6414,13 +6780,13 @@
   <script src="screenshot-import.js?v=20260620-import1"></script>
   <script src="wizard-store.js?v=20260620-calisthenics1"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-system.js?v=20260620-calisthenics1"></script>
-  <script src="ai-copilot-actions.js?v=20260619-ai-audit1"></script>
+  <script src="ai-system.js?v=20260621-assistant2"></script>
+  <script src="ai-copilot-actions.js?v=20260621-assistant2"></script>
   <script src="auth-gate.js?v=20260619-gdpr1"></script>
   <script src="profile-account.js?v=20260620-calisthenics1"></script>
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
-  <script src="wizard-controller.js?v=20260619-priority-goals1"></script>
+  <script src="wizard-controller.js?v=20260621-textfit1"></script>
   <script src="membership.js?v=20260621-pricing1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
   <script type="module" src="auth-service.js?v=20260619-gdpr1"></script>

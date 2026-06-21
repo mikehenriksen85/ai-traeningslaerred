@@ -70,6 +70,78 @@
       };
     }
 
+    const safetyNotice = window.Work4itAISystem?.HEALTH_SAFETY_NOTICE || "Ved smerter, skade eller usikkerhed bør du kontakte læge eller fysioterapeut.";
+    if (/(brækket|brækket arm|broken arm|arm injury)/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "arm_injury", originalInput: command, requiresSafetyNotice: true, safetyNotice };
+    }
+    if (/(ondt i ryggen|rygsmerter|back pain|pain in my back)/i.test(text)) {
+      return {
+        action: "healthGuidance",
+        message: `Undgå bevægelser der tydeligt forværrer smerten. Vælg rolige, kontrollerede øvelser og lav belastning, men få årsagen vurderet før du laver større programændringer. ${safetyNotice}`
+      };
+    }
+    if (/(kan ikke træne ben|ingen ben i dag|skip legs|cannot train legs)/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "avoid_legs", originalInput: command };
+    }
+    if (/(kun håndvægte|only dumbbells|have dumbbells)/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "dumbbells_only", originalInput: command };
+    }
+    if (/(hjemme uden udstyr|uden udstyr|home without equipment|no equipment)/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "no_equipment", originalInput: command };
+    }
+    if (/(undgå skulderpres|uden skulderpres|avoid shoulder press|no shoulder press)/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "avoid_shoulder_press", originalInput: command };
+    }
+    if (/(skift|erstat|fjern).*(alle\s+)?(skulderpres|shoulder press).*(ondt|smerte|pain|skade)?/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "avoid_shoulder_press", originalInput: command, requiresSafetyNotice: true, safetyNotice };
+    }
+    if (/(uden hop|ingen hop|lav-impact|lav impact|low-impact|low impact|without jumping)/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "low_impact", originalInput: command };
+    }
+    if (/(dårlig kondition|poor conditioning|low fitness)/i.test(text)) {
+      return { action: "advice", topic: text, originalInput: command };
+    }
+    let constraintMatch = text.match(/(?:har kun|kun|only have)\s*(\d+)\s*(?:min|minutter|minutes)/i);
+    if (constraintMatch) {
+      return { action: "adaptWorkout", constraint: "time_limit", durationMinutes: Number(constraintMatch[1]), originalInput: command };
+    }
+
+    const programIntent = /(lav|generér|generer|opret|foreslå|create|generate|suggest).*(program|træningspas|workout)/i.test(text);
+    if (programIntent) {
+      const goal = /vægttab|weight loss/.test(text) ? "weight_loss"
+        : /muskel|hypertrophy/.test(text) ? "muscle_gain"
+        : /styrke|strength/.test(text) ? "strength"
+        : /cardio|kondition/.test(text) ? "cardio"
+        : /sundhed|health/.test(text) ? "general_health"
+        : null;
+      const style = /calisthenics|street workout/.test(text) ? "calisthenics"
+        : /hjemme|home/.test(text) ? "home"
+        : /fitness|center|gym/.test(text) ? "gym"
+        : null;
+      const level = /begynder|beginner/.test(text) ? "beginner"
+        : /avanceret|advanced/.test(text) ? "experienced"
+        : /øvet|intermediate/.test(text) ? "intermediate"
+        : null;
+      return { action: "suggestProgram", goal, style, level, originalInput: command };
+    }
+
+    if (/(hvordan|hvad bør|how do|what should|råd|advice)/i.test(text)) {
+      return { action: "advice", topic: text, originalInput: command };
+    }
+
+    let priorityMatch = text.match(/(?:sæt|ændr|opdater)?\s*(?:mit\s+)?(primære|sekundære|tertiære)\s+mål\s+(?:til\s+)?(muskelopbygning|vægttab|styrke|generel sundhed|cardio)/i);
+    if (priorityMatch) {
+      const positions = { primære: "primary", sekundære: "secondary", tertiære: "tertiary" };
+      const goals = { muskelopbygning: "muscle_gain", vægttab: "weight_loss", styrke: "strength", "generel sundhed": "general_health", cardio: "cardio" };
+      return { action: "updateTrainingPreference", field: "trainingGoalPriority", priority: positions[priorityMatch[1]], value: goals[priorityMatch[2]] };
+    }
+
+    let styleMatch = text.match(/(?:træningsstil|foretrukken træningsstil|jeg træner)\s*(?:til|er|med)?\s*(fitnesscenter|fitness|calisthenics|begge dele)/i);
+    if (styleMatch) {
+      const styles = { fitnesscenter: "gym", fitness: "gym", calisthenics: "calisthenics", "begge dele": "hybrid" };
+      return { action: "updateTrainingPreference", field: "preferredTrainingStyle", value: styles[styleMatch[1]] };
+    }
+
     let match = text.match(/(?:skift|sæt|ændr|opdater)?\s*(?:mit\s+)?(?:træningsmål|mål)\s+(?:til\s+)?(muskelopbygning|muskelvækst|vægttab|styrke|generel sundhed|cardio)/i);
     if (match) {
       const goals = {

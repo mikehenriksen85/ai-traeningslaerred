@@ -1,8 +1,10 @@
 (function work4itAiSystemModule() {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "2.0.0";
+  const HEALTH_SAFETY_NOTICE = "Ved smerter, skade eller usikkerhed bør du kontakte læge eller fysioterapeut.";
   const MAX_HISTORY_ITEMS = 20;
+  const REQUEST_USAGE_KEY = "ai_request_usage_v1";
 
   const PROMPTS = Object.freeze({
     assistant: {
@@ -11,6 +13,8 @@
         "Svar på samme sprog som brugeren (dansk eller engelsk).",
         "Brug mål, erfaring, fokusområder, aktiv dag og aktivt program som kontekst.",
         "Spørg kort ind, hvis kommandoen kan betyde flere forskellige handlinger.",
+        "Vis altid 'Jeg foreslår at ændre følgende...' før profil- eller programdata ændres.",
+        "Udfør kun muterende handlinger efter brugerens aktive godkendelse.",
         "Ændr aldrig konto, login, medlemskab eller betaling.",
         "Foretag aldrig flere programændringer end brugeren udtrykkeligt har bedt om.",
         "Giv en kort bekræftelse og forklar højst én vigtig begrundelse."
@@ -23,6 +27,8 @@
         "Brug kun øvelser fra Work4its katalog og undgå dubletter på samme dag.",
         "Hold styrke, cardio og træningssplit adskilt, medmindre brugeren aktivt vælger en kombination.",
         "Tilpas sæt, reps og pauser efter målet og undgå urealistisk volumen.",
+        "Tag højde for prioriterede mål, træningsstil, udstyr, tid og brugerens begrænsninger.",
+        "Vis programmet som et forslag og kræv godkendelse før oprettelse eller overskrivning.",
         "Overskriv ikke et eksisterende program uden en udtrykkelig generér/opret-kommando."
       ]
     },
@@ -111,7 +117,12 @@
         name: name?.textContent?.trim() || "",
         muscle: name?.dataset?.muscle || "",
         exerciseType: block.dataset.exerciseType || "strength",
-        setCount: block.querySelectorAll(".set-row").length
+        setCount: block.querySelectorAll(".set-row").length,
+        sets: [...block.querySelectorAll(".set-row")].map(row => ({
+          reps: row.querySelector(".reps")?.value || row.querySelector(".reps")?.dataset?.targetReps || "",
+          weightKg: Number(String(row.querySelector(".weight")?.value || "").replace(",", ".")) || null,
+          pause: row.querySelector(".pause")?.value || ""
+        }))
       };
     }).filter(exercise => exercise.name);
     return {
@@ -121,10 +132,28 @@
     };
   }
 
+  function requestPeriodKey(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  function requestUsage(membership = {}, consume = false, date = new Date()) {
+    const limit = Math.max(0, Number(membership.aiRequestLimit) || 0);
+    const period = requestPeriodKey(date);
+    const stored = safeJson(REQUEST_USAGE_KEY, {});
+    const usedBefore = stored.period === period ? Math.max(0, Number(stored.used) || 0) : 0;
+    if (limit > 0 && usedBefore >= limit) return { allowed: false, limit, used: usedBefore, remaining: 0, period };
+    const used = consume ? usedBefore + 1 : usedBefore;
+    if (consume) {
+      try { localStorage.setItem(REQUEST_USAGE_KEY, JSON.stringify({ period, used, updatedAt: new Date().toISOString() })); } catch {}
+    }
+    return { allowed: true, limit, used, remaining: limit > 0 ? Math.max(0, limit - used) : null, period };
+  }
+
   function buildContext() {
     const profile = window.TrainingWizardStore?.getProfile?.() || {};
     const daily = window.TrainingWizardStore?.getDailyState?.() || {};
     const membership = window.Membership?.getMembership?.() || {};
+    const usage = requestUsage(membership, false);
     return {
       version: VERSION,
       profile: {
@@ -163,7 +192,9 @@
         type: membership.membershipType || "free",
         isPremium: membership.isPremium === true,
         requestLimit: Number(membership.aiRequestLimit) || 0,
-        requestPeriod: membership.aiRequestPeriod || ""
+        requestPeriod: membership.aiRequestPeriod || "",
+        requestsUsed: usage.used,
+        requestsRemaining: usage.remaining
       },
       capabilities: {
         externalModelConnected: false,
@@ -171,7 +202,7 @@
         screenshotOcrEngine: "Tesseract.js 5.1.1 eng+dan",
         screenshotParser: "Work4it Structured Import Parser 1.0",
         dedicatedCalisthenicsGenerator: true,
-        requestUsageEnforced: false
+        requestUsageEnforced: "client_demo"
       }
     };
   }
@@ -217,15 +248,45 @@
     }
     if (medical.test(text)) {
       return {
-        allowed: false,
-        type: "health",
+        allowed: true,
+        type: "health_caution",
+        requiresSafetyNotice: true,
         language,
         message: language === "en"
-          ? "I can adapt training preferences, but I cannot diagnose pain or injuries. Stop if the movement hurts and consider advice from a doctor or physiotherapist."
-          : "Jeg kan tilpasse træningspræferencer, men ikke diagnosticere smerter eller skader. Stop hvis bevægelsen gør ondt, og overvej rådgivning fra læge eller fysioterapeut."
+          ? "I can suggest lower-risk training alternatives, but I cannot diagnose pain or injuries. Contact a doctor or physiotherapist if you have pain, an injury, or uncertainty."
+          : HEALTH_SAFETY_NOTICE
       };
     }
     return { allowed: true, type: "training", language };
+  }
+
+  function practicalAdvice(input, context = buildContext()) {
+    const text = String(input || "").toLowerCase();
+    const profile = context.profile || {};
+    const experience = { beginner: "nybegynderniveau", light_intermediate: "let øvet niveau", intermediate: "øvet niveau", experienced: "erfarent niveau" }[profile.experience] || "dit niveau";
+    const goal = profile.trainingGoals?.primary || profile.goal || "general_health";
+    const focus = profile.focusAreas?.length ? ` Prioritér især ${profile.focusAreas.join(", ").toLowerCase()}.` : "";
+    const safety = /(smerte|ondt|skade|brækket|sygdom|pain|injur|broken)/i.test(text) ? `\n\n${HEALTH_SAFETY_NOTICE}` : "";
+    if (/(taber jeg mig|vægttab|weight loss|lose weight)/i.test(text)) {
+      return `Sigt efter et moderat kalorieunderskud, regelmæssig styrketræning og daglig bevægelse. Bevar proteinrige måltider, sov stabilt og vurder udviklingen over flere uger frem for at vælge ekstreme løsninger.${focus}${safety}`;
+    }
+    if (/(muskelmasse|muskelopbygning|muscle gain|build muscle)/i.test(text)) {
+      return `Træn hver prioriteret muskelgruppe regelmæssigt, brug typisk 6-15 reps og øg gradvist reps eller belastning. Sørg for tilstrækkeligt protein, energi og restitution. Forslagene bør passe til ${experience}.${focus}${safety}`;
+    }
+    if (/(stærkere|styrke|stronger|strength)/i.test(text)) {
+      return `Prioritér stabile basisøvelser, lavere reps, længere pauser og målbar progression. Hold teknikken ens fra uge til uge og undgå at øge belastningen på bekostning af kontrol.${focus}${safety}`;
+    }
+    if (/(kondition|cardio|conditioning|endurance)/i.test(text)) {
+      return `Kombinér rolige pas med korte, kontrollerede intervaller. Start med en varighed du kan gentage stabilt, og øg tid eller intensitet gradvist, ikke begge dele samtidig.${safety}`;
+    }
+    if (/(kombiner|kombinere|combine).*(styrke|strength).*(vægttab|weight loss)/i.test(text)) {
+      return `Bevar 2-4 styrkepas om ugen, læg moderat cardio omkring dem og brug kosten til hovedparten af kalorieunderskuddet. Reducér volumen før du reducerer træningskvaliteten.${focus}${safety}`;
+    }
+    if (/(hvad bør jeg fokusere|ud fra min profil|what should i focus)/i.test(text)) {
+      const label = { muscle_gain: "muskelopbygning", weight_loss: "vægttab", strength: "styrke", cardio: "cardio", general_health: "generel sundhed" }[goal] || goal;
+      return `Dit primære fokus er ${label}. Brug en plan der matcher ${experience}, dine prioriterede mål og dit tilgængelige udstyr.${focus} Vælg en progression du kan gennemføre stabilt.${safety}`;
+    }
+    return "Jeg kan hjælpe med profil, mål, programmer, øvelser, sæt, reps, pauser, udstyr og tidsbegrænsninger. Beskriv det ønskede resultat, så giver jeg et konkret forslag uden at ændre noget før din godkendelse." + safety;
   }
 
   window.Work4itAISystem = {
@@ -234,6 +295,9 @@
     buildContext,
     externalModelContext,
     detectLanguage,
-    guardInput
+    guardInput,
+    practicalAdvice,
+    requestUsage,
+    HEALTH_SAFETY_NOTICE
   };
 })();
