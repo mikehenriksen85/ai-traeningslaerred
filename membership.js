@@ -369,6 +369,7 @@
       return current;
     }
     const trial = write({ ...createTrial(now), lastMembershipPopupDate: current.lastMembershipPopupDate, updatedAt: iso(now) });
+    window.dispatchEvent(new CustomEvent("membership:changed", { detail: trial }));
     render(trial);
     showConfirmation("Din 10 dages gratis Premium-prøveperiode er startet.");
     return trial;

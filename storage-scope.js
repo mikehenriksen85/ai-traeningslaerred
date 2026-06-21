@@ -67,6 +67,7 @@
   };
   const pendingWrites = new Map();
   let activeUid = "";
+  let storageScopeInstalled = false;
 
   function scopedKey(key, uid = activeUid) {
     if (!uid || !managedKeys.has(key)) return key;
@@ -171,10 +172,16 @@
 
   if (nativeStorage) {
     try {
-      nativeStorage.getItem = getScopedItem;
-      nativeStorage.setItem = setScopedItem;
-      nativeStorage.removeItem = removeScopedItem;
-      nativeStorage.clear = clearActiveUserCache;
+      Object.defineProperties(nativeStorage, {
+        getItem: { configurable: true, value: getScopedItem },
+        setItem: { configurable: true, value: setScopedItem },
+        removeItem: { configurable: true, value: removeScopedItem },
+        clear: { configurable: true, value: clearActiveUserCache }
+      });
+      storageScopeInstalled = nativeStorage.getItem === getScopedItem &&
+        nativeStorage.setItem === setScopedItem &&
+        nativeStorage.removeItem === removeScopedItem;
+      if (!storageScopeInstalled) throw new Error("UID-opdeling kunne ikke verificeres.");
     } catch (error) {
       console.warn("Browseren tillod ikke UID-opdeling af localStorage.", error);
     }
@@ -308,6 +315,7 @@
     managedKeys: [...managedKeys],
     setActiveUid,
     getActiveUid: () => activeUid,
+    isScopeInstalled: () => storageScopeInstalled,
     scopedKey,
     hasCurrentUserData,
     hasLegacyData,

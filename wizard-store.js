@@ -69,7 +69,7 @@
     };
   }
 
-  function saveProfile(profile) {
+  function saveProfile(profile, options = {}) {
     const current = getProfile();
     const hasLegacyGoalUpdate = Object.prototype.hasOwnProperty.call(profile, "goal");
     const requestedGoals = profile.trainingGoals || (hasLegacyGoalUpdate
@@ -89,7 +89,7 @@
     };
     write(PROFILE_KEY, next);
     window.dispatchEvent(new CustomEvent("training-profile:updated", { detail: { ...next } }));
-    if (window.FirestoreDataService?.saveProfileToCloud) {
+    if (options.cloud !== false && window.FirestoreDataService?.saveProfileToCloud) {
       window.FirestoreDataService.saveProfileToCloud(next).catch(error => {
         window.dispatchEvent(new CustomEvent("training-profile:cloud-save-failed", {
           detail: { error, profile: { ...next } }
@@ -97,6 +97,16 @@
       });
     }
     return next;
+  }
+
+  async function saveProfileAndSync(profile) {
+    const saved = saveProfile(profile, { cloud: false });
+    if (!window.FirebaseAuthService?.getCurrentUser?.()) return saved;
+    if (!window.FirestoreDataService?.saveProfileToCloud) {
+      throw new Error("Cloud-tjenesten er ikke klar.");
+    }
+    await window.FirestoreDataService.saveProfileToCloud(saved);
+    return saved;
   }
 
   function localDateString(date = new Date()) {
@@ -198,6 +208,7 @@
     normalizeTrainingGoals,
     getProfile,
     saveProfile,
+    saveProfileAndSync,
     localDateString,
     getDailyState,
     saveDailyState,

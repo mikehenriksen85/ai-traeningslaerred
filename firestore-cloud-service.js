@@ -241,6 +241,10 @@ async function saveProfileToCloud(profile) {
   if (!activeUid || !cloudEnabled) {
     throw new Error("Cloud er ikke klar. Log ind igen eller prøv senere.");
   }
+  const authenticatedUid = window.FirebaseAuthService?.getCurrentUser?.()?.uid || "";
+  if (authenticatedUid !== activeUid) {
+    throw new Error("Den aktive Firebase-bruger matcher ikke Cloud-sessionen.");
+  }
   const path = ["users", activeUid, "profile", "main"];
   const nextProfile = {
     ...cleanDocument(profile),
@@ -263,6 +267,32 @@ async function saveProfileToCloud(profile) {
     throw error;
   }
 }
+
+async function saveProfileDocumentToCloud(documentId, value) {
+  if (!activeUid || !cloudEnabled) {
+    throw new Error("Cloud er ikke klar. Log ind igen eller prøv senere.");
+  }
+  const authenticatedUid = window.FirebaseAuthService?.getCurrentUser?.()?.uid || "";
+  if (authenticatedUid !== activeUid) {
+    throw new Error("Den aktive Firebase-bruger matcher ikke Cloud-sessionen.");
+  }
+  const path = ["users", activeUid, "profile", documentId];
+  try {
+    await setDoc(doc(db, ...path), {
+      ...cleanDocument(value),
+      updatedAt: value?.updatedAt || new Date().toISOString(),
+      firestoreUpdatedAt: serverTimestamp()
+    }, { merge: true });
+    localFingerprint = currentLocalFingerprint();
+    return true;
+  } catch (error) {
+    reportFirestoreError("setDoc", path, error);
+    throw error;
+  }
+}
+
+const saveDailyToCloud = value => saveProfileDocumentToCloud("daily", value);
+const saveMembershipToCloud = value => saveProfileDocumentToCloud("membership", value);
 
 async function upsertCollection(pathSegments, values, prefix, fallbackUpdatedAt = "") {
   const reference = collection(db, ...pathSegments);
@@ -412,8 +442,9 @@ async function hydratePrograms(uid) {
   return programs;
 }
 
-async function hydrateFromFirestore(uid = activeUid) {
+async function hydrateFromFirestore(uid = activeUid, options = {}) {
   if (!uid) return false;
+  const preserveLocalWhenCloudEmpty = Boolean(options.preserveLocalWhenCloudEmpty);
   try {
     const [
       profile,
@@ -443,48 +474,60 @@ async function hydrateFromFirestore(uid = activeUid) {
       readCollection(["users", uid, COLLECTIONS.trash])
     ]);
 
-    if (profile.exists()) {
-      const cloudProfile = cleanDocument(profile.data());
-      if (hasProfileFields(cloudProfile)) {
-        writeLocal(KEYS.profile, cloudProfile);
-      }
+    const cloudProfile = profile.exists() ? cleanDocument(profile.data()) : null;
+    const hasCloudProfile = hasProfileFields(cloudProfile);
+    if (hasCloudProfile) {
+      writeLocal(KEYS.profile, cloudProfile);
+    } else if (!preserveLocalWhenCloudEmpty) {
+      writeLocal(KEYS.profile, null);
     }
-    if (daily.exists()) writeLocal(KEYS.daily, newest(parseLocal(KEYS.daily, null), cleanDocument(daily.data())));
-    if (membership.exists()) writeLocal(KEYS.membership, newest(parseLocal(KEYS.membership, null), cleanDocument(membership.data())));
+    if (daily.exists()) writeLocal(KEYS.daily, cleanDocument(daily.data()));
+    else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.daily, null);
+    if (membership.exists()) writeLocal(KEYS.membership, cleanDocument(membership.data()));
+    else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.membership, null);
     if (appState.exists()) {
       const state = cleanDocument(appState.data());
       if (state.lastActiveProgramId) writeLocal(KEYS.lastProgram, state.lastActiveProgramId);
+      else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.lastProgram, null);
+    } else if (!preserveLocalWhenCloudEmpty) {
+      writeLocal(KEYS.lastProgram, null);
     }
 
-    const mergedPrograms = mergeLists(parseLocal(KEYS.programs, []), programs, "program")
-      .sort((a, b) => timestampMillis(b) - timestampMillis(a));
-    const mergedSessions = mergeLists(parseLocal(KEYS.sessions, []), sessions, "session")
-      .sort((a, b) => new Date(a.date || a.completedAt || 0) - new Date(b.date || b.completedAt || 0));
-    const mergedMeasurements = mergeLists(parseLocal(KEYS.measurements, []), measurements, "measurement")
-      .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
-    writeLocal(KEYS.programs, mergedPrograms);
-    writeLocal(KEYS.sessions, mergedSessions);
-    writeLocal(KEYS.measurements, mergedMeasurements);
-    writeLocal(KEYS.aiHistory, mergeLists(parseLocal(KEYS.aiHistory, []), aiHistory, "message").slice(-200));
-    writeLocal(KEYS.imports, mergeLists(parseLocal(KEYS.imports, []), imports, "import"));
-    writeLocal(KEYS.customExercises, mergeLists(parseLocal(KEYS.customExercises, []), customExercises, "exercise"));
-    writeLocal(KEYS.trash, mergeLists(parseLocal(KEYS.trash, []), trash, "deleted"));
+    const writeCloudCollection = (key, values, sorter = null) => {
+      if (values.length || !preserveLocalWhenCloudEmpty) {
+        const next = sorter ? [...values].sort(sorter) : [...values];
+        writeLocal(key, next);
+      }
+    };
+    writeCloudCollection(KEYS.programs, programs, (a, b) => timestampMillis(b) - timestampMillis(a));
+    writeCloudCollection(KEYS.sessions, sessions,
+      (a, b) => new Date(a.date || a.completedAt || 0) - new Date(b.date || b.completedAt || 0));
+    writeCloudCollection(KEYS.measurements, measurements,
+      (a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    writeCloudCollection(KEYS.aiHistory, aiHistory.slice(-200));
+    writeCloudCollection(KEYS.imports, imports);
+    writeCloudCollection(KEYS.customExercises, customExercises);
+    writeCloudCollection(KEYS.trash, trash);
 
     if (activeWorkout.exists()) {
       const remoteAutosave = cleanDocument(activeWorkout.data());
-      writeLocal(KEYS.activeWorkout, newest(parseLocal(KEYS.activeWorkout, null), remoteAutosave));
-    } else {
-      const localAutosave = activeSessionFromAutosave();
-      if (!localAutosave) localStorage.removeItem(KEYS.activeWorkout);
+      writeLocal(KEYS.activeWorkout, remoteAutosave);
+    } else if (!preserveLocalWhenCloudEmpty) {
+      writeLocal(KEYS.activeWorkout, null);
     }
 
     localFingerprint = currentLocalFingerprint();
-    window.dispatchEvent(new CustomEvent("firestore:data-hydrated"));
-    return true;
+    const cloudHasData = hasCloudProfile || daily.exists() || membership.exists() || appState.exists() ||
+      activeWorkout.exists() || [programs, sessions, measurements, aiHistory, imports, customExercises, trash]
+        .some(values => values.length > 0);
+    window.dispatchEvent(new CustomEvent("firestore:data-hydrated", {
+      detail: { uid, source: "firestore", authoritative: !preserveLocalWhenCloudEmpty, cloudHasData }
+    }));
+    return { success: true, cloudHasData };
   } catch (error) {
     console.warn("Firestore kunne ikke hentes. Appen fortsætter med den aktive brugers UID-cache.", error);
     window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
-    return false;
+    return { success: false, cloudHasData: false, error };
   }
 }
 
@@ -539,27 +582,50 @@ async function initializeUserData(user) {
     !localMigrationDecision &&
     !cloudMigrationDecision;
 
-  // Firestore læses altid først. UID-cachen er kun fallback og konfliktbuffer.
-  await hydrateFromFirestore(activeUid);
+  const cloudBootstrapCompleted = metadata.cloudBootstrapCompleted === true;
 
+  // Efter første bootstrap er Firestore autoritativ og overskriver altid UID-cachen.
+  // Første gang bevares en eventuel UID-cache, hvis Cloud endnu er tom.
+  let hydration = await hydrateFromFirestore(activeUid, {
+    preserveLocalWhenCloudEmpty: !cloudBootstrapCompleted
+  });
+  if (!hydration.success) {
+    throw hydration.error || new Error("Cloud-data kunne ikke hentes.");
+  }
+  if (!cloudBootstrapCompleted && hydration.cloudHasData) {
+    hydration = await hydrateFromFirestore(activeUid, { preserveLocalWhenCloudEmpty: false });
+    if (!hydration.success) throw hydration.error || new Error("Cloud-data kunne ikke hentes.");
+  }
+
+  let legacyAccepted = false;
   if (legacyAvailable) {
     const accepted = await showLegacyMigrationDialog();
     storageScope.resolveLegacyMigration(accepted ? "accepted" : "declined", activeUid);
-    if (accepted) storageScope.importLegacyToCurrent();
+    if (accepted) {
+      storageScope.importLegacyToCurrent();
+      legacyAccepted = true;
+    }
   }
 
   const migrationDecision = storageScope?.legacyResolution?.(activeUid)?.status ||
     cloudMigrationDecision ||
     "none";
   const migrationCompletedAt = metadata.migrationCompletedAt || new Date().toISOString();
+  const shouldBootstrapLocalCache = !cloudBootstrapCompleted && !hydration.cloudHasData;
+  if (shouldBootstrapLocalCache || legacyAccepted) {
+    await syncAllLocalData(activeUid);
+  }
+
   await setSyncMetadata(activeUid, {
     migrationCompleted: true,
     migrationCompletedAt,
     legacyMigrationStatus: migrationDecision,
+    cloudBootstrapCompleted: true,
+    cloudBootstrapCompletedAt: metadata.cloudBootstrapCompletedAt || new Date().toISOString(),
+    sourceOfTruth: "firestore",
     cacheStrategy: "uid_scoped",
     status: "ready"
   });
-  await syncAllLocalData(activeUid);
   localFingerprint = currentLocalFingerprint();
   window.dispatchEvent(new CustomEvent("firestore:user-ready", {
     detail: { uid: activeUid, fallback: false }
@@ -590,6 +656,18 @@ function clearRuntimeForLogout() {
 }
 
 window.addEventListener("workit-storage:changed", queueSync);
+window.addEventListener("daily-motivation:changed", event => {
+  if (!activeUid || !event.detail) return;
+  saveDailyToCloud(event.detail).catch(error => {
+    window.dispatchEvent(new CustomEvent("firestore:daily-save-failed", { detail: { error } }));
+  });
+});
+window.addEventListener("membership:changed", event => {
+  if (!activeUid || !event.detail) return;
+  saveMembershipToCloud(event.detail).catch(error => {
+    window.dispatchEvent(new CustomEvent("firestore:membership-save-failed", { detail: { error } }));
+  });
+});
 window.setInterval(() => {
   if (!activeUid) return;
   const next = currentLocalFingerprint();
@@ -730,6 +808,8 @@ async function deleteCurrentUserData(uid = activeUid) {
 window.FirestoreDataService = {
   keys: { ...KEYS },
   saveProfileToCloud,
+  saveDailyToCloud,
+  saveMembershipToCloud,
   syncAllLocalData,
   hydrateFromFirestore,
   exportCurrentUserData,

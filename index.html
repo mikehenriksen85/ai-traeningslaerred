@@ -886,6 +886,30 @@
       font: inherit;
     }
     .auth-gate-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+    .password-control {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: stretch;
+      width: 100%;
+      min-width: 0;
+    }
+    .password-control input { min-width: 0; width: 100%; }
+    .password-visibility-button {
+      min-height: 44px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      font: inherit;
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+      white-space: nowrap;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .password-visibility-button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
     .auth-gate-button {
       min-height: 44px;
       border: 1px solid var(--border);
@@ -1474,16 +1498,19 @@
           <input id="authGateEmail" type="email" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="email@example.com" required>
         </label>
         <label class="auth-gate-field">Adgangskode
-          <input id="authGatePassword" type="password" autocomplete="current-password" placeholder="Mindst 6 tegn" minlength="6" required>
+          <span class="password-control">
+            <input id="authGatePassword" type="password" autocomplete="current-password" placeholder="Mindst 6 tegn" minlength="6" required>
+            <button class="password-visibility-button" type="button" data-password-toggle="authGatePassword" aria-controls="authGatePassword" aria-pressed="false">👁 Vis adgangskode</button>
+          </span>
         </label>
         <label class="auth-consent">
           <input id="authPrivacyConsent" type="checkbox">
           <span>Jeg accepterer Work4its privatlivspolitik og lokal/cloud-lagring af mine træningsdata. <button class="auth-link-button" type="button" onclick="openPrivacyPolicyDialog()">Læs privatlivspolitik</button></span>
         </label>
         <div class="auth-gate-actions">
+          <button class="auth-gate-button google" id="authGateGoogleBtn" type="button" onclick="googleFromAuthGate()" disabled>Log ind med Google</button>
           <button class="auth-gate-button primary" id="authGateLoginBtn" type="submit" disabled>Log ind</button>
           <button class="auth-gate-button" id="authGateCreateBtn" type="button" onclick="createFromAuthGate()" disabled>Opret bruger</button>
-          <button class="auth-gate-button google" id="authGateGoogleBtn" type="button" onclick="googleFromAuthGate()" disabled>Log ind med Google</button>
           <button class="auth-gate-button reset" id="authGateResetBtn" type="button" onclick="resetFromAuthGate()" disabled>Nulstil adgangskode</button>
         </div>
       </form>
@@ -1715,15 +1742,15 @@
               <div><strong id="profileLoginStatus">Ikke logget ind</strong><span id="profileActiveEmail">Ingen aktiv e-mail</span></div>
               <div class="profile-ready-badge" id="profileFirebaseStatus">Firebase indlæses</div>
             </div>
-            <div class="profile-form-grid" style="margin-top:12px;">
+            <div class="profile-form-grid" id="profileLoginCredentials" style="margin-top:12px;" hidden aria-hidden="true">
               <label class="profile-form-field">E-mail<input id="profileLoginEmail" type="email" autocomplete="email" disabled placeholder="email@example.com"></label>
-              <label class="profile-form-field">Adgangskode<input id="profileLoginPassword" type="password" autocomplete="current-password" disabled placeholder="••••••••"></label>
+              <label class="profile-form-field">Adgangskode<span class="password-control"><input id="profileLoginPassword" type="password" autocomplete="current-password" disabled placeholder="••••••••"><button class="password-visibility-button" type="button" data-password-toggle="profileLoginPassword" aria-controls="profileLoginPassword" aria-pressed="false">👁 Vis adgangskode</button></span></label>
             </div>
             <div class="profile-account-actions">
-              <button class="profile-account-button" id="profileEmailLoginBtn" type="button" onclick="loginProfileWithEmail()" disabled>Log ind med e-mail</button>
-              <button class="profile-account-button" id="profileCreateAccountBtn" type="button" onclick="createProfileAccount()" disabled>Opret bruger</button>
-              <button class="profile-account-button" id="profileGoogleLoginBtn" type="button" onclick="loginProfileWithGoogle()" disabled>Log ind med Google</button>
-              <button class="profile-account-button" id="profileLogoutBtn" type="button" onclick="logoutProfileAccount()" disabled>Log ud</button>
+              <button class="profile-account-button" id="profileGoogleLoginBtn" type="button" onclick="loginProfileWithGoogle()" disabled hidden aria-hidden="true">Log ind med Google</button>
+              <button class="profile-account-button" id="profileEmailLoginBtn" type="button" onclick="loginProfileWithEmail()" disabled hidden aria-hidden="true">Log ind med e-mail</button>
+              <button class="profile-account-button" id="profileCreateAccountBtn" type="button" onclick="createProfileAccount()" disabled hidden aria-hidden="true">Opret bruger</button>
+              <button class="profile-account-button" id="profileLogoutBtn" type="button" onclick="logoutProfileAccount()" disabled hidden aria-hidden="true">Log ud</button>
             </div>
             <div class="profile-save-feedback" id="profileAuthFeedback" aria-live="polite"></div>
           </section>
@@ -6198,6 +6225,13 @@
         $("copilotInput").value = "";
         return;
       }
+      feedback(window.Work4itAISystem?.practicalAdvice?.(cmd, aiContext) || `${t("unknownCommand")} ${goalRecommendation}`);
+      $("copilotInput").value = "";
+      return;
+
+      // Historiske mutationer nedenfor er bevidst utilgængelige. Alle
+      // muterende kommandoer skal oversættes til en struktureret action og
+      // passere proposeCopilotAction() før executeCopilotAction().
       let moveMatch = normalized.match(/^flyt\s+øvelse\s+(\d+)\s+til\s+dag\s+(\d+)$/i);
       if (moveMatch) {
         const exerciseIndex = Number(moveMatch[1]) - 1;
@@ -6774,23 +6808,24 @@
     window.ENABLE_PROFILE_WIZARD = true;
     window.ENABLE_DAILY_START_WIZARD = true;
   </script>
-  <script src="storage-scope.js?v=20260614-migration1"></script>
+  <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
   <script src="screenshot-import.js?v=20260620-import1"></script>
-  <script src="wizard-store.js?v=20260620-calisthenics1"></script>
+  <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-system.js?v=20260621-assistant2"></script>
   <script src="ai-copilot-actions.js?v=20260621-assistant2"></script>
+  <script src="password-visibility.js?v=20260621-password-toggle1"></script>
   <script src="auth-gate.js?v=20260619-gdpr1"></script>
-  <script src="profile-account.js?v=20260620-calisthenics1"></script>
+  <script src="profile-account.js?v=20260621-login-actions1"></script>
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260621-textfit1"></script>
-  <script src="membership.js?v=20260621-pricing1"></script>
+  <script src="membership.js?v=20260621-cloud-primary1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
   <script type="module" src="auth-service.js?v=20260619-gdpr1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260621-pricing1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260621-cloud-primary1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {

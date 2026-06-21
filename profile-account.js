@@ -89,6 +89,13 @@
     const firebaseStatus = byId("profileFirebaseStatus");
     const emailInput = byId("profileLoginEmail");
     const passwordInput = byId("profileLoginPassword");
+    const credentials = byId("profileLoginCredentials");
+
+    const setVisible = (element, visible) => {
+      if (!element) return;
+      element.hidden = !visible;
+      element.setAttribute("aria-hidden", String(!visible));
+    };
 
     if (status) status.textContent = loggedIn ? "Logget ind" : ready ? "Ikke logget ind" : "Firebase indlæses";
     if (email) email.textContent = loggedIn ? user.email : "Ingen aktiv e-mail";
@@ -102,12 +109,18 @@
       passwordInput.value = "";
     }
 
-    ["profileEmailLoginBtn", "profileCreateAccountBtn", "profileGoogleLoginBtn"].forEach(id => {
+    setVisible(credentials, ready && !loggedIn);
+    ["profileGoogleLoginBtn", "profileEmailLoginBtn", "profileCreateAccountBtn"].forEach(id => {
       const button = byId(id);
-      if (button) button.disabled = !ready || loggedIn;
+      if (!button) return;
+      setVisible(button, ready && !loggedIn);
+      button.disabled = !ready || loggedIn;
     });
     const logoutButton = byId("profileLogoutBtn");
-    if (logoutButton) logoutButton.disabled = !ready || !loggedIn;
+    if (logoutButton) {
+      setVisible(logoutButton, ready && loggedIn);
+      logoutButton.disabled = !ready || !loggedIn;
+    }
     const resetButton = byId("profileResetPasswordBtn");
     if (resetButton) resetButton.disabled = !ready;
     updateSidebarProfileIdentity();
@@ -328,17 +341,23 @@
       exercisePreference: byId("profileExercisePreference").value,
       preferredExerciseCount: Number(byId("profilePreferredExerciseCount").value) || 5
     };
-    const savedProfile = window.TrainingWizardStore?.saveProfile?.(profile);
-    saveMeasurementSnapshot(profile);
-    updateSidebarProfileIdentity();
-    if (!feedback) return;
     try {
-      await window.FirestoreDataService?.saveProfileToCloud?.(savedProfile);
-      feedback.textContent = "Profil gemt i Cloud ☁️";
-      feedback.style.color = "";
+      const savedProfile = window.TrainingWizardStore?.saveProfileAndSync
+        ? await window.TrainingWizardStore.saveProfileAndSync(profile)
+        : window.TrainingWizardStore?.saveProfile?.(profile);
+      saveMeasurementSnapshot(savedProfile || profile);
+      updateSidebarProfileIdentity();
+      if (feedback) {
+        feedback.textContent = "Profil gemt i Cloud ☁️";
+        feedback.style.color = "";
+      }
     } catch (error) {
-      feedback.textContent = "Profil gemt lokalt – Cloud ikke tilgængelig";
-      feedback.style.color = "#fbbf24";
+      saveMeasurementSnapshot(profile);
+      updateSidebarProfileIdentity();
+      if (feedback) {
+        feedback.textContent = "Profil gemt lokalt – Cloud ikke tilgængelig";
+        feedback.style.color = "#fbbf24";
+      }
     }
   }
 
