@@ -10,6 +10,8 @@
   const TRIAL_DAYS = 10;
   const POPUP_INTERVAL_DAYS = 30;
   const DAY_MS = 24 * 60 * 60 * 1000;
+  const PRICING_STRATEGY_VERSION = "1.0";
+  const EARLY_ADOPTER_LIMIT = 500;
   const PLAN_LABELS = {
     trial: "Premium-prøveperiode",
     free: "Gratis version",
@@ -17,16 +19,36 @@
     yearly: "Premium 12 måneder",
     lifetime: "Premium livstid"
   };
+  const PRICE_TIERS = Object.freeze({
+    early_adopter: Object.freeze({ quarterly: 59, yearly: 199, lifetime: 449 }),
+    standard: Object.freeze({ quarterly: 79, yearly: 249, lifetime: 499 })
+  });
   const PLAN_DETAILS = {
     trial: { priceDkk: 0, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
     free: { priceDkk: 0, aiRequestLimit: 3, aiRequestPeriod: "included" },
     quarterly: { priceDkk: 59, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
-    yearly: { priceDkk: 149, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    yearly: { priceDkk: 199, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
     lifetime: { priceDkk: 449, aiRequestLimit: 30, aiRequestPeriod: "monthly" }
   };
+  let pricingContext = {
+    strategyVersion: PRICING_STRATEGY_VERSION,
+    registeredUserCount: null,
+    earlyAdopterLimit: EARLY_ADOPTER_LIMIT,
+    activeTier: "early_adopter",
+    source: "fallback"
+  };
 
-  function planDetails(plan) {
-    return PLAN_DETAILS[plan] || PLAN_DETAILS.free;
+  function normalizedPricingTier(value) {
+    return value === "standard" ? "standard" : "early_adopter";
+  }
+
+  function planDetails(plan, tier = pricingContext.activeTier) {
+    const base = PLAN_DETAILS[plan] || PLAN_DETAILS.free;
+    const tierPrices = PRICE_TIERS[normalizedPricingTier(tier)] || PRICE_TIERS.early_adopter;
+    return {
+      ...base,
+      priceDkk: Object.prototype.hasOwnProperty.call(tierPrices, plan) ? tierPrices[plan] : base.priceDkk
+    };
   }
 
   function iso(date) {
@@ -65,7 +87,14 @@
       priceDkk: details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
       aiRequestPeriod: details.aiRequestPeriod,
-      lastMembershipPopupDate: null
+      lastMembershipPopupDate: null,
+      pricingStrategyVersion: PRICING_STRATEGY_VERSION,
+      pricingTierAtPurchase: null,
+      priceDkkAtPurchase: null,
+      priceLocked: false,
+      registeredUserCountAtSelection: null,
+      selectedAt: null,
+      updatedAt: iso(now)
     };
   }
 
@@ -74,7 +103,11 @@
     const allowed = ["trial", "free", "quarterly", "yearly", "lifetime"];
     const membershipType = allowed.includes(value.membershipType) ? value.membershipType : "free";
     const selectedPlan = allowed.includes(value.selectedPlan) ? value.selectedPlan : membershipType;
-    const details = planDetails(selectedPlan);
+    const paidPlan = ["quarterly", "yearly", "lifetime"].includes(selectedPlan);
+    const storedPrice = Number(value.priceDkkAtPurchase ?? value.priceDkk);
+    const hasLockedPrice = paidPlan && Number.isFinite(storedPrice) && storedPrice > 0 && Boolean(value.membershipStartDate || value.priceLocked);
+    const purchaseTier = value.pricingTierAtPurchase || (hasLockedPrice ? "legacy" : null);
+    const details = planDetails(selectedPlan, purchaseTier === "standard" ? "standard" : pricingContext.activeTier);
     return {
       membershipType,
       trialStartDate: value.trialStartDate || null,
@@ -83,10 +116,19 @@
       membershipEndDate: value.membershipEndDate || null,
       isPremium: membershipType !== "free",
       selectedPlan,
-      priceDkk: details.priceDkk,
+      priceDkk: hasLockedPrice ? storedPrice : details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
       aiRequestPeriod: details.aiRequestPeriod,
-      lastMembershipPopupDate: value.lastMembershipPopupDate || null
+      lastMembershipPopupDate: value.lastMembershipPopupDate || null,
+      pricingStrategyVersion: value.pricingStrategyVersion || PRICING_STRATEGY_VERSION,
+      pricingTierAtPurchase: purchaseTier,
+      priceDkkAtPurchase: hasLockedPrice ? storedPrice : null,
+      priceLocked: hasLockedPrice,
+      registeredUserCountAtSelection: Number.isFinite(Number(value.registeredUserCountAtSelection))
+        ? Number(value.registeredUserCountAtSelection)
+        : null,
+      selectedAt: value.selectedAt || value.membershipStartDate || null,
+      updatedAt: value.updatedAt || null
     };
   }
 
@@ -152,6 +194,50 @@
     return !lastShown || now.getTime() - lastShown.getTime() >= POPUP_INTERVAL_DAYS * DAY_MS;
   }
 
+  function formatPrice(price) {
+    return `${Number(price) || 0} kr.`;
+  }
+
+  function renderPricing() {
+    const quarterly = planDetails("quarterly");
+    const yearly = planDetails("yearly");
+    const lifetime = planDetails("lifetime");
+    const values = {
+      membershipPriceQuarterly: formatPrice(quarterly.priceDkk),
+      membershipPriceYearly: formatPrice(yearly.priceDkk),
+      membershipPriceLifetime: formatPrice(lifetime.priceDkk),
+      membershipPopupPriceQuarterly: `${formatPrice(quarterly.priceDkk)} · 15 AI Requests/md.`,
+      membershipPopupPriceYearly: `${formatPrice(yearly.priceDkk)} · 15 AI Requests/md. · Bedste værdi`,
+      membershipPopupPriceLifetime: `${formatPrice(lifetime.priceDkk)} · 30 AI Requests/md.`
+    };
+    Object.entries(values).forEach(([id, value]) => {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
+    });
+    const phase = document.getElementById("membershipPricingPhase");
+    if (phase) {
+      phase.textContent = pricingContext.activeTier === "early_adopter"
+        ? "Early Adopter-priser · gælder de første 500 registrerede brugere"
+        : "Standardpriser";
+      phase.dataset.tier = pricingContext.activeTier;
+    }
+  }
+
+  function updatePricingContext(detail = {}) {
+    const count = Number(detail.registeredUserCount);
+    const limit = Math.max(1, Number(detail.earlyAdopterLimit) || EARLY_ADOPTER_LIMIT);
+    const hasCount = Number.isFinite(count) && count >= 0;
+    pricingContext = {
+      strategyVersion: detail.strategyVersion || PRICING_STRATEGY_VERSION,
+      registeredUserCount: hasCount ? count : null,
+      earlyAdopterLimit: limit,
+      activeTier: hasCount && count >= limit ? "standard" : normalizedPricingTier(detail.activeTier),
+      source: detail.source || "fallback"
+    };
+    renderPricing();
+    render(getMembership());
+  }
+
   function render(data = getMembership()) {
     const statusName = document.getElementById("membershipStatusName");
     const statusCopy = document.getElementById("membershipStatusCopy");
@@ -160,6 +246,7 @@
     const trialButton = document.getElementById("startTrialBtn");
     if (!statusName || !statusCopy || !statusDate) return;
 
+    renderPricing();
     const remaining = daysRemaining(data);
     statusName.textContent = PLAN_LABELS[data.membershipType];
 
@@ -172,11 +259,11 @@
       statusDate.textContent = "Dine brugerdata slettes aldrig, hvis du bruger gratisversionen.";
       if (navStatus) navStatus.textContent = "Gratis";
     } else if (data.membershipType === "lifetime") {
-      statusCopy.textContent = "Permanent Premium-adgang med 30 AI Requests pr. måned.";
+      statusCopy.textContent = `Permanent Premium-adgang med 30 AI Requests pr. måned. Valgt til ${formatPrice(data.priceDkkAtPurchase || data.priceDkk)}.`;
       statusDate.textContent = `Medlemskabet blev valgt ${formatDate(data.membershipStartDate)}.`;
       if (navStatus) navStatus.textContent = "Livstid";
     } else {
-      statusCopy.textContent = "Fuld Premium-adgang med 15 AI Requests pr. måned.";
+      statusCopy.textContent = `Fuld Premium-adgang med 15 AI Requests pr. måned. Valgt til ${formatPrice(data.priceDkkAtPurchase || data.priceDkk)}.`;
       statusDate.textContent = `${remaining} ${remaining === 1 ? "dag" : "dage"} tilbage. Udløber ${formatDate(data.membershipEndDate)}.`;
       if (navStatus) navStatus.textContent = "Premium";
     }
@@ -233,7 +320,9 @@
       selectedPlan: plan,
       priceDkk: details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
-      aiRequestPeriod: details.aiRequestPeriod
+      aiRequestPeriod: details.aiRequestPeriod,
+      pricingStrategyVersion: PRICING_STRATEGY_VERSION,
+      updatedAt: iso(now)
     };
 
     if (plan === "free") {
@@ -242,6 +331,11 @@
       next.membershipStartDate = null;
       next.membershipEndDate = null;
       next.lastMembershipPopupDate = iso(now);
+      next.pricingTierAtPurchase = null;
+      next.priceDkkAtPurchase = null;
+      next.priceLocked = false;
+      next.registeredUserCountAtSelection = null;
+      next.selectedAt = iso(now);
     } else {
       next.membershipType = plan;
       next.isPremium = true;
@@ -251,6 +345,11 @@
         : plan === "yearly"
           ? iso(addMonths(now, 12))
           : null;
+      next.pricingTierAtPurchase = pricingContext.activeTier;
+      next.priceDkkAtPurchase = details.priceDkk;
+      next.priceLocked = true;
+      next.registeredUserCountAtSelection = pricingContext.registeredUserCount;
+      next.selectedAt = iso(now);
     }
 
     const saved = write(next);
@@ -269,7 +368,7 @@
       showConfirmation("Den gratis prøveperiode er allerede startet eller tidligere brugt.");
       return current;
     }
-    const trial = write({ ...createTrial(now), lastMembershipPopupDate: current.lastMembershipPopupDate });
+    const trial = write({ ...createTrial(now), lastMembershipPopupDate: current.lastMembershipPopupDate, updatedAt: iso(now) });
     render(trial);
     showConfirmation("Din 10 dages gratis Premium-prøveperiode er startet.");
     return trial;
@@ -327,6 +426,11 @@
     TRIAL_DAYS,
     POPUP_INTERVAL_DAYS,
     PLAN_DETAILS,
+    PRICE_TIERS,
+    PRICING_STRATEGY_VERSION,
+    EARLY_ADOPTER_LIMIT,
+    getPricingContext: () => ({ ...pricingContext }),
+    getPlanDetails: planDetails,
     createTrial,
     normalize,
     evaluate,
@@ -349,6 +453,7 @@
   window.openPremiumFeature = requireFeature;
 
   window.addEventListener("training-app:ready", initialize, { once: true });
+  window.addEventListener("work4it:pricing-config", event => updatePricingContext(event.detail));
   window.addEventListener("firestore:user-ready", showStartupPopupWhenFree);
   window.addEventListener("workit:window-closed", showStartupPopupWhenFree);
 }());

@@ -272,7 +272,13 @@
 
     .canvas { width: 100%; max-width: 560px; margin-top: calc(80px + env(safe-area-inset-top, 0px)); padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
-    #workoutTitle { font-size: var(--font-size-h1); font-weight: var(--font-weight-semibold); margin-bottom: 12px; }
+    #workoutTitle { position: relative; min-height: 42px; font-size: var(--font-size-h1); font-weight: var(--font-weight-semibold); margin-bottom: 12px; border-radius: 6px; cursor: text; overflow-wrap: anywhere; }
+    #workoutTitle:not(.editing) { padding: 4px 34px 4px 4px; }
+    #workoutTitle:not(.editing)::after { content: "✎"; position: absolute; right: 7px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 18px; opacity: .72; }
+    #workoutTitle:not(.editing):hover, #workoutTitle:not(.editing):focus-visible { background: rgba(59,130,246,.08); outline: 1px solid rgba(59,130,246,.45); }
+    #workoutTitle.editing { cursor: default; }
+    .program-title-input { width: 100%; min-height: 42px; box-sizing: border-box; border: 1px solid var(--blue); border-radius: 6px; padding: 4px 8px; background: var(--input); color: var(--text-primary); font: inherit; font-weight: inherit; line-height: var(--line-height-heading); }
+    .program-title-input:focus { outline: 3px solid rgba(59,130,246,.22); outline-offset: 1px; }
     .top-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .top-btn { border: 0; border-radius: 6px; color: var(--text-primary); padding: 11px; font-weight: var(--font-weight-semibold); cursor: pointer; }
     .save-btn { background: var(--green); }
@@ -1211,6 +1217,8 @@
       background: linear-gradient(135deg, rgba(59,130,246,.16), rgba(34,197,94,.08));
     }
     .membership-eyebrow { color: var(--text-accent); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); margin-bottom: 6px; }
+    .membership-pricing-phase { margin: -4px 0 14px; color: var(--text-accent); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); text-align: center; }
+    .membership-pricing-phase[data-tier="early_adopter"] { color: var(--text-success); }
     .membership-status-name { font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); margin-bottom: 6px; }
     .membership-status-copy, .membership-date, .membership-note { color: var(--text-secondary); }
     .membership-date { margin-top: 8px; font-size: var(--font-size-small); }
@@ -1575,7 +1583,7 @@
   <main class="canvas" id="programCanvas">
     <section class="card">
       <div class="work4it-landing-hero program-only brand-fade-in"><img class="brand-hero-logo" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
-      <div id="workoutTitle">Mit nye træningspas</div>
+      <div id="workoutTitle" role="button" tabindex="0" aria-label="Redigér programnavn" title="Tryk for at ændre programnavnet" onclick="beginProgramTitleEdit()" onkeydown="handleProgramTitleKey(event)">Mit nye træningspas</div>
       <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
       <div class="top-controls program-only">
         <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem ændringer</button>
@@ -1896,16 +1904,17 @@
         <article class="membership-benefits">
           <div class="membership-benefits-title">Premium indeholder</div>
           <ul>
-            <li>AI Copilot og programgenerator</li>
+            <li>AI-assistent og hurtig programgenerator</li>
             <li>Op til 10 træningspas</li>
-            <li>Min udvikling og avancerede diagrammer</li>
+            <li>Avanceret statistik, udvikling og diagrammer</li>
             <li>Kropsmålinger og ubegrænset historik</li>
-            <li>Daglig wizard og automatisk tilpasning</li>
-            <li>Cloud-backup, når Firebase tilføjes</li>
+            <li>Automatisk tilpasning, der sparer planlægningstid</li>
+            <li>Cloud-backup og synkronisering mellem enheder</li>
           </ul>
         </article>
       </div>
 
+      <div class="membership-pricing-phase" id="membershipPricingPhase" data-tier="early_adopter">Early Adopter-priser · gælder de første 500 registrerede brugere</div>
       <div class="membership-plans">
         <article class="membership-plan">
           <div class="membership-plan-name">Gratis version</div>
@@ -1922,7 +1931,7 @@
 
         <article class="membership-plan">
           <div class="membership-plan-name">Premium 3 måneder</div>
-          <div class="membership-price">59 kr.</div>
+          <div class="membership-price" id="membershipPriceQuarterly">59 kr.</div>
           <div class="membership-price-note">15 AI Requests/md.</div>
           <ul>
             <li>Alle Premium-funktioner</li>
@@ -1934,7 +1943,7 @@
         <article class="membership-plan best">
           <div class="membership-best-badge">Bedste værdi</div>
           <div class="membership-plan-name">Premium 12 måneder</div>
-          <div class="membership-price">149 kr.</div>
+          <div class="membership-price" id="membershipPriceYearly">199 kr.</div>
           <div class="membership-price-note">15 AI Requests/md.</div>
           <ul>
             <li>Alle Premium-funktioner</li>
@@ -1945,7 +1954,7 @@
 
         <article class="membership-plan">
           <div class="membership-plan-name">Livstid</div>
-          <div class="membership-price">449 kr.</div>
+          <div class="membership-price" id="membershipPriceLifetime">449 kr.</div>
           <div class="membership-price-note">30 AI Requests/md.</div>
           <ul>
             <li>Permanent Premium-adgang</li>
@@ -1956,7 +1965,7 @@
       </div>
 
       <div class="membership-terms">
-        Betaling er ikke aktiveret endnu. Valgte planer gemmes kun lokalt som demo/test, og gratisversionen kan altid vælges.
+        Betaling er ikke aktiveret endnu. Valgte planer gemmes som demo/test i din lokale cache og brugerprofil i Cloud. Gratisversionen og almindelig træning er altid tilgængelig.
       </div>
     </div>
   </section>
@@ -1968,9 +1977,9 @@
         Din gratis prøveperiode er udløbet. Du kan fortsætte gratis med begrænsede funktioner eller vælge et medlemskab for at få adgang til alle Premium-funktioner.
       </div>
       <div class="membership-popup-plans">
-        <button class="membership-popup-option" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span>59 kr. · 15 AI Requests/md.</span></button>
-        <button class="membership-popup-option best" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span>149 kr. · 15 AI Requests/md. · Bedste værdi</span></button>
-        <button class="membership-popup-option" onclick="selectMembershipPlan('lifetime')"><strong>🥇 Livstid</strong><span>449 kr. · 30 AI Requests/md.</span></button>
+        <button class="membership-popup-option" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span id="membershipPopupPriceQuarterly">59 kr. · 15 AI Requests/md.</span></button>
+        <button class="membership-popup-option best" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span id="membershipPopupPriceYearly">199 kr. · 15 AI Requests/md. · Bedste værdi</span></button>
+        <button class="membership-popup-option" onclick="selectMembershipPlan('lifetime')"><strong>🥇 Livstid</strong><span id="membershipPopupPriceLifetime">449 kr. · 30 AI Requests/md.</span></button>
       </div>
       <button class="membership-plan-btn membership-popup-free" onclick="selectMembershipPlan('free')">📘 Fortsæt gratis · 3 AI Requests</button>
     </div>
@@ -4196,8 +4205,11 @@
       activeExerciseCountPreference = Number.isInteger(day.desiredExerciseCount)
         ? normalizeAutomaticExerciseCount(day.desiredExerciseCount)
         : null;
-      $("workoutTitle").textContent = trainingDayHeading(days.length, currentProgramDayIndex);
-      delete $("workoutTitle").dataset.customTitle;
+      $("workoutTitle").textContent = currentProgramSession.titleCustomized && currentProgramSession.title
+        ? currentProgramSession.title
+        : trainingDayHeading(days.length, currentProgramDayIndex);
+      if (currentProgramSession.titleCustomized) $("workoutTitle").dataset.customTitle = "true";
+      else delete $("workoutTitle").dataset.customTitle;
       if (!hasActiveWorkoutSession()) {
         totalSeconds = 0;
         $("globalTimer").textContent = formatTime(totalSeconds);
@@ -4387,6 +4399,98 @@
       renderDayNavigation();
       $("autosaveStatus").textContent = t("restored");
       updateWorkoutButtonVisibility();
+      return true;
+    }
+
+    let programTitleEditOriginal = "";
+
+    function handleProgramTitleKey(event) {
+      if (event.target?.classList?.contains("program-title-input")) return;
+      if (!["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      beginProgramTitleEdit();
+    }
+
+    function beginProgramTitleEdit() {
+      const title = $("workoutTitle");
+      if (!title || title.querySelector(".program-title-input")) return;
+      programTitleEditOriginal = title.textContent.trim() || t("workoutFallback");
+      title.classList.add("editing");
+      title.innerHTML = `<input class="program-title-input" type="text" maxlength="80" value="${esc(programTitleEditOriginal)}" aria-label="Programnavn">`;
+      const input = title.querySelector(".program-title-input");
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          input.blur();
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          input.dataset.cancelled = "true";
+          input.blur();
+        }
+      });
+      input.addEventListener("blur", () => finishProgramTitleEdit(input), { once: true });
+      window.requestAnimationFrame(() => {
+        input.focus();
+        input.select();
+      });
+    }
+
+    function finishProgramTitleEdit(input) {
+      const title = $("workoutTitle");
+      if (!title || !input || !title.contains(input)) return;
+      const cancelled = input.dataset.cancelled === "true";
+      const nextName = cancelled ? programTitleEditOriginal : input.value.trim();
+      const finalName = nextName || programTitleEditOriginal || t("workoutFallback");
+      title.textContent = finalName;
+      title.classList.remove("editing");
+      title.dataset.customTitle = "true";
+      if (!cancelled && finalName !== programTitleEditOriginal) persistProgramName(finalName);
+      else title.focus();
+    }
+
+    function persistProgramName(name) {
+      const nextName = String(name || "").trim().slice(0, 80);
+      if (!nextName) return false;
+      const now = new Date().toISOString();
+      const state = collectWorkoutState();
+      if (currentProgramSession) {
+        if (currentWorkoutView === "program") syncActiveDayFromCanvas();
+      } else {
+        const id = currentSavedProgramId || `program_${Date.now()}`;
+        currentProgramSession = window.WorkoutProgramStore.createProgram({
+          id,
+          title: nextName,
+          goal: state.goal,
+          savedAt: now,
+          days: [{ ...state, id: state.dayId || "day_1", title: state.title || "Dag 1" }]
+        });
+        currentProgramDayIndex = 0;
+      }
+      currentSavedProgramId = currentProgramSession.id || currentSavedProgramId || `program_${Date.now()}`;
+      currentProgramSession.id = currentSavedProgramId;
+      currentProgramSession.title = nextName;
+      currentProgramSession.titleCustomized = true;
+      currentProgramSession.updatedAt = now;
+      currentProgramSession.savedAt = currentProgramSession.savedAt || now;
+      if (activeWorkoutSession) {
+        activeWorkoutSession.programTitle = nextName;
+        activeWorkoutSession.updatedAt = now;
+      }
+      const programs = getPrograms();
+      const program = window.WorkoutProgramStore.clone(currentProgramSession);
+      const index = programs.findIndex(item => item.id === currentSavedProgramId);
+      if (index >= 0) programs[index] = program;
+      else programs.push(program);
+      if (!setPrograms(programs)) {
+        $("autosaveStatus").textContent = "Programnavnet kunne ikke gemmes";
+        return false;
+      }
+      $("workoutTitle").textContent = nextName;
+      $("workoutTitle").dataset.customTitle = "true";
+      window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
+      autoSave();
+      renderSaved();
+      $("autosaveStatus").textContent = "Programnavn gemt ✓";
       return true;
     }
 
@@ -5799,15 +5903,7 @@
       let m = cmd.match(/(?:navn|titel|program|træningspas)\s*(?:til|=|:|hedder)\s*(.+)$/i);
       if (m) {
         const newTitle = m[1].trim();
-        if (currentProgramSession) {
-          currentProgramSession.title = newTitle;
-          $("workoutTitle").textContent = trainingDayHeading(currentProgramSession.days?.length, currentProgramDayIndex);
-          delete $("workoutTitle").dataset.customTitle;
-        } else {
-          $("workoutTitle").textContent = newTitle;
-          $("workoutTitle").dataset.customTitle = "true";
-        }
-        autoSave();
+        persistProgramName(newTitle);
         feedback(`${t("nameChanged")} "${newTitle}".`);
         $("copilotInput").value = "";
         return;
@@ -6325,10 +6421,10 @@
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260619-priority-goals1"></script>
-  <script src="membership.js?v=20260618-authflow1"></script>
+  <script src="membership.js?v=20260621-pricing1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
   <script type="module" src="auth-service.js?v=20260619-gdpr1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260619-gdpr1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260621-pricing1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {

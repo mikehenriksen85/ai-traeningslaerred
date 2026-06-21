@@ -10,6 +10,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const MIGRATION_VERSION = 2;
+const PRICING_CONFIG = {
+  collection: "appConfig",
+  document: "pricing",
+  strategyVersion: "1.0",
+  earlyAdopterLimit: 500
+};
 const KEYS = {
   profile: "training_profile_v1",
   daily: "daily_start_v1",
@@ -70,6 +76,35 @@ function cleanDocument(value) {
   const clean = serializable(value) || {};
   delete clean.firestoreUpdatedAt;
   return clean;
+}
+
+async function loadPublicPricingConfig() {
+  let detail = {
+    strategyVersion: PRICING_CONFIG.strategyVersion,
+    registeredUserCount: null,
+    earlyAdopterLimit: PRICING_CONFIG.earlyAdopterLimit,
+    activeTier: "early_adopter",
+    source: "fallback"
+  };
+  try {
+    const snapshot = await getDoc(doc(db, PRICING_CONFIG.collection, PRICING_CONFIG.document));
+    if (snapshot.exists()) {
+      const data = cleanDocument(snapshot.data());
+      const registeredUserCount = Math.max(0, Number(data.registeredUserCount) || 0);
+      const earlyAdopterLimit = Math.max(1, Number(data.earlyAdopterLimit) || PRICING_CONFIG.earlyAdopterLimit);
+      detail = {
+        strategyVersion: data.strategyVersion || PRICING_CONFIG.strategyVersion,
+        registeredUserCount,
+        earlyAdopterLimit,
+        activeTier: registeredUserCount >= earlyAdopterLimit ? "standard" : "early_adopter",
+        source: "firestore"
+      };
+    }
+  } catch (error) {
+    console.warn("Priskonfiguration kunne ikke hentes. Early Adopter-priser bruges som fallback.", error);
+  }
+  window.dispatchEvent(new CustomEvent("work4it:pricing-config", { detail }));
+  return detail;
 }
 
 function hasProfileFields(value) {
@@ -722,6 +757,7 @@ window.FirestoreDataService = {
     ]));
     return entry;
   },
+  refreshPricingConfig: loadPublicPricingConfig,
   deleteDeletedProgram: async programId => {
     if (!activeUid || !programId) return false;
     await deleteDoc(doc(db, "users", activeUid, COLLECTIONS.trash, String(programId)));
@@ -752,3 +788,4 @@ window.addEventListener("firebase-auth:changed", () => {
 
 const existingUser = window.FirebaseAuthService?.getCurrentUser?.();
 if (existingUser) beginAuthenticatedUser(existingUser);
+loadPublicPricingConfig();

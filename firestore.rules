@@ -93,6 +93,13 @@ service cloud.firestore {
     // Senere backend/Cloud Functions skal skrive serverbeskyttede felter
     // eller custom claims, som klienten ikke selv kan ændre.
 
+    // Offentlig, ikke-personlig priskonfiguration. Dokumentet opdateres kun
+    // af en betroet backend/Cloud Function via Admin SDK.
+    match /appConfig/pricing {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

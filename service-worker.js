@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v12-pause-format1";
+const CACHE_NAME = "work4it-shell-v14-pricing-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -15,7 +15,7 @@ const APP_SHELL = [
   "./wizard-store.js?v=20260620-calisthenics1",
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260619-priority-goals1",
-  "./membership.js?v=20260618-authflow1",
+  "./membership.js?v=20260621-pricing1",
   "./ai-system.js?v=20260620-calisthenics1",
   "./ai-copilot-actions.js?v=20260619-ai-audit1",
   "./auth-gate.js?v=20260619-gdpr1",
@@ -23,7 +23,7 @@ const APP_SHELL = [
   "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260614-auth2",
   "./auth-service.js?v=20260619-gdpr1",
-  "./firestore-cloud-service.js?v=20260619-gdpr1"
+  "./firestore-cloud-service.js?v=20260621-pricing1"
 ];
 
 self.addEventListener("install", event => {
