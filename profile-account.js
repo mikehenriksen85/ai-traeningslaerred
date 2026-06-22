@@ -3,6 +3,7 @@
 
   const focusAreas = ["Bryst", "Skuldre", "Arme", "Ben", "Core", "Ryg"];
   const bodyHistoryKey = "body_measurement_history";
+  let profileAutosaveTimer = null;
   function byId(id) {
     return document.getElementById(id);
   }
@@ -122,7 +123,9 @@
       logoutButton.disabled = !ready || !loggedIn;
     }
     const resetButton = byId("profileResetPasswordBtn");
-    if (resetButton) resetButton.disabled = !ready;
+    if (resetButton) resetButton.disabled = !ready || !loggedIn;
+    const changePasswordButton = byId("profileChangePasswordBtn");
+    if (changePasswordButton) changePasswordButton.disabled = !ready || !loggedIn;
     updateSidebarProfileIdentity();
   }
 
@@ -147,13 +150,16 @@
     const messages = {
       "auth/email-already-in-use": "E-mailadressen er allerede i brug.",
       "auth/invalid-credential": "E-mail eller adgangskode er forkert.",
+      "auth/wrong-password": "Den nuværende adgangskode er forkert.",
       "auth/invalid-email": "E-mailadressen er ikke gyldig.",
       "auth/popup-closed-by-user": "Google-login blev lukket, før det var færdigt.",
       "auth/popup-blocked": "Browseren blokerede Google-login-vinduet.",
       "auth/too-many-requests": "For mange forsøg. Vent lidt og prøv igen.",
       "auth/user-disabled": "Denne konto er deaktiveret.",
-      "auth/requires-recent-login": "Log ind igen, før kontoen kan slettes af sikkerhedshensyn.",
-      "auth/weak-password": "Adgangskoden skal være på mindst 6 tegn."
+      "auth/requires-recent-login": "Firebase kræver et nyt login. Log ud, log ind igen og prøv derefter på ny.",
+      "auth/weak-password": "Adgangskoden skal være på mindst 6 tegn.",
+      "auth/password-provider-required": "Direkte skift er kun muligt for konti med e-mail/adgangskode. Brug nulstillingsmail eller log ind via din Google-konto.",
+      "auth/password-unchanged": "Den nye adgangskode skal være forskellig fra den nuværende."
     };
     return messages[error?.code] || error?.message || "Firebase-handlingen kunne ikke gennemføres.";
   }
@@ -222,6 +228,105 @@
       setAuthFeedback("Link til nulstilling af adgangskode er sendt.");
     } catch (error) {
       setAuthFeedback(authErrorMessage(error), true);
+    }
+  }
+
+  function setPasswordChangeFeedback(message, isError = false) {
+    const feedback = byId("passwordChangeFeedback");
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.style.color = isError ? "var(--text-danger)" : "var(--text-success)";
+  }
+
+  function passwordChangeErrorMessage(error) {
+    if (["auth/invalid-credential", "auth/wrong-password"].includes(error?.code)) {
+      return "Den nuværende adgangskode er forkert. Prøv igen, eller brug nulstillingsmail.";
+    }
+    return authErrorMessage(error);
+  }
+
+  function openChangePasswordDialog() {
+    const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+    if (!user) {
+      setAuthFeedback("Du skal være logget ind for at ændre adgangskoden.", true);
+      return;
+    }
+    const supportsPassword = Array.isArray(user.providerIds) && user.providerIds.includes("password");
+    const title = byId("modalTitle");
+    const content = byId("modalContent");
+    if (!title || !content) return;
+    title.textContent = "Skift adgangskode";
+    content.innerHTML = supportsPassword ? `
+      <form class="password-change-form" onsubmit="changePasswordFromDialog(event)">
+        <p class="profile-section-copy">Bekræft din nuværende adgangskode. Firebase bruger den til sikker re-authentication før ændringen.</p>
+        <label class="profile-form-field">Nuværende adgangskode
+          <span class="password-control"><input id="currentPasswordChange" type="password" autocomplete="current-password" minlength="6" required><button class="password-visibility-button" type="button" data-password-toggle="currentPasswordChange" aria-controls="currentPasswordChange" aria-pressed="false">👁 Vis adgangskode</button></span>
+        </label>
+        <label class="profile-form-field">Ny adgangskode
+          <span class="password-control"><input id="newPasswordChange" type="password" autocomplete="new-password" minlength="6" required><button class="password-visibility-button" type="button" data-password-toggle="newPasswordChange" aria-controls="newPasswordChange" aria-pressed="false">👁 Vis adgangskode</button></span>
+        </label>
+        <label class="profile-form-field">Gentag ny adgangskode
+          <span class="password-control"><input id="confirmPasswordChange" type="password" autocomplete="new-password" minlength="6" required><button class="password-visibility-button" type="button" data-password-toggle="confirmPasswordChange" aria-controls="confirmPasswordChange" aria-pressed="false">👁 Vis adgangskode</button></span>
+        </label>
+        <div class="profile-account-actions">
+          <button class="profile-account-button primary" id="confirmPasswordChangeBtn" type="submit">Skift adgangskode</button>
+          <button class="profile-account-button" type="button" onclick="sendPasswordResetFromDialog()">Send nulstillingsmail</button>
+        </div>
+        <div class="profile-save-feedback" id="passwordChangeFeedback" aria-live="polite"></div>
+      </form>` : `
+      <div class="password-change-form">
+        <p>Din konto bruger ${user.providerIds?.includes("google.com") ? "Google-login" : "en ekstern loginmetode"}. Den har derfor ingen nuværende Work4it-adgangskode, som kan bekræftes direkte.</p>
+        <p class="profile-section-copy">Fortsæt med din normale loginmetode, eller forsøg at få tilsendt en Firebase-nulstillingsmail til <strong>${String(user.email || "din e-mail")}</strong>.</p>
+        <div class="profile-account-actions"><button class="profile-account-button" type="button" onclick="sendPasswordResetFromDialog()">Send nulstillingsmail</button></div>
+        <div class="profile-save-feedback" id="passwordChangeFeedback" aria-live="polite"></div>
+      </div>`;
+    window.openModal?.();
+  }
+
+  async function changePasswordFromDialog(event) {
+    event?.preventDefault?.();
+    const currentPassword = byId("currentPasswordChange")?.value || "";
+    const newPassword = byId("newPasswordChange")?.value || "";
+    const confirmation = byId("confirmPasswordChange")?.value || "";
+    if (newPassword !== confirmation) {
+      setPasswordChangeFeedback("De to nye adgangskoder er ikke ens.", true);
+      return;
+    }
+    const button = byId("confirmPasswordChangeBtn");
+    if (button) button.disabled = true;
+    setPasswordChangeFeedback("Bekræfter login og opdaterer adgangskoden...");
+    try {
+      const service = window.FirebaseAuthService;
+      if (!service?.changePassword) throw new Error("Firebase Authentication er ikke klar endnu.");
+      await service.changePassword(currentPassword, newPassword);
+      ["currentPasswordChange", "newPasswordChange", "confirmPasswordChange"].forEach(id => {
+        const input = byId(id);
+        if (input) input.value = "";
+      });
+      window.PasswordVisibility?.reset?.();
+      setPasswordChangeFeedback("Adgangskoden er ændret sikkert ✓");
+      setAuthFeedback("Adgangskoden er ændret sikkert.");
+      window.setTimeout(() => window.closeModal?.(), 900);
+    } catch (error) {
+      setPasswordChangeFeedback(passwordChangeErrorMessage(error), true);
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function sendPasswordResetFromDialog() {
+    const service = window.FirebaseAuthService;
+    const email = service?.getCurrentUser?.()?.email || "";
+    if (!service?.resetPassword || !email) {
+      setPasswordChangeFeedback("Der findes ingen aktiv e-mail til nulstillingsmailen.", true);
+      return;
+    }
+    setPasswordChangeFeedback("Sender nulstillingsmail...");
+    try {
+      await service.resetPassword(email);
+      setPasswordChangeFeedback("Nulstillingsmail er sendt. Kontrollér også din spam-mappe.");
+      setAuthFeedback("Link til nulstilling af adgangskode er sendt.");
+    } catch (error) {
+      setPasswordChangeFeedback(authErrorMessage(error), true);
     }
   }
 
@@ -307,40 +412,73 @@
     writeJson(bodyHistoryKey, [...(Array.isArray(entries) ? entries : []), entry]);
   }
 
-  async function saveProfileAccount(event) {
-    event?.preventDefault?.();
+  function collectProfileAccountData() {
     const trainingGoals = selectedProfileGoals();
-    const selectedGoalValues = Object.values(trainingGoals).filter(Boolean);
-    const feedback = byId("profileSaveFeedback");
-    if (!trainingGoals.primary) {
-      if (feedback) feedback.textContent = "Vælg et primært træningsmål.";
-      return;
-    }
-    if (new Set(selectedGoalValues).size !== selectedGoalValues.length) {
-      if (feedback) feedback.textContent = "Det samme træningsmål kan kun vælges én gang.";
-      return;
-    }
-    const profile = {
+    return {
       hasCompletedProfileWizard: true,
-      name: byId("profileName").value.trim(),
+      name: byId("profileName")?.value.trim() || "",
       age: inputNumber("profileAge"),
-      gender: byId("profileGender").value,
+      gender: byId("profileGender")?.value || "",
       heightCm: inputNumber("profileHeight"),
       weightKg: inputNumber("profileWeight"),
       bodyFat: inputNumber("profileBodyFat"),
       muscleMass: inputNumber("profileMuscleMass"),
-      personalGoal: byId("profilePersonalGoal").value.trim(),
+      personalGoal: byId("profilePersonalGoal")?.value.trim() || "",
       goal: trainingGoals.primary,
       trainingGoals,
       preferredTrainingStyle: ["gym", "calisthenics", "hybrid"].includes(byId("profilePreferredTrainingStyle")?.value)
         ? byId("profilePreferredTrainingStyle").value
         : "hybrid",
-      experience: byId("profileExperience").value,
-      trainingDaysPerWeek: Number(byId("profileTrainingDays").value) || 3,
+      experience: byId("profileExperience")?.value || "",
+      trainingDaysPerWeek: Number(byId("profileTrainingDays")?.value) || 3,
       focusAreas: selectedFocusAreas(),
-      exercisePreference: byId("profileExercisePreference").value,
-      preferredExerciseCount: Number(byId("profilePreferredExerciseCount").value) || 5
+      exercisePreference: byId("profileExercisePreference")?.value || "",
+      preferredExerciseCount: Number(byId("profilePreferredExerciseCount")?.value) || 5
     };
+  }
+
+  function profileIsValid(profile, feedback = null) {
+    const selectedGoalValues = Object.values(profile.trainingGoals || {}).filter(Boolean);
+    if (!profile.trainingGoals?.primary) {
+      if (feedback) feedback.textContent = "Vælg et primært træningsmål.";
+      return false;
+    }
+    if (new Set(selectedGoalValues).size !== selectedGoalValues.length) {
+      if (feedback) feedback.textContent = "Det samme træningsmål kan kun vælges én gang.";
+      return false;
+    }
+    return true;
+  }
+
+  function scheduleProfileAutosave() {
+    window.clearTimeout(profileAutosaveTimer);
+    profileAutosaveTimer = window.setTimeout(async () => {
+      if (!window.FirebaseAuthService?.getCurrentUser?.()) return;
+      const feedback = byId("profileSaveFeedback");
+      const profile = collectProfileAccountData();
+      if (!profileIsValid(profile, feedback)) return;
+      try {
+        await window.TrainingWizardStore?.saveProfileAndSync?.(profile);
+        updateSidebarProfileIdentity();
+        if (feedback) {
+          feedback.textContent = "Profil gemt automatisk i Cloud ☁️";
+          feedback.style.color = "";
+        }
+      } catch {
+        if (feedback) {
+          feedback.textContent = "Profil gemt lokalt – Cloud ikke tilgængelig";
+          feedback.style.color = "#fbbf24";
+        }
+      }
+    }, 700);
+  }
+
+  async function saveProfileAccount(event) {
+    event?.preventDefault?.();
+    const feedback = byId("profileSaveFeedback");
+    const profile = collectProfileAccountData();
+    if (!profileIsValid(profile, feedback)) return;
+    window.clearTimeout(profileAutosaveTimer);
     try {
       const savedProfile = window.TrainingWizardStore?.saveProfileAndSync
         ? await window.TrainingWizardStore.saveProfileAndSync(profile)
@@ -440,6 +578,9 @@
   window.loginProfileWithGoogle = loginProfileWithGoogle;
   window.logoutProfileAccount = logoutProfileAccount;
   window.resetProfilePassword = resetProfilePassword;
+  window.openChangePasswordDialog = openChangePasswordDialog;
+  window.changePasswordFromDialog = changePasswordFromDialog;
+  window.sendPasswordResetFromDialog = sendPasswordResetFromDialog;
 
   window.addEventListener("firebase-auth:ready", renderAccountStatus);
   window.addEventListener("firebase-auth:changed", event => {
@@ -453,4 +594,7 @@
   });
   window.addEventListener("firestore:user-cache-cleared", renderAccountStatus);
   window.addEventListener("training-profile:updated", updateSidebarProfileIdentity);
+  const profileForm = byId("profileAccountForm");
+  profileForm?.addEventListener("input", scheduleProfileAutosave);
+  profileForm?.addEventListener("change", scheduleProfileAutosave);
 })();

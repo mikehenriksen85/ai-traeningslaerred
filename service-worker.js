@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v20-password-toggle";
+const CACHE_NAME = "work4it-shell-v22-password-change";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -20,11 +20,11 @@ const APP_SHELL = [
   "./ai-copilot-actions.js?v=20260621-assistant2",
   "./password-visibility.js?v=20260621-password-toggle1",
   "./auth-gate.js?v=20260619-gdpr1",
-  "./profile-account.js?v=20260621-login-actions1",
+  "./profile-account.js?v=20260622-password-change1",
   "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260614-auth2",
-  "./auth-service.js?v=20260619-gdpr1",
-  "./firestore-cloud-service.js?v=20260621-cloud-primary1"
+  "./auth-service.js?v=20260622-password-change1",
+  "./firestore-cloud-service.js?v=20260622-persistence1"
 ];
 
 self.addEventListener("install", event => {

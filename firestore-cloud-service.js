@@ -46,6 +46,8 @@ let syncInProgress = false;
 let syncQueued = false;
 let migrationDialogRoot = null;
 let localFingerprint = "";
+let refreshInProgress = false;
+let lastCloudRefreshAt = 0;
 const initializationByUid = new Map();
 
 function parseLocal(key, fallback = null) {
@@ -113,14 +115,19 @@ function hasProfileFields(value) {
     "hasCompletedProfileWizard",
     "name",
     "goal",
+    "trainingGoals",
     "heightCm",
     "weightKg",
+    "bodyFat",
+    "muscleMass",
+    "personalGoal",
     "age",
     "gender",
     "experience",
     "trainingDaysPerWeek",
     "focusAreas",
     "exercisePreference",
+    "preferredTrainingStyle",
     "preferredExerciseCount"
   ].some(field => Object.prototype.hasOwnProperty.call(value, field));
 }
@@ -360,19 +367,34 @@ function activeSessionFromAutosave() {
   return session && ["in_progress", "paused"].includes(session.sessionStatus) ? autosave : null;
 }
 
+function workoutDraftFromAutosave() {
+  const autosave = parseLocal(KEYS.activeWorkout, null);
+  if (!autosave || (!autosave.program && !autosave.draft)) return null;
+  const updatedAt = autosave.session?.updatedAt ||
+    autosave.draft?.savedAt ||
+    autosave.program?.updatedAt ||
+    autosave.program?.savedAt ||
+    new Date().toISOString();
+  return { ...cleanDocument(autosave), updatedAt };
+}
+
 async function syncActiveWorkout(uid) {
   const reference = doc(db, "users", uid, "activeWorkout", "current");
-  const autosave = activeSessionFromAutosave();
-  if (!autosave) {
+  const draftReference = doc(db, "users", uid, "appState", "workoutDraft");
+  const activeAutosave = activeSessionFromAutosave();
+  const workoutDraft = workoutDraftFromAutosave();
+  if (!activeAutosave) {
     await deleteDoc(reference).catch(() => {});
-    return;
+  } else {
+    await upsertDocument(reference, {
+      ...cleanDocument(activeAutosave),
+      status: activeAutosave.session.sessionStatus,
+      sessionId: activeAutosave.session.sessionId || "",
+      updatedAt: activeAutosave.session.updatedAt || new Date().toISOString()
+    });
   }
-  await upsertDocument(reference, {
-    ...cleanDocument(autosave),
-    status: autosave.session.sessionStatus,
-    sessionId: autosave.session.sessionId || "",
-    updatedAt: autosave.session.updatedAt || new Date().toISOString()
-  });
+  if (workoutDraft) await upsertDocument(draftReference, workoutDraft);
+  else await deleteDoc(draftReference).catch(() => {});
 }
 
 async function syncAllLocalData(uid = activeUid) {
@@ -452,6 +474,7 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
       membership,
       appState,
       activeWorkout,
+      workoutDraft,
       programs,
       sessions,
       measurements,
@@ -465,6 +488,7 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
       getDoc(doc(db, "users", uid, "profile", "membership")),
       getDoc(doc(db, "users", uid, "profile", "appState")),
       getDoc(doc(db, "users", uid, "activeWorkout", "current")),
+      getDoc(doc(db, "users", uid, "appState", "workoutDraft")),
       hydratePrograms(uid),
       readCollection(["users", uid, COLLECTIONS.sessions]),
       readCollection(["users", uid, COLLECTIONS.measurements]),
@@ -512,13 +536,15 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     if (activeWorkout.exists()) {
       const remoteAutosave = cleanDocument(activeWorkout.data());
       writeLocal(KEYS.activeWorkout, remoteAutosave);
+    } else if (workoutDraft.exists()) {
+      writeLocal(KEYS.activeWorkout, cleanDocument(workoutDraft.data()));
     } else if (!preserveLocalWhenCloudEmpty) {
       writeLocal(KEYS.activeWorkout, null);
     }
 
     localFingerprint = currentLocalFingerprint();
     const cloudHasData = hasCloudProfile || daily.exists() || membership.exists() || appState.exists() ||
-      activeWorkout.exists() || [programs, sessions, measurements, aiHistory, imports, customExercises, trash]
+      activeWorkout.exists() || workoutDraft.exists() || [programs, sessions, measurements, aiHistory, imports, customExercises, trash]
         .some(values => values.length > 0);
     window.dispatchEvent(new CustomEvent("firestore:data-hydrated", {
       detail: { uid, source: "firestore", authoritative: !preserveLocalWhenCloudEmpty, cloudHasData }
@@ -567,6 +593,23 @@ function queueSync() {
   if (!activeUid || !cloudEnabled) return;
   window.clearTimeout(syncTimer);
   syncTimer = window.setTimeout(() => syncAllLocalData(), 900);
+}
+
+async function refreshFromCloud(reason = "manual") {
+  if (!activeUid || !cloudEnabled || refreshInProgress || syncInProgress) return false;
+  const now = Date.now();
+  if (reason !== "manual" && now - lastCloudRefreshAt < 15000) return false;
+  refreshInProgress = true;
+  try {
+    const fingerprint = currentLocalFingerprint();
+    if (fingerprint !== localFingerprint) await syncAllLocalData(activeUid);
+    const result = await hydrateFromFirestore(activeUid, { preserveLocalWhenCloudEmpty: false });
+    if (!result.success) throw result.error || new Error("Cloud-data kunne ikke opdateres.");
+    lastCloudRefreshAt = Date.now();
+    return true;
+  } finally {
+    refreshInProgress = false;
+  }
 }
 
 async function initializeUserData(user) {
@@ -667,6 +710,11 @@ window.addEventListener("membership:changed", event => {
   saveMembershipToCloud(event.detail).catch(error => {
     window.dispatchEvent(new CustomEvent("firestore:membership-save-failed", { detail: { error } }));
   });
+});
+window.addEventListener("focus", () => refreshFromCloud("focus").catch(() => {}));
+window.addEventListener("online", () => refreshFromCloud("online").catch(() => {}));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") refreshFromCloud("visibility").catch(() => {});
 });
 window.setInterval(() => {
   if (!activeUid) return;
@@ -810,6 +858,7 @@ window.FirestoreDataService = {
   saveProfileToCloud,
   saveDailyToCloud,
   saveMembershipToCloud,
+  refreshFromCloud,
   syncAllLocalData,
   hydrateFromFirestore,
   exportCurrentUserData,

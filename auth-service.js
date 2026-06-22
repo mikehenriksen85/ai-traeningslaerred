@@ -1,17 +1,20 @@
 import { auth, db } from "./firebase-config.js?v=20260614-auth2";
 import {
+  EmailAuthProvider,
   GoogleAuthProvider,
   browserLocalPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  signOut
+  signOut,
+  updatePassword
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
   doc,
@@ -139,6 +142,27 @@ async function resetPassword(email) {
   return sendPasswordResetEmail(auth, validateEmail(targetEmail));
 }
 
+async function changePassword(currentPassword, newPassword) {
+  if (!currentUser) throw new Error("Du er ikke logget ind.");
+  const providerIds = currentUser.providerData.map(provider => provider.providerId);
+  if (!providerIds.includes("password") || !currentUser.email) {
+    const error = new Error("Direkte adgangskodeskift kræver en konto oprettet med e-mail og adgangskode.");
+    error.code = "auth/password-provider-required";
+    throw error;
+  }
+  const current = validatePassword(currentPassword);
+  const next = validatePassword(newPassword);
+  if (current === next) {
+    const error = new Error("Den nye adgangskode skal være forskellig fra den nuværende.");
+    error.code = "auth/password-unchanged";
+    throw error;
+  }
+  const credential = EmailAuthProvider.credential(currentUser.email, current);
+  await reauthenticateWithCredential(currentUser, credential);
+  await updatePassword(currentUser, next);
+  return true;
+}
+
 async function deleteAccountAndData() {
   if (!currentUser) throw new Error("Du er ikke logget ind.");
   if (!window.FirestoreDataService?.deleteCurrentUserData) {
@@ -154,6 +178,7 @@ window.FirebaseAuthService = {
   loginWithGoogle,
   logout,
   resetPassword,
+  changePassword,
   deleteAccountAndData,
   getCurrentUser: () => publicUser(currentUser),
   isInitialized: () => initialized
@@ -211,5 +236,6 @@ export {
   loginWithGoogle,
   logout,
   resetPassword,
+  changePassword,
   deleteAccountAndData
 };

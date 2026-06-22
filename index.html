@@ -910,6 +910,9 @@
       touch-action: manipulation;
     }
     .password-visibility-button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .password-change-form { display: grid; gap: 14px; }
+    .password-change-form .profile-form-field { width: 100%; }
+    .password-change-form .profile-save-feedback { min-height: 22px; }
     .auth-gate-button {
       min-height: 44px;
       border: 1px solid var(--border);
@@ -1757,9 +1760,9 @@
 
           <section class="profile-account-section">
             <h2>Sikkerhed</h2>
-            <p class="profile-section-copy">Få tilsendt et sikkert link til nulstilling af adgangskoden.</p>
+            <p class="profile-section-copy">Skift adgangskoden direkte efter sikker bekræftelse, eller få tilsendt et nulstillingslink.</p>
             <div class="profile-account-actions">
-              <button class="profile-account-button" type="button" disabled>Skift adgangskode</button>
+              <button class="profile-account-button" id="profileChangePasswordBtn" type="button" onclick="openChangePasswordDialog()" disabled>Skift adgangskode</button>
               <button class="profile-account-button" id="profileResetPasswordBtn" type="button" onclick="resetProfilePassword()" disabled>Nulstil adgangskode</button>
               <button class="profile-account-button" type="button" disabled>Skift e-mail senere</button>
             </div>
@@ -3759,6 +3762,7 @@
           <div class="set-analytics"><span class="pill" id="orm-${slot}-${i}">1RM: -</span><span class="pill green" id="vol-${slot}-${i}">Volumen: -</span></div>
         `;
         container.appendChild(block);
+        restorePauseTimer(slot, i, data.pauseTimer);
       }
       $(`count-${slot}`).textContent = count;
       updateAnalytics(slot);
@@ -3786,15 +3790,24 @@
     function collectSetData(slot) {
       const container = $(`sets-${slot}`);
       if (!container) return [];
-      return [...container.querySelectorAll(".set-block")].map(row => ({
-        prev: row.querySelector(".previous")?.textContent || "-",
-        completed: row.querySelector('input[type="checkbox"]')?.checked || false,
-        weight: row.querySelector(".weight")?.value || "",
-        reps: row.querySelector(".reps")?.value || "",
-        targetReps: row.querySelector(".reps")?.dataset.targetReps || "",
-        pause: row.querySelector(".pause")?.value || "",
-        pauseManual: row.querySelector(".pause")?.dataset.pauseManual === "true"
-      }));
+      return [...container.querySelectorAll(".set-block")].map((row, index) => {
+        const timer = pauseTimers[pauseKey(slot, index + 1)];
+        return {
+          prev: row.querySelector(".previous")?.textContent || "-",
+          completed: row.querySelector('input[type="checkbox"]')?.checked || false,
+          weight: row.querySelector(".weight")?.value || "",
+          reps: row.querySelector(".reps")?.value || "",
+          targetReps: row.querySelector(".reps")?.dataset.targetReps || "",
+          pause: row.querySelector(".pause")?.value || "",
+          pauseManual: row.querySelector(".pause")?.dataset.pauseManual === "true",
+          pauseTimer: timer ? {
+            total: timer.total,
+            remaining: timer.remaining,
+            running: timer.running,
+            endsAt: timer.running ? timer.endsAt : null
+          } : null
+        };
+      });
     }
 
     function markPauseManual(input) {
@@ -3881,6 +3894,32 @@
         }
       });
     }
+    function restorePauseTimer(slot, set, savedTimer) {
+      if (!savedTimer || !Number(savedTimer.total)) return;
+      const key = pauseKey(slot, set);
+      const input = $(`pause-${slot}-${set}`);
+      const btn = $(`pause-btn-${slot}-${set}`);
+      if (!input || !btn) return;
+      const total = Math.max(1, Number(savedTimer.total) || 1);
+      let remaining = Math.max(0, Math.min(total, Number(savedTimer.remaining) || 0));
+      if (savedTimer.running && savedTimer.endsAt) {
+        remaining = Math.max(0, Math.ceil((new Date(savedTimer.endsAt).getTime() - Date.now()) / 1000));
+      }
+      pauseTimers[key] = {
+        remaining,
+        total,
+        running: false,
+        endsAt: null,
+        interval: null,
+        btn: btn.id,
+        input: input.id,
+        control: `pause-control-${slot}-${set}`,
+        progress: `pause-progress-${slot}-${set}`
+      };
+      input.value = formatPause(remaining);
+      updatePauseProgress(key, { complete: remaining === 0 });
+      if (savedTimer.running && remaining > 0) togglePause(slot, set);
+    }
     function togglePause(slot, set) {
       const key = pauseKey(slot, set);
       const input = $(`pause-${slot}-${set}`);
@@ -3898,6 +3937,7 @@
       const total = existing?.total > 0 ? existing.total : seconds;
       pauseTimers[key] = {
         remaining: Math.min(seconds, total), total, running: true, interval: null,
+        endsAt: Date.now() + Math.min(seconds, total) * 1000,
         btn: btn.id, input: input.id,
         control: `pause-control-${slot}-${set}`,
         progress: `pause-progress-${slot}-${set}`
@@ -3906,10 +3946,12 @@
       btn.classList.add("running");
       input.value = formatPause(pauseTimers[key].remaining);
       updatePauseProgress(key);
+      scheduleAutoSave();
       pauseTimers[key].interval = setInterval(() => {
-        pauseTimers[key].remaining--;
+        pauseTimers[key].remaining = Math.max(0, Math.ceil((pauseTimers[key].endsAt - Date.now()) / 1000));
         input.value = formatPause(pauseTimers[key].remaining);
         updatePauseProgress(key);
+        if (pauseTimers[key].remaining > 0 && pauseTimers[key].remaining % 5 === 0) scheduleAutoSave();
         if (pauseTimers[key].remaining <= 0) {
           pauseTimers[key].remaining = 0;
           input.value = formatPause(0);
@@ -3925,7 +3967,9 @@
       const btn = $(pauseTimers[key].btn);
       if (btn) { btn.textContent = "▶"; btn.classList.remove("running"); }
       pauseTimers[key].running = false;
+      pauseTimers[key].endsAt = null;
       updatePauseProgress(key, options);
+      scheduleAutoSave();
     }
     function resetPause(slot, set) {
       const key = pauseKey(slot, set);
@@ -3936,6 +3980,7 @@
       if (pauseTimers[key]) {
         pauseTimers[key].total = total;
         pauseTimers[key].remaining = total;
+        pauseTimers[key].endsAt = null;
         updatePauseProgress(key, { reset: true });
       }
       updateEstimatedTime();
@@ -4338,6 +4383,7 @@
       if (currentWorkoutView === "session") captureActiveSessionFromCanvas();
       if (currentProgramSession) {
         if (currentWorkoutView === "program") syncActiveDayFromCanvas();
+        autosaveCurrentProgramTemplate();
         savedLocally = writeLocalJson("active_workout_autosave", {
           version: 4,
           program: cloneWorkoutData(currentProgramSession),
@@ -4358,6 +4404,17 @@
           ? t("finishedSaved")
           : `${t("autosaved")} ${new Date(state.savedAt).toLocaleTimeString("da-DK", { hour:"2-digit", minute:"2-digit" })}`;
       }
+    }
+    function autosaveCurrentProgramTemplate() {
+      if (currentWorkoutView !== "program" || !currentProgramSession || !currentSavedProgramId) return false;
+      const programs = getPrograms();
+      const index = programs.findIndex(program => program.id === currentSavedProgramId);
+      if (index < 0) return false;
+      const now = new Date().toISOString();
+      currentProgramSession.updatedAt = now;
+      currentProgramSession.savedAt = now;
+      programs[index] = window.WorkoutProgramStore.clone(currentProgramSession);
+      return setPrograms(programs);
     }
     function scheduleAutoSave() {
       if (autosaveDebounce) clearTimeout(autosaveDebounce);
@@ -6818,14 +6875,14 @@
   <script src="ai-copilot-actions.js?v=20260621-assistant2"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
   <script src="auth-gate.js?v=20260619-gdpr1"></script>
-  <script src="profile-account.js?v=20260621-login-actions1"></script>
+  <script src="profile-account.js?v=20260622-password-change1"></script>
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260621-textfit1"></script>
   <script src="membership.js?v=20260621-cloud-primary1"></script>
   <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
-  <script type="module" src="auth-service.js?v=20260619-gdpr1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260621-cloud-primary1"></script>
+  <script type="module" src="auth-service.js?v=20260622-password-change1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260622-persistence1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
