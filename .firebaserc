@@ -7,8 +7,12 @@
       "hosting": {
         "app": [
           "work4it-app"
+        ],
+        "website": [
+          "workout-b55ed"
         ]
       }
     }
-  }
+  },
+  "etags": {}
 }

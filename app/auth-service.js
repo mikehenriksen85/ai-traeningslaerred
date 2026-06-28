@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js?v=20260614-auth2";
+import { auth, db } from "./firebase-config.js?v=20260628-domain-pwa1";
 import {
   EmailAuthProvider,
   GoogleAuthProvider,
@@ -26,6 +26,18 @@ let currentUser = null;
 let initialized = false;
 const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
 const REDIRECT_PENDING_KEY = "work4it:authRedirectPending";
+
+function logAuthError(context, error) {
+  console.error("Work4it Firebase Auth-fejl", {
+    context,
+    code: error?.code || "unknown",
+    message: error?.message || String(error || "Ukendt fejl"),
+    host: window.location.host,
+    href: window.location.href,
+    isStandalone: window.matchMedia?.("(display-mode: standalone)")?.matches ||
+      window.navigator.standalone === true
+  });
+}
 
 function readPrivacyConsent() {
   try {
@@ -131,16 +143,26 @@ async function loginWithGoogle() {
     try {
       sessionStorage.setItem(REDIRECT_PENDING_KEY, String(Date.now()));
     } catch {}
+    console.info("Work4it Google-login bruger redirect på mobil/PWA.", {
+      host: window.location.host,
+      isMobile,
+      isStandalone
+    });
     return signInWithRedirect(auth, provider);
   }
 
   try {
     return await signInWithPopup(auth, provider);
   } catch (error) {
+    logAuthError("google-popup", error);
     if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(error?.code)) {
       try {
         sessionStorage.setItem(REDIRECT_PENDING_KEY, String(Date.now()));
       } catch {}
+      console.info("Work4it Google-login skifter fra popup til redirect.", {
+        host: window.location.host,
+        code: error?.code || "unknown"
+      });
       return signInWithRedirect(auth, provider);
     }
     throw error;
@@ -219,7 +241,7 @@ async function initializeAuthState() {
     try {
       sessionStorage.removeItem(REDIRECT_PENDING_KEY);
     } catch {}
-    console.error("Google-login via redirect kunne ikke gennemføres.", error);
+    logAuthError("google-redirect-result", error);
     initialized = true;
     emitAuthState(error);
   }

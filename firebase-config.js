@@ -4,7 +4,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/12.14.0/firebas
 
 const firebaseConfig = {
   apiKey: "AIzaSyBT0dbEXXb1lmVzhTHyfBw2r_DiwBWIphg",
-  authDomain: "app.work-4it.dk",
+  authDomain: "workout-b55ed.firebaseapp.com",
   projectId: "workout-b55ed",
   storageBucket: "workout-b55ed.firebasestorage.app",
   messagingSenderId: "873024449428",

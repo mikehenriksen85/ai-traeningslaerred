@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v34-authdomain-app";
+const CACHE_NAME = "work4it-shell-v35-domain-pwa";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -24,9 +24,9 @@ const APP_SHELL = [
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260627-theme1",
   "./profile-wizard.js?v=20260620-calisthenics1",
-  "./firebase-config.js?v=20260628-authdomain2",
-  "./auth-service.js?v=20260628-mobile-google1",
-  "./firestore-cloud-service.js?v=20260628-firebase-audit1"
+  "./firebase-config.js?v=20260628-domain-pwa1",
+  "./auth-service.js?v=20260628-domain-pwa1",
+  "./firestore-cloud-service.js?v=20260628-domain-pwa1"
 ];
 
 self.addEventListener("install", event => {
@@ -53,6 +53,8 @@ self.addEventListener("fetch", event => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  if (url.pathname.startsWith("/__/auth/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

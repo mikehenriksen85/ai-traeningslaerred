@@ -1,4 +1,4 @@
-import { db } from "./firebase-config.js?v=20260614-auth2";
+import { db } from "./firebase-config.js?v=20260628-domain-pwa1";
 import {
   collection,
   deleteDoc,
