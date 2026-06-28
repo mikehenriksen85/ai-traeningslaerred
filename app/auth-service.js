@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js?v=20260628-domain-pwa1";
+import { auth, db } from "./firebase-config.js?v=20260628-mobile-authdomain1";
 import {
   EmailAuthProvider,
   GoogleAuthProvider,

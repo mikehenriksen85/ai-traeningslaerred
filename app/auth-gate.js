@@ -289,15 +289,24 @@
       return;
     }
     if (detail.initialized) {
+      if (detail.error) {
+        clearGoogleRedirectPending();
+        routingAttempted = false;
+        cloudReady = false;
+        clearGateIdentity();
+        showGate("Google-login kunne ikke gennemføres. Prøv igen eller brug e-mail-login.");
+        setFeedback(authErrorMessage(detail.error), true);
+        return;
+      }
       if (recentGoogleRedirectPending()) {
         showLoading("Afslutter Google-login...");
         setFeedback("Venter på Firebase-session fra Google...");
         window.setTimeout(() => {
           if (window.FirebaseAuthService?.getCurrentUser?.()) return;
           clearGoogleRedirectPending();
-          showGate("Google-login blev ikke fuldført. Prøv igen eller brug e-mail-login.");
-          setFeedback("Google-login blev ikke fuldført på denne enhed.", true);
-        }, 6000);
+          showGate("Google-login tager længere tid end normalt. Prøv igen eller brug e-mail-login.");
+          setFeedback("Google-login blev ikke bekræftet endnu på denne enhed.", true);
+        }, 30000);
         return;
       }
       routingAttempted = false;

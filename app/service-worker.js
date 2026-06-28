@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v35-domain-pwa";
+const CACHE_NAME = "work4it-shell-v36-mobile-authdomain";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -20,13 +20,13 @@ const APP_SHELL = [
   "./ai-copilot-actions.js?v=20260621-assistant2",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
-  "./auth-gate.js?v=20260628-mobile-google1",
+  "./auth-gate.js?v=20260628-mobile-google2",
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260627-theme1",
   "./profile-wizard.js?v=20260620-calisthenics1",
-  "./firebase-config.js?v=20260628-domain-pwa1",
-  "./auth-service.js?v=20260628-domain-pwa1",
-  "./firestore-cloud-service.js?v=20260628-domain-pwa1"
+  "./firebase-config.js?v=20260628-mobile-authdomain1",
+  "./auth-service.js?v=20260628-mobile-authdomain1",
+  "./firestore-cloud-service.js?v=20260628-mobile-authdomain1"
 ];
 
 self.addEventListener("install", event => {

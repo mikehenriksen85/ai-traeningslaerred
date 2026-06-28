@@ -1,4 +1,4 @@
-import { db } from "./firebase-config.js?v=20260628-domain-pwa1";
+import { db } from "./firebase-config.js?v=20260628-mobile-authdomain1";
 import {
   collection,
   deleteDoc,
