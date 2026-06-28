@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v39-domain-debug";
+const CACHE_NAME = "work4it-shell-v41-ai20";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,17 +16,17 @@ const APP_SHELL = [
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",
   "./membership.js?v=20260627-membership-touch1",
-  "./ai-system.js?v=20260621-assistant2",
-  "./ai-copilot-actions.js?v=20260621-assistant2",
+  "./ai-system.js?v=20260628-ai20",
+  "./ai-copilot-actions.js?v=20260628-ai20",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
-  "./auth-gate.js?v=20260628-mobile-google2",
+  "./auth-gate.js?v=20260628-auth-ready1",
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260627-theme1",
   "./profile-wizard.js?v=20260620-calisthenics1",
-  "./firebase-config.js?v=20260628-domain-debug1",
-  "./auth-service.js?v=20260628-domain-debug1",
-  "./firestore-cloud-service.js?v=20260628-oauth-handler1"
+  "./firebase-config.js?v=20260628-auth-ready1",
+  "./auth-service.js?v=20260628-auth-ready1",
+  "./firestore-cloud-service.js?v=20260628-auth-ready1"
 ];
 
 self.addEventListener("install", event => {

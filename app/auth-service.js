@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js?v=20260628-oauth-handler1";
+import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
 import {
   EmailAuthProvider,
   GoogleAuthProvider,
@@ -24,8 +24,22 @@ import {
 
 let currentUser = null;
 let initialized = false;
+let redirectChecked = false;
+let authStateChecked = false;
+let authInitError = null;
 const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
 const REDIRECT_PENDING_KEY = "work4it:authRedirectPending";
+
+function markRedirectPending() {
+  const value = String(Date.now());
+  try { sessionStorage.setItem(REDIRECT_PENDING_KEY, value); } catch {}
+  try { localStorage.setItem(REDIRECT_PENDING_KEY, value); } catch {}
+}
+
+function clearRedirectPending() {
+  try { sessionStorage.removeItem(REDIRECT_PENDING_KEY); } catch {}
+  try { localStorage.removeItem(REDIRECT_PENDING_KEY); } catch {}
+}
 
 function logAuthError(context, error) {
   console.error("Work4it Firebase Auth-fejl", {
@@ -88,11 +102,16 @@ function reportAuthFirestoreError(operation, path, uid, error) {
 }
 
 function emitAuthState(error = null) {
+  const authReady = redirectChecked && authStateChecked;
+  initialized = authReady;
   window.dispatchEvent(new CustomEvent("firebase-auth:changed", {
     detail: {
       initialized,
+      authReady,
+      redirectChecked,
+      authStateChecked,
       user: publicUser(currentUser),
-      error
+      error: error || authInitError
     }
   }));
 }
@@ -139,11 +158,9 @@ async function loginWithGoogle() {
     window.navigator.standalone === true;
   const isMobile = isIOS || /Android|Mobile/i.test(userAgent);
 
-  if (isStandalone) {
-    try {
-      sessionStorage.setItem(REDIRECT_PENDING_KEY, String(Date.now()));
-    } catch {}
-    console.info("Work4it Google-login bruger redirect i PWA/standalone.", {
+  if (isMobile || isStandalone) {
+    markRedirectPending();
+    console.info("Work4it Google-login bruger redirect på mobil/PWA.", {
       host: window.location.host,
       isMobile,
       isStandalone
@@ -166,9 +183,7 @@ async function loginWithGoogle() {
       "auth/popup-blocked",
       "auth/popup-closed-by-user"
     ].includes(error?.code)) {
-      try {
-        sessionStorage.setItem(REDIRECT_PENDING_KEY, String(Date.now()));
-      } catch {}
+      markRedirectPending();
       console.info("Work4it Google-login skifter fra popup til redirect.", {
         host: window.location.host,
         code: error?.code || "unknown"
@@ -181,6 +196,49 @@ async function loginWithGoogle() {
 
 async function logout() {
   return signOut(auth);
+}
+
+async function clearLoginCache() {
+  try { await signOut(auth); } catch (error) { logAuthError("clear-login-cache-signout", error); }
+  clearRedirectPending();
+
+  try {
+    Object.keys(localStorage)
+      .filter(key => /^firebase:|^firebaseui::|^work4it:authRedirectPending$/.test(key))
+      .forEach(key => localStorage.removeItem(key));
+  } catch (error) {
+    console.warn("[Work4it Firebase Auth] Kunne ikke rydde localStorage auth-cache", error);
+  }
+
+  try {
+    Object.keys(sessionStorage)
+      .filter(key => /^firebase:|^firebaseui::|^work4it:authRedirectPending$/.test(key))
+      .forEach(key => sessionStorage.removeItem(key));
+  } catch (error) {
+    console.warn("[Work4it Firebase Auth] Kunne ikke rydde sessionStorage auth-cache", error);
+  }
+
+  try {
+    if (window.indexedDB?.deleteDatabase) {
+      ["firebaseLocalStorageDb", "firebase-heartbeat-database"].forEach(name => {
+        const request = indexedDB.deleteDatabase(name);
+        request.onerror = () => console.warn("[Work4it Firebase Auth] Kunne ikke rydde IndexedDB", name, request.error);
+      });
+    }
+  } catch (error) {
+    console.warn("[Work4it Firebase Auth] Kunne ikke rydde IndexedDB auth-cache", error);
+  }
+
+  try {
+    if (window.caches?.keys) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter(key => /^work4it-shell-/i.test(key)).map(key => caches.delete(key)));
+    }
+  } catch (error) {
+    console.warn("[Work4it Firebase Auth] Kunne ikke rydde app-cache", error);
+  }
+
+  window.location.reload();
 }
 
 async function resetPassword(email) {
@@ -226,8 +284,10 @@ window.FirebaseAuthService = {
   resetPassword,
   changePassword,
   deleteAccountAndData,
+  clearLoginCache,
   getCurrentUser: () => publicUser(currentUser),
-  isInitialized: () => initialized
+  isInitialized: () => initialized,
+  isAuthReady: () => redirectChecked && authStateChecked
 };
 
 window.dispatchEvent(new CustomEvent("firebase-auth:ready"));
@@ -240,31 +300,31 @@ async function initializeAuthState() {
   }
 
   try {
+    console.log("[Work4it Firebase Auth] Checking redirect result");
     const redirectResult = await getRedirectResult(auth);
+    console.log("[Work4it Firebase Auth] Redirect result", redirectResult);
     if (redirectResult?.user) {
       currentUser = redirectResult.user;
-      try {
-        sessionStorage.removeItem(REDIRECT_PENDING_KEY);
-      } catch {}
+      clearRedirectPending();
     }
   } catch (error) {
-    try {
-      sessionStorage.removeItem(REDIRECT_PENDING_KEY);
-    } catch {}
+    clearRedirectPending();
+    authInitError = error;
+    console.error("[Work4it Firebase Auth] Redirect error", error?.code || "unknown", error?.message || error);
     logAuthError("google-redirect-result", error);
-    initialized = true;
-    emitAuthState(error);
+  } finally {
+    redirectChecked = true;
+    emitAuthState(authInitError);
   }
 
   onAuthStateChanged(auth, async user => {
     currentUser = user;
-    initialized = true;
+    authStateChecked = true;
     console.log("[Work4it Firebase Auth] currentUser", publicUser(currentUser));
     console.log("[Work4it Firebase Auth] auth.currentUser", publicUser(auth.currentUser));
     if (user) {
-      try {
-        sessionStorage.removeItem(REDIRECT_PENDING_KEY);
-      } catch {}
+      authInitError = null;
+      clearRedirectPending();
     }
 
     if (user) {
@@ -284,7 +344,8 @@ async function initializeAuthState() {
 
     emitAuthState();
   }, error => {
-    initialized = true;
+    authStateChecked = true;
+    authInitError = error;
     currentUser = null;
     emitAuthState(error);
   });
@@ -299,5 +360,6 @@ export {
   logout,
   resetPassword,
   changePassword,
-  deleteAccountAndData
+  deleteAccountAndData,
+  clearLoginCache
 };

@@ -37,6 +37,42 @@
       .map(([area]) => area);
   }
 
+  function parseEquipment(text) {
+    const aliases = [
+      ["Håndvægte", ["håndvægt", "håndvægte", "dumbbell", "dumbbells"]],
+      ["Kropsvægt", ["kropsvægt", "uden udstyr", "bodyweight", "no equipment"]],
+      ["Elastik", ["elastik", "resistance band", "bands"]],
+      ["Kettlebell", ["kettlebell", "kettlebells"]],
+      ["Maskiner", ["maskine", "maskiner", "machines"]],
+      ["Kabel", ["kabel", "cable"]],
+      ["Vægtstang", ["vægtstang", "barbell"]],
+      ["Pull-up bar", ["pull-up bar", "pullup bar", "pull up bar"]]
+    ];
+    return aliases
+      .filter(([, terms]) => terms.some(term => text.includes(term)))
+      .map(([equipment]) => equipment);
+  }
+
+  function parseGoalValue(value) {
+    const goals = {
+      muskelopbygning: "muscle_gain",
+      muskelvækst: "muscle_gain",
+      hypertrofi: "muscle_gain",
+      "muscle gain": "muscle_gain",
+      hypertrophy: "muscle_gain",
+      vægttab: "weight_loss",
+      "weight loss": "weight_loss",
+      styrke: "strength",
+      strength: "strength",
+      "generel sundhed": "general_health",
+      sundhed: "general_health",
+      "general health": "general_health",
+      cardio: "cardio",
+      kondition: "cardio"
+    };
+    return goals[normalize(value)];
+  }
+
   function parse(command, context = null) {
     const text = normalize(command);
     if (!text) return null;
@@ -83,6 +119,12 @@
     if (/(kan ikke træne ben|ingen ben i dag|skip legs|cannot train legs)/i.test(text)) {
       return { action: "adaptWorkout", constraint: "avoid_legs", originalInput: command };
     }
+    if (/(dårlige knæ|ondt i knæ|knæsmerter|bad knees|knee pain)/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "knee_friendly", originalInput: command, requiresSafetyNotice: true, safetyNotice };
+    }
+    if (/(kun træne hjemme|træner hjemme|home workout|train at home)/i.test(text)) {
+      return { action: "adaptWorkout", constraint: "home_training", originalInput: command };
+    }
     if (/(kun håndvægte|only dumbbells|have dumbbells)/i.test(text)) {
       return { action: "adaptWorkout", constraint: "dumbbells_only", originalInput: command };
     }
@@ -101,10 +143,21 @@
     if (/(dårlig kondition|poor conditioning|low fitness)/i.test(text)) {
       return { action: "advice", topic: text, originalInput: command };
     }
+    if (/(protein|kalorie|kalorier|motivation|plateau|står stille|calisthenics|kropsvægt|muscle-up|pull-up)/i.test(text)) {
+      return { action: "advice", topic: text, originalInput: command };
+    }
     let constraintMatch = text.match(/(?:har kun|kun|only have)\s*(\d+)\s*(?:min|minutter|minutes)/i);
     if (constraintMatch) {
       return { action: "adaptWorkout", constraint: "time_limit", durationMinutes: Number(constraintMatch[1]), originalInput: command };
     }
+
+    let resizeMatch = text.match(/(?:forkort|gør kortere|forlæng|gør længere|tilpas).*(?:program|træningspas).*(?:til\s+)?(\d+)\s*øvelser/i);
+    if (resizeMatch) {
+      return { action: "resizeWorkout", exerciseCount: Number(resizeMatch[1]), originalInput: command };
+    }
+
+    resizeMatch = text.match(/(?:shorten|make shorter|extend|make longer|resize).*(?:workout|program).*(?:to\s+)?(\d+)\s*exercises/i);
+    if (resizeMatch) return { action: "resizeWorkout", exerciseCount: Number(resizeMatch[1]), originalInput: command };
 
     const programIntent = /(lav|generér|generer|opret|foreslå|create|generate|suggest).*(program|træningspas|workout)/i.test(text);
     if (programIntent) {
@@ -136,10 +189,59 @@
       return { action: "updateTrainingPreference", field: "trainingGoalPriority", priority: positions[priorityMatch[1]], value: goals[priorityMatch[2]] };
     }
 
+    priorityMatch = text.match(/(?:sæt|ændr|opdater)?\s*(?:mine\s+)?mål\s+(?:til\s+)?(.+)$/i);
+    if (priorityMatch && /(muskel|vægttab|styrke|sundhed|cardio|kondition)/i.test(priorityMatch[1])) {
+      const goals = priorityMatch[1]
+        .split(/\s*(?:,| og |\/|\+)\s*/i)
+        .map(parseGoalValue)
+        .filter(Boolean);
+      const uniqueGoals = [...new Set(goals)].slice(0, 3);
+      if (uniqueGoals.length) {
+        return {
+          action: "updateTrainingPreference",
+          field: "trainingGoals",
+          value: {
+            primary: uniqueGoals[0] || "",
+            secondary: uniqueGoals[1] || "",
+            tertiary: uniqueGoals[2] || ""
+          }
+        };
+      }
+    }
+
+    priorityMatch = text.match(/(?:set|change|update)?\s*(?:my\s+)?goals\s+(?:to\s+)?(.+)$/i);
+    if (priorityMatch && /(muscle|weight|strength|health|cardio)/i.test(priorityMatch[1])) {
+      const goals = priorityMatch[1].split(/\s*(?:,| and |\/|\+)\s*/i).map(parseGoalValue).filter(Boolean);
+      const uniqueGoals = [...new Set(goals)].slice(0, 3);
+      if (uniqueGoals.length) return { action: "updateTrainingPreference", field: "trainingGoals", value: { primary: uniqueGoals[0] || "", secondary: uniqueGoals[1] || "", tertiary: uniqueGoals[2] || "" } };
+    }
+
     let styleMatch = text.match(/(?:træningsstil|foretrukken træningsstil|jeg træner)\s*(?:til|er|med)?\s*(fitnesscenter|fitness|calisthenics|begge dele)/i);
     if (styleMatch) {
       const styles = { fitnesscenter: "gym", fitness: "gym", calisthenics: "calisthenics", "begge dele": "hybrid" };
       return { action: "updateTrainingPreference", field: "preferredTrainingStyle", value: styles[styleMatch[1]] };
+    }
+
+    styleMatch = text.match(/(?:training style|preferred training style|i train)\s*(?:to|is|with)?\s*(gym|fitness|calisthenics|both|hybrid)/i);
+    if (styleMatch) {
+      const styles = { gym: "gym", fitness: "gym", calisthenics: "calisthenics", both: "hybrid", hybrid: "hybrid" };
+      return { action: "updateTrainingPreference", field: "preferredTrainingStyle", value: styles[styleMatch[1]] };
+    }
+
+    let equipmentMatch = text.match(/(?:mit udstyr er|jeg har kun|jeg har|sæt mit udstyr til|opdater mit udstyr til)\s+(.+)/i);
+    if (equipmentMatch) {
+      const equipment = parseEquipment(equipmentMatch[1]);
+      return equipment.length
+        ? { action: "updateTrainingPreference", field: "availableEquipment", value: equipment, mode: /kun/.test(text) ? "replace" : "add" }
+        : { action: "clarify", message: "Hvilket udstyr har du: håndvægte, kropsvægt, elastik, kettlebell, maskiner, kabel, vægtstang eller pull-up bar?" };
+    }
+
+    equipmentMatch = text.match(/(?:my equipment is|i only have|i have|set my equipment to|update my equipment to)\s+(.+)/i);
+    if (equipmentMatch) {
+      const equipment = parseEquipment(equipmentMatch[1]);
+      return equipment.length
+        ? { action: "updateTrainingPreference", field: "availableEquipment", value: equipment, mode: /only/.test(text) ? "replace" : "add" }
+        : { action: "clarify", message: "Which equipment do you have: dumbbells, bodyweight, bands, kettlebells, machines, cable, barbell or pull-up bar?" };
     }
 
     let match = text.match(/(?:skift|sæt|ændr|opdater)?\s*(?:mit\s+)?(?:træningsmål|mål)\s+(?:til\s+)?(muskelopbygning|muskelvækst|vægttab|styrke|generel sundhed|cardio)/i);

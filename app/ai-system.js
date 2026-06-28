@@ -8,15 +8,17 @@
 
   const PROMPTS = Object.freeze({
     assistant: {
-      purpose: "Fortolk en kommando og foreslå én konkret Work4it-handling.",
+      purpose: "Funger som personlig træningscoach og app-assistent i Work4it.",
       instructions: [
         "Svar på samme sprog som brugeren (dansk eller engelsk).",
-        "Brug mål, erfaring, fokusområder, aktiv dag og aktivt program som kontekst.",
+        "Brug profil, prioriterede mål, erfaring, træningsstil, udstyr, aktiv dag, aktivt program og historik som kontekst.",
         "Spørg kort ind, hvis kommandoen kan betyde flere forskellige handlinger.",
         "Vis altid 'Jeg foreslår at ændre følgende...' før profil- eller programdata ændres.",
         "Udfør kun muterende handlinger efter brugerens aktive godkendelse.",
         "Ændr aldrig konto, login, medlemskab eller betaling.",
+        "Slet aldrig data og overskriv aldrig programmer uden tydelig brugeraccept.",
         "Foretag aldrig flere programændringer end brugeren udtrykkeligt har bedt om.",
+        "Ved smerte, skade eller sygdom: giv sikre lavrisiko-alternativer, ingen diagnose, og anbefal læge eller fysioterapeut.",
         "Giv en kort bekræftelse og forklar højst én vigtig begrundelse."
       ]
     },
@@ -24,6 +26,7 @@
       purpose: "Generér et realistisk træningspas eller en ugeplan.",
       instructions: [
         "Respektér træningsmål, erfaring, antal dage, fokusområder og valgt antal øvelser.",
+        "Vægt målene efter prioritering: primært mål styrer mest, sekundært mål justerer struktur, tertiært mål giver mindre variation.",
         "Brug kun øvelser fra Work4its katalog og undgå dubletter på samme dag.",
         "Hold styrke, cardio og træningssplit adskilt, medmindre brugeren aktivt vælger en kombination.",
         "Tilpas sæt, reps og pauser efter målet og undgå urealistisk volumen.",
@@ -37,6 +40,7 @@
       instructions: [
         "Bevar træningstype og primær muskelgruppe, medmindre brugeren beder om andet.",
         "Respektér udstyr, træningssted og ønsket sværhedsgrad.",
+        "Ved begrænsninger skal alternativer være tydeligt mere passende end den oprindelige øvelse.",
         "Vis højst tre alternativer og lad brugeren vælge før udskiftning.",
         "Ved smerte, skade eller sygdom: giv ingen diagnose og anbefal faglig vurdering."
       ]
@@ -63,6 +67,14 @@
         "Brug kun øvelser markeret som kropsvægt eller uden maskiner.",
         "Tilpas progression/regression til erfaring og tilgængeligt udstyr.",
         "Kræv ikke avancerede færdigheder uden et passende lettere trin."
+      ]
+    },
+    generalGuidance: {
+      purpose: "Giv kort, praktisk og sikker vejledning om træning, kost og motivation.",
+      instructions: [
+        "Forklar vægttab, muskelopbygning, styrke, cardio, calisthenics, protein, kalorier, motivation og plateauer praktisk.",
+        "Undgå ekstreme vægttabsråd, farlige programmer og træning gennem stærke smerter.",
+        "Gør det tydeligt når kalorier, forbrænding og kropsmålinger er estimater."
       ]
     },
     screenshotImport: {
@@ -173,6 +185,7 @@
         trainingDaysPerWeek: Number(profile.trainingDaysPerWeek) || 3,
         preferredExerciseCount: Number(profile.preferredExerciseCount) || 5,
         availableEquipment: Array.isArray(profile.availableEquipment) ? [...profile.availableEquipment] : [],
+        limitations: Array.isArray(profile.limitations) ? [...profile.limitations] : [],
         body: {
           age: Number(profile.age) || null,
           gender: profile.gender || "",
@@ -202,7 +215,25 @@
         screenshotOcrEngine: "Tesseract.js 5.1.1 eng+dan",
         screenshotParser: "Work4it Structured Import Parser 1.0",
         dedicatedCalisthenicsGenerator: true,
-        requestUsageEnforced: "client_demo"
+        requestUsageEnforced: "client_demo",
+        mutatingActionsRequireApproval: true,
+        canModifyAfterApproval: [
+          "profile",
+          "trainingPreferences",
+          "programs",
+          "exercises",
+          "sets",
+          "reps",
+          "weights",
+          "pauses"
+        ],
+        forbiddenActions: [
+          "accountSecurity",
+          "loginMethod",
+          "membershipPayment",
+          "deleteWithoutConfirmation",
+          "medicalDiagnosis"
+        ]
       }
     };
   }
@@ -220,6 +251,7 @@
         trainingDaysPerWeek: context.profile.trainingDaysPerWeek,
         preferredExerciseCount: context.profile.preferredExerciseCount,
         availableEquipment: context.profile.availableEquipment,
+        limitations: context.profile.limitations,
         ...(includeBody ? { body: context.profile.body } : {})
       },
       daily: context.daily,
@@ -234,7 +266,7 @@
   function guardInput(input) {
     const text = String(input || "").trim();
     const language = detectLanguage(text);
-    const security = /(password|adgangskode|e-?mail|email|login|log ind|log ud|google login|delete account|slet konto|payment|betaling|membership|medlemskab|premium|trial|prøveperiode)/i;
+    const security = /(password|adgangskode|skift e-?mail|change e-?mail|login|log ind|log ud|google login|delete account|slet konto|payment|betaling|køb|buy|checkout|stripe|abonnementstype|membership type|premium-status|trial|prøveperiode)/i;
     const medical = /(ondt|smerte|skade|skadet|sygdom|diagnose|medicin|læge|fysioterapeut|pain|injur|medical|diagnos|medicine|doctor|physio)/i;
     if (security.test(text)) {
       return {
@@ -270,6 +302,12 @@
     if (/(taber jeg mig|vægttab|weight loss|lose weight)/i.test(text)) {
       return `Sigt efter et moderat kalorieunderskud, regelmæssig styrketræning og daglig bevægelse. Bevar proteinrige måltider, sov stabilt og vurder udviklingen over flere uger frem for at vælge ekstreme løsninger.${focus}${safety}`;
     }
+    if (/(protein|proteiner|proteinindtag|how much protein)/i.test(text)) {
+      return `Som praktisk tommelfingerregel fungerer ca. 1,6-2,2 g protein pr. kg kropsvægt ofte godt ved muskelopbygning eller vægttab. Fordel det over dagen og vælg et niveau du kan holde stabilt.${safety}`;
+    }
+    if (/(kalorie|kalorier|calorie|calories)/i.test(text)) {
+      return `Brug kalorier som styringsværktøj, ikke som perfekt facit. Start med et realistisk estimat, følg vægt, energi og træningsperformance i 2-3 uger, og justér gradvist.${safety}`;
+    }
     if (/(muskelmasse|muskelopbygning|muscle gain|build muscle)/i.test(text)) {
       return `Træn hver prioriteret muskelgruppe regelmæssigt, brug typisk 6-15 reps og øg gradvist reps eller belastning. Sørg for tilstrækkeligt protein, energi og restitution. Forslagene bør passe til ${experience}.${focus}${safety}`;
     }
@@ -278,6 +316,15 @@
     }
     if (/(kondition|cardio|conditioning|endurance)/i.test(text)) {
       return `Kombinér rolige pas med korte, kontrollerede intervaller. Start med en varighed du kan gentage stabilt, og øg tid eller intensitet gradvist, ikke begge dele samtidig.${safety}`;
+    }
+    if (/(calisthenics|kropsvægt|street workout|pull-up|muscle-up)/i.test(text)) {
+      return `Byg calisthenics med tydelige progressioner: stabil teknik, kontrollerede reps og et lettere trin klar når formen falder. Prioritér basis som push-ups, rows, dips-varianter, core og pull-up progressioner.${safety}`;
+    }
+    if (/(motivation|motiveret|motivated|discipline)/i.test(text)) {
+      return `Gør dagens opgave så konkret at den er nem at starte: én plan, få valg og et minimum du altid kan gennemføre. Stabilitet slår perfekte enkeltdage.${safety}`;
+    }
+    if (/(plateau|står stille|stagnation|stuck)/i.test(text)) {
+      return `Hvis udviklingen står stille, så ændr én ting ad gangen: lidt flere reps, lidt mere vægt, bedre søvn, lavere volumen i en uge eller mere præcis teknik. Mål på trends, ikke én dårlig træning.${focus}${safety}`;
     }
     if (/(kombiner|kombinere|combine).*(styrke|strength).*(vægttab|weight loss)/i.test(text)) {
       return `Bevar 2-4 styrkepas om ugen, læg moderat cardio omkring dem og brug kosten til hovedparten af kalorieunderskuddet. Reducér volumen før du reducerer træningskvaliteten.${focus}${safety}`;

@@ -2163,6 +2163,7 @@
           <button class="auth-gate-button primary" id="authGateLoginBtn" type="submit" disabled>Log ind</button>
           <button class="auth-gate-button" id="authGateCreateBtn" type="button" onclick="createFromAuthGate()" disabled>Opret bruger</button>
           <button class="auth-gate-button reset" id="authGateResetBtn" type="button" onclick="resetFromAuthGate()" disabled>Nulstil adgangskode</button>
+          <button class="auth-gate-button reset" id="authGateClearCacheBtn" type="button" onclick="clearLoginCacheFromAuthGate()" disabled>Ryd login-cache</button>
         </div>
       </form>
       <div class="auth-gate-feedback" id="authGateFeedback">Firebase indlæses...</div>
@@ -6269,14 +6270,40 @@
       "addCardioExercise", "generateCardioProgram", "suggestProgram", "addExercise",
       "addMuscleExercise", "removeExercise", "replaceExercise", "replaceExerciseByIndex",
       "updateExercise", "updatePause", "updatePauseSet", "updateWorkoutTime",
-      "optimizeWorkout", "renameProgram", "adaptWorkout"
+      "optimizeWorkout", "renameProgram", "adaptWorkout", "resizeWorkout"
     ]);
+
+    function currentProfileFieldDisplay(field) {
+      const profile = window.TrainingWizardStore?.getProfile?.() || {};
+      const value = profile[field];
+      return value === undefined || value === null || value === ""
+        ? "ikke angivet"
+        : profileFieldDisplay(field, value);
+    }
+
+    function trainingPreferenceDisplay(field, value) {
+      if (field === "trainingGoals") {
+        const labels = ["primary", "secondary", "tertiary"]
+          .map(priority => value?.[priority])
+          .filter(Boolean)
+          .map(goal => window.TrainingGoalEngine?.profile?.(goal)?.label || goal);
+        return labels.length ? labels.join(" → ") : "ikke valgt";
+      }
+      if (field === "trainingGoalPriority" || field === "goal") return window.TrainingGoalEngine?.profile?.(value)?.label || value;
+      if (field === "experience") return { beginner: "Nybegynder", light_intermediate: "Let øvet", intermediate: "Øvet", experienced: "Erfaren" }[value] || value;
+      if (field === "preferredTrainingStyle") return { gym: "Fitnesscenter", calisthenics: "Calisthenics", hybrid: "Begge dele" }[value] || value;
+      if (field === "exercisePreference") return { variation: "Variation", consistent: "Faste øvelser", mixed: "Lidt af begge dele" }[value] || value;
+      if (field === "availableEquipment") return Array.isArray(value) ? value.join(", ") : String(value || "");
+      if (field === "focusAreas") return Array.isArray(value) ? value.join(", ") : String(value || "");
+      if (field === "motivation") return { low: "Lav", normal: "Normal", high: "Høj" }[value] || value;
+      return String(value ?? "");
+    }
 
     function copilotActionSummary(action) {
       const value = action.value ?? "";
       const summaries = {
-        updateProfile: `${profileFieldLabel(action.field)} til ${profileFieldDisplay(action.field, value)}`,
-        updateTrainingPreference: `træningsindstillingen ${action.field} til ${String(value)}`,
+        updateProfile: `${profileFieldLabel(action.field)} fra ${currentProfileFieldDisplay(action.field)} til ${profileFieldDisplay(action.field, value)}`,
+        updateTrainingPreference: `træningsindstillingen ${action.field} til ${trainingPreferenceDisplay(action.field, value)}`,
         moveExercise: `flytte ${action.exerciseName} til Dag ${action.day}`,
         moveExerciseByIndex: `flytte øvelse ${action.exerciseIndex} til Dag ${action.day}`,
         addCardioExercise: `tilføje ${action.exerciseName} som cardio`,
@@ -6293,7 +6320,8 @@
         updateWorkoutTime: `ændre den registrerede tid til ${action.value}`,
         optimizeWorkout: `tilpasse ${action.mode || "træningspasset"} efter din profil`,
         renameProgram: `omdøbe træningspasset til ${action.name}`,
-        adaptWorkout: `tilpasse træningspasset til begrænsningen: ${action.originalInput || action.constraint}`
+        adaptWorkout: `tilpasse træningspasset til begrænsningen: ${action.originalInput || action.constraint}`,
+        resizeWorkout: `ændre træningspasset til ${action.exerciseCount} øvelser`
       };
       return summaries[action.action] || "anvende den foreslåede ændring";
     }
@@ -6349,9 +6377,13 @@
         ? "Alternativer: behold programmet uændret, tilpas kun dagens træning eller opret et separat skånsomt træningspas."
         : action.action === "suggestProgram"
           ? "Alternativer: kortere pas, færre øvelser eller et program med en anden træningsstil."
+          : action.action === "resizeWorkout"
+            ? "Alternativer: behold nuværende længde, forkort kun dagens pas eller opret et separat kort program."
           : action.action === "replaceExercise"
             ? "Alternativer: vælg en lettere variant, en hjemmevariant eller behold den nuværende øvelse."
-            : "Alternativer: behold den nuværende værdi eller annullér og skriv et mere præcist ønske.";
+            : action.action === "updateTrainingPreference"
+              ? "Alternativer: opdatér kun profilindstillingen, skriv en mere præcis prioritering eller annullér."
+              : "Alternativer: behold den nuværende værdi eller annullér og skriv et mere præcist ønske.";
       container.textContent = alternatives;
     }
 
@@ -6563,7 +6595,8 @@
         gender: "Dit køn",
         bodyFat: "Din fedtprocent",
         muscleMass: "Din muskelmasse",
-        personalGoal: "Dit personlige mål"
+        personalGoal: "Dit personlige mål",
+        limitations: "Dine træningsbegrænsninger"
       }[field] || "Din profil";
     }
 
@@ -6575,6 +6608,7 @@
       if (field === "heightCm") return `${String(value).replace(".", ",")} cm`;
       if (field === "bodyFat") return `${String(value).replace(".", ",")}%`;
       if (field === "age") return `${value} år`;
+      if (Array.isArray(value)) return value.join(", ");
       return value;
     }
 
@@ -6633,7 +6667,7 @@
       if (!slots.length) {
         const created = createCopilotProgram({
           goal: action.constraint === "low_impact" ? "general_health" : null,
-          style: ["no_equipment", "arm_injury"].includes(action.constraint) ? "home" : null,
+          style: ["no_equipment", "arm_injury", "home_training"].includes(action.constraint) ? "home" : null,
           level: "beginner"
         });
         if (!created.success) return { success: false, changed: false, message: "Der kunne ikke oprettes et sikkert udgangspunkt for tilpasningen." };
@@ -6651,6 +6685,10 @@
         const muscle = $(`name-${slot}`)?.dataset.muscle || "";
         const normalized = normalizedExerciseSearch(name);
         if (action.constraint === "avoid_legs" && /lår|baller/.test(muscle)) removeSlots.push(slot);
+        if (action.constraint === "knee_friendly" && /(squat|lunge|jump|hop|leg extension|front squat|bulgarian|trappeløb|stair|burpee)/.test(normalized)) {
+          const replacement = replacementFor(slot, exercise => !/(squat|lunge|jump|hop|leg extension|front squat|bulgarian|trappeløb|stair|burpee)/i.test(exercise.name));
+          if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
+        }
         if (action.constraint === "avoid_shoulder_press" && /(shoulder press|overhead press|arnold press|skulderpres)/.test(normalized)) {
           const replacement = replacementFor(slot, exercise => !/(press|overhead|arnold)/i.test(exercise.name));
           if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
@@ -6665,6 +6703,14 @@
             : exercise => exercise.type === "Hjemme" && equipmentCategory(exercise) === "Kropsvægt";
           if (!predicate(resolveExerciseDefinition(name) || {})) {
             const replacement = replacementFor(slot, predicate);
+            if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
+          }
+        }
+        if (action.constraint === "home_training") {
+          const definition = resolveExerciseDefinition(name) || {};
+          const isHomeFriendly = definition.type === "Hjemme" || ["Kropsvægt", "Håndvægte", "Elastik", "Kettlebell"].includes(equipmentCategory(definition));
+          if (!isHomeFriendly) {
+            const replacement = replacementFor(slot, exercise => exercise.type === "Hjemme" || ["Kropsvægt", "Håndvægte", "Elastik", "Kettlebell"].includes(equipmentCategory(exercise)));
             if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
           }
         }
@@ -6693,6 +6739,55 @@
       autoSave();
       updateEstimatedTime();
       return { success: true, changed: changed > 0, message: changed ? `${changed} programændring${changed === 1 ? "" : "er"} er implementeret.` : "Programmet opfyldte allerede begrænsningen." };
+    }
+
+    function resizeCurrentWorkout(action) {
+      const target = Number(action.exerciseCount);
+      if (!Number.isInteger(target) || target < 1 || target > 12) {
+        return { success: false, changed: false, message: "Antal øvelser skal være mellem 1 og 12." };
+      }
+      let slots = slotIds();
+      let changed = 0;
+      if (!slots.length) {
+        const created = createCopilotProgram({ originalInput: action.originalInput });
+        if (!created.success) return { success: false, changed: false, message: "Der kunne ikke oprettes et program at tilpasse." };
+        slots = slotIds();
+        changed++;
+      }
+      while (slotIds().length > target) {
+        const last = slotIds().at(-1);
+        if (!last) break;
+        removeExercise(last);
+        changed++;
+      }
+      const context = trainingContext();
+      const focusMuscles = (context.focusAreas || []).flatMap(area => {
+        if (area === "Bryst") return ["Bryst"];
+        if (area === "Skuldre") return ["Skuldre"];
+        if (area === "Arme") return ["Biceps", "Triceps"];
+        if (area === "Ben") return ["Forside lår", "Bagside lår & baller"];
+        if (area === "Core") return ["Mave", "Nedre ryg / lænd"];
+        if (area === "Ryg") return ["Øvre ryg"];
+        return [];
+      });
+      const fallbackMuscles = focusMuscles.length ? focusMuscles : ["Bryst", "Øvre ryg", "Skuldre", "Forside lår", "Biceps", "Triceps", "Mave"];
+      activeExerciseCountPreference = Math.max(Number(activeExerciseCountPreference) || 0, target);
+      let guard = 0;
+      while (slotIds().length < target && guard < 30) {
+        const muscle = fallbackMuscles[guard % fallbackMuscles.length];
+        const result = addGoalExerciseForMuscle(muscle);
+        if (result === "added") changed++;
+        guard++;
+      }
+      autoSave();
+      updateEstimatedTime();
+      return {
+        success: slotIds().length === target,
+        changed: changed > 0,
+        message: slotIds().length === target
+          ? `Træningspasset er nu tilpasset til ${target} øvelse${target === 1 ? "" : "r"}.`
+          : `Træningspasset kunne kun tilpasses til ${slotIds().length} øvelse${slotIds().length === 1 ? "" : "r"}.`
+      };
     }
 
     function executeCopilotAction(action) {
@@ -6738,6 +6833,19 @@
           if (!["muscle_gain", "weight_loss", "strength", "general_health", "cardio"].includes(action.value)) return { success: false, message: "Træningsmålet blev ikke genkendt." };
           updates.goal = action.value;
           message = `Dit træningsmål er opdateret til ${window.TrainingGoalEngine?.profile?.(action.value)?.label || action.value}. Fremtidige forslag tilpasses målet.`;
+        } else if (action.field === "trainingGoals") {
+          const goals = ["muscle_gain", "weight_loss", "strength", "general_health", "cardio"];
+          const nextGoals = {
+            primary: action.value?.primary || "",
+            secondary: action.value?.secondary || "",
+            tertiary: action.value?.tertiary || ""
+          };
+          const selected = Object.values(nextGoals).filter(Boolean);
+          if (!nextGoals.primary || selected.some(goal => !goals.includes(goal))) return { success: false, message: "Målprioriteringen blev ikke genkendt." };
+          if (new Set(selected).size !== selected.length) return { success: false, message: "Samme mål kan ikke vælges flere gange." };
+          updates.trainingGoals = nextGoals;
+          updates.goal = nextGoals.primary;
+          message = `Dine prioriterede mål er opdateret til ${trainingPreferenceDisplay("trainingGoals", nextGoals)}.`;
         } else if (action.field === "trainingGoalPriority") {
           const priorities = ["primary", "secondary", "tertiary"];
           const goals = ["muscle_gain", "weight_loss", "strength", "general_health", "cardio"];
@@ -6761,6 +6869,14 @@
           if (!requested.length) return { success: false, message: "Ingen gyldige fokusområder blev fundet." };
           updates.focusAreas = [...new Set([...(profile.focusAreas || []), ...requested])];
           message = `${requested.join(" og ")} er tilføjet som fokusområde. Fremtidige forslag er opdateret.`;
+        } else if (action.field === "availableEquipment") {
+          const allowed = ["Håndvægte", "Kropsvægt", "Elastik", "Kettlebell", "Maskiner", "Kabel", "Vægtstang", "Pull-up bar"];
+          const requested = (Array.isArray(action.value) ? action.value : []).filter(item => allowed.includes(item));
+          if (!requested.length) return { success: false, message: "Intet gyldigt udstyr blev fundet." };
+          updates.availableEquipment = action.mode === "replace"
+            ? [...new Set(requested)]
+            : [...new Set([...(profile.availableEquipment || []), ...requested])];
+          message = `Dit tilgængelige udstyr er opdateret til ${updates.availableEquipment.join(", ")}.`;
         } else if (action.field === "trainingDaysPerWeek") {
           const days = Number(action.value);
           if (!Number.isInteger(days) || days < 1 || days > 7) return { success: false, message: "Antal træningsdage skal være mellem 1 og 7." };
@@ -6842,6 +6958,8 @@
       if (action.action === "suggestProgram") return createCopilotProgram(action);
 
       if (action.action === "adaptWorkout") return adaptCurrentWorkout(action);
+
+      if (action.action === "resizeWorkout") return resizeCurrentWorkout(action);
 
       if (action.action === "optimizeWorkout") {
         const success = optimizeCurrentWorkoutForGoal(action.mode || "all");
@@ -7660,20 +7778,20 @@
   <script src="screenshot-import.js?v=20260620-import1"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-system.js?v=20260621-assistant2"></script>
-  <script src="ai-copilot-actions.js?v=20260621-assistant2"></script>
+  <script src="ai-system.js?v=20260628-ai20"></script>
+  <script src="ai-copilot-actions.js?v=20260628-ai20"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
-  <script src="auth-gate.js?v=20260628-mobile-google2"></script>
+  <script src="auth-gate.js?v=20260628-auth-ready1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="profile-account.js?v=20260627-theme1"></script>
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="membership.js?v=20260627-membership-touch1"></script>
-  <script type="module" src="firebase-config.js?v=20260628-domain-debug1"></script>
-  <script type="module" src="auth-service.js?v=20260628-domain-debug1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260628-oauth-handler1"></script>
+  <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
+  <script type="module" src="auth-service.js?v=20260628-auth-ready1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260628-auth-ready1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {

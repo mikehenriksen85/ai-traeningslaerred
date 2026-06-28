@@ -92,7 +92,7 @@
   }
 
   function setActionsEnabled(enabled) {
-    ["authGateLoginBtn", "authGateCreateBtn", "authGateGoogleBtn", "authGateResetBtn"].forEach(id => {
+    ["authGateLoginBtn", "authGateCreateBtn", "authGateGoogleBtn", "authGateResetBtn", "authGateClearCacheBtn"].forEach(id => {
       const button = byId(id);
       if (button) button.disabled = !enabled;
     });
@@ -197,10 +197,11 @@
 
   function recentGoogleRedirectPending() {
     try {
-      const raw = sessionStorage.getItem(REDIRECT_PENDING_KEY);
+      const raw = sessionStorage.getItem(REDIRECT_PENDING_KEY) ||
+        localStorage.getItem(REDIRECT_PENDING_KEY);
       if (!raw) return false;
       const startedAt = Number(raw);
-      return Number.isFinite(startedAt) && Date.now() - startedAt < 25000;
+      return Number.isFinite(startedAt) && Date.now() - startedAt < 90000;
     } catch {
       return false;
     }
@@ -209,6 +210,9 @@
   function clearGoogleRedirectPending() {
     try {
       sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+    } catch {}
+    try {
+      localStorage.removeItem(REDIRECT_PENDING_KEY);
     } catch {}
   }
 
@@ -275,9 +279,30 @@
     }
   }
 
+  async function clearLoginCacheFromAuthGate() {
+    const service = window.FirebaseAuthService;
+    setBusy(true);
+    setFeedback("Rydder login-cache for dette domæne...");
+    try {
+      if (service?.clearLoginCache) await service.clearLoginCache();
+      else {
+        clearGoogleRedirectPending();
+        window.location.reload();
+      }
+    } catch (error) {
+      setFeedback(authErrorMessage(error), true);
+      setBusy(false);
+    }
+  }
+
   function handleAuthState(detail = {}) {
     setActionsEnabled(Boolean(window.FirebaseAuthService));
     const verifiedUser = window.FirebaseAuthService?.getCurrentUser?.() || null;
+    if (!detail.authReady) {
+      showLoading("Logger ind...");
+      setFeedback(detail.redirectChecked ? "Venter på Firebase-session..." : "Tjekker Google-login...");
+      return;
+    }
     if (verifiedUser) {
       clearGoogleRedirectPending();
       routingAttempted = false;
@@ -358,6 +383,7 @@
   window.createFromAuthGate = createFromAuthGate;
   window.googleFromAuthGate = googleFromAuthGate;
   window.resetFromAuthGate = resetFromAuthGate;
+  window.clearLoginCacheFromAuthGate = clearLoginCacheFromAuthGate;
   window.showAuthGate = showGate;
 
   window.addEventListener("firebase-auth:ready", () => {
