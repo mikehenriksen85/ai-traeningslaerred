@@ -12,6 +12,11 @@ const firebaseConfig = {
   measurementId: "G-HEK84CT9TQ"
 };
 
+const currentHost = window.location.hostname;
+if (currentHost === "work4it-app.web.app" || currentHost === "app.work-4it.dk") {
+  firebaseConfig.authDomain = currentHost;
+}
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);

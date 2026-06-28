@@ -3,6 +3,7 @@
 
   const LAST_VIEW_KEY = "work4it:lastActiveView";
   const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
+  const REDIRECT_PENDING_KEY = "work4it:authRedirectPending";
   const PRIVACY_VERSION = "2026-06-19";
   const restoreableViews = new Set([
     "program",
@@ -194,6 +195,23 @@
     return payload;
   }
 
+  function recentGoogleRedirectPending() {
+    try {
+      const raw = sessionStorage.getItem(REDIRECT_PENDING_KEY);
+      if (!raw) return false;
+      const startedAt = Number(raw);
+      return Number.isFinite(startedAt) && Date.now() - startedAt < 25000;
+    } catch {
+      return false;
+    }
+  }
+
+  function clearGoogleRedirectPending() {
+    try {
+      sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+    } catch {}
+  }
+
   function requirePrivacyConsent(source) {
     const checkbox = byId("authPrivacyConsent");
     if (!checkbox?.checked) {
@@ -261,6 +279,7 @@
     setActionsEnabled(Boolean(window.FirebaseAuthService));
     const verifiedUser = window.FirebaseAuthService?.getCurrentUser?.() || null;
     if (verifiedUser) {
+      clearGoogleRedirectPending();
       routingAttempted = false;
       cloudReady = false;
       closeNonAuthWindows();
@@ -270,6 +289,17 @@
       return;
     }
     if (detail.initialized) {
+      if (recentGoogleRedirectPending()) {
+        showLoading("Afslutter Google-login...");
+        setFeedback("Venter på Firebase-session fra Google...");
+        window.setTimeout(() => {
+          if (window.FirebaseAuthService?.getCurrentUser?.()) return;
+          clearGoogleRedirectPending();
+          showGate("Google-login blev ikke fuldført. Prøv igen eller brug e-mail-login.");
+          setFeedback("Google-login blev ikke fuldført på denne enhed.", true);
+        }, 6000);
+        return;
+      }
       routingAttempted = false;
       cloudReady = false;
       clearGateIdentity();

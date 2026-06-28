@@ -25,6 +25,7 @@ import {
 let currentUser = null;
 let initialized = false;
 const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
+const REDIRECT_PENDING_KEY = "work4it:authRedirectPending";
 
 function readPrivacyConsent() {
   try {
@@ -127,6 +128,9 @@ async function loginWithGoogle() {
   const isMobile = isIOS || /Android|Mobile/i.test(userAgent);
 
   if (isMobile || isStandalone) {
+    try {
+      sessionStorage.setItem(REDIRECT_PENDING_KEY, String(Date.now()));
+    } catch {}
     return signInWithRedirect(auth, provider);
   }
 
@@ -134,6 +138,9 @@ async function loginWithGoogle() {
     return await signInWithPopup(auth, provider);
   } catch (error) {
     if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(error?.code)) {
+      try {
+        sessionStorage.setItem(REDIRECT_PENDING_KEY, String(Date.now()));
+      } catch {}
       return signInWithRedirect(auth, provider);
     }
     throw error;
@@ -201,8 +208,17 @@ async function initializeAuthState() {
   }
 
   try {
-    await getRedirectResult(auth);
+    const redirectResult = await getRedirectResult(auth);
+    if (redirectResult?.user) {
+      currentUser = redirectResult.user;
+      try {
+        sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+      } catch {}
+    }
   } catch (error) {
+    try {
+      sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+    } catch {}
     console.error("Google-login via redirect kunne ikke gennemføres.", error);
     initialized = true;
     emitAuthState(error);
@@ -211,6 +227,11 @@ async function initializeAuthState() {
   onAuthStateChanged(auth, async user => {
     currentUser = user;
     initialized = true;
+    if (user) {
+      try {
+        sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+      } catch {}
+    }
 
     if (user) {
       try {

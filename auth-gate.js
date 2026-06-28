@@ -3,6 +3,7 @@
 
   const LAST_VIEW_KEY = "work4it:lastActiveView";
   const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
+  const REDIRECT_PENDING_KEY = "work4it:authRedirectPending";
   const PRIVACY_VERSION = "2026-06-19";
   const restoreableViews = new Set([
     "program",
@@ -14,7 +15,8 @@
     "dashboard"
   ]);
   let appReady = false;
-  let restoreAttempted = false;
+  let cloudReady = false;
+  let routingAttempted = false;
 
   function byId(id) {
     return document.getElementById(id);
@@ -193,6 +195,23 @@
     return payload;
   }
 
+  function recentGoogleRedirectPending() {
+    try {
+      const raw = sessionStorage.getItem(REDIRECT_PENDING_KEY);
+      if (!raw) return false;
+      const startedAt = Number(raw);
+      return Number.isFinite(startedAt) && Date.now() - startedAt < 25000;
+    } catch {
+      return false;
+    }
+  }
+
+  function clearGoogleRedirectPending() {
+    try {
+      sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+    } catch {}
+  }
+
   function requirePrivacyConsent(source) {
     const checkbox = byId("authPrivacyConsent");
     if (!checkbox?.checked) {
@@ -260,33 +279,53 @@
     setActionsEnabled(Boolean(window.FirebaseAuthService));
     const verifiedUser = window.FirebaseAuthService?.getCurrentUser?.() || null;
     if (verifiedUser) {
-      hideGate();
-      setFeedback("");
-      restoreLastActiveViewWhenReady();
+      clearGoogleRedirectPending();
+      routingAttempted = false;
+      cloudReady = false;
+      closeNonAuthWindows();
+      showLoading("Gendanner dit træningspas...");
+      setFeedback("Henter træningsdata fra Cloud...");
+      routeAfterLoginWhenReady();
       return;
     }
     if (detail.initialized) {
-      restoreAttempted = false;
+      if (recentGoogleRedirectPending()) {
+        showLoading("Afslutter Google-login...");
+        setFeedback("Venter på Firebase-session fra Google...");
+        window.setTimeout(() => {
+          if (window.FirebaseAuthService?.getCurrentUser?.()) return;
+          clearGoogleRedirectPending();
+          showGate("Google-login blev ikke fuldført. Prøv igen eller brug e-mail-login.");
+          setFeedback("Google-login blev ikke fuldført på denne enhed.", true);
+        }, 6000);
+        return;
+      }
+      routingAttempted = false;
+      cloudReady = false;
       clearGateIdentity();
       showGate();
       setFeedback(detail.error ? authErrorMessage(detail.error) : "Log ind for at fortsætte.");
     }
   }
 
-  function restoreLastActiveViewWhenReady() {
-    if (restoreAttempted || !appReady) return;
+  function routeAfterLoginWhenReady() {
+    if (routingAttempted || !appReady || !cloudReady) return;
     const verifiedUser = window.FirebaseAuthService?.getCurrentUser?.() || null;
     if (!verifiedUser) return;
-    restoreAttempted = true;
-    const view = readLastActiveView();
+    if (!window.WorkitWorkoutRouting?.routeAfterLogin) return;
+    routingAttempted = true;
     window.setTimeout(() => {
       if (!window.FirebaseAuthService?.getCurrentUser?.()) return;
-      if (view === "profile") window.openProfileAccountView?.();
-      else if (view === "membership") window.openMembershipView?.();
-      else if (view === "progress") window.openPremiumFeature?.("progress", window.openProgressView);
-      else if (view === "calorie") window.openCalorieView?.();
-      else if (view === "dashboard") window.openDashboard?.();
-      else if (view === "today") window.openTodayWorkout?.();
+      try {
+        closeNonAuthWindows();
+        const destination = window.WorkitWorkoutRouting.routeAfterLogin();
+        setFeedback(destination === "active" ? "Aktiv træning gendannet." : "Tomt træningspas er klar.");
+        hideGate();
+      } catch (error) {
+        routingAttempted = false;
+        showLoading("Kunne ikke gendanne træningen. Prøver igen...");
+        setFeedback(error?.message || "Træningen kunne ikke gendannes.", true);
+      }
     }, 0);
   }
 
@@ -295,8 +334,14 @@
     save: saveLastActiveView,
     get: readLastActiveView,
     restore: () => {
-      restoreAttempted = false;
-      restoreLastActiveViewWhenReady();
+      routingAttempted = false;
+      routeAfterLoginWhenReady();
+    }
+  };
+  window.WorkitAuthRouting = {
+    route: () => {
+      routingAttempted = false;
+      routeAfterLoginWhenReady();
     }
   };
 
@@ -314,10 +359,14 @@
   window.addEventListener("firebase-auth:changed", event => handleAuthState(event.detail));
   window.addEventListener("training-app:ready", () => {
     appReady = true;
-    restoreLastActiveViewWhenReady();
+    routeAfterLoginWhenReady();
   });
-  window.addEventListener("firestore:data-hydrated", restoreLastActiveViewWhenReady);
-  window.addEventListener("firestore:user-ready", restoreLastActiveViewWhenReady);
+  ["firestore:data-hydrated", "firestore:user-ready", "firestore:fallback-active"].forEach(eventName => {
+    window.addEventListener(eventName, () => {
+      cloudReady = true;
+      routeAfterLoginWhenReady();
+    });
+  });
 
   clearGateIdentity();
   showLoading();
