@@ -16,4 +16,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+console.log("[Work4it Firebase] firebaseConfig", firebaseConfig);
+console.log("[Work4it Firebase] auth.currentUser at init", auth.currentUser);
+
 export { app, db, auth };

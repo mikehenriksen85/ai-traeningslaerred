@@ -15,6 +15,25 @@
       }
     }());
   </script>
+  <script>
+    (function work4itStartupDebug() {
+      try {
+        console.log("[Work4it startup] location.origin", location.origin);
+        console.log("[Work4it startup] location.hostname", location.hostname);
+        console.log("[Work4it startup] location.href", location.href);
+        console.log("[Work4it startup] navigator.serviceWorker", navigator.serviceWorker || null);
+        if (window.caches?.keys) {
+          caches.keys()
+            .then(keys => console.log("[Work4it startup] caches.keys()", keys))
+            .catch(error => console.warn("[Work4it startup] caches.keys() failed", error));
+        } else {
+          console.log("[Work4it startup] caches.keys()", "Cache API ikke tilgængelig");
+        }
+      } catch (error) {
+        console.warn("[Work4it startup] debug logging failed", error);
+      }
+    }());
+  </script>
   <meta name="description" content="Work4it er en professionel AI-træningsplatform til programmer, træningsdata, kropsmålinger og cloud-backup.">
   <meta name="application-name" content="Work4it">
   <meta name="theme-color" content="#0F172A">
@@ -7652,8 +7671,8 @@
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="membership.js?v=20260627-membership-touch1"></script>
-  <script type="module" src="firebase-config.js?v=20260628-oauth-handler1"></script>
-  <script type="module" src="auth-service.js?v=20260628-mobile-popup1"></script>
+  <script type="module" src="firebase-config.js?v=20260628-domain-debug1"></script>
+  <script type="module" src="auth-service.js?v=20260628-domain-debug1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260628-oauth-handler1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {

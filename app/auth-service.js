@@ -259,6 +259,8 @@ async function initializeAuthState() {
   onAuthStateChanged(auth, async user => {
     currentUser = user;
     initialized = true;
+    console.log("[Work4it Firebase Auth] currentUser", publicUser(currentUser));
+    console.log("[Work4it Firebase Auth] auth.currentUser", publicUser(auth.currentUser));
     if (user) {
       try {
         sessionStorage.removeItem(REDIRECT_PENDING_KEY);
