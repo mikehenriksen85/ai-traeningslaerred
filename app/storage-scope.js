@@ -1,0 +1,329 @@
+(function workitStorageScopeModule() {
+  "use strict";
+
+  const PREFIX = "workit";
+  const LEGACY_RESOLUTION_KEY = `${PREFIX}:legacyMigrationResolution`;
+  const legacyResolutionKey = uid => `${PREFIX}:${String(uid || "")}:legacyMigrationResolution`;
+  const KEY_ALIASES = {
+    training_profile_v1: "profile",
+    daily_start_v1: "daily",
+    ai_training_membership_v1: "membership",
+    saved_workout_programs: "programs",
+    training_analytics_history: "sessions",
+    body_measurement_history: "measurements",
+    ai_copilot_history: "aiHistory",
+    screenshot_imports: "imports",
+    custom_exercises: "customExercises",
+    deleted_workout_programs: "trash",
+    active_workout_autosave: "activeWorkout",
+    last_active_program_id: "lastProgram"
+  };
+  const managedKeys = new Set(Object.keys(KEY_ALIASES));
+  const memoryFallback = new Map();
+  let nativeStorage = null;
+  try {
+    nativeStorage = window.localStorage;
+  } catch (error) {
+    console.warn("Browserens lokale lager er ikke tilgængeligt. Work4it bruger midlertidig hukommelse.", error);
+  }
+  const nativeMethods = nativeStorage ? {
+    getItem: nativeStorage.getItem.bind(nativeStorage),
+    setItem: nativeStorage.setItem.bind(nativeStorage),
+    removeItem: nativeStorage.removeItem.bind(nativeStorage),
+    clear: nativeStorage.clear.bind(nativeStorage)
+  } : null;
+  const original = {
+    getItem(key) {
+      try {
+        const value = nativeMethods?.getItem(String(key));
+        return value == null ? memoryFallback.get(String(key)) ?? null : value;
+      } catch {
+        return memoryFallback.get(String(key)) ?? null;
+      }
+    },
+    setItem(key, value) {
+      const normalizedKey = String(key);
+      const normalizedValue = String(value);
+      memoryFallback.set(normalizedKey, normalizedValue);
+      try {
+        nativeMethods?.setItem(normalizedKey, normalizedValue);
+      } catch (error) {
+        console.warn("Work4it kunne ikke skrive til browserens lokale lager.", error);
+      }
+    },
+    removeItem(key) {
+      const normalizedKey = String(key);
+      memoryFallback.delete(normalizedKey);
+      try {
+        nativeMethods?.removeItem(normalizedKey);
+      } catch {}
+    },
+    clear() {
+      memoryFallback.clear();
+      try {
+        nativeMethods?.clear();
+      } catch {}
+    }
+  };
+  const pendingWrites = new Map();
+  let activeUid = "";
+  let storageScopeInstalled = false;
+
+  function scopedKey(key, uid = activeUid) {
+    if (!uid || !managedKeys.has(key)) return key;
+    return `${PREFIX}:${uid}:${KEY_ALIASES[key]}`;
+  }
+
+  function parse(value, fallback = null) {
+    try {
+      return value == null ? fallback : JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+
+  function comparable(value) {
+    if (!value || typeof value !== "object") return JSON.stringify(value);
+    const clone = Array.isArray(value) ? [...value] : { ...value };
+    if (!Array.isArray(clone)) {
+      delete clone.updatedAt;
+      delete clone.firestoreUpdatedAt;
+      delete clone._cacheUpdatedAt;
+    }
+    return JSON.stringify(clone);
+  }
+
+  function itemId(value, index) {
+    return String(value?.id ?? value?.sessionId ?? value?.date ?? value?.timestamp ?? index);
+  }
+
+  function stampValue(key, rawValue) {
+    if (key === "last_active_program_id") return String(rawValue);
+    const next = parse(rawValue, rawValue);
+    const previous = parse(original.getItem(scopedKey(key)), null);
+    const now = new Date().toISOString();
+    if (Array.isArray(next)) {
+      const previousItems = new Map((Array.isArray(previous) ? previous : []).map((item, index) => [
+        itemId(item, index),
+        item
+      ]));
+      return JSON.stringify(next.map((item, index) => {
+        if (!item || typeof item !== "object") return item;
+        const oldItem = previousItems.get(itemId(item, index));
+        const unchanged = oldItem && comparable(oldItem) === comparable(item);
+        return {
+          ...item,
+          updatedAt: unchanged
+            ? oldItem.updatedAt || oldItem.savedAt || oldItem.date || now
+            : now
+        };
+      }));
+    }
+    if (next && typeof next === "object") {
+      return JSON.stringify({ ...next, updatedAt: now });
+    }
+    return String(rawValue);
+  }
+
+  function notify(key, operation) {
+    window.dispatchEvent(new CustomEvent("workit-storage:changed", {
+      detail: { key, operation, uid: activeUid }
+    }));
+  }
+
+  function getScopedItem(key) {
+    if (!managedKeys.has(String(key))) return original.getItem(key);
+    if (!activeUid) return null;
+    return original.getItem(scopedKey(String(key)));
+  }
+
+  function setScopedItem(key, value) {
+    const logicalKey = String(key);
+    if (!managedKeys.has(logicalKey)) {
+      original.setItem(logicalKey, value);
+      return;
+    }
+    if (!activeUid) {
+      pendingWrites.set(logicalKey, String(value));
+      return;
+    }
+    original.setItem(scopedKey(logicalKey), stampValue(logicalKey, value));
+    notify(logicalKey, "set");
+  }
+
+  function removeScopedItem(key) {
+    const logicalKey = String(key);
+    if (!managedKeys.has(logicalKey)) {
+      original.removeItem(logicalKey);
+      return;
+    }
+    pendingWrites.delete(logicalKey);
+    if (!activeUid) return;
+    original.removeItem(scopedKey(logicalKey));
+    notify(logicalKey, "remove");
+  }
+
+  // Ryd kun den aktive brugers cache. Globale, ikke-personlige indstillinger bevares.
+  function clearActiveUserCache() {
+    if (!activeUid) return;
+    for (const key of managedKeys) original.removeItem(scopedKey(key));
+    notify("*", "clear");
+  }
+
+  if (nativeStorage) {
+    try {
+      Object.defineProperties(nativeStorage, {
+        getItem: { configurable: true, value: getScopedItem },
+        setItem: { configurable: true, value: setScopedItem },
+        removeItem: { configurable: true, value: removeScopedItem },
+        clear: { configurable: true, value: clearActiveUserCache }
+      });
+      storageScopeInstalled = nativeStorage.getItem === getScopedItem &&
+        nativeStorage.setItem === setScopedItem &&
+        nativeStorage.removeItem === removeScopedItem;
+      if (!storageScopeInstalled) throw new Error("UID-opdeling kunne ikke verificeres.");
+    } catch (error) {
+      console.warn("Browseren tillod ikke UID-opdeling af localStorage.", error);
+    }
+  }
+
+  function setActiveUid(uid) {
+    activeUid = String(uid || "");
+    if (!activeUid) {
+      pendingWrites.clear();
+      return;
+    }
+    for (const [key, value] of pendingWrites) {
+      const target = scopedKey(key);
+      if (original.getItem(target) == null) original.setItem(target, stampValue(key, value));
+    }
+    pendingWrites.clear();
+  }
+
+  function hasCurrentUserData() {
+    return Boolean(activeUid && [...managedKeys].some(key => original.getItem(scopedKey(key)) != null));
+  }
+
+  function hasLegacyData() {
+    return [...managedKeys].some(key => {
+      const value = original.getItem(key);
+      if (value == null) return false;
+      const parsed = parse(value, value);
+      return Array.isArray(parsed)
+        ? parsed.length > 0
+        : typeof parsed === "object"
+          ? parsed && Object.keys(parsed).length > 0
+          : Boolean(parsed);
+    });
+  }
+
+  function legacyResolution(uid = activeUid) {
+    const normalizedUid = String(uid || "");
+    if (!normalizedUid) return null;
+    const scopedResolution = parse(original.getItem(legacyResolutionKey(normalizedUid)), null);
+    if (scopedResolution) return scopedResolution;
+
+    // Flyt den tidligere globale markør til den aktuelle bruger én gang.
+    const previousResolution = parse(original.getItem(LEGACY_RESOLUTION_KEY), null);
+    if (!previousResolution || (previousResolution.uid && previousResolution.uid !== normalizedUid)) {
+      return null;
+    }
+    const migratedResolution = {
+      ...previousResolution,
+      uid: normalizedUid
+    };
+    original.setItem(legacyResolutionKey(normalizedUid), JSON.stringify(migratedResolution));
+    original.removeItem(LEGACY_RESOLUTION_KEY);
+    return migratedResolution;
+  }
+
+  function resolveLegacyMigration(status, uid = activeUid) {
+    const normalizedUid = String(uid || "");
+    if (!normalizedUid) return;
+    original.setItem(legacyResolutionKey(normalizedUid), JSON.stringify({
+      status,
+      uid: normalizedUid,
+      resolvedAt: new Date().toISOString()
+    }));
+    const previousResolution = parse(original.getItem(LEGACY_RESOLUTION_KEY), null);
+    if (!previousResolution?.uid || previousResolution.uid === normalizedUid) {
+      original.removeItem(LEGACY_RESOLUTION_KEY);
+    }
+  }
+
+  function importLegacyToCurrent() {
+    if (!activeUid) return false;
+    for (const key of managedKeys) {
+      const legacy = original.getItem(key);
+      if (legacy == null) continue;
+      const target = scopedKey(key);
+      const currentRaw = original.getItem(target);
+      const legacyValue = parse(legacy, legacy);
+      const currentValue = parse(currentRaw, currentRaw);
+      let imported = legacyValue;
+      if (Array.isArray(legacyValue) && Array.isArray(currentValue)) {
+        const merged = new Map();
+        legacyValue.forEach((item, index) => merged.set(itemId(item, index), item));
+        currentValue.forEach((item, index) => merged.set(itemId(item, index), item));
+        imported = [...merged.values()];
+      } else if (
+        legacyValue && currentValue &&
+        typeof legacyValue === "object" &&
+        typeof currentValue === "object"
+      ) {
+        imported = { ...legacyValue, ...currentValue };
+      } else if (currentRaw != null) {
+        imported = currentValue;
+      }
+      original.setItem(
+        target,
+        stampValue(key, key === "last_active_program_id" ? imported : JSON.stringify(imported))
+      );
+      original.setItem(`${PREFIX}:legacyBackup:${activeUid}:${KEY_ALIASES[key]}`, legacy);
+      original.removeItem(key);
+    }
+    return true;
+  }
+
+  function exportCurrentUserData() {
+    const data = {};
+    if (!activeUid) return data;
+    for (const key of managedKeys) {
+      const raw = original.getItem(scopedKey(key));
+      if (raw == null) continue;
+      data[key] = parse(raw, raw);
+    }
+    return data;
+  }
+
+  function clearCurrentUserCache() {
+    if (!activeUid) return;
+    for (const key of managedKeys) original.removeItem(scopedKey(key));
+    notify("*", "clear");
+  }
+
+  function writeCurrentRaw(key, value) {
+    if (!activeUid || !managedKeys.has(key)) return false;
+    const target = scopedKey(key);
+    if (value == null) original.removeItem(target);
+    else original.setItem(target, key === "last_active_program_id" ? String(value) : JSON.stringify(value));
+    return true;
+  }
+
+  window.WorkitStorageScope = {
+    keys: { ...KEY_ALIASES },
+    managedKeys: [...managedKeys],
+    setActiveUid,
+    getActiveUid: () => activeUid,
+    isScopeInstalled: () => storageScopeInstalled,
+    scopedKey,
+    hasCurrentUserData,
+    hasLegacyData,
+    legacyResolution,
+    resolveLegacyMigration,
+    importLegacyToCurrent,
+    exportCurrentUserData,
+    clearCurrentUserCache,
+    writeCurrentRaw
+  };
+})();
