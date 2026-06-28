@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v36-mobile-authdomain";
+const CACHE_NAME = "work4it-shell-v37-oauth-handler";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -24,9 +24,9 @@ const APP_SHELL = [
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260627-theme1",
   "./profile-wizard.js?v=20260620-calisthenics1",
-  "./firebase-config.js?v=20260628-mobile-authdomain1",
-  "./auth-service.js?v=20260628-mobile-authdomain1",
-  "./firestore-cloud-service.js?v=20260628-mobile-authdomain1"
+  "./firebase-config.js?v=20260628-oauth-handler1",
+  "./auth-service.js?v=20260628-oauth-handler1",
+  "./firestore-cloud-service.js?v=20260628-oauth-handler1"
 ];
 
 self.addEventListener("install", event => {
