@@ -4,18 +4,13 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/12.14.0/firebas
 
 const firebaseConfig = {
   apiKey: "AIzaSyBT0dbEXXb1lmVzhTHyfBw2r_DiwBWIphg",
-  authDomain: "workout-b55ed.firebaseapp.com",
+  authDomain: "app.work-4it.dk",
   projectId: "workout-b55ed",
   storageBucket: "workout-b55ed.firebasestorage.app",
   messagingSenderId: "873024449428",
   appId: "1:873024449428:web:0b1c168317235f28eebd81",
   measurementId: "G-HEK84CT9TQ"
 };
-
-const currentHost = window.location.hostname;
-if (currentHost === "work4it-app.web.app" || currentHost === "app.work-4it.dk") {
-  firebaseConfig.authDomain = currentHost;
-}
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

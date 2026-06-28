@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v32-mobile-google-auth";
+const CACHE_NAME = "work4it-shell-v34-authdomain-app";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -24,7 +24,7 @@ const APP_SHELL = [
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260627-theme1",
   "./profile-wizard.js?v=20260620-calisthenics1",
-  "./firebase-config.js?v=20260628-mobile-google1",
+  "./firebase-config.js?v=20260628-authdomain2",
   "./auth-service.js?v=20260628-mobile-google1",
   "./firestore-cloud-service.js?v=20260628-firebase-audit1"
 ];
