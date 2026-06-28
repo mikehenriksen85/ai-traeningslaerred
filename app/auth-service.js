@@ -139,11 +139,11 @@ async function loginWithGoogle() {
     window.navigator.standalone === true;
   const isMobile = isIOS || /Android|Mobile/i.test(userAgent);
 
-  if (isMobile || isStandalone) {
+  if (isStandalone) {
     try {
       sessionStorage.setItem(REDIRECT_PENDING_KEY, String(Date.now()));
     } catch {}
-    console.info("Work4it Google-login bruger redirect på mobil/PWA.", {
+    console.info("Work4it Google-login bruger redirect i PWA/standalone.", {
       host: window.location.host,
       isMobile,
       isStandalone
@@ -152,10 +152,20 @@ async function loginWithGoogle() {
   }
 
   try {
+    console.info("Work4it Google-login bruger popup.", {
+      host: window.location.host,
+      isMobile,
+      isStandalone
+    });
     return await signInWithPopup(auth, provider);
   } catch (error) {
     logAuthError("google-popup", error);
-    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(error?.code)) {
+    if ([
+      "auth/cancelled-popup-request",
+      "auth/operation-not-supported-in-this-environment",
+      "auth/popup-blocked",
+      "auth/popup-closed-by-user"
+    ].includes(error?.code)) {
       try {
         sessionStorage.setItem(REDIRECT_PENDING_KEY, String(Date.now()));
       } catch {}

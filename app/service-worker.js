@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v37-oauth-handler";
+const CACHE_NAME = "work4it-shell-v38-mobile-popup";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -25,7 +25,7 @@ const APP_SHELL = [
   "./profile-account.js?v=20260627-theme1",
   "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260628-oauth-handler1",
-  "./auth-service.js?v=20260628-oauth-handler1",
+  "./auth-service.js?v=20260628-mobile-popup1",
   "./firestore-cloud-service.js?v=20260628-oauth-handler1"
 ];
 
