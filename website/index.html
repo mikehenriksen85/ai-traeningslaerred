@@ -12,62 +12,108 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<header class="site-header">
-  <a class="brand" href="/"><img src="/assets/app-icon-192.png" alt="Work4it"><span>Work4it</span></a>
-  <nav class="nav" aria-label="Primær navigation">
-    <a href="/#funktioner">Funktioner</a>
-    <a href="/#priser">Priser</a>
-    <a href="/#kontakt">Kontakt</a>
-    <a href="/privatlivspolitik.html">Privatliv</a>
-    <a href="/handelsbetingelser.html">Betingelser</a>
-    <a class="app-link" href="https://app.work-4it.dk/">Åbn app</a>
-  </nav>
-</header>
-<main>
-  <section class="hero">
-    <div class="hero-inner">
-      <img class="hero-logo" src="/assets/hero-logo.png" alt="Work4it">
-      <h1>Din AI-træningsplatform til programmer, progression og overblik.</h1>
-      <p class="lead">Work4it hjælper dig med at planlægge træning, følge din udvikling, gemme historik og få intelligente forslag uden at miste kontrollen over dine egne data.</p>
-      <div class="actions">
-        <a class="btn primary" href="https://app.work-4it.dk/">Åbn Work4it App</a>
-        <a class="btn secondary" href="#funktioner">Se funktioner</a>
+  <main class="app-page">
+    <section class="hero app-hero">
+      <div class="hero-inner">
+        <a class="logo-link" href="/" aria-label="Work4it forside">
+          <img class="hero-logo" src="/assets/hero-logo.png" alt="Work4it">
+        </a>
+        <p class="eyebrow">⚡ AI powered fitness</p>
+        <h1>Din AI-træningsplatform til programmer, progression og overblik.</h1>
+        <p class="lead">Planlæg træning, følg din udvikling, gem historik og få intelligente forslag — samlet i én enkel app.</p>
+        <a class="btn primary app-open" href="https://app.work-4it.dk/">Åbn Work4it App</a>
       </div>
-    </div>
-  </section>
-  <section class="section" id="funktioner">
-    <h2>Funktioner</h2>
-    <div class="grid">
-      <article class="card"><h3>Træningsprogrammer</h3><p>Opret styrke-, cardio- og calisthenics-programmer med øvelser, sæt, reps, pauser og historik.</p></article>
-      <article class="card"><h3>AI-assistent</h3><p>Få forslag, justeringer og analyser baseret på profil, mål, træningsstil og historik.</p></article>
-      <article class="card"><h3>Statistik</h3><p>Se 1RM, volumen, kalorier, kropsmålinger, PR og udvikling over tid.</p></article>
-      <article class="card"><h3>Cloud-backup</h3><p>Gem data sikkert på din konto via Firebase, så appen kan bruges på tværs af enheder.</p></article>
-      <article class="card"><h3>Medlemskab</h3><p>Gratis version og Premium-planer med flere AI-requests, statistik og tidsbesparende funktioner.</p></article>
-      <article class="card"><h3>Fremtidssikret</h3><p>Struktur klar til Stripe, Cloud Functions, App Check og serverbeskyttet adgangskontrol.</p></article>
-    </div>
-  </section>
-  <section class="section" id="priser">
-    <h2>Priser</h2>
-    <div class="grid">
-      <article class="card"><h3>Gratis</h3><div class="price">0 kr.</div><p>3 AI Requests og basale træningsfunktioner.</p></article>
-      <article class="card"><h3>Premium 3 måneder</h3><div class="price">59 kr.</div><p>15 AI Requests/md. Early Adopter-pris.</p></article>
-      <article class="card"><span class="badge">Bedste værdi</span><h3>Premium 12 måneder</h3><div class="price">199 kr.</div><p>15 AI Requests/md. Early Adopter-pris.</p></article>
-      <article class="card"><h3>Livstid</h3><div class="price">449 kr.</div><p>30 AI Requests/md. Permanent adgang.</p></article>
-    </div>
-  </section>
-  <section class="section" id="kontakt">
-    <h2>Kontakt</h2>
-    <p>Har du spørgsmål, fejlrapporter eller forslag, kan du kontakte Work4it på <a href="mailto:Mikehenriksen85@gmail.com">Mikehenriksen85@gmail.com</a>.</p>
-  </section>
-</main>
-<footer class="footer">
-  <div>© 2026 Work4it. Alle rettigheder forbeholdes.</div>
-  <div>
-    <a href="/privatlivspolitik.html">Privatlivspolitik</a>
-    <a href="/handelsbetingelser.html">Handelsbetingelser</a>
-    <a href="/ai-disclaimer.html">AI Disclaimer</a>
-    <a href="/abonnementsvilkaar.html">Abonnementsvilkår</a>
-  </div>
-</footer>
+    </section>
+
+    <section class="app-menu" aria-label="Work4it indhold">
+      <details class="app-panel" id="funktioner" open>
+        <summary><span class="summary-icon">🏋️</span><span><strong>Funktioner</strong><small>Se hvad Work4it kan hjælpe dig med</small></span></summary>
+        <div class="panel-content feature-list">
+          <article><h3>Træningsprogrammer</h3><p>Opret styrke-, cardio- og calisthenics-programmer med øvelser, sæt, reps, pauser og historik.</p></article>
+          <article><h3>AI-assistent</h3><p>Få forslag, justeringer og analyser baseret på profil, mål, træningsstil og historik.</p></article>
+          <article><h3>Statistik</h3><p>Se 1RM, volumen, kalorier, kropsmålinger, PR og udvikling over tid.</p></article>
+          <article><h3>Cloud-backup</h3><p>Gem data sikkert på din konto via Firebase, så appen kan bruges på tværs af enheder.</p></article>
+          <article><h3>Medlemskab</h3><p>Gratis version og Premium-planer med flere AI-requests, statistik og tidsbesparende funktioner.</p></article>
+          <article><h3>Fremtidssikret</h3><p>Struktur klar til Stripe, Cloud Functions, App Check og serverbeskyttet adgangskontrol.</p></article>
+        </div>
+      </details>
+
+      <details class="app-panel" id="priser">
+        <summary><span class="summary-icon">💎</span><span><strong>Priser</strong><small>Gratis, Premium og Livstid</small></span></summary>
+        <div class="panel-content price-list">
+          <article><h3>Gratis</h3><div class="price">0 kr.</div><p>3 AI Requests og basale træningsfunktioner.</p></article>
+          <article><h3>Premium 3 måneder</h3><div class="price">59 kr.</div><p>15 AI Requests/md. Early Adopter-pris.</p></article>
+          <article class="highlight"><span class="badge">Bedste værdi</span><h3>Premium 12 måneder</h3><div class="price">199 kr.</div><p>15 AI Requests/md. Early Adopter-pris.</p></article>
+          <article><h3>Livstid</h3><div class="price">449 kr.</div><p>30 AI Requests/md. Permanent adgang.</p></article>
+          <p class="fineprint">Early Adopter-priser kan gælde for de første 500 registrerede brugere. Stripe-integration og serverbeskyttet adgangskontrol implementeres som særskilt næste trin.</p>
+        </div>
+      </details>
+
+      <details class="app-panel" id="privatliv">
+        <summary><span class="summary-icon">🔒</span><span><strong>Privatliv</strong><small>Data, Firebase og brugerrettigheder</small></span></summary>
+        <div class="panel-content legal-text">
+          <h2>Privatlivspolitik</h2>
+          <p>Work4it behandler konto-, profil-, trænings-, kropsmålings- og medlemskabsdata for at kunne levere appens funktioner.</p>
+          <p>Når brugeren er logget ind, gemmes understøttede data i Firebase/Firestore. Lokale data bruges som cache/fallback.</p>
+          <p>Brugeren kan anmode om eksport og sletning af egne data. Denne tekst skal juridisk gennemgås før kommerciel lancering.</p>
+          <a class="text-link" href="/privatlivspolitik.html">Åbn separat privatlivsside</a>
+        </div>
+      </details>
+
+      <details class="app-panel" id="betingelser">
+        <summary><span class="summary-icon">📜</span><span><strong>Handelsbetingelser</strong><small>Brug, betaling og ansvar</small></span></summary>
+        <div class="panel-content legal-text">
+          <h2>Handelsbetingelser</h2>
+          <p>Betaling er planlagt via Stripe. Indtil Stripe er fuldt aktiveret, er medlemskabsvalg i appen demo/test og opkræver ikke betaling.</p>
+          <p>Endelige handelsbetingelser skal juridisk gennemgås før kommerciel lancering.</p>
+          <a class="text-link" href="/handelsbetingelser.html">Åbn separat side med handelsbetingelser</a>
+        </div>
+      </details>
+
+      <details class="app-panel" id="abonnement">
+        <summary><span class="summary-icon">🔁</span><span><strong>Abonnementsvilkår</strong><small>Premium, fornyelse og adgang</small></span></summary>
+        <div class="panel-content legal-text">
+          <h2>Abonnementsvilkår</h2>
+          <p>Work4it forventes at tilbyde gratis version, Premium 3 måneder, Premium 12 måneder og Livstid.</p>
+          <p>Stripe-integration og serverbeskyttet adgangskontrol implementeres som særskilt næste trin. Endelige vilkår skal juridisk gennemgås.</p>
+          <a class="text-link" href="/abonnementsvilkaar.html">Åbn separat side med abonnementsvilkår</a>
+        </div>
+      </details>
+
+      <details class="app-panel" id="ai-disclaimer">
+        <summary><span class="summary-icon">🤖</span><span><strong>AI Disclaimer</strong><small>AI er hjælp — ikke sundhedsfaglig rådgivning</small></span></summary>
+        <div class="panel-content legal-text">
+          <h2>AI Disclaimer</h2>
+          <p>Work4its AI-funktioner giver træningsforslag og praktisk vejledning, men erstatter ikke læge, fysioterapeut, personlig træner eller anden sundhedsfaglig rådgivning.</p>
+          <p>Ved smerter, skade eller usikkerhed bør brugeren kontakte læge eller fysioterapeut.</p>
+          <a class="text-link" href="/ai-disclaimer.html">Åbn separat AI Disclaimer</a>
+        </div>
+      </details>
+
+      <details class="app-panel" id="kontakt">
+        <summary><span class="summary-icon">✉️</span><span><strong>Kontakt</strong><small>Spørgsmål, fejl og forslag</small></span></summary>
+        <div class="panel-content legal-text">
+          <h2>Kontakt</h2>
+          <p>Har du spørgsmål, fejlrapporter eller forslag, kan du kontakte Work4it på:</p>
+          <p><a class="text-link strong" href="mailto:Mikehenriksen85@gmail.com">Mikehenriksen85@gmail.com</a></p>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="footer app-footer">
+    <div>© 2026 Work4it. Alle rettigheder forbeholdes.</div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.app-panel').forEach((panel) => {
+      panel.addEventListener('toggle', () => {
+        if (!panel.open) return;
+        document.querySelectorAll('.app-panel[open]').forEach((other) => {
+          if (other !== panel) other.open = false;
+        });
+      });
+    });
+  </script>
 </body>
 </html>
