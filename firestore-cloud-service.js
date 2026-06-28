@@ -28,7 +28,8 @@ const KEYS = {
   customExercises: "custom_exercises",
   trash: "deleted_workout_programs",
   activeWorkout: "active_workout_autosave",
-  lastProgram: "last_active_program_id"
+  lastProgram: "last_active_program_id",
+  theme: "work4it_theme"
 };
 const COLLECTIONS = {
   sessions: "workoutSessions",
@@ -37,6 +38,17 @@ const COLLECTIONS = {
   imports: "imports",
   customExercises: "customExercises",
   trash: "deletedPrograms"
+};
+const PATHS = {
+  profile: uid => ["users", uid, "profile", "main"],
+  syncMetadata: uid => ["users", uid, "profile", "syncMetadata"],
+  daily: uid => ["users", uid, "profile", "daily"],
+  settings: uid => ["users", uid, "settings", "main"],
+  legacySettings: uid => ["users", uid, "profile", "appState"],
+  membership: uid => ["users", uid, "membership", "main"],
+  legacyMembership: uid => ["users", uid, "profile", "membership"],
+  appState: (uid, stateId = "main") => ["users", uid, "appState", stateId],
+  activeWorkout: uid => ["users", uid, "activeWorkout", "current"]
 };
 const storageScope = window.WorkitStorageScope;
 let activeUid = "";
@@ -54,7 +66,7 @@ function parseLocal(key, fallback = null) {
   try {
     const raw = localStorage.getItem(key);
     if (raw == null) return fallback;
-    if (key === KEYS.lastProgram) return raw;
+    if (key === KEYS.lastProgram || key === KEYS.theme) return raw;
     return JSON.parse(raw);
   } catch {
     return fallback;
@@ -64,7 +76,7 @@ function parseLocal(key, fallback = null) {
 function writeLocal(key, value) {
   if (storageScope?.writeCurrentRaw?.(key, value)) return;
   if (value == null) localStorage.removeItem(key);
-  else localStorage.setItem(key, key === KEYS.lastProgram ? String(value) : JSON.stringify(value));
+  else localStorage.setItem(key, (key === KEYS.lastProgram || key === KEYS.theme) ? String(value) : JSON.stringify(value));
 }
 
 function serializable(value) {
@@ -88,6 +100,17 @@ async function loadPublicPricingConfig() {
     activeTier: "early_adopter",
     source: "fallback"
   };
+  if (window.ENABLE_FIRESTORE_PRICING_CONFIG !== true) {
+    detail.source = "client_pricing_strategy";
+    window.dispatchEvent(new CustomEvent("work4it:pricing-config", { detail }));
+    return detail;
+  }
+  const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+  if (!user) {
+    detail.source = "fallback_until_auth_ready";
+    window.dispatchEvent(new CustomEvent("work4it:pricing-config", { detail }));
+    return detail;
+  }
   try {
     const snapshot = await getDoc(doc(db, PRICING_CONFIG.collection, PRICING_CONFIG.document));
     if (snapshot.exists()) {
@@ -103,7 +126,7 @@ async function loadPublicPricingConfig() {
       };
     }
   } catch (error) {
-    console.warn("Priskonfiguration kunne ikke hentes. Early Adopter-priser bruges som fallback.", error);
+    console.warn("Priskonfiguration kunne ikke hentes efter login. Early Adopter-priser bruges som fallback.", error);
   }
   window.dispatchEvent(new CustomEvent("work4it:pricing-config", { detail }));
   return detail;
@@ -182,25 +205,63 @@ function firestorePath(pathSegments) {
   return Array.isArray(pathSegments) ? pathSegments.join("/") : String(pathSegments || "");
 }
 
-function reportFirestoreError(operation, pathSegments, error) {
-  console.error(`Firestore ${operation} fejlede på ${firestorePath(pathSegments)}.`, error);
+function authUid() {
+  return window.FirebaseAuthService?.getCurrentUser?.()?.uid || "";
 }
 
-async function getSyncMetadata(uid) {
-  const path = ["users", uid, "profile", "syncMetadata"];
+function reportFirestoreError(operation, pathSegments, error, uid = activeUid || authUid()) {
+  console.error("Work4it Firestore-fejl", {
+    operation,
+    path: firestorePath(pathSegments),
+    uid: uid || null,
+    code: error?.code || "unknown",
+    message: error?.message || String(error || "Ukendt fejl")
+  });
+}
+
+function assertCloudUser(operation = "Firestore") {
+  const uid = activeUid || "";
+  const authenticatedUid = authUid();
+  if (!uid || !cloudEnabled) {
+    throw new Error(`${operation}: Cloud er ikke klar. Vent på login og prøv igen.`);
+  }
+  if (!authenticatedUid || authenticatedUid !== uid) {
+    throw new Error(`${operation}: Firebase Auth UID er ikke klar eller matcher ikke aktiv cloud-session.`);
+  }
+  return uid;
+}
+
+async function getDocument(pathSegments, operation = "getDoc") {
   try {
-    const snapshot = await getDoc(syncReference(uid));
-    return snapshot.exists() ? snapshot.data() : {};
+    return await getDoc(doc(db, ...pathSegments));
   } catch (error) {
-    reportFirestoreError("getDoc", path, error);
+    reportFirestoreError(operation, pathSegments, error);
     throw error;
   }
 }
 
+async function readDocumentData(pathSegments) {
+  const snapshot = await getDocument(pathSegments);
+  return snapshot.exists() ? cleanDocument(snapshot.data()) : null;
+}
+
+async function readDocumentDataWithFallback(primaryPath, fallbackPath) {
+  const primary = await readDocumentData(primaryPath);
+  if (primary) return { data: primary, source: firestorePath(primaryPath) };
+  if (!fallbackPath) return { data: null, source: "" };
+  const fallback = await readDocumentData(fallbackPath);
+  return { data: fallback, source: fallback ? firestorePath(fallbackPath) : "" };
+}
+
+async function getSyncMetadata(uid) {
+  const snapshot = await getDocument(PATHS.syncMetadata(uid));
+  return snapshot.exists() ? snapshot.data() : {};
+}
+
 async function setSyncMetadata(uid, data) {
-  const syncPath = ["users", uid, "profile", "syncMetadata"];
+  const syncPath = PATHS.syncMetadata(uid);
   try {
-    await setDoc(syncReference(uid), {
+    await setDoc(doc(db, ...syncPath), {
       migrationVersion: MIGRATION_VERSION,
       ...data,
       updatedAt: new Date().toISOString(),
@@ -211,7 +272,7 @@ async function setSyncMetadata(uid, data) {
     throw error;
   }
   if (Object.prototype.hasOwnProperty.call(data, "migrationCompleted")) {
-    const appStatePath = ["users", uid, "profile", "appState"];
+    const appStatePath = PATHS.appState(uid, "main");
     try {
       await setDoc(doc(db, ...appStatePath), {
         migrationCompleted: Boolean(data.migrationCompleted),
@@ -227,8 +288,13 @@ async function setSyncMetadata(uid, data) {
 }
 
 async function readCollection(pathSegments) {
-  const snapshot = await getDocs(collection(db, ...pathSegments));
-  return snapshot.docs.map(item => ({ ...cleanDocument(item.data()), id: item.id }));
+  try {
+    const snapshot = await getDocs(collection(db, ...pathSegments));
+    return snapshot.docs.map(item => ({ ...cleanDocument(item.data()), id: item.id }));
+  } catch (error) {
+    reportFirestoreError("getDocs", pathSegments, error);
+    throw error;
+  }
 }
 
 async function upsertDocument(reference, localValue) {
@@ -245,14 +311,8 @@ async function upsertDocument(reference, localValue) {
 }
 
 async function saveProfileToCloud(profile) {
-  if (!activeUid || !cloudEnabled) {
-    throw new Error("Cloud er ikke klar. Log ind igen eller prøv senere.");
-  }
-  const authenticatedUid = window.FirebaseAuthService?.getCurrentUser?.()?.uid || "";
-  if (authenticatedUid !== activeUid) {
-    throw new Error("Den aktive Firebase-bruger matcher ikke Cloud-sessionen.");
-  }
-  const path = ["users", activeUid, "profile", "main"];
+  assertCloudUser("Profilgemning");
+  const path = PATHS.profile(activeUid);
   const nextProfile = {
     ...cleanDocument(profile),
     updatedAt: profile?.updatedAt || new Date().toISOString(),
@@ -276,14 +336,12 @@ async function saveProfileToCloud(profile) {
 }
 
 async function saveProfileDocumentToCloud(documentId, value) {
-  if (!activeUid || !cloudEnabled) {
-    throw new Error("Cloud er ikke klar. Log ind igen eller prøv senere.");
-  }
-  const authenticatedUid = window.FirebaseAuthService?.getCurrentUser?.()?.uid || "";
-  if (authenticatedUid !== activeUid) {
-    throw new Error("Den aktive Firebase-bruger matcher ikke Cloud-sessionen.");
-  }
-  const path = ["users", activeUid, "profile", documentId];
+  assertCloudUser("Cloud-gemning");
+  const path = documentId === "membership"
+    ? PATHS.membership(activeUid)
+    : documentId === "appState"
+      ? PATHS.settings(activeUid)
+      : ["users", activeUid, "profile", documentId];
   try {
     await setDoc(doc(db, ...path), {
       ...cleanDocument(value),
@@ -379,8 +437,8 @@ function workoutDraftFromAutosave() {
 }
 
 async function syncActiveWorkout(uid) {
-  const reference = doc(db, "users", uid, "activeWorkout", "current");
-  const draftReference = doc(db, "users", uid, "appState", "workoutDraft");
+  const reference = doc(db, ...PATHS.activeWorkout(uid));
+  const draftReference = doc(db, ...PATHS.appState(uid, "workoutDraft"));
   const activeAutosave = activeSessionFromAutosave();
   const workoutDraft = workoutDraftFromAutosave();
   if (!activeAutosave) {
@@ -405,18 +463,21 @@ async function syncAllLocalData(uid = activeUid) {
   }
   syncInProgress = true;
   try {
+    assertCloudUser("Firestore-synkronisering");
     const profile = parseLocal(KEYS.profile, {});
     const daily = parseLocal(KEYS.daily, {});
     const membership = parseLocal(KEYS.membership, {});
     const appState = {
       lastActiveProgramId: parseLocal(KEYS.lastProgram, ""),
+      theme: parseLocal(KEYS.theme, "work4it"),
       updatedAt: new Date().toISOString()
     };
     await Promise.all([
-      upsertDocument(doc(db, "users", uid, "profile", "main"), profile),
-      upsertDocument(doc(db, "users", uid, "profile", "daily"), daily),
-      upsertDocument(doc(db, "users", uid, "profile", "membership"), membership),
-      upsertDocument(doc(db, "users", uid, "profile", "appState"), appState),
+      upsertDocument(doc(db, ...PATHS.profile(uid)), profile),
+      upsertDocument(doc(db, ...PATHS.daily(uid)), daily),
+      upsertDocument(doc(db, ...PATHS.membership(uid)), membership),
+      upsertDocument(doc(db, ...PATHS.settings(uid)), appState),
+      upsertDocument(doc(db, ...PATHS.appState(uid, "main")), appState),
       syncPrograms(uid),
       upsertCollection(["users", uid, COLLECTIONS.sessions], parseLocal(KEYS.sessions, []), "session"),
       upsertCollection(["users", uid, COLLECTIONS.measurements], parseLocal(KEYS.measurements, []), "measurement"),
@@ -436,7 +497,7 @@ async function syncAllLocalData(uid = activeUid) {
     window.dispatchEvent(new CustomEvent("firestore:sync-completed"));
     return true;
   } catch (error) {
-    console.error("Firestore-synkronisering mislykkedes. UID-cachen er bevaret.", error);
+    reportFirestoreError("syncAllLocalData", ["users", uid], error, uid);
     await setSyncMetadata(uid, {
       status: "failed",
       lastError: error?.code || error?.message || "unknown"
@@ -468,10 +529,17 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
   if (!uid) return false;
   const preserveLocalWhenCloudEmpty = Boolean(options.preserveLocalWhenCloudEmpty);
   try {
+    assertCloudUser("Cloud-hentning");
+    const profileSnapshot = getDocument(PATHS.profile(uid));
+    const dailySnapshot = getDocument(PATHS.daily(uid));
+    const membershipSnapshot = readDocumentDataWithFallback(PATHS.membership(uid), PATHS.legacyMembership(uid));
+    const settingsSnapshot = readDocumentDataWithFallback(PATHS.settings(uid), PATHS.legacySettings(uid));
+    const appStateSnapshot = readDocumentDataWithFallback(PATHS.appState(uid, "main"), PATHS.legacySettings(uid));
     const [
       profile,
       daily,
       membership,
+      settings,
       appState,
       activeWorkout,
       workoutDraft,
@@ -483,12 +551,13 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
       customExercises,
       trash
     ] = await Promise.all([
-      getDoc(doc(db, "users", uid, "profile", "main")),
-      getDoc(doc(db, "users", uid, "profile", "daily")),
-      getDoc(doc(db, "users", uid, "profile", "membership")),
-      getDoc(doc(db, "users", uid, "profile", "appState")),
-      getDoc(doc(db, "users", uid, "activeWorkout", "current")),
-      getDoc(doc(db, "users", uid, "appState", "workoutDraft")),
+      profileSnapshot,
+      dailySnapshot,
+      membershipSnapshot,
+      settingsSnapshot,
+      appStateSnapshot,
+      getDocument(PATHS.activeWorkout(uid)),
+      getDocument(PATHS.appState(uid, "workoutDraft")),
       hydratePrograms(uid),
       readCollection(["users", uid, COLLECTIONS.sessions]),
       readCollection(["users", uid, COLLECTIONS.measurements]),
@@ -507,14 +576,29 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     }
     if (daily.exists()) writeLocal(KEYS.daily, cleanDocument(daily.data()));
     else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.daily, null);
-    if (membership.exists()) writeLocal(KEYS.membership, cleanDocument(membership.data()));
+    if (membership.data) writeLocal(KEYS.membership, membership.data);
     else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.membership, null);
-    if (appState.exists()) {
-      const state = cleanDocument(appState.data());
+    const state = { ...(settings.data || {}), ...(appState.data || {}) };
+    if (Object.keys(state).length) {
       if (state.lastActiveProgramId) writeLocal(KEYS.lastProgram, state.lastActiveProgramId);
       else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.lastProgram, null);
+      if (state.theme) {
+        writeLocal(KEYS.theme, state.theme);
+        window.dispatchEvent(new CustomEvent("work4it:theme-hydrated", {
+          detail: { theme: state.theme, uid }
+        }));
+      } else if (!preserveLocalWhenCloudEmpty) {
+        writeLocal(KEYS.theme, null);
+        window.dispatchEvent(new CustomEvent("work4it:theme-hydrated", {
+          detail: { theme: "work4it", uid }
+        }));
+      }
     } else if (!preserveLocalWhenCloudEmpty) {
       writeLocal(KEYS.lastProgram, null);
+      writeLocal(KEYS.theme, null);
+      window.dispatchEvent(new CustomEvent("work4it:theme-hydrated", {
+        detail: { theme: "work4it", uid }
+      }));
     }
 
     const writeCloudCollection = (key, values, sorter = null) => {
@@ -543,7 +627,7 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     }
 
     localFingerprint = currentLocalFingerprint();
-    const cloudHasData = hasCloudProfile || daily.exists() || membership.exists() || appState.exists() ||
+    const cloudHasData = hasCloudProfile || daily.exists() || Boolean(membership.data) || Boolean(settings.data || appState.data) ||
       activeWorkout.exists() || workoutDraft.exists() || [programs, sessions, measurements, aiHistory, imports, customExercises, trash]
         .some(values => values.length > 0);
     window.dispatchEvent(new CustomEvent("firestore:data-hydrated", {
@@ -706,9 +790,38 @@ window.addEventListener("daily-motivation:changed", event => {
   });
 });
 window.addEventListener("membership:changed", event => {
-  if (!activeUid || !event.detail) return;
-  saveMembershipToCloud(event.detail).catch(error => {
+  if (!event.detail) return;
+  if (!activeUid || !cloudEnabled) {
+    window.dispatchEvent(new CustomEvent("membership:cloud-failed", { detail: { reason: "cloud_unavailable" } }));
+    return;
+  }
+  window.dispatchEvent(new CustomEvent("membership:cloud-saving"));
+  saveMembershipToCloud(event.detail).then(() => {
+    window.dispatchEvent(new CustomEvent("membership:cloud-saved"));
+  }).catch(error => {
+    window.dispatchEvent(new CustomEvent("membership:cloud-failed", { detail: { error } }));
     window.dispatchEvent(new CustomEvent("firestore:membership-save-failed", { detail: { error } }));
+  });
+});
+window.addEventListener("work4it:theme-changed", event => {
+  const theme = event.detail?.theme || "work4it";
+  const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+  if (!user) return;
+  if (!activeUid || !cloudEnabled) {
+    window.dispatchEvent(new CustomEvent("work4it:theme-cloud-failed", {
+      detail: { reason: "cloud_unavailable" }
+    }));
+    return;
+  }
+  window.dispatchEvent(new CustomEvent("work4it:theme-cloud-saving", { detail: { theme } }));
+  saveProfileDocumentToCloud("appState", {
+    theme,
+    updatedAt: new Date().toISOString()
+  }).then(() => {
+    localFingerprint = currentLocalFingerprint();
+    window.dispatchEvent(new CustomEvent("work4it:theme-cloud-saved", { detail: { theme } }));
+  }).catch(error => {
+    window.dispatchEvent(new CustomEvent("work4it:theme-cloud-failed", { detail: { theme, error } }));
   });
 });
 window.addEventListener("focus", () => refreshFromCloud("focus").catch(() => {}));
@@ -755,6 +868,7 @@ async function exportCurrentUserData(uid = activeUid) {
     profile,
     daily,
     membership,
+    settings,
     appState,
     syncMetadata,
     activeWorkout,
@@ -769,12 +883,13 @@ async function exportCurrentUserData(uid = activeUid) {
     trashAlias,
     records
   ] = await Promise.all([
-    readDoc("users", uid, "profile", "main"),
-    readDoc("users", uid, "profile", "daily"),
-    readDoc("users", uid, "profile", "membership"),
-    readDoc("users", uid, "profile", "appState"),
-    readDoc("users", uid, "profile", "syncMetadata"),
-    readDoc("users", uid, "activeWorkout", "current"),
+    readDoc(...PATHS.profile(uid)),
+    readDoc(...PATHS.daily(uid)),
+    readDoc(...PATHS.membership(uid)),
+    readDoc(...PATHS.settings(uid)),
+    readDoc(...PATHS.appState(uid, "main")),
+    readDoc(...PATHS.syncMetadata(uid)),
+    readDoc(...PATHS.activeWorkout(uid)),
     exportPrograms(uid),
     readCollection(["users", uid, "workoutSessions"]),
     readCollection(["users", uid, "bodyMeasurements"]),
@@ -791,7 +906,10 @@ async function exportCurrentUserData(uid = activeUid) {
     source: "firestore",
     exportedAt: new Date().toISOString(),
     uid,
-    profile: { main: profile, daily, membership, appState, syncMetadata },
+    profile: { main: profile, daily, syncMetadata },
+    membership,
+    settings,
+    appState,
     programs,
     workoutSessions,
     bodyMeasurements,
@@ -834,16 +952,18 @@ async function deleteCurrentUserData(uid = activeUid) {
     deleteCollectionDocuments(["users", uid, "deletedPrograms"]),
     deleteCollectionDocuments(["users", uid, "trash"]),
     deleteCollectionDocuments(["users", uid, "records"]),
+    deleteCollectionDocuments(["users", uid, "settings"]),
+    deleteCollectionDocuments(["users", uid, "membership"]),
     deleteCollectionDocuments(["users", uid, "appState"])
   ]);
 
   await Promise.all([
-    deleteDoc(doc(db, "users", uid, "activeWorkout", "current")).catch(() => {}),
-    deleteDoc(doc(db, "users", uid, "profile", "main")).catch(() => {}),
-    deleteDoc(doc(db, "users", uid, "profile", "daily")).catch(() => {}),
-    deleteDoc(doc(db, "users", uid, "profile", "membership")).catch(() => {}),
-    deleteDoc(doc(db, "users", uid, "profile", "appState")).catch(() => {}),
-    deleteDoc(doc(db, "users", uid, "profile", "syncMetadata")).catch(() => {}),
+    deleteDoc(doc(db, ...PATHS.activeWorkout(uid))).catch(() => {}),
+    deleteDoc(doc(db, ...PATHS.profile(uid))).catch(() => {}),
+    deleteDoc(doc(db, ...PATHS.daily(uid))).catch(() => {}),
+    deleteDoc(doc(db, ...PATHS.legacyMembership(uid))).catch(() => {}),
+    deleteDoc(doc(db, ...PATHS.legacySettings(uid))).catch(() => {}),
+    deleteDoc(doc(db, ...PATHS.syncMetadata(uid))).catch(() => {}),
     deleteDoc(doc(db, "users", uid)).catch(() => {})
   ]);
 
@@ -910,9 +1030,11 @@ window.addEventListener("firebase-auth:changed", () => {
   const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
   if (!user) {
     clearRuntimeForLogout();
+    loadPublicPricingConfig();
     return;
   }
   beginAuthenticatedUser(user);
+  loadPublicPricingConfig();
 });
 
 const existingUser = window.FirebaseAuthService?.getCurrentUser?.();

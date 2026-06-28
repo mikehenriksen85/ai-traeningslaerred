@@ -18,7 +18,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
   doc,
-  getDoc,
   serverTimestamp,
   setDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -49,7 +48,6 @@ function publicUser(user) {
 
 async function ensureUserDocument(user) {
   const reference = doc(db, "users", user.uid, "profile", "main");
-  const snapshot = await getDoc(reference);
   const privacyConsent = readPrivacyConsent();
   await setDoc(reference, {
     account: {
@@ -62,9 +60,18 @@ async function ensureUserDocument(user) {
       lastLoginAt: new Date().toISOString()
     },
     ...(privacyConsent?.accepted ? { privacyConsent } : {}),
-    ...(snapshot.exists() ? {} : { createdAt: serverTimestamp() }),
     updatedAt: serverTimestamp()
   }, { merge: true });
+}
+
+function reportAuthFirestoreError(operation, path, uid, error) {
+  console.error("Work4it Auth/Firestore-fejl", {
+    operation,
+    path,
+    uid: uid || null,
+    code: error?.code || "unknown",
+    message: error?.message || String(error || "Ukendt fejl")
+  });
 }
 
 function emitAuthState(error = null) {
@@ -209,7 +216,7 @@ async function initializeAuthState() {
       try {
         await ensureUserDocument(user);
       } catch (error) {
-        console.error("Kunne ikke oprette Firebase-profilmetadata på users/{uid}/profile/main.", error);
+        reportAuthFirestoreError("setDoc", `users/${user.uid}/profile/main`, user.uid, error);
         window.dispatchEvent(new CustomEvent("firebase-auth:profile-metadata-error", {
           detail: {
             path: `users/${user.uid}/profile/main`,

@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "workout-b55ed"
+  },
+  "targets": {
+    "workout-b55ed": {
+      "hosting": {
+        "app": [
+          "work4it-app"
+        ]
+      }
+    }
   }
 }

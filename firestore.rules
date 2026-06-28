@@ -39,6 +39,22 @@ service cloud.firestore {
         allow read, create, update, delete: if isOwner(userId);
       }
 
+      match /settings/{settingsId} {
+        allow read, create, update, delete: if
+          isOwner(userId) &&
+          settingsId == "main";
+      }
+
+      match /membership/{membershipId} {
+        allow read, create, update, delete: if
+          isOwner(userId) &&
+          membershipId == "main";
+      }
+
+      match /statistics/{statisticId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
       // Aktiv app-path. "trash" beholdes som fremtidigt alias.
       match /deletedPrograms/{itemId} {
         allow read, create, update, delete: if isOwner(userId);
@@ -61,8 +77,6 @@ service cloud.firestore {
         allow read, create, update, delete: if isOwner(userId);
       }
 
-      // Appen bruger profile/appState i dag. Denne path er klar til en
-      // senere selvstændig appState-collection.
       match /appState/{stateId} {
         allow read, create, update, delete: if isOwner(userId);
       }
@@ -95,8 +109,8 @@ service cloud.firestore {
 
     // Offentlig, ikke-personlig priskonfiguration. Dokumentet opdateres kun
     // af en betroet backend/Cloud Function via Admin SDK.
-    match /appConfig/pricing {
-      allow read: if true;
+    match /appConfig/{configId} {
+      allow read: if configId == "pricing";
       allow create, update, delete: if false;
     }
 
