@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFunctions } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBT0dbEXXb1lmVzhTHyfBw2r_DiwBWIphg",
@@ -15,8 +16,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const functions = getFunctions(app, "europe-west1");
 
 console.log("[Work4it Firebase] firebaseConfig", firebaseConfig);
 console.log("[Work4it Firebase] auth.currentUser at init", auth.currentUser);
 
-export { app, db, auth };
+export { app, db, auth, functions };

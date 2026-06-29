@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v43-ai-requests";
+const CACHE_NAME = "work4it-shell-v44-stripe";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -15,7 +15,8 @@ const APP_SHELL = [
   "./wizard-store.js?v=20260621-cloud-primary1",
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",
-  "./membership.js?v=20260627-membership-touch1",
+  "./membership.js?v=20260629-stripe1",
+  "./stripe-checkout.js?v=20260629-stripe1",
   "./ai-system.js?v=20260628-ai20",
   "./ai-copilot-actions.js?v=20260628-ai20",
   "./ai-request-counter.js?v=20260629-ai-requests1",

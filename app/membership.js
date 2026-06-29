@@ -1,11 +1,11 @@
 (function () {
   "use strict";
 
-  // DEMO ONLY: Medlemskab og Premium-status er klientstyret og må ikke
-  // bruges som produktionssikker adgangskontrol.
-  // TODO: Flyt autoritativ medlemskabsstatus til backend/Cloud Functions,
-  // og håndhæv den med serverudstedte claims og Firestore Rules.
-  const CLIENT_MANAGED_DEMO = true;
+  // Gratis/prøveperiode håndteres fortsat i klienten. Betalte planer må kun
+  // aktiveres af Stripe-webhooken i Firebase Functions efter bekræftet betaling.
+  // TODO: Flyt endelig produktionsadgang til serverbeskyttede claims, når Stripe
+  // går fra test-mode til live.
+  const CLIENT_MANAGED_DEMO = false;
   const STORAGE_KEY = "ai_training_membership_v1";
   const TRIAL_DAYS = 10;
   const POPUP_INTERVAL_DAYS = 30;
@@ -87,6 +87,7 @@
       membershipStartDate: null,
       membershipEndDate: null,
       isPremium: true,
+      membershipStatus: "trial",
       selectedPlan: "trial",
       priceDkk: details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
@@ -121,7 +122,8 @@
       trialEndDate: value.trialEndDate || null,
       membershipStartDate: value.membershipStartDate || null,
       membershipEndDate: value.membershipEndDate || null,
-      isPremium: membershipType !== "free",
+      isPremium: value.membershipStatus === "active" || membershipType === "trial",
+      membershipStatus: value.membershipStatus || (membershipType === "free" ? "free" : membershipType === "trial" ? "trial" : "pending_payment"),
       selectedPlan,
       priceDkk: hasLockedPrice ? storedPrice : details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
@@ -138,6 +140,11 @@
         ? Number(value.registeredUserCountAtSelection)
         : null,
       selectedAt: value.selectedAt || value.membershipStartDate || null,
+      membershipPrice: Number.isFinite(Number(value.membershipPrice)) ? Number(value.membershipPrice) : null,
+      membershipStartedAt: value.membershipStartedAt || null,
+      membershipExpiresAt: value.membershipExpiresAt || null,
+      stripeCustomerId: value.stripeCustomerId || null,
+      stripeSessionId: value.stripeSessionId || null,
       updatedAt: value.updatedAt || null
     };
   }
@@ -172,10 +179,11 @@
       next.membershipType = "free";
       next.selectedPlan = "free";
       next.isPremium = false;
+      next.membershipStatus = "free";
       next.membershipStartDate = null;
       next.membershipEndDate = null;
     } else {
-      next.isPremium = next.membershipType !== "free";
+      next.isPremium = next.membershipStatus === "active" || next.membershipType === "trial";
     }
     return next;
   }
@@ -310,6 +318,34 @@
     element.classList.add("show");
   }
 
+  function isPaidPlan(plan) {
+    return ["quarterly", "yearly", "lifetime"].includes(plan);
+  }
+
+  async function startStripeCheckout(plan) {
+    const button = document.querySelector(`[data-membership-select="${plan}"]`);
+    const defaultText = button?.dataset.defaultText || button?.textContent || "";
+    try {
+      if (!window.Work4itStripeCheckout?.createCheckout) {
+        throw new Error("Stripe Checkout er ikke indlæst endnu. Prøv igen om et øjeblik.");
+      }
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Åbner sikker betaling...";
+      }
+      showConfirmation("Åbner sikker Stripe-betaling...");
+      await window.Work4itStripeCheckout.createCheckout(plan);
+    } catch (error) {
+      if (button) {
+        button.disabled = false;
+        button.textContent = defaultText || `Vælg ${PLAN_LABELS[plan]}`;
+      }
+      const message = window.Work4itStripeCheckout?.friendlyError?.(error) || error?.message || "Stripe Checkout kunne ikke startes.";
+      showConfirmation(message);
+      console.error("[Work4it Stripe] Checkout failed", error);
+    }
+  }
+
   function appendConfirmation(message) {
     const element = document.getElementById("membershipConfirmation");
     if (!element) return;
@@ -384,6 +420,11 @@
   }
 
   function selectPlan(plan, now = new Date()) {
+    if (isPaidPlan(plan)) {
+      startStripeCheckout(plan);
+      return getMembership(now);
+    }
+
     const current = getMembership(now);
     const details = planDetails(plan);
     const next = {
@@ -398,6 +439,7 @@
 
     if (plan === "free") {
       next.membershipType = "free";
+      next.membershipStatus = "free";
       next.isPremium = false;
       next.membershipStartDate = null;
       next.membershipEndDate = null;
@@ -409,22 +451,6 @@
       next.priceLocked = false;
       next.registeredUserCountAtSelection = null;
       next.selectedAt = iso(now);
-    } else {
-      next.membershipType = plan;
-      next.isPremium = true;
-      next.membershipStartDate = iso(now);
-      next.membershipEndDate = plan === "quarterly"
-        ? iso(addMonths(now, 3))
-        : plan === "yearly"
-          ? iso(addMonths(now, 12))
-          : null;
-      next.aiRequestsUsed = 0;
-      next.aiResetDate = nextMonthStart(now);
-      next.pricingTierAtPurchase = pricingContext.activeTier;
-      next.priceDkkAtPurchase = details.priceDkk;
-      next.priceLocked = true;
-      next.registeredUserCountAtSelection = pricingContext.registeredUserCount;
-      next.selectedAt = iso(now);
     }
 
     const saved = write(next);
@@ -432,7 +458,7 @@
     render(saved);
     showConfirmation(plan === "free"
       ? "Gratisversionen er valgt. Alle dine eksisterende data er bevaret."
-      : `${PLAN_LABELS[plan]} er valgt som demo. Ingen betaling er gennemført.`);
+      : `${PLAN_LABELS[plan]} kræver sikker betaling via Stripe.`);
     window.dispatchEvent(new CustomEvent("membership:changed", { detail: saved }));
     return saved;
   }
@@ -445,6 +471,7 @@
     }
     const trial = write({
       ...createTrial(now),
+      membershipStatus: "trial",
       aiRequestsUsed: 0,
       aiResetDate: nextMonthStart(now),
       lastMembershipPopupDate: current.lastMembershipPopupDate,
@@ -521,12 +548,14 @@
     popupIsDue,
     selectPlan,
     startTrial,
+    startStripeCheckout,
     render,
     initialize,
     requireFeature,
     openView,
     closeView,
-    showPopup
+    showPopup,
+    showConfirmation
   };
   window.openMembershipView = openView;
   window.closeMembershipView = closeView;

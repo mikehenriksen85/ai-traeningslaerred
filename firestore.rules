@@ -10,6 +10,19 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function clientMembershipTypeIsAllowed() {
+      return request.resource.data.membershipType in ["free", "trial"] &&
+        request.resource.data.membershipStatus in ["free", "trial"];
+    }
+
+    function isAiRequestUsageUpdate() {
+      return resource.data.membershipStatus == "active" &&
+        request.resource.data.membershipStatus == resource.data.membershipStatus &&
+        request.resource.data.membershipType == resource.data.membershipType &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["aiRequestsUsed", "aiResetDate", "lastRequestTimestamp", "updatedAt"]);
+    }
+
     match /users/{userId} {
       allow read, create, update, delete: if isOwner(userId);
 
@@ -46,9 +59,25 @@ service cloud.firestore {
       }
 
       match /membership/{membershipId} {
-        allow read, create, update, delete: if
+        allow read: if
           isOwner(userId) &&
           membershipId == "main";
+        allow create: if
+          isOwner(userId) &&
+          membershipId == "main" &&
+          clientMembershipTypeIsAllowed();
+        allow update: if
+          isOwner(userId) &&
+          membershipId == "main" &&
+          (clientMembershipTypeIsAllowed() || isAiRequestUsageUpdate());
+        allow delete: if
+          isOwner(userId) &&
+          membershipId == "main";
+      }
+
+      match /checkoutSessions/{sessionId} {
+        allow read: if isOwner(userId);
+        allow create, update, delete: if false;
       }
 
       match /statistics/{statisticId} {

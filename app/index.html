@@ -2755,7 +2755,7 @@
           <div class="membership-price-note">15 AI Requests/md.</div>
           <ul>
             <li>Alle Premium-funktioner</li>
-            <li>Ingen automatisk betaling i demoen</li>
+            <li>Sikker betaling via Stripe Checkout</li>
           </ul>
           <button class="membership-plan-btn primary" type="button" data-membership-select="quarterly" onclick="selectMembershipPlan('quarterly')">Vælg 3 måneder</button>
         </article>
@@ -2785,7 +2785,7 @@
       </div>
 
       <div class="membership-terms">
-        Betaling er ikke aktiveret endnu. Valgte planer gemmes som demo/test i din lokale cache og brugerprofil i Cloud. Gratisversionen og almindelig træning er altid tilgængelig.
+        Betalte medlemskaber gennemføres via sikker Stripe Checkout. Premium aktiveres først, når betalingen er bekræftet af Stripe. Gratisversionen og almindelig træning er altid tilgængelig.
       </div>
     </div>
   </section>
@@ -7844,8 +7844,9 @@
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
-  <script src="membership.js?v=20260627-membership-touch1"></script>
+  <script src="membership.js?v=20260629-stripe1"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
+  <script type="module" src="stripe-checkout.js?v=20260629-stripe1"></script>
   <script type="module" src="auth-service.js?v=20260628-auth-ready1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260628-auth-ready1"></script>
   <script type="module" src="ai-request-counter.js?v=20260629-ai-requests1"></script>

@@ -1,0 +1,14 @@
+{
+  "name": "work4it-functions",
+  "description": "Secure backend for Work4it Firebase and Stripe flows",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.3.2",
+    "stripe": "^17.5.0"
+  }
+}
