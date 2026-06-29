@@ -13,26 +13,27 @@ const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 const EARLY_ADOPTER_LIMIT = 500;
-const PRICE_TIERS = Object.freeze({
-  early_adopter: Object.freeze({ quarterly: 59, yearly: 199, lifetime: 449 }),
-  standard: Object.freeze({ quarterly: 79, yearly: 249, lifetime: 499 })
-});
-
 const PLAN_CONFIG = Object.freeze({
   quarterly: Object.freeze({
     label: "Work4it Premium 3 måneder",
+    priceId: "price_1TnhepJ8DJiiK3vDoqAb7oqY",
+    fallbackPriceDkk: 59,
     months: 3,
     aiRequestLimit: 15,
     aiRequestPeriod: "monthly"
   }),
   yearly: Object.freeze({
     label: "Work4it Premium 12 måneder",
+    priceId: "price_1Tnhf9J8DJiiK3vDpQe8srVl",
+    fallbackPriceDkk: 199,
     months: 12,
     aiRequestLimit: 15,
     aiRequestPeriod: "monthly"
   }),
   lifetime: Object.freeze({
     label: "Work4it Premium Livstid",
+    priceId: "price_1TnhfNJ8DJiiK3vDCYTp8C4e",
+    fallbackPriceDkk: 449,
     months: null,
     aiRequestLimit: 30,
     aiRequestPeriod: "monthly"
@@ -106,8 +107,13 @@ async function pricingTier() {
   };
 }
 
-function planPrice(plan, tier) {
-  return PRICE_TIERS[tier]?.[plan] || PRICE_TIERS.early_adopter[plan];
+function priceAmountDkk(price, fallbackPriceDkk) {
+  const amount = Number(price?.unit_amount);
+  return Number.isFinite(amount) && amount > 0 ? amount / 100 : fallbackPriceDkk;
+}
+
+function checkoutModeForPrice(price) {
+  return price?.recurring ? "subscription" : "payment";
 }
 
 async function getOrCreateCustomer(stripe, uid, email, name) {
@@ -142,17 +148,25 @@ exports.createStripeCheckoutSession = onCall({
   if (!config) {
     throw new HttpsError("invalid-argument", "Ukendt medlemskabsplan.");
   }
+  const requestedPriceId = String(request.data?.priceId || "");
+  if (requestedPriceId !== config.priceId) {
+    throw new HttpsError("invalid-argument", "Stripe Price ID matcher ikke den valgte Work4it-plan.");
+  }
 
   const origin = safeOrigin(request);
   const tier = await pricingTier();
-  const priceDkk = planPrice(plan, tier.activeTier);
   const stripe = stripeClient();
+  const stripePrice = await stripe.prices.retrieve(config.priceId);
+  if (!stripePrice?.active) {
+    throw new HttpsError("failed-precondition", "Den valgte Stripe-pris er ikke aktiv.");
+  }
+  const priceDkk = priceAmountDkk(stripePrice, config.fallbackPriceDkk);
   const email = request.auth?.token?.email || undefined;
   const name = request.auth?.token?.name || undefined;
   const customerId = await getOrCreateCustomer(stripe, uid, email, name);
 
   const session = await stripe.checkout.sessions.create({
-    mode: "payment",
+    mode: checkoutModeForPrice(stripePrice),
     customer: customerId,
     client_reference_id: uid,
     locale: request.data?.locale === "en" ? "en" : "da",
@@ -160,21 +174,13 @@ exports.createStripeCheckoutSession = onCall({
     cancel_url: `${origin}/?payment=cancelled`,
     allow_promotion_codes: true,
     line_items: [{
-      quantity: 1,
-      price_data: {
-        currency: "dkk",
-        unit_amount: Math.round(priceDkk * 100),
-        product_data: {
-          name: config.label,
-          description: plan === "lifetime"
-            ? "Permanent Premium-adgang til Work4it."
-            : `Premium-adgang i ${config.months} måneder.`
-        }
-      }
+      price: config.priceId,
+      quantity: 1
     }],
     metadata: {
       uid,
       plan,
+      priceId: config.priceId,
       priceDkk: String(priceDkk),
       pricingTier: tier.activeTier,
       registeredUserCount: tier.registeredUserCount == null ? "" : String(tier.registeredUserCount)
@@ -184,6 +190,7 @@ exports.createStripeCheckoutSession = onCall({
   await admin.firestore().doc(`users/${uid}/checkoutSessions/${session.id}`).set({
     sessionId: session.id,
     plan,
+    priceId: config.priceId,
     priceDkk,
     pricingTier: tier.activeTier,
     status: "created",
@@ -207,6 +214,7 @@ async function activateMembershipFromSession(session) {
   const now = new Date();
   const expiresAt = config.months ? addMonths(now, config.months) : null;
   const priceDkk = Number(session.metadata?.priceDkk) || (Number(session.amount_total) / 100);
+  const priceId = session.metadata?.priceId || config.priceId;
   const membershipRef = admin.firestore().doc(`users/${uid}/membership/main`);
   const checkoutRef = admin.firestore().doc(`users/${uid}/checkoutSessions/${session.id}`);
 
@@ -219,6 +227,8 @@ async function activateMembershipFromSession(session) {
       membershipExpiresAt: expiresAt ? admin.firestore.Timestamp.fromDate(expiresAt) : null,
       stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id || null,
       stripeSessionId: session.id,
+      stripePriceId: priceId,
+      stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : session.subscription?.id || null,
       isPremium: true,
       selectedPlan: plan,
       priceDkk,
@@ -240,7 +250,9 @@ async function activateMembershipFromSession(session) {
       status: "paid",
       paidAt: admin.firestore.FieldValue.serverTimestamp(),
       stripeSessionId: session.id,
+      stripePriceId: priceId,
       stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null,
+      stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : session.subscription?.id || null,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   });

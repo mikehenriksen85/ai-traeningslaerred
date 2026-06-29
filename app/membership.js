@@ -44,10 +44,16 @@
 
   function planDetails(plan, tier = pricingContext.activeTier) {
     const base = PLAN_DETAILS[plan] || PLAN_DETAILS.free;
+    const stripePlan = window.Work4itStripeConfig?.getPlan?.(plan);
     const tierPrices = PRICE_TIERS[normalizedPricingTier(tier)] || PRICE_TIERS.early_adopter;
     return {
       ...base,
-      priceDkk: Object.prototype.hasOwnProperty.call(tierPrices, plan) ? tierPrices[plan] : base.priceDkk
+      priceDkk: Number.isFinite(Number(stripePlan?.priceDkk))
+        ? Number(stripePlan.priceDkk)
+        : Object.prototype.hasOwnProperty.call(tierPrices, plan)
+          ? tierPrices[plan]
+          : base.priceDkk,
+      stripePriceId: stripePlan?.priceId || null
     };
   }
 
@@ -276,6 +282,11 @@
       statusCopy.textContent = "Gratis medlemskab med 3 AI Requests.";
       statusDate.textContent = "Dine brugerdata slettes aldrig, hvis du bruger gratisversionen.";
       if (navStatus) navStatus.textContent = "Gratis";
+    } else if (isPaidPlan(data.membershipType) && data.membershipStatus !== "active") {
+      statusName.textContent = "Betaling afventer";
+      statusCopy.textContent = "Premium aktiveres først, når Stripe har bekræftet betalingen.";
+      statusDate.textContent = "Hvis du har gennemført betaling, opdaterer Work4it automatisk Cloud-status om lidt.";
+      if (navStatus) navStatus.textContent = "Afventer";
     } else if (data.membershipType === "lifetime") {
       statusCopy.textContent = `Permanent Premium-adgang med 30 AI Requests pr. måned. Valgt til ${formatPrice(data.priceDkkAtPurchase || data.priceDkk)}.`;
       statusDate.textContent = `Medlemskabet blev valgt ${formatDate(data.membershipStartDate)}.`;
@@ -355,7 +366,9 @@
   }
 
   function updateActivePlanUi(data = getMembership()) {
-    const activePlan = data.selectedPlan || data.membershipType || "free";
+    const activePlan = data.membershipStatus === "active" || ["free", "trial"].includes(data.membershipType)
+      ? data.selectedPlan || data.membershipType || "free"
+      : "free";
     document.querySelectorAll("[data-membership-plan]").forEach(card => {
       const isActive = card.dataset.membershipPlan === activePlan;
       card.classList.toggle("active", isActive);

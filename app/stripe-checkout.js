@@ -20,6 +20,11 @@ async function createCheckout(plan) {
     throw new Error("Ugyldig Stripe-plan.");
   }
 
+  const stripePlan = window.Work4itStripeConfig?.getPlan?.(plan);
+  if (!stripePlan?.priceId) {
+    throw new Error("Stripe Price ID mangler for den valgte plan.");
+  }
+
   const user = currentUser();
   if (!user) {
     window.Work4itAuthGate?.showLogin?.("Log ind for at købe Premium.");
@@ -29,6 +34,7 @@ async function createCheckout(plan) {
   const createSession = httpsCallable(functions, "createStripeCheckoutSession");
   const result = await createSession({
     plan,
+    priceId: stripePlan.priceId,
     locale: "da",
     origin: window.location.origin
   });
@@ -39,9 +45,39 @@ async function createCheckout(plan) {
   return result.data;
 }
 
+function delay(ms) {
+  return new Promise(resolve => window.setTimeout(resolve, ms));
+}
+
+async function waitForConfirmedMembership(maxAttempts = 8) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      if (!window.FirestoreDataService?.refreshFromCloud) {
+        await delay(500);
+        continue;
+      }
+      await window.FirestoreDataService.refreshFromCloud();
+      const membership = window.Membership?.getMembership?.();
+      window.Membership?.render?.(membership);
+      if (membership?.membershipStatus === "active" || (membership?.isPremium === true && membership?.membershipType !== "trial")) {
+        window.Membership?.showConfirmation?.("Betaling bekræftet. Premium er aktivt ✓");
+        window.Work4itAIRequestCounter?.refresh?.();
+        return true;
+      }
+    } catch (error) {
+      console.warn("[Work4it Stripe] Cloud refresh after payment failed", error);
+    }
+    await delay(Math.min(1200 * attempt, 5000));
+  }
+
+  window.Membership?.showConfirmation?.("Betalingen er modtaget. Vi afventer stadig Stripe-bekræftelsen. Prøv at opdatere om et øjeblik.");
+  return false;
+}
+
 function showReturnMessage() {
   const params = new URLSearchParams(window.location.search);
   const payment = params.get("payment");
+  const sessionId = params.get("session_id");
   if (!payment) return;
 
   const cleanUrl = `${window.location.origin}${window.location.pathname}`;
@@ -50,9 +86,9 @@ function showReturnMessage() {
   window.setTimeout(() => {
     window.Membership?.openView?.();
     if (payment === "success") {
-      window.Membership?.showConfirmation?.("Betaling modtaget. Premium aktiveres, så snart Stripe har bekræftet betalingen.");
-      window.FirestoreDataService?.refreshFromCloud?.().catch(() => {});
-      window.Membership?.render?.();
+      console.log("[Work4it Stripe] Returned from Checkout", { sessionId });
+      window.Membership?.showConfirmation?.("Betaling modtaget. Henter Stripe-bekræftelse...");
+      waitForConfirmedMembership();
     } else if (payment === "cancelled") {
       window.Membership?.showConfirmation?.("Betalingen blev afbrudt. Ingen ændringer er foretaget.");
     }
