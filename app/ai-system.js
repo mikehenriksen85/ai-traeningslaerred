@@ -149,6 +149,18 @@
   }
 
   function requestUsage(membership = {}, consume = false, date = new Date()) {
+    const cloudSnapshot = window.Work4itAIRequestCounter?.getSnapshot?.();
+    if (cloudSnapshot && Number.isFinite(Number(cloudSnapshot.aiRequestLimit))) {
+      return {
+        allowed: cloudSnapshot.remaining > 0,
+        limit: Number(cloudSnapshot.aiRequestLimit) || 0,
+        used: Number(cloudSnapshot.aiRequestsUsed) || 0,
+        remaining: Number(cloudSnapshot.remaining) || 0,
+        period: cloudSnapshot.aiResetDate ? requestPeriodKey(new Date(cloudSnapshot.aiResetDate)) : "total",
+        resetDate: cloudSnapshot.aiResetDate || null,
+        source: cloudSnapshot.source || "counter"
+      };
+    }
     const limit = Math.max(0, Number(membership.aiRequestLimit) || 0);
     const period = requestPeriodKey(date);
     const stored = safeJson(REQUEST_USAGE_KEY, {});

@@ -790,6 +790,11 @@
     .exercise-picker-list { min-height: 0; overflow-y: auto; }
     .copilot { border-top: 1px dashed var(--border); padding-top: 18px; }
     .copilot-title { color: var(--text-accent); font-weight: var(--font-weight-bold); margin-bottom: 10px; }
+    .ai-request-counter { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; background: rgba(59,130,246,.08); color: var(--text-secondary); font-size: var(--font-size-small); }
+    .ai-request-counter strong { color: var(--text-primary); }
+    .ai-request-counter.warning { border-color: rgba(245,158,11,.65); background: rgba(245,158,11,.09); }
+    .ai-request-counter.empty { border-color: rgba(239,68,68,.65); background: rgba(239,68,68,.09); }
+    .ai-request-upgrade { color: var(--text-accent); font-weight: var(--font-weight-semibold); background: transparent; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
     .copilot-bar { display: flex; gap: 8px; }
     .copilot-input { flex: 1; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 6px; padding: 11px; min-width: 0; }
     .copilot-btn { background: var(--blue); color: var(--text-primary); border: 0; border-radius: 6px; padding: 0 18px; font-weight: var(--font-weight-bold); cursor: pointer; }
@@ -861,8 +866,12 @@
     .screenshot-field { display: grid; gap: 5px; color: var(--muted); font-size: var(--font-size-small); }
     .screenshot-day { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #17202b; }
     .screenshot-exercise-list { display: grid; gap: 10px; }
-    .screenshot-exercise { display: grid; grid-template-columns: minmax(150px,2fr) repeat(4,minmax(70px,1fr)) minmax(140px,1.4fr) auto; align-items: end; gap: 8px; padding: 10px; border: 1px solid #334155; border-radius: 8px; }
+    .screenshot-exercise { display: grid; grid-template-columns: repeat(6,minmax(72px,1fr)) auto; align-items: end; gap: 8px; padding: 10px; border: 1px solid #334155; border-radius: 8px; }
     .screenshot-exercise.uncertain { border-color: #a16207; background: rgba(245,158,11,.05); }
+    .screenshot-exercise .wide { grid-column: span 2; }
+    .screenshot-match-status { color: var(--muted); font-size: var(--font-size-small); line-height: var(--line-height-body); }
+    .screenshot-field-warnings { display: grid; gap: 3px; margin-top: 4px; color: #fde68a; }
+    .import-add-exercise { justify-self: start; }
     .screenshot-ocr-details { border-top: 1px solid var(--border); padding-top: 12px; }
     .screenshot-ocr-details summary { cursor: pointer; color: var(--blue); font-weight: var(--font-weight-semibold); }
     .screenshot-ocr-details textarea { width: 100%; margin: 10px 0; resize: vertical; }
@@ -2409,6 +2418,10 @@
       </div>
       <div class="copilot program-only" id="copilotAccess">
         <div class="copilot-title">✨ AI Træningsassistent (Profil, programmer og træningspas)</div>
+        <div class="ai-request-counter" id="aiRequestCounter" aria-live="polite">
+          <span><strong id="aiRequestRemaining">-</strong> AI Requests tilbage</span>
+          <button class="ai-request-upgrade" type="button" onclick="openMembershipView()">Se medlemskab</button>
+        </div>
         <div class="copilot-bar">
           <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'Lav et styrkeprogram', 'Jeg har kun håndvægte' eller 'Opdater min vægt til 88 kg'">
           <button class="copilot-btn" onclick="runCopilot()">Kør</button>
@@ -2873,6 +2886,7 @@
         });
       }
     });
+    window.Work4itExerciseCatalog = catalog;
 
     let slotCounter = 0;
     let totalSeconds = 0;
@@ -6403,6 +6417,34 @@
         pendingCopilotHistory = null;
       }
     }
+
+    function formatAiResetDate(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return "";
+      return new Intl.DateTimeFormat("da-DK", { day: "numeric", month: "short" }).format(date);
+    }
+
+    function updateAiRequestCounterDisplay(detail = window.Work4itAIRequestCounter?.getSnapshot?.()) {
+      const box = $("aiRequestCounter");
+      const remainingEl = $("aiRequestRemaining");
+      if (!box || !remainingEl || !detail) return;
+      const limit = Number(detail.aiRequestLimit) || 0;
+      const used = Number(detail.aiRequestsUsed) || 0;
+      const remaining = Math.max(0, Number(detail.remaining ?? (limit - used)) || 0);
+      const reset = detail.membershipType === "free"
+        ? "Gratis nulstilles ikke"
+        : detail.aiResetDate
+          ? `Nulstilles ${formatAiResetDate(detail.aiResetDate)}`
+          : "Månedlig nulstilling";
+      remainingEl.textContent = `${remaining}/${limit}`;
+      box.classList.toggle("warning", remaining > 0 && remaining <= 2);
+      box.classList.toggle("empty", remaining <= 0);
+      box.querySelector("span").innerHTML = `<strong id="aiRequestRemaining">${remaining}/${limit}</strong> AI Requests tilbage · ${esc(reset)}`;
+      const upgrade = box.querySelector(".ai-request-upgrade");
+      if (upgrade) upgrade.textContent = remaining <= 0 ? "Opgradér" : "Se medlemskab";
+    }
+
     function slotIds() { return [...document.querySelectorAll(".exercise")].map(b => b.id.replace("block-", "")); }
 
     function optimizeCurrentWorkoutForGoal(mode = "all") {
@@ -7130,13 +7172,19 @@
       return null;
     }
 
-    function runCopilot() {
-      if (!openPremiumFeature("copilot")) return;
+    async function runCopilot() {
       const cmd = $("copilotInput").value.trim();
       if (!cmd) return;
-      const requestUsage = window.Work4itAISystem?.requestUsage?.(window.Membership?.getMembership?.() || {}, true);
-      if (requestUsage && !requestUsage.allowed) {
-        feedback(`Du har brugt månedens ${requestUsage.limit} AI Requests. Grænsen nulstilles i næste kalendermåned.`, true);
+      const consume = await window.Work4itAIRequestCounter?.consumeRequest?.();
+      updateAiRequestCounterDisplay(consume);
+      if (consume && !consume.allowed) {
+        const resetText = consume.membershipType === "free"
+          ? "Gratisversionens 3 AI Requests er brugt."
+          : consume.aiResetDate
+            ? `Grænsen nulstilles ${formatAiResetDate(consume.aiResetDate)}.`
+            : "Grænsen nulstilles næste måned.";
+        feedback(`${resetText} Opgradér for flere AI Requests.`, true);
+        window.Membership?.openView?.();
         return;
       }
       const aiContext = window.Work4itAISystem?.buildContext?.() || null;
@@ -7674,12 +7722,14 @@
         structure: "screenshot_import",
         workoutIntensity: "medium",
         exercises: (day.exercises || []).map(exercise => {
-          const muscle = inferImportedMuscle(exercise.name);
+          const muscle = exercise.muscle || inferImportedMuscle(exercise.matchedName || exercise.name);
+          const name = exercise.matchedName || exercise.name;
           return {
             ...exercise,
+            name,
             muscle,
             goal: currentTrainingGoal(),
-            role: window.TrainingGoalEngine?.exerciseRole?.(exercise.name, muscle) || "accessory",
+            role: window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory",
             exerciseType: muscle === "Cardio" ? "cardio" : "strength",
             trainingStyle: "gym"
           };
@@ -7687,7 +7737,7 @@
       }));
       const program = window.WorkoutProgramStore.createProgram({
         id,
-        title: imported.title || "Importeret træningspas",
+        title: imported.programName || imported.title || "Importeret træningspas",
         goal: currentTrainingGoal(),
         days
       });
@@ -7721,6 +7771,7 @@
     window.addEventListener("daily-motivation:changed", updateDailyMotivationDisplay);
     window.addEventListener("screenshot-import:approved", createProgramFromScreenshot);
     window.addEventListener("training-profile:updated", updateEstimatedCalories);
+    window.addEventListener("ai-requests:changed", event => updateAiRequestCounterDisplay(event.detail));
     window.addEventListener("firestore:data-hydrated", () => {
       loadCustom();
       renderSaved();
@@ -7728,6 +7779,8 @@
       loadAutosave();
       updateDailyMotivationDisplay();
       updateEstimatedCalories();
+      window.Work4itAIRequestCounter?.refresh?.();
+      updateAiRequestCounterDisplay();
       window.refreshProfileAccountView?.();
       window.Membership?.render?.();
       $("autosaveStatus").textContent = "Data synkroniseret fra Firebase";
@@ -7744,6 +7797,7 @@
       renderTrash();
       updateDailyMotivationDisplay();
       updateEstimatedCalories();
+      updateAiRequestCounterDisplay();
       window.refreshProfileAccountView?.();
     });
 
@@ -7764,6 +7818,8 @@
       updateWorkoutProgress();
       updateDailyMotivationDisplay();
       updateEstimatedCalories();
+      window.Work4itAIRequestCounter?.refresh?.();
+      updateAiRequestCounterDisplay();
       window.dispatchEvent(new CustomEvent("training-app:ready"));
     };
   </script>
@@ -7775,7 +7831,7 @@
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
-  <script src="screenshot-import.js?v=20260620-import1"></script>
+  <script src="screenshot-import.js?v=20260628-import2"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-system.js?v=20260628-ai20"></script>
@@ -7792,6 +7848,7 @@
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
   <script type="module" src="auth-service.js?v=20260628-auth-ready1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260628-auth-ready1"></script>
+  <script type="module" src="ai-request-counter.js?v=20260629-ai-requests1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {

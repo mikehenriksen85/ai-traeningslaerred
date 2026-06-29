@@ -74,6 +74,10 @@
     return result;
   }
 
+  function nextMonthStart(date = new Date()) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 1, 0, 0, 0, 0).toISOString();
+  }
+
   function createTrial(now = new Date()) {
     const details = planDetails("trial");
     return {
@@ -87,6 +91,9 @@
       priceDkk: details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
       aiRequestPeriod: details.aiRequestPeriod,
+      aiRequestsUsed: 0,
+      aiResetDate: null,
+      lastRequestTimestamp: null,
       lastMembershipPopupDate: null,
       pricingStrategyVersion: PRICING_STRATEGY_VERSION,
       pricingTierAtPurchase: null,
@@ -119,6 +126,9 @@
       priceDkk: hasLockedPrice ? storedPrice : details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
       aiRequestPeriod: details.aiRequestPeriod,
+      aiRequestsUsed: Number.isFinite(Number(value.aiRequestsUsed)) ? Math.max(0, Number(value.aiRequestsUsed)) : 0,
+      aiResetDate: value.aiResetDate || null,
+      lastRequestTimestamp: value.lastRequestTimestamp || null,
       lastMembershipPopupDate: value.lastMembershipPopupDate || null,
       pricingStrategyVersion: value.pricingStrategyVersion || PRICING_STRATEGY_VERSION,
       pricingTierAtPurchase: purchaseTier,
@@ -391,6 +401,8 @@
       next.isPremium = false;
       next.membershipStartDate = null;
       next.membershipEndDate = null;
+      next.aiRequestsUsed = Math.min(Number(current.aiRequestsUsed) || 0, details.aiRequestLimit);
+      next.aiResetDate = null;
       next.lastMembershipPopupDate = iso(now);
       next.pricingTierAtPurchase = null;
       next.priceDkkAtPurchase = null;
@@ -406,6 +418,8 @@
         : plan === "yearly"
           ? iso(addMonths(now, 12))
           : null;
+      next.aiRequestsUsed = 0;
+      next.aiResetDate = nextMonthStart(now);
       next.pricingTierAtPurchase = pricingContext.activeTier;
       next.priceDkkAtPurchase = details.priceDkk;
       next.priceLocked = true;
@@ -429,7 +443,13 @@
       showConfirmation("Den gratis prøveperiode er allerede startet eller tidligere brugt.");
       return current;
     }
-    const trial = write({ ...createTrial(now), lastMembershipPopupDate: current.lastMembershipPopupDate, updatedAt: iso(now) });
+    const trial = write({
+      ...createTrial(now),
+      aiRequestsUsed: 0,
+      aiResetDate: nextMonthStart(now),
+      lastMembershipPopupDate: current.lastMembershipPopupDate,
+      updatedAt: iso(now)
+    });
     window.dispatchEvent(new CustomEvent("membership:changed", { detail: trial }));
     render(trial);
     showConfirmation("Din 10 dages gratis Premium-prøveperiode er startet.");
