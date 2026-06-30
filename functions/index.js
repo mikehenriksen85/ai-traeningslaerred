@@ -11,6 +11,9 @@ setGlobalOptions({ region: "europe-west1", maxInstances: 10 });
 
 const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
+const ADMIN_EMAILS = new Set([
+  "mikehenriksen85@gmail.com"
+]);
 
 const EARLY_ADOPTER_LIMIT = 500;
 const PLAN_CONFIG = Object.freeze({
@@ -47,6 +50,89 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:8767",
   "http://127.0.0.1:8767"
 ]);
+
+function isAdminRequest(request) {
+  const email = String(request.auth?.token?.email || "").toLowerCase();
+  return Boolean(request.auth?.uid && ADMIN_EMAILS.has(email));
+}
+
+function authTimestamp(value) {
+  const date = value ? new Date(value) : null;
+  return date && Number.isFinite(date.getTime())
+    ? admin.firestore.Timestamp.fromDate(date)
+    : admin.firestore.FieldValue.serverTimestamp();
+}
+
+function authProviderIds(userRecord) {
+  return (userRecord.providerData || [])
+    .map(provider => provider.providerId)
+    .filter(Boolean);
+}
+
+async function ensureFirestoreUserForAuthRecord(userRecord) {
+  if (!userRecord?.uid) return { uid: "", changed: false };
+  const uid = userRecord.uid;
+  const userRef = admin.firestore().doc(`users/${uid}`);
+  const profileRef = admin.firestore().doc(`users/${uid}/profile/main`);
+  const membershipRef = admin.firestore().doc(`users/${uid}/membership/main`);
+  const [userSnapshot, membershipSnapshot] = await Promise.all([
+    userRef.get(),
+    membershipRef.get()
+  ]);
+  const existingUser = userSnapshot.exists ? userSnapshot.data() || {} : {};
+  const membershipData = membershipSnapshot.exists ? membershipSnapshot.data() || {} : {};
+  const membershipType = existingUser.membership || membershipData.membershipType || "free";
+  const providerIds = authProviderIds(userRecord);
+  const createdAt = existingUser.createdAt || authTimestamp(userRecord.metadata?.creationTime);
+  const rootPayload = {
+    uid,
+    email: userRecord.email || "",
+    displayName: userRecord.displayName || "",
+    photoURL: userRecord.photoURL || "",
+    emailVerified: Boolean(userRecord.emailVerified),
+    providerIds,
+    membership: membershipType,
+    createdAt,
+    lastLoginAt: authTimestamp(userRecord.metadata?.lastSignInTime),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+  const profilePayload = {
+    account: {
+      uid,
+      email: userRecord.email || "",
+      displayName: userRecord.displayName || "",
+      photoURL: userRecord.photoURL || "",
+      emailVerified: Boolean(userRecord.emailVerified),
+      providerIds,
+      lastLoginAt: userRecord.metadata?.lastSignInTime || new Date().toISOString()
+    },
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+
+  await Promise.all([
+    userRef.set(rootPayload, { merge: true }),
+    profileRef.set(profilePayload, { merge: true }),
+    membershipSnapshot.exists
+      ? Promise.resolve()
+      : membershipRef.set({
+        membershipType: "free",
+        membershipStatus: "free",
+        selectedPlan: "free",
+        isPremium: false,
+        aiRequestLimit: 3,
+        aiRequestsUsed: 0,
+        aiResetDate: null,
+        lastRequestTimestamp: null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true })
+  ]);
+
+  return {
+    uid,
+    changed: !userSnapshot.exists || !membershipSnapshot.exists
+  };
+}
 
 function stripeClient() {
   const secret = STRIPE_SECRET_KEY.value();
@@ -117,6 +203,8 @@ function checkoutModeForPrice(price) {
 }
 
 async function getOrCreateCustomer(stripe, uid, email, name) {
+  const authUser = await admin.auth().getUser(uid).catch(() => null);
+  if (authUser) await ensureFirestoreUserForAuthRecord(authUser);
   const membershipRef = admin.firestore().doc(`users/${uid}/membership/main`);
   const membershipSnapshot = await membershipRef.get();
   const existingCustomerId = membershipSnapshot.exists ? membershipSnapshot.data()?.stripeCustomerId : null;
@@ -201,6 +289,47 @@ exports.createStripeCheckoutSession = onCall({
   }, { merge: true });
 
   return { url: session.url, sessionId: session.id };
+});
+
+exports.verifyAndBackfillUserDocuments = onCall({
+  region: "europe-west1"
+}, async request => {
+  if (!isAdminRequest(request)) {
+    throw new HttpsError("permission-denied", "Kun Work4it-admin kan synkronisere Auth-brugere.");
+  }
+
+  let authUserCount = 0;
+  let pageToken;
+  const backfilled = [];
+  do {
+    const page = await admin.auth().listUsers(1000, pageToken);
+    authUserCount += page.users.length;
+    for (const userRecord of page.users) {
+      const result = await ensureFirestoreUserForAuthRecord(userRecord);
+      if (result.changed) backfilled.push(result.uid);
+    }
+    pageToken = page.pageToken;
+  } while (pageToken);
+
+  const firestoreCountSnapshot = await admin.firestore().collection("users").count().get();
+  const firestoreUserCount = firestoreCountSnapshot.data().count;
+  await admin.firestore().doc("appConfig/userSync").set({
+    authUserCount,
+    firestoreUserCount,
+    matches: authUserCount === firestoreUserCount,
+    backfilledCount: backfilled.length,
+    backfilled,
+    checkedAt: admin.firestore.FieldValue.serverTimestamp(),
+    checkedBy: request.auth.uid
+  }, { merge: true });
+
+  return {
+    authUserCount,
+    firestoreUserCount,
+    matches: authUserCount === firestoreUserCount,
+    backfilledCount: backfilled.length,
+    backfilled
+  };
 });
 
 async function activateMembershipFromSession(session) {

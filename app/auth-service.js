@@ -18,6 +18,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
   doc,
+  getDoc,
   serverTimestamp,
   setDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -74,21 +75,63 @@ function publicUser(user) {
 }
 
 async function ensureUserDocument(user) {
-  const reference = doc(db, "users", user.uid, "profile", "main");
+  const userReference = doc(db, "users", user.uid);
+  const profileReference = doc(db, "users", user.uid, "profile", "main");
+  const membershipReference = doc(db, "users", user.uid, "membership", "main");
   const privacyConsent = readPrivacyConsent();
-  await setDoc(reference, {
+  const providerIds = user.providerData.map(provider => provider.providerId);
+  const [userSnapshot, membershipSnapshot] = await Promise.all([
+    getDoc(userReference),
+    getDoc(membershipReference)
+  ]);
+  const existingUser = userSnapshot.exists() ? userSnapshot.data() : {};
+  const membershipType = existingUser?.membership || membershipSnapshot.data()?.membershipType || "free";
+
+  await setDoc(userReference, {
+    uid: user.uid,
+    email: user.email || "",
+    displayName: user.displayName || "",
+    photoURL: user.photoURL || "",
+    emailVerified: Boolean(user.emailVerified),
+    providerIds,
+    membership: membershipType,
+    createdAt: existingUser?.createdAt || serverTimestamp(),
+    lastLoginAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  await setDoc(profileReference, {
     account: {
       uid: user.uid,
       email: user.email || "",
       displayName: user.displayName || "",
       photoURL: user.photoURL || "",
       emailVerified: Boolean(user.emailVerified),
-      providerIds: user.providerData.map(provider => provider.providerId),
+      providerIds,
       lastLoginAt: new Date().toISOString()
     },
     ...(privacyConsent?.accepted ? { privacyConsent } : {}),
     updatedAt: serverTimestamp()
   }, { merge: true });
+
+  if (!membershipSnapshot.exists()) {
+    await setDoc(membershipReference, {
+      membershipType: "free",
+      membershipStatus: "free",
+      selectedPlan: "free",
+      isPremium: false,
+      aiRequestLimit: 3,
+      aiRequestsUsed: 0,
+      aiResetDate: null,
+      lastRequestTimestamp: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }
+
+  window.dispatchEvent(new CustomEvent("firebase-auth:user-document-ready", {
+    detail: { uid: user.uid, path: `users/${user.uid}` }
+  }));
 }
 
 function reportAuthFirestoreError(operation, path, uid, error) {
@@ -331,10 +374,10 @@ async function initializeAuthState() {
       try {
         await ensureUserDocument(user);
       } catch (error) {
-        reportAuthFirestoreError("setDoc", `users/${user.uid}/profile/main`, user.uid, error);
+        reportAuthFirestoreError("setDoc", `users/${user.uid}`, user.uid, error);
         window.dispatchEvent(new CustomEvent("firebase-auth:profile-metadata-error", {
           detail: {
-            path: `users/${user.uid}/profile/main`,
+            path: `users/${user.uid}`,
             operation: "setDoc",
             error
           }
