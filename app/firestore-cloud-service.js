@@ -60,6 +60,8 @@ let migrationDialogRoot = null;
 let localFingerprint = "";
 let refreshInProgress = false;
 let lastCloudRefreshAt = 0;
+let cloudHydrationInProgress = false;
+let localSyncReady = false;
 const initializationByUid = new Map();
 
 function parseLocal(key, fallback = null) {
@@ -674,7 +676,7 @@ function currentLocalFingerprint() {
 }
 
 function queueSync() {
-  if (!activeUid || !cloudEnabled) return;
+  if (!activeUid || !cloudEnabled || !localSyncReady || cloudHydrationInProgress) return;
   window.clearTimeout(syncTimer);
   syncTimer = window.setTimeout(() => syncAllLocalData(), 900);
 }
@@ -684,14 +686,16 @@ async function refreshFromCloud(reason = "manual") {
   const now = Date.now();
   if (reason !== "manual" && now - lastCloudRefreshAt < 15000) return false;
   refreshInProgress = true;
+  cloudHydrationInProgress = true;
   try {
-    const fingerprint = currentLocalFingerprint();
-    if (fingerprint !== localFingerprint) await syncAllLocalData(activeUid);
+    // Firestore er autoritativ ved login. Refresh/focus/online må aldrig
+    // uploade en gammel lokal cache før Cloud er hentet.
     const result = await hydrateFromFirestore(activeUid, { preserveLocalWhenCloudEmpty: false });
     if (!result.success) throw result.error || new Error("Cloud-data kunne ikke opdateres.");
     lastCloudRefreshAt = Date.now();
     return true;
   } finally {
+    cloudHydrationInProgress = false;
     refreshInProgress = false;
   }
 }
@@ -700,6 +704,8 @@ async function initializeUserData(user) {
   activeUid = user.uid;
   storageScope?.setActiveUid(activeUid);
   cloudEnabled = true;
+  localSyncReady = false;
+  cloudHydrationInProgress = true;
   const metadata = await getSyncMetadata(activeUid).catch(() => ({}));
   const localMigrationDecision = storageScope?.legacyResolution?.(activeUid);
   const cloudMigrationDecision = ["accepted", "declined"].includes(metadata.legacyMigrationStatus)
@@ -713,15 +719,18 @@ async function initializeUserData(user) {
 
   // Efter første bootstrap er Firestore autoritativ og overskriver altid UID-cachen.
   // Første gang bevares en eventuel UID-cache, hvis Cloud endnu er tom.
-  let hydration = await hydrateFromFirestore(activeUid, {
-    preserveLocalWhenCloudEmpty: !cloudBootstrapCompleted
-  });
-  if (!hydration.success) {
-    throw hydration.error || new Error("Cloud-data kunne ikke hentes.");
-  }
-  if (!cloudBootstrapCompleted && hydration.cloudHasData) {
-    hydration = await hydrateFromFirestore(activeUid, { preserveLocalWhenCloudEmpty: false });
+  let hydration;
+  try {
+    hydration = await hydrateFromFirestore(activeUid, {
+      preserveLocalWhenCloudEmpty: !cloudBootstrapCompleted
+    });
     if (!hydration.success) throw hydration.error || new Error("Cloud-data kunne ikke hentes.");
+    if (!cloudBootstrapCompleted && hydration.cloudHasData) {
+      hydration = await hydrateFromFirestore(activeUid, { preserveLocalWhenCloudEmpty: false });
+      if (!hydration.success) throw hydration.error || new Error("Cloud-data kunne ikke hentes.");
+    }
+  } finally {
+    cloudHydrationInProgress = false;
   }
 
   let legacyAccepted = false;
@@ -754,6 +763,7 @@ async function initializeUserData(user) {
     status: "ready"
   });
   localFingerprint = currentLocalFingerprint();
+  localSyncReady = true;
   window.dispatchEvent(new CustomEvent("firestore:user-ready", {
     detail: { uid: activeUid, fallback: false }
   }));
@@ -777,6 +787,8 @@ function clearRuntimeForLogout() {
   migrationDialogRoot = null;
   activeUid = "";
   cloudEnabled = false;
+  localSyncReady = false;
+  cloudHydrationInProgress = false;
   localFingerprint = "";
   storageScope?.setActiveUid("");
   window.dispatchEvent(new CustomEvent("firestore:user-cache-cleared"));
@@ -830,7 +842,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") refreshFromCloud("visibility").catch(() => {});
 });
 window.setInterval(() => {
-  if (!activeUid) return;
+  if (!activeUid || !localSyncReady || cloudHydrationInProgress) return;
   const next = currentLocalFingerprint();
   if (next === localFingerprint) return;
   localFingerprint = next;

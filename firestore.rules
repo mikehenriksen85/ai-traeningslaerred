@@ -20,7 +20,14 @@ service cloud.firestore {
         request.resource.data.membershipStatus == resource.data.membershipStatus &&
         request.resource.data.membershipType == resource.data.membershipType &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(["aiRequestsUsed", "aiResetDate", "lastRequestTimestamp", "updatedAt"]);
+          .hasOnly([
+            "aiRequestLimit",
+            "aiRequestsUsed",
+            "aiResetDate",
+            "lastRequestTimestamp",
+            "updatedAt",
+            "firestoreUpdatedAt"
+          ]);
     }
 
     match /users/{userId} {
