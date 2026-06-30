@@ -37,6 +37,12 @@
     activeTier: "early_adopter",
     source: "fallback"
   };
+  const stripeCheckoutState = {
+    ready: Boolean(window.Work4itStripeCheckout?.createCheckout),
+    retryAllowed: false,
+    failed: false,
+    pendingImport: null
+  };
 
   function normalizedPricingTier(value) {
     return value === "standard" ? "standard" : "early_adopter";
@@ -311,6 +317,7 @@
 
     applyAccessState(data);
     updateActivePlanUi(data);
+    updatePaidButtonsState(data);
     bindMembershipActivation();
   }
 
@@ -333,17 +340,81 @@
     return ["quarterly", "yearly", "lifetime"].includes(plan);
   }
 
+  function setStripeCheckoutReady(ready = true) {
+    stripeCheckoutState.ready = Boolean(ready && window.Work4itStripeCheckout?.createCheckout);
+    stripeCheckoutState.failed = false;
+    stripeCheckoutState.pendingImport = null;
+    updatePaidButtonsState();
+  }
+
+  function updatePaidButtonsState(data = getMembership()) {
+    document.querySelectorAll("[data-membership-select]").forEach(button => {
+      const plan = button.dataset.membershipSelect;
+      if (!isPaidPlan(plan)) return;
+      if (!button.dataset.defaultText) button.dataset.defaultText = button.textContent;
+      const activePlan = data.membershipStatus === "active" ? data.selectedPlan || data.membershipType : "";
+      const isActive = activePlan === plan || button.getAttribute("aria-pressed") === "true";
+      if (isActive) {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+        button.textContent = "Aktiv plan";
+        return;
+      }
+      if (stripeCheckoutState.ready) {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+        button.textContent = button.dataset.defaultText;
+        return;
+      }
+      if (stripeCheckoutState.retryAllowed || stripeCheckoutState.failed) {
+        button.disabled = false;
+        button.setAttribute("aria-busy", "false");
+        button.textContent = stripeCheckoutState.failed ? "Prøv betaling igen" : button.dataset.defaultText;
+        return;
+      }
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.textContent = "Indlæser sikker betaling...";
+    });
+  }
+
+  async function ensureStripeCheckoutReady() {
+    if (window.Work4itStripeCheckout?.createCheckout) {
+      setStripeCheckoutReady(true);
+      return true;
+    }
+    if (stripeCheckoutState.pendingImport) return stripeCheckoutState.pendingImport;
+    stripeCheckoutState.failed = false;
+    stripeCheckoutState.retryAllowed = true;
+    updatePaidButtonsState();
+    showConfirmation("Indlæser sikker betaling...");
+    stripeCheckoutState.pendingImport = import(`./stripe-checkout.js?v=20260630-stripe-ready1&retry=${Date.now()}`)
+      .then(() => {
+        if (!window.Work4itStripeCheckout?.createCheckout) {
+          throw new Error("Stripe Checkout blev indlæst, men blev ikke klar.");
+        }
+        setStripeCheckoutReady(true);
+        return true;
+      })
+      .catch(error => {
+        stripeCheckoutState.ready = false;
+        stripeCheckoutState.failed = true;
+        stripeCheckoutState.pendingImport = null;
+        updatePaidButtonsState();
+        throw error;
+      });
+    return stripeCheckoutState.pendingImport;
+  }
+
   async function startStripeCheckout(plan) {
     const button = document.querySelector(`[data-membership-select="${plan}"]`);
     const defaultText = button?.dataset.defaultText || button?.textContent || "";
     try {
-      if (!window.Work4itStripeCheckout?.createCheckout) {
-        throw new Error("Stripe Checkout er ikke indlæst endnu. Prøv igen om et øjeblik.");
-      }
       if (button) {
         button.disabled = true;
         button.textContent = "Åbner sikker betaling...";
       }
+      await ensureStripeCheckoutReady();
       showConfirmation("Åbner sikker Stripe-betaling...");
       await window.Work4itStripeCheckout.createCheckout(plan);
     } catch (error) {
@@ -578,9 +649,28 @@
 
   window.addEventListener("training-app:ready", initialize, { once: true });
   window.addEventListener("work4it:pricing-config", event => updatePricingContext(event.detail));
+  window.addEventListener("work4it:stripe-checkout-ready", () => {
+    setStripeCheckoutReady(true);
+    render(getMembership());
+  });
+  window.addEventListener("work4it:stripe-checkout-error", event => {
+    stripeCheckoutState.ready = false;
+    stripeCheckoutState.failed = true;
+    stripeCheckoutState.pendingImport = null;
+    updatePaidButtonsState();
+    appendConfirmation(event.detail?.message || "Sikker betaling kunne ikke indlæses. Prøv igen.");
+  });
   window.addEventListener("membership:cloud-saving", () => appendConfirmation("Gemmer i Cloud..."));
   window.addEventListener("membership:cloud-saved", () => appendConfirmation("Gemt i Cloud ☁️"));
   window.addEventListener("membership:cloud-failed", () => appendConfirmation("Gemt lokalt – Cloud ikke tilgængelig."));
   window.addEventListener("firestore:user-ready", showStartupPopupWhenFree);
   window.addEventListener("workit:window-closed", showStartupPopupWhenFree);
+  window.setTimeout(() => {
+    if (window.Work4itStripeCheckout?.createCheckout) {
+      setStripeCheckoutReady(true);
+      return;
+    }
+    stripeCheckoutState.retryAllowed = true;
+    updatePaidButtonsState();
+  }, 2500);
 }());

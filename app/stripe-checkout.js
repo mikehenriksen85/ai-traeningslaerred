@@ -1,10 +1,17 @@
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
-import { auth, functions } from "./firebase-config.js?v=20260628-auth-ready1";
+import {
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { auth, db, functions } from "./firebase-config.js?v=20260628-auth-ready1";
 
 const PAID_PLANS = new Set(["quarterly", "yearly", "lifetime"]);
 
 function currentUser() {
-  return auth.currentUser || window.Work4itAuth?.getCurrentUser?.() || null;
+  return auth.currentUser ||
+    window.FirebaseAuthService?.getCurrentUser?.() ||
+    window.Work4itAuth?.getCurrentUser?.() ||
+    null;
 }
 
 function friendlyError(error) {
@@ -49,12 +56,19 @@ function delay(ms) {
   return new Promise(resolve => window.setTimeout(resolve, ms));
 }
 
-async function waitForConfirmedMembership(maxAttempts = 8) {
+async function waitForConfirmedMembership(sessionId = "", maxAttempts = 8) {
+  const user = currentUser();
+  let checkoutStatus = "";
+
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       if (!window.FirestoreDataService?.refreshFromCloud) {
         await delay(500);
         continue;
+      }
+      if (user?.uid && sessionId) {
+        const checkoutSnapshot = await getDoc(doc(db, "users", user.uid, "checkoutSessions", sessionId));
+        checkoutStatus = checkoutSnapshot.exists() ? String(checkoutSnapshot.data()?.status || "") : "";
       }
       await window.FirestoreDataService.refreshFromCloud();
       const membership = window.Membership?.getMembership?.();
@@ -64,10 +78,18 @@ async function waitForConfirmedMembership(maxAttempts = 8) {
         window.Work4itAIRequestCounter?.refresh?.();
         return true;
       }
+      if (checkoutStatus === "expired") {
+        window.Membership?.showConfirmation?.("Stripe-sessionen udløb. Ingen Premium-adgang er aktiveret.");
+        return false;
+      }
     } catch (error) {
       console.warn("[Work4it Stripe] Cloud refresh after payment failed", error);
     }
-    await delay(Math.min(1200 * attempt, 5000));
+    const statusText = checkoutStatus === "paid"
+      ? "Betaling er registreret. Aktiverer Premium..."
+      : "Afventer Stripe-bekræftelse...";
+    window.Membership?.showConfirmation?.(`${statusText} Forsøg ${attempt}/${maxAttempts}.`);
+    await delay(Math.min(1500 * attempt, 6000));
   }
 
   window.Membership?.showConfirmation?.("Betalingen er modtaget. Vi afventer stadig Stripe-bekræftelsen. Prøv at opdatere om et øjeblik.");
@@ -88,7 +110,7 @@ function showReturnMessage() {
     if (payment === "success") {
       console.log("[Work4it Stripe] Returned from Checkout", { sessionId });
       window.Membership?.showConfirmation?.("Betaling modtaget. Henter Stripe-bekræftelse...");
-      waitForConfirmedMembership();
+      waitForConfirmedMembership(sessionId, 24);
     } else if (payment === "cancelled") {
       window.Membership?.showConfirmation?.("Betalingen blev afbrudt. Ingen ændringer er foretaget.");
     }
@@ -99,5 +121,8 @@ window.Work4itStripeCheckout = {
   createCheckout,
   friendlyError
 };
+window.dispatchEvent(new CustomEvent("work4it:stripe-checkout-ready", {
+  detail: { ready: true }
+}));
 
 showReturnMessage();
