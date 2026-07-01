@@ -292,6 +292,15 @@
       .wizard-button.primary { border-color: var(--blue, #3a93ff); background: var(--blue, #3a93ff); }
       .wizard-button.create { border-color: var(--green, #4ade80); background: var(--green, #4ade80); color: #102117; }
       .wizard-button:disabled { cursor: not-allowed; opacity: .45; }
+      .wizard-save-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .wizard-save-actions .wizard-button {
+        min-width: 150px;
+      }
       @media (max-width: 560px) {
         .wizard-overlay { padding: 10px; }
         .wizard-overlay.daily {
@@ -317,6 +326,15 @@
         .wizard-options.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .wizard-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .wizard-step-title { font-size: var(--font-size-h2, 1.125rem); }
+        .wizard-save-actions {
+          width: 100%;
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+        .wizard-save-actions .wizard-button {
+          width: 100%;
+          min-height: 48px;
+        }
       }
     `;
     document.head.appendChild(style);

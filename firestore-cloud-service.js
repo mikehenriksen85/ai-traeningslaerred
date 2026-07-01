@@ -62,6 +62,22 @@ let refreshInProgress = false;
 let lastCloudRefreshAt = 0;
 const initializationByUid = new Map();
 
+function setSyncStatus(status, message, extra = {}) {
+  window.dispatchEvent(new CustomEvent("firestore:sync-status", {
+    detail: {
+      status,
+      message,
+      uid: activeUid || authUid() || "",
+      at: new Date().toISOString(),
+      ...extra
+    }
+  }));
+}
+
+function isBrowserOffline() {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
 function parseLocal(key, fallback = null) {
   try {
     const raw = localStorage.getItem(key);
@@ -439,30 +455,45 @@ function workoutDraftFromAutosave() {
 async function syncActiveWorkout(uid) {
   const reference = doc(db, ...PATHS.activeWorkout(uid));
   const draftReference = doc(db, ...PATHS.appState(uid, "workoutDraft"));
+  const autosave = parseLocal(KEYS.activeWorkout, null);
   const activeAutosave = activeSessionFromAutosave();
   const workoutDraft = workoutDraftFromAutosave();
-  if (!activeAutosave) {
-    await deleteDoc(reference).catch(() => {});
-  } else {
+  if (activeAutosave) {
     await upsertDocument(reference, {
       ...cleanDocument(activeAutosave),
       status: activeAutosave.session.sessionStatus,
       sessionId: activeAutosave.session.sessionId || "",
       updatedAt: activeAutosave.session.updatedAt || new Date().toISOString()
     });
+  } else if (autosave?.session?.sessionStatus === "completed") {
+    await upsertDocument(reference, {
+      ...cleanDocument(autosave),
+      status: "completed",
+      sessionId: autosave.session.sessionId || "",
+      completedAt: autosave.session.completedAt || new Date().toISOString(),
+      updatedAt: autosave.session.updatedAt || autosave.session.completedAt || new Date().toISOString()
+    });
   }
   if (workoutDraft) await upsertDocument(draftReference, workoutDraft);
-  else await deleteDoc(draftReference).catch(() => {});
 }
 
 async function syncAllLocalData(uid = activeUid) {
   if (!uid || !cloudEnabled) return false;
+  if (isBrowserOffline()) {
+    syncQueued = true;
+    setSyncStatus("offline", "Offline");
+    window.dispatchEvent(new CustomEvent("firestore:fallback-active", {
+      detail: { reason: "offline", queued: true }
+    }));
+    return false;
+  }
   if (syncInProgress) {
     syncQueued = true;
     return false;
   }
   syncInProgress = true;
   try {
+    setSyncStatus("syncing", "Synkroniserer...");
     assertCloudUser("Firestore-synkronisering");
     const profile = parseLocal(KEYS.profile, {});
     const daily = parseLocal(KEYS.daily, {});
@@ -494,6 +525,7 @@ async function syncAllLocalData(uid = activeUid) {
       localStorageRole: "cache_fallback",
       status: "synced"
     });
+    setSyncStatus("synced", "Synkroniseret");
     window.dispatchEvent(new CustomEvent("firestore:sync-completed"));
     return true;
   } catch (error) {
@@ -502,6 +534,7 @@ async function syncAllLocalData(uid = activeUid) {
       status: "failed",
       lastError: error?.code || error?.message || "unknown"
     }).catch(() => {});
+    setSyncStatus("failed", "Synkronisering mislykkedes", { error });
     window.dispatchEvent(new CustomEvent("firestore:sync-failed", { detail: { error } }));
     return false;
   } finally {
@@ -529,6 +562,11 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
   if (!uid) return false;
   const preserveLocalWhenCloudEmpty = Boolean(options.preserveLocalWhenCloudEmpty);
   try {
+    if (isBrowserOffline()) {
+      setSyncStatus("offline", "Offline");
+      throw new Error("Offline: Cloud-data kan ikke hentes lige nu.");
+    }
+    setSyncStatus("syncing", "Synkroniserer...");
     assertCloudUser("Cloud-hentning");
     const profileSnapshot = getDocument(PATHS.profile(uid));
     const dailySnapshot = getDocument(PATHS.daily(uid));
@@ -633,9 +671,11 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     window.dispatchEvent(new CustomEvent("firestore:data-hydrated", {
       detail: { uid, source: "firestore", authoritative: !preserveLocalWhenCloudEmpty, cloudHasData }
     }));
+    setSyncStatus("synced", "Synkroniseret");
     return { success: true, cloudHasData };
   } catch (error) {
     console.warn("Firestore kunne ikke hentes. Appen fortsætter med den aktive brugers UID-cache.", error);
+    setSyncStatus(isBrowserOffline() ? "offline" : "failed", isBrowserOffline() ? "Offline" : "Synkronisering mislykkedes", { error });
     window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
     return { success: false, cloudHasData: false, error };
   }
@@ -675,12 +715,22 @@ function currentLocalFingerprint() {
 
 function queueSync() {
   if (!activeUid || !cloudEnabled) return;
+  if (isBrowserOffline()) {
+    syncQueued = true;
+    setSyncStatus("offline", "Offline");
+    return;
+  }
   window.clearTimeout(syncTimer);
   syncTimer = window.setTimeout(() => syncAllLocalData(), 900);
 }
 
 async function refreshFromCloud(reason = "manual") {
   if (!activeUid || !cloudEnabled || refreshInProgress || syncInProgress) return false;
+  if (isBrowserOffline()) {
+    setSyncStatus("offline", "Offline");
+    syncQueued = true;
+    return false;
+  }
   const now = Date.now();
   if (reason !== "manual" && now - lastCloudRefreshAt < 15000) return false;
   refreshInProgress = true;
@@ -825,7 +875,16 @@ window.addEventListener("work4it:theme-changed", event => {
   });
 });
 window.addEventListener("focus", () => refreshFromCloud("focus").catch(() => {}));
-window.addEventListener("online", () => refreshFromCloud("online").catch(() => {}));
+window.addEventListener("online", () => {
+  setSyncStatus("syncing", "Synkroniserer...");
+  if (syncQueued) {
+    syncQueued = false;
+    syncAllLocalData().then(() => refreshFromCloud("online")).catch(() => {});
+    return;
+  }
+  refreshFromCloud("online").catch(() => {});
+});
+window.addEventListener("offline", () => setSyncStatus("offline", "Offline"));
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") refreshFromCloud("visibility").catch(() => {});
 });

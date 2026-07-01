@@ -404,7 +404,10 @@
           <button type="button" class="wizard-button" data-action="back" ${state.step === 1 ? "disabled" : ""}>Tilbage</button>
           ${state.step < totalSteps
             ? `<button type="button" class="wizard-button primary" data-action="next" ${canContinue() ? "" : "disabled"}>Næste</button>`
-            : `<button type="button" class="wizard-button create" data-action="create">${state.mode === "edit" ? "Gem profil og program" : "Opret program"}</button>`}
+            : `<div class="wizard-save-actions">
+                <button type="button" class="wizard-button primary" data-action="save-profile">Gem profil</button>
+                <button type="button" class="wizard-button create" data-action="save-profile-program">Gem profil + program</button>
+              </div>`}
         </footer>
       </section>
     </div>`;
@@ -421,7 +424,33 @@
     render();
   }
 
-  function handleClick(event) {
+  async function saveProfileOnly() {
+    const profileData = {
+      hasCompletedProfileWizard: true,
+      goal: state.goal,
+      trainingGoals: { ...state.trainingGoals },
+      heightCm: Number(state.heightCm),
+      weightKg: Number(state.weightKg),
+      age: Number(state.age),
+      gender: state.gender,
+      experience: state.experience,
+      trainingDaysPerWeek: state.trainingDaysPerWeek,
+      focusAreas: [...state.focusAreas],
+      exercisePreference: state.exercisePreference,
+      preferredTrainingStyle: state.preferredTrainingStyle
+    };
+    if (window.TrainingWizardStore?.saveProfileAndSync) {
+      return window.TrainingWizardStore.saveProfileAndSync(profileData);
+    }
+    return window.TrainingWizardStore.saveProfile(profileData);
+  }
+
+  function discardGeneratedPrograms() {
+    state.generatedPrograms = [];
+    state.selectedProgramDay = 0;
+  }
+
+  async function handleClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button || !state) return;
     const action = button.dataset.action;
@@ -471,36 +500,52 @@
       state.generatedPrograms = [];
       return render();
     }
-    if (action === "create") {
-      const programs = state.generatedPrograms.length ? state.generatedPrograms : generatePrograms();
-      const profile = window.TrainingWizardStore.saveProfile({
-        hasCompletedProfileWizard: true,
-        goal: state.goal,
-        trainingGoals: { ...state.trainingGoals },
-        heightCm: Number(state.heightCm),
-        weightKg: Number(state.weightKg),
-        age: Number(state.age),
-        gender: state.gender,
-        experience: state.experience,
-        trainingDaysPerWeek: state.trainingDaysPerWeek,
-        focusAreas: [...state.focusAreas],
-        exercisePreference: state.exercisePreference,
-        preferredTrainingStyle: state.preferredTrainingStyle
-      });
-      window.dispatchEvent(new CustomEvent("onboarding:create-programs", {
-        detail: {
-          ...profile,
-          days: state.trainingDaysPerWeek,
-          focus: [...state.focusAreas],
-          programs: programs.map(program => ({
-            title: program.title,
-            goal: program.goal,
-            trainingGoals: { ...state.trainingGoals },
-            structure: program.structure,
-            exercises: program.exercises.map(exercise => ({ ...exercise }))
-          }))
-        }
-      }));
+    if (action === "save-profile" || action === "save-profile-program" || action === "create") {
+      const shouldSaveProgram = action !== "save-profile";
+      let profile;
+      try {
+        profile = await saveProfileOnly();
+      } catch (error) {
+        console.error("[Work4it Profile Wizard] Profil kunne ikke gemmes i Cloud", error);
+        profile = window.TrainingWizardStore.saveProfile({
+          hasCompletedProfileWizard: true,
+          goal: state.goal,
+          trainingGoals: { ...state.trainingGoals },
+          heightCm: Number(state.heightCm),
+          weightKg: Number(state.weightKg),
+          age: Number(state.age),
+          gender: state.gender,
+          experience: state.experience,
+          trainingDaysPerWeek: state.trainingDaysPerWeek,
+          focusAreas: [...state.focusAreas],
+          exercisePreference: state.exercisePreference,
+          preferredTrainingStyle: state.preferredTrainingStyle
+        }, { cloud: false });
+      }
+      if (shouldSaveProgram) {
+        const programs = state.generatedPrograms.length ? state.generatedPrograms : generatePrograms();
+        window.dispatchEvent(new CustomEvent("onboarding:create-programs", {
+          detail: {
+            ...profile,
+            mode: state.mode,
+            days: state.trainingDaysPerWeek,
+            focus: [...state.focusAreas],
+            programs: programs.map(program => ({
+              title: program.title,
+              goal: program.goal,
+              trainingGoals: { ...state.trainingGoals },
+              structure: program.structure,
+              exercises: program.exercises.map(exercise => ({ ...exercise }))
+            }))
+          }
+        }));
+      } else {
+        discardGeneratedPrograms();
+        window.dispatchEvent(new CustomEvent("profile-wizard:profile-saved-only", {
+          detail: profile
+        }));
+        window.setTimeout(() => alert("Profil gemt. Programforslaget blev ikke gemt."), 0);
+      }
       close();
     }
   }

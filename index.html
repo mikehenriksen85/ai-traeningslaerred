@@ -3,6 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>
+    (function () {
+      try {
+        var queryTheme = new URLSearchParams(location.search).get("theme");
+        var theme = /^(work4it|classic)$/.test(queryTheme || "") ? queryTheme : localStorage.getItem("work4it_theme");
+        if (theme) localStorage.setItem("work4it_theme", theme);
+        document.documentElement.dataset.theme = theme || "work4it";
+      } catch (_) {
+        document.documentElement.dataset.theme = "work4it";
+      }
+    }());
+  </script>
+  <script>
+    (function work4itStartupDebug() {
+      try {
+        console.log("[Work4it startup] location.origin", location.origin);
+        console.log("[Work4it startup] location.hostname", location.hostname);
+        console.log("[Work4it startup] location.href", location.href);
+        console.log("[Work4it startup] navigator.serviceWorker", navigator.serviceWorker || null);
+        if (window.caches?.keys) {
+          caches.keys()
+            .then(keys => console.log("[Work4it startup] caches.keys()", keys))
+            .catch(error => console.warn("[Work4it startup] caches.keys() failed", error));
+        } else {
+          console.log("[Work4it startup] caches.keys()", "Cache API ikke tilgængelig");
+        }
+      } catch (error) {
+        console.warn("[Work4it startup] debug logging failed", error);
+      }
+    }());
+  </script>
   <meta name="description" content="Work4it er en professionel AI-træningsplatform til programmer, træningsdata, kropsmålinger og cloud-backup.">
   <meta name="application-name" content="Work4it">
   <meta name="theme-color" content="#0F172A">
@@ -60,6 +91,65 @@
       --text-success: var(--green);
       --text-danger: var(--red);
       --text-warning: #fbbf24;
+      --brand-hero-logo: url("work4it-hero-logo-v1.png");
+    }
+
+    :root[data-theme="work4it"] { color-scheme: dark; }
+
+    :root[data-theme="classic"] {
+      color-scheme: light;
+      --bg: #F4F4F5;
+      --card: #FFFFFF;
+      --panel: #E5E7EB;
+      --input: #F9FAFB;
+      --border: #D1D5DB;
+      --text: #111827;
+      --muted: #4B5563;
+      --blue: #374151;
+      --green: #15803D;
+      --orange: #374151;
+      --purple: #374151;
+      --red: #B91C1C;
+      --text-primary: #111827;
+      --text-secondary: #4B5563;
+      --text-accent: #111827;
+      --text-success: var(--green);
+      --text-danger: var(--red);
+      --text-warning: #92400E;
+    }
+
+    :root[data-theme="classic"] body {
+      background: var(--bg);
+      color: var(--text-primary);
+    }
+
+    :root[data-theme="classic"] .card,
+    :root[data-theme="classic"] .profile-account-section,
+    :root[data-theme="classic"] .exercise-block,
+    :root[data-theme="classic"] .modal,
+    :root[data-theme="classic"] .membership-card,
+    :root[data-theme="classic"] .daily-wizard-card,
+    :root[data-theme="classic"] .sidebar {
+      box-shadow: 0 16px 36px rgba(17, 24, 39, .08);
+    }
+
+    :root[data-theme="classic"] .sidebar-item:hover,
+    :root[data-theme="classic"] .sidebar-accordion-toggle:hover,
+    :root[data-theme="classic"] .sidebar-accordion.open > .sidebar-accordion-toggle {
+      background: rgba(55, 65, 81, .08);
+    }
+
+    :root[data-theme="classic"] .sidebar-item.active {
+      background: rgba(55, 65, 81, .14);
+      box-shadow: inset 3px 0 0 var(--blue);
+    }
+
+    :root[data-theme="classic"] input,
+    :root[data-theme="classic"] select,
+    :root[data-theme="classic"] textarea {
+      background: var(--input);
+      color: var(--text-primary);
+      border-color: var(--border);
     }
 
     * { box-sizing: border-box; }
@@ -81,6 +171,26 @@
       display: flex;
       justify-content: center;
       overflow-x: hidden;
+    }
+    .skip-link {
+      position: fixed;
+      left: max(12px, env(safe-area-inset-left, 0px));
+      top: max(12px, env(safe-area-inset-top, 0px));
+      z-index: 5000;
+      transform: translateY(-160%);
+      border: 2px solid var(--blue);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      font-weight: var(--font-weight-bold);
+      text-decoration: none;
+      transition: transform .16s ease;
+    }
+    .skip-link:focus {
+      transform: translateY(0);
+      outline: 3px solid rgba(59,130,246,.45);
+      outline-offset: 2px;
     }
 
     .app-header {
@@ -121,6 +231,53 @@
     .brand-hero-logo { display: block; width: min(420px, 88vw); max-height: 220px; height: auto; object-fit: contain; }
     .brand-fade-in { animation: work4itFadeIn .55s ease both; }
     @keyframes work4itFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .canvas .work4it-landing-hero { display: none; }
+    .brand-surface,
+    .canvas > .card,
+    .progress-panel {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .brand-surface::before,
+    .canvas > .card::before,
+    .progress-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background-image: var(--brand-hero-logo);
+      background-repeat: no-repeat;
+      background-position: center 26px;
+      background-size: min(92%, 560px) auto;
+      opacity: .12;
+    }
+    .brand-surface::after,
+    .canvas > .card::after,
+    .progress-panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: rgba(15, 23, 42, .62);
+    }
+    :root[data-theme="classic"] .brand-surface::after,
+    :root[data-theme="classic"] .canvas > .card::after,
+    :root[data-theme="classic"] .progress-panel::after {
+      background: rgba(244, 244, 245, .82);
+    }
+    .brand-surface > *,
+    .canvas > .card > *,
+    .progress-panel > * {
+      position: relative;
+      z-index: 1;
+    }
+    .dashboard-brand-surface {
+      border-radius: 8px;
+      padding: 2px;
+    }
     @media (min-width: 760px) {
       .brand-header-logo { display: block; }
       .brand-header-mobile { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -132,15 +289,82 @@
       width: 290px;
       background: var(--panel);
       border-right: 1px solid var(--border);
-      z-index: 220;
-      transition: left .25s ease;
+      z-index: 1200;
+      transition: left .25s ease, width .25s ease;
       box-shadow: 8px 0 24px rgba(0,0,0,.42);
       overflow-y: auto;
       padding-top: env(safe-area-inset-top, 0px);
       padding-bottom: env(safe-area-inset-bottom, 0px);
       -webkit-overflow-scrolling: touch;
     }
-    .sidebar.open { left: 0; }
+    .sidebar.open {
+      left: 0;
+      width: 100vw;
+      border-right: 0;
+      box-shadow: none;
+    }
+    body.sidebar-open {
+      overflow: hidden;
+    }
+    body.sidebar-open .app-header,
+    body.sidebar-open main.canvas,
+    body.sidebar-open .modal,
+    body.sidebar-open .progress-view,
+    body.sidebar-open .calorie-view,
+    body.sidebar-open .profile-account-view,
+    body.sidebar-open .membership-view,
+    body.sidebar-open .wizard-shell,
+    body.sidebar-open .auth-gate {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .sidebar-view-header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      min-height: calc(58px + env(safe-area-inset-top, 0px));
+      padding: env(safe-area-inset-top, 0px) max(18px, env(safe-area-inset-right, 0px)) 0 max(18px, env(safe-area-inset-left, 0px));
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .sidebar-view-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: var(--text-primary);
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-bold);
+    }
+    .sidebar-view-title img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+    .sidebar-close-btn {
+      min-width: 44px;
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 1.15rem;
+      font-weight: var(--font-weight-bold);
+    }
+    .sidebar > .profile,
+    .sidebar > .sidebar-accordion,
+    .sidebar > .sidebar-menu-spacer,
+    .sidebar > .sidebar-bottom-action {
+      width: min(100%, 560px);
+      margin-left: auto;
+      margin-right: auto;
+    }
     .overlay {
       display: none;
       position: fixed;
@@ -149,6 +373,7 @@
       z-index: 180;
     }
     .overlay.show { display: block; }
+    body.sidebar-open .overlay.show { display: none; }
     .profile { padding: 26px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
     .profile.profile-edit-enabled { cursor: default; }
     .avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--blue); display: grid; place-items: center; background: var(--card); }
@@ -585,6 +810,11 @@
     .exercise-picker-list { min-height: 0; overflow-y: auto; }
     .copilot { border-top: 1px dashed var(--border); padding-top: 18px; }
     .copilot-title { color: var(--text-accent); font-weight: var(--font-weight-bold); margin-bottom: 10px; }
+    .ai-request-counter { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; background: rgba(59,130,246,.08); color: var(--text-secondary); font-size: var(--font-size-small); }
+    .ai-request-counter strong { color: var(--text-primary); }
+    .ai-request-counter.warning { border-color: rgba(245,158,11,.65); background: rgba(245,158,11,.09); }
+    .ai-request-counter.empty { border-color: rgba(239,68,68,.65); background: rgba(239,68,68,.09); }
+    .ai-request-upgrade { color: var(--text-accent); font-weight: var(--font-weight-semibold); background: transparent; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
     .copilot-bar { display: flex; gap: 8px; }
     .copilot-input { flex: 1; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 6px; padding: 11px; min-width: 0; }
     .copilot-btn { background: var(--blue); color: var(--text-primary); border: 0; border-radius: 6px; padding: 0 18px; font-weight: var(--font-weight-bold); cursor: pointer; }
@@ -656,8 +886,12 @@
     .screenshot-field { display: grid; gap: 5px; color: var(--muted); font-size: var(--font-size-small); }
     .screenshot-day { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #17202b; }
     .screenshot-exercise-list { display: grid; gap: 10px; }
-    .screenshot-exercise { display: grid; grid-template-columns: minmax(150px,2fr) repeat(4,minmax(70px,1fr)) minmax(140px,1.4fr) auto; align-items: end; gap: 8px; padding: 10px; border: 1px solid #334155; border-radius: 8px; }
+    .screenshot-exercise { display: grid; grid-template-columns: repeat(6,minmax(72px,1fr)) auto; align-items: end; gap: 8px; padding: 10px; border: 1px solid #334155; border-radius: 8px; }
     .screenshot-exercise.uncertain { border-color: #a16207; background: rgba(245,158,11,.05); }
+    .screenshot-exercise .wide { grid-column: span 2; }
+    .screenshot-match-status { color: var(--muted); font-size: var(--font-size-small); line-height: var(--line-height-body); }
+    .screenshot-field-warnings { display: grid; gap: 3px; margin-top: 4px; color: #fde68a; }
+    .import-add-exercise { justify-self: start; }
     .screenshot-ocr-details { border-top: 1px solid var(--border); padding-top: 12px; }
     .screenshot-ocr-details summary { cursor: pointer; color: var(--blue); font-weight: var(--font-weight-semibold); }
     .screenshot-ocr-details textarea { width: 100%; margin: 10px 0; resize: vertical; }
@@ -841,6 +1075,39 @@
     .profile-account-status span { margin-top: 3px; color: var(--text-secondary); font-size: var(--font-size-small); }
     .profile-ready-badge { flex: 0 0 auto; color: var(--text-warning); font-size: var(--font-size-small); font-weight: var(--font-weight-bold); }
     .profile-save-feedback { min-height: 20px; margin-top: 10px; color: var(--text-success); font-size: var(--font-size-small); }
+    .theme-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    .theme-option {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      min-height: 126px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--input);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: border-color .2s ease, transform .2s ease, background .2s ease;
+    }
+    .theme-option:hover { border-color: var(--blue); transform: translateY(-1px); }
+    .theme-option input { margin-top: 3px; accent-color: var(--blue); }
+    .theme-option-title { display: block; font-weight: var(--font-weight-bold); }
+    .theme-option-copy { display: block; margin: 3px 0 10px; color: var(--text-secondary); font-size: var(--font-size-small); line-height: var(--line-height-body); }
+    .theme-preview { display: grid; gap: 6px; padding: 9px; border: 1px solid var(--border); border-radius: 7px; }
+    .theme-preview.work4it { background: #0F172A; }
+    .theme-preview.classic { background: #F4F4F5; border-color: #D1D5DB; }
+    .theme-preview-row { display: flex; gap: 5px; }
+    .theme-preview-line { height: 7px; border-radius: 999px; flex: 1; opacity: .95; }
+    .theme-preview-card { height: 22px; border-radius: 5px; }
+    .theme-preview.work4it .theme-preview-card { background: #1E293B; }
+    .theme-preview.classic .theme-preview-card { background: #FFFFFF; border: 1px solid #D1D5DB; }
+    .theme-preview-blue { background: #3B82F6; }
+    .theme-preview-green { background: #22C55E; }
+    .theme-preview-red { background: #EF4444; }
+    .theme-preview-gray { background: #374151; }
+    .theme-preview-light { background: #9CA3AF; }
+    .theme-save-feedback { min-height: 20px; margin-top: 10px; color: var(--text-success); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
     .auth-gate {
       position: fixed;
       inset: 0;
@@ -1136,6 +1403,22 @@
       line-height: 1.6;
     }
     .about-intro strong { color: var(--text-success); }
+    .about-value-list {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 16px;
+      padding: 0;
+      list-style: none;
+    }
+    .about-value-list li {
+      padding: 10px 12px;
+      border: 1px solid rgba(59,130,246,.28);
+      border-radius: 7px;
+      color: var(--text-primary);
+      background: rgba(59,130,246,.08);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.45;
+    }
     .about-feature-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1160,6 +1443,17 @@
       color: var(--text-secondary);
       font-size: var(--font-size-body);
       line-height: 1.5;
+    }
+    .about-feature-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      margin-bottom: 8px;
+      border-radius: 7px;
+      background: rgba(59,130,246,.14);
+      font-size: 1rem;
     }
     .about-feature.future {
       grid-column: 1 / -1;
@@ -1241,7 +1535,7 @@
     .membership-hero-logo { width: min(190px, 40vw); max-height: 92px; object-fit: contain; flex: 0 0 auto; }
     .about-brand { display: flex; justify-content: center; margin-bottom: 16px; }
     .about-brand .brand-logo { width: min(260px, 78vw); }
-    .membership-view { display: none; position: fixed; inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0; z-index: 305; overflow-y: auto; background: var(--bg); padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
+    .membership-view { display: none; position: fixed; inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0; z-index: 1300; overflow-y: auto; background: var(--bg); padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     .membership-view.open { display: block; }
     .membership-shell { width: min(1080px, 100%); margin: 0 auto; }
     .membership-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
@@ -1280,8 +1574,26 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 16px;
+      scroll-margin-top: 20px;
     }
     .membership-plan.best { border-color: var(--green); box-shadow: 0 0 0 1px rgba(34,197,94,.16); }
+    .membership-plan.active {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(59,130,246,.24);
+    }
+    .membership-plan.active::after {
+      content: "Aktiv plan";
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      color: #061225;
+      background: var(--blue);
+      font-size: var(--font-size-compact);
+      font-weight: var(--font-weight-bold);
+      pointer-events: none;
+    }
     .membership-best-badge {
       position: absolute;
       top: 10px;
@@ -1299,6 +1611,7 @@
     .membership-plan ul { flex: 1; margin: 12px 0 16px; }
     .membership-plan-btn {
       width: 100%;
+      min-height: 46px;
       min-width: 0;
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -1308,6 +1621,12 @@
       cursor: pointer;
       white-space: normal;
       overflow-wrap: anywhere;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .membership-plan-btn[aria-pressed="true"] {
+      outline: 2px solid rgba(59,130,246,.45);
+      outline-offset: 2px;
     }
     .membership-plan-btn.primary { border-color: var(--blue); background: var(--blue); }
     .membership-plan-btn.best { border-color: var(--green); background: var(--green); color: #07130c; }
@@ -1316,7 +1635,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 520;
+      z-index: 1400;
       align-items: center;
       justify-content: center;
       padding: 16px;
@@ -1348,6 +1667,8 @@
       background: var(--input);
       cursor: pointer;
       text-align: left;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .membership-popup-option.best { border-color: var(--green); }
     .membership-popup-option strong, .membership-popup-option span { display: block; }
@@ -1366,6 +1687,7 @@
 
     @media (max-width: 900px) {
       .membership-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .membership-status { grid-template-columns: 1fr; }
       .profile-account-columns { grid-template-columns: 1fr; }
       .profile-account-column.account { padding-right: 0; border-right: 0; }
     }
@@ -1373,6 +1695,8 @@
     @media (max-width: 560px) {
             .brand-header-icon { width: 30px; height: 30px; }
       .brand-header-text { font-size: 1rem; }
+      .sidebar.open { width: 100dvw; }
+      .sidebar-view-title { font-size: var(--font-size-body); }
       .work4it-landing-hero .brand-hero-logo { width: min(300px, 86vw); max-height: 150px; }
       .profile-account-title-group, .membership-title-group { align-items: flex-start; flex-direction: column; gap: 8px; }
       .profile-account-logo { width: min(190px, 70vw); }
@@ -1422,6 +1746,7 @@
       .profile-form-field.wide { grid-column: auto; }
       .profile-account-status { align-items: flex-start; flex-direction: column; }
       .profile-account-actions .profile-account-button { width: 100%; }
+      .theme-choice-grid { grid-template-columns: 1fr; }
       .auth-gate { place-items: start center; }
       .auth-gate-panel { width: 100%; max-width: 100%; padding: 18px; }
       .auth-gate-actions { grid-template-columns: 1fr; }
@@ -1433,6 +1758,12 @@
       .measure-entry { grid-template-columns: 1fr; }
       .membership-view { padding: 12px; }
       .membership-status, .membership-plans, .membership-popup-plans { grid-template-columns: 1fr; }
+      .membership-view { inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0; }
+      .membership-plan { padding: 14px; }
+      .membership-plan-name { padding-right: 0; }
+      .membership-best-badge { position: static; display: inline-flex; width: fit-content; margin-bottom: 8px; }
+      .membership-plan.active::after { position: static; display: inline-flex; width: fit-content; margin-top: 10px; }
+      .membership-plan-btn, .membership-popup-option { min-height: 48px; }
       .membership-price-note { min-height: 0; }
       .membership-popup-option { min-height: 0; }
       .replacement-toolbar, .replacement-presets, .replacement-mode-grid { grid-template-columns: 1fr; }
@@ -1488,9 +1819,356 @@
       .cardio-fields { grid-template-columns: 1fr; }
       .cardio-field.notes, .cardio-complete { grid-column: auto; }
     }
+    :root[data-theme="classic"] .cardio-field input,
+    :root[data-theme="classic"] .cardio-field textarea,
+    :root[data-theme="classic"] .about-feature,
+    :root[data-theme="classic"] .development-stat,
+    :root[data-theme="classic"] .measure-entry,
+    :root[data-theme="classic"] .line-chart-wrap,
+    :root[data-theme="classic"] .stats {
+      background: var(--input);
+      color: var(--text-primary);
+      border-color: var(--border);
+    }
+    :root[data-theme="classic"] th,
+    :root[data-theme="classic"] td {
+      border-bottom-color: rgba(17,24,39,.12);
+    }
+    :root[data-theme="classic"] .auth-gate {
+      background: rgba(244,244,245,.98);
+    }
+    :root[data-theme="classic"] .auth-gate-panel {
+      box-shadow: 0 24px 70px rgba(17,24,39,.14);
+    }
+
+    /* Work4it UI Audit Polish 1.0 */
+    :root {
+      --radius-xs: 6px;
+      --radius-sm: 8px;
+      --radius-md: 10px;
+      --shadow-soft: 0 14px 34px rgba(0,0,0,.24);
+      --shadow-strong: 0 26px 70px rgba(0,0,0,.44);
+      --transition-fast: 140ms ease;
+      --transition-smooth: 220ms ease;
+      --control-height: 44px;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 50% -10%, rgba(59,130,246,.14), transparent 34rem),
+        var(--bg);
+    }
+
+    .canvas {
+      max-width: min(760px, calc(100vw - 28px));
+    }
+
+    .card,
+    .modal-content,
+    .auth-gate-panel,
+    .profile-account-section,
+    .membership-plan,
+    .membership-status-card,
+    .progress-panel,
+    .calorie-view-card,
+    .about-feature,
+    .development-card,
+    .exercise-block,
+    .wizard-card,
+    .daily-wizard-card {
+      border-radius: var(--radius-md);
+      border-color: color-mix(in srgb, var(--border), var(--blue) 14%);
+      box-shadow: var(--shadow-soft);
+    }
+
+    button,
+    .profile-account-button,
+    .auth-gate-button,
+    .top-btn,
+    .small-btn,
+    .dashboard-btn,
+    .program-action-btn,
+    .session-control-btn,
+    .membership-plan-btn,
+    .membership-popup-option,
+    .generator-create,
+    .timer-btn,
+    .square,
+    .nav-btn,
+    .menu-toggle-btn {
+      min-height: var(--control-height);
+      border-radius: var(--radius-sm);
+      transition:
+        transform var(--transition-fast),
+        border-color var(--transition-fast),
+        background-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        opacity var(--transition-fast);
+    }
+
+    button:not(:disabled):hover,
+    .profile-account-button:not(:disabled):hover,
+    .auth-gate-button:not(:disabled):hover,
+    .small-btn:not(:disabled):hover,
+    .membership-plan-btn:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0,0,0,.2);
+    }
+
+    button:not(:disabled):active,
+    .profile-account-button:not(:disabled):active,
+    .auth-gate-button:not(:disabled):active,
+    .small-btn:not(:disabled):active {
+      transform: translateY(0) scale(.99);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 3px solid rgba(59,130,246,.34);
+      outline-offset: 2px;
+    }
+
+    input,
+    select,
+    textarea,
+    .field,
+    .sidebar-select {
+      min-height: var(--control-height);
+      border-radius: var(--radius-sm);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus,
+    .field:focus,
+    .sidebar-select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.16);
+    }
+
+    .app-header {
+      backdrop-filter: blur(18px);
+      background: color-mix(in srgb, var(--card), transparent 8%);
+    }
+
+    .nav-btn,
+    .menu-toggle-btn {
+      min-width: 44px;
+    }
+
+    .top-controls {
+      gap: 12px;
+    }
+
+    .top-btn,
+    .dashboard-btn,
+    .program-action-btn {
+      min-height: 46px;
+    }
+
+    .auth-link-button {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      background: var(--input);
+      color: var(--text-accent);
+      font: inherit;
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    .auth-consent {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .auth-consent input {
+      width: 20px;
+      height: 20px;
+      min-height: 20px;
+      margin-top: 2px;
+      accent-color: var(--green);
+    }
+
+    .auth-gate-panel {
+      max-width: 500px;
+      animation: work4itPanelIn .32s ease both;
+    }
+
+    .auth-gate-title {
+      letter-spacing: 0;
+    }
+
+    .modal-content {
+      animation: work4itPanelIn .24s ease both;
+    }
+
+    @keyframes work4itPanelIn {
+      from { opacity: 0; transform: translateY(10px) scale(.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .dash-card,
+    .membership-plan,
+    .profile-account-section,
+    .development-card,
+    .progress-panel,
+    .calorie-info-card {
+      transition: transform var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+    }
+
+    .dash-card:hover,
+    .membership-plan:hover,
+    .development-card:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--border), var(--blue) 44%);
+    }
+
+    .membership-plan.best,
+    .membership-plan.recommended {
+      border-color: var(--blue);
+      box-shadow: 0 18px 52px rgba(59,130,246,.2);
+    }
+
+    .membership-price,
+    .membership-plan-price,
+    .dash-value {
+      letter-spacing: 0;
+    }
+
+    .copilot-section,
+    #copilotFeedback,
+    .copilot-proposal {
+      border-radius: var(--radius-md);
+    }
+
+    #copilotFeedback.ai-change,
+    .feedback-success {
+      animation: work4itSavePulse .52s ease both;
+    }
+
+    @keyframes work4itSavePulse {
+      0% { transform: scale(.985); opacity: .72; }
+      70% { transform: scale(1.01); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .sidebar-item,
+    .sidebar-accordion-toggle {
+      min-height: 46px;
+      border-radius: var(--radius-sm);
+    }
+
+    .sidebar-accordion-panel {
+      gap: 4px;
+    }
+
+    .exercise-actions {
+      align-items: stretch;
+    }
+
+    .exercise-actions .small-btn {
+      min-height: 42px;
+    }
+
+    .set-row {
+      align-items: center;
+    }
+
+    .set-complete-control {
+      flex: 0 0 auto;
+    }
+
+    .helper-text,
+    .profile-section-copy,
+    .auth-gate-copy,
+    .generator-helper {
+      color: color-mix(in srgb, var(--text-secondary), var(--text-primary) 8%);
+    }
+
+    @media (min-width: 1180px) {
+      .canvas {
+        max-width: 860px;
+      }
+      .canvas > .card {
+        padding: 24px;
+      }
+      .exercise-head {
+        grid-template-columns: minmax(180px, 1fr) auto;
+      }
+      .modal-content {
+        width: min(980px, calc(100vw - 48px));
+      }
+      .dash-grid,
+      .membership-plans {
+        gap: 14px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      :root { --control-height: 46px; }
+      .auth-gate {
+        padding: 12px;
+      }
+      .auth-gate-panel {
+        padding: 18px;
+      }
+      .auth-gate-actions,
+      .top-controls,
+      .program-actions,
+      .profile-account-actions {
+        gap: 9px;
+      }
+      .nav-btn {
+        padding-inline: 10px;
+      }
+      .app-title {
+        font-size: var(--font-size-small);
+      }
+      .card {
+        padding: 16px;
+      }
+      .modal-content {
+        max-height: calc(100dvh - 24px);
+        border-radius: var(--radius-md);
+      }
+      .small-btn,
+      .profile-account-button,
+      .auth-gate-button,
+      .membership-plan-btn,
+      .program-action-btn {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
   </style>
 </head>
 <body class="auth-locked">
+  <a class="skip-link" href="#programCanvas">Spring til hovedindhold</a>
   <section class="auth-gate loading" id="authGate" aria-label="Logger ind" aria-live="polite">
     <div class="auth-gate-panel">
       <div class="auth-gate-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="Work4it"><img class="auth-hero-logo brand-fade-in" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
@@ -1515,20 +2193,25 @@
           <button class="auth-gate-button primary" id="authGateLoginBtn" type="submit" disabled>Log ind</button>
           <button class="auth-gate-button" id="authGateCreateBtn" type="button" onclick="createFromAuthGate()" disabled>Opret bruger</button>
           <button class="auth-gate-button reset" id="authGateResetBtn" type="button" onclick="resetFromAuthGate()" disabled>Nulstil adgangskode</button>
+          <button class="auth-gate-button reset" id="authGateClearCacheBtn" type="button" onclick="clearLoginCacheFromAuthGate()" disabled>Ryd login-cache</button>
         </div>
       </form>
       <div class="auth-gate-feedback" id="authGateFeedback">Firebase indlæses...</div>
     </div>
   </section>
   <header class="app-header">
-    <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <button class="menu-toggle-btn" type="button" onclick="toggleSidebar()" aria-label="Åbn hovedmenu" aria-controls="sidebar" aria-expanded="false">☰</button>
     <button class="nav-btn" onclick="goBackSafe()">Tilbage</button>
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
     <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="work4it-logo-v1.png" alt="Work4it"><span class="brand-header-mobile"><img class="brand-header-icon" src="work4it-app-icon-192.png" alt=""><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
   </header>
 
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-  <nav class="sidebar" id="sidebar" aria-label="Hovedmenu">
+  <nav class="sidebar" id="sidebar" aria-label="Hovedmenu" aria-hidden="true">
+    <div class="sidebar-view-header">
+      <div class="sidebar-view-title"><img src="work4it-app-icon-192.png" alt="">Menu</div>
+      <button class="sidebar-close-btn" type="button" onclick="toggleSidebar(false)" aria-label="Luk menu">×</button>
+    </div>
     <div class="profile">
       <div class="avatar">👤</div>
       <div><b id="sidebarProfileName">Min profil</b><br><span class="profile-login" id="sidebarProfileSubtitle">Profil og konto</span></div>
@@ -1633,7 +2316,11 @@
         </div>
         <button class="sidebar-item" id="exportDataNavItem" type="button" onclick="setActiveSidebarItem(this); exportDataFromMenu()">↗ Eksportér data</button>
         <button class="sidebar-item" id="helpNavItem" type="button" onclick="setActiveSidebarItem(this); openHelpAboutDialog()">? Hjælp / Om appen</button>
-        <button class="sidebar-item" id="privacyNavItem" type="button" onclick="setActiveSidebarItem(this); openPrivacyPolicyDialog()">🔒 Privatliv / GDPR</button>
+        <a class="sidebar-item" id="privacyNavItem"
+          href="https://work-4it.dk/"
+          target="_blank" rel="noopener noreferrer"
+          title="Se Privatliv og GDPR på Work-4it.dk"
+          onclick="setActiveSidebarItem(this); if(document.getElementById('sidebar')?.classList.contains('open')) toggleSidebar(false)">🔒 Privatliv / GDPR på Work-4it.dk</a>
       </div>
     </section>
     <div class="sidebar-menu-spacer"></div>
@@ -1644,6 +2331,53 @@
       onclick="if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar()">📝 Feedback</a>
     <button class="sidebar-item sidebar-bottom-action" id="sidebarLogoutBtn" type="button" onclick="logoutProfileAccount()">↪ Log ud</button>
   </nav>
+  <script>
+    (function initMenuViewController() {
+      const workspaceSelectors = [
+        ".app-header",
+        "main.canvas",
+        ".modal",
+        ".progress-view",
+        ".calorie-view",
+        ".profile-account-view",
+        ".membership-view",
+        ".wizard-shell"
+      ];
+      function setWorkspaceHidden(hidden) {
+        document.querySelectorAll(workspaceSelectors.join(",")).forEach(element => {
+          if (element.id === "sidebar" || element.closest("#sidebar")) return;
+          if (hidden) {
+            element.setAttribute("aria-hidden", "true");
+            element.inert = true;
+          } else {
+            element.removeAttribute("aria-hidden");
+            element.inert = false;
+          }
+        });
+      }
+      function setSidebarOpen(forceOpen) {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("overlay");
+        if (!sidebar || !overlay) return;
+        const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !sidebar.classList.contains("open");
+        sidebar.classList.toggle("open", shouldOpen);
+        sidebar.setAttribute("aria-hidden", String(!shouldOpen));
+        overlay.classList.toggle("show", shouldOpen);
+        document.body.classList.toggle("sidebar-open", shouldOpen);
+        setWorkspaceHidden(shouldOpen);
+      }
+      window.toggleSidebar = setSidebarOpen;
+      window.WorkitMenuView = {
+        setOpen: setSidebarOpen,
+        setWorkspaceHidden
+      };
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && document.getElementById("sidebar")?.classList.contains("open")) {
+          setSidebarOpen(false);
+        }
+      });
+    })();
+  </script>
 
   <main class="canvas" id="programCanvas">
     <section class="card">
@@ -1705,8 +2439,12 @@
       </div>
       <div class="copilot program-only" id="copilotAccess">
         <div class="copilot-title">✨ AI Træningsassistent (Profil, programmer og træningspas)</div>
+        <div class="ai-request-counter" id="aiRequestCounter" aria-live="polite">
+          <span><strong id="aiRequestRemaining">-</strong> AI Requests tilbage</span>
+          <button class="ai-request-upgrade" type="button" onclick="openMembershipView()">Se medlemskab</button>
+        </div>
         <div class="copilot-bar">
-          <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'Lav et styrkeprogram', 'Jeg har kun håndvægte' eller 'Opdater min vægt til 88 kg'">
+          <input class="copilot-input" id="copilotInput" aria-label="Skriv besked til Work4it AI-assistent" placeholder="F.eks. 'Lav et styrkeprogram', 'Jeg har kun håndvægte' eller 'Opdater min vægt til 88 kg'">
           <button class="copilot-btn" onclick="runCopilot()">Kør</button>
         </div>
         <div id="copilotFeedback"></div>
@@ -1777,6 +2515,44 @@
               <button class="profile-account-button danger" type="button" onclick="deleteProfileAccountAndData()">Slet konto og data</button>
               <button class="profile-account-button" type="button" onclick="openPrivacyPolicyDialog()">Privatliv / GDPR-info</button>
             </div>
+          </section>
+
+          <section class="profile-account-section" id="themeSettingsSection">
+            <h2>Indstillinger</h2>
+            <p class="profile-section-copy">Vælg appens tema. Valget gemmes i Cloud, når du er logget ind, og lokalt som backup.</p>
+            <div class="theme-choice-grid" role="radiogroup" aria-label="Tema">
+              <label class="theme-option">
+                <input type="radio" name="work4it-theme" value="work4it" onchange="changeAppTheme(this.value)">
+                <span>
+                  <span class="theme-option-title">Work4it</span>
+                  <span class="theme-option-copy">Standardtema med mørk baggrund og Work4it-brandfarver.</span>
+                  <span class="theme-preview work4it" aria-hidden="true">
+                    <span class="theme-preview-card"></span>
+                    <span class="theme-preview-row">
+                      <span class="theme-preview-line theme-preview-blue"></span>
+                      <span class="theme-preview-line theme-preview-green"></span>
+                      <span class="theme-preview-line theme-preview-red"></span>
+                    </span>
+                  </span>
+                </span>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="work4it-theme" value="classic" onchange="changeAppTheme(this.value)">
+                <span>
+                  <span class="theme-option-title">Classic</span>
+                  <span class="theme-option-copy">Lyst, roligt og tidløst tema med ekstra fokus på læsbarhed.</span>
+                  <span class="theme-preview classic" aria-hidden="true">
+                    <span class="theme-preview-card"></span>
+                    <span class="theme-preview-row">
+                      <span class="theme-preview-line theme-preview-gray"></span>
+                      <span class="theme-preview-line theme-preview-light"></span>
+                      <span class="theme-preview-line theme-preview-green"></span>
+                    </span>
+                  </span>
+                </span>
+              </label>
+            </div>
+            <div class="theme-save-feedback" id="themeSaveFeedback" aria-live="polite"></div>
           </section>
         </div>
 
@@ -1981,7 +2757,7 @@
 
       <div class="membership-pricing-phase" id="membershipPricingPhase" data-tier="early_adopter">Early Adopter-priser · gælder de første 500 registrerede brugere</div>
       <div class="membership-plans">
-        <article class="membership-plan">
+        <article class="membership-plan" data-membership-plan="free">
           <div class="membership-plan-name">Gratis version</div>
           <div class="membership-price">0 kr.</div>
           <div class="membership-price-note">3 AI Requests</div>
@@ -1991,21 +2767,21 @@
             <li>Basale træningsfunktioner</li>
             <li>Brugerdata slettes aldrig</li>
           </ul>
-          <button class="membership-plan-btn" onclick="selectMembershipPlan('free')">Fortsæt gratis</button>
+          <button class="membership-plan-btn" type="button" data-membership-select="free" onclick="selectMembershipPlan('free')">Fortsæt gratis</button>
         </article>
 
-        <article class="membership-plan">
+        <article class="membership-plan" data-membership-plan="quarterly">
           <div class="membership-plan-name">Premium 3 måneder</div>
           <div class="membership-price" id="membershipPriceQuarterly">59 kr.</div>
           <div class="membership-price-note">15 AI Requests/md.</div>
           <ul>
             <li>Alle Premium-funktioner</li>
-            <li>Ingen automatisk betaling i demoen</li>
+            <li>Sikker betaling via Stripe Checkout</li>
           </ul>
-          <button class="membership-plan-btn primary" onclick="selectMembershipPlan('quarterly')">Vælg 3 måneder</button>
+          <button class="membership-plan-btn primary" type="button" data-membership-select="quarterly" onclick="selectMembershipPlan('quarterly')">Vælg 3 måneder</button>
         </article>
 
-        <article class="membership-plan best">
+        <article class="membership-plan best" data-membership-plan="yearly">
           <div class="membership-best-badge">Bedste værdi</div>
           <div class="membership-plan-name">Premium 12 måneder</div>
           <div class="membership-price" id="membershipPriceYearly">199 kr.</div>
@@ -2014,10 +2790,10 @@
             <li>Alle Premium-funktioner</li>
             <li>Laveste pris pr. måned</li>
           </ul>
-          <button class="membership-plan-btn best" onclick="selectMembershipPlan('yearly')">Vælg 12 måneder</button>
+          <button class="membership-plan-btn best" type="button" data-membership-select="yearly" onclick="selectMembershipPlan('yearly')">Vælg 12 måneder</button>
         </article>
 
-        <article class="membership-plan">
+        <article class="membership-plan" data-membership-plan="lifetime">
           <div class="membership-plan-name">Livstid</div>
           <div class="membership-price" id="membershipPriceLifetime">449 kr.</div>
           <div class="membership-price-note">30 AI Requests/md.</div>
@@ -2025,12 +2801,12 @@
             <li>Permanent Premium-adgang</li>
             <li>Alle nuværende Premium-funktioner</li>
           </ul>
-          <button class="membership-plan-btn primary" onclick="selectMembershipPlan('lifetime')">Vælg livstid</button>
+          <button class="membership-plan-btn primary" type="button" data-membership-select="lifetime" onclick="selectMembershipPlan('lifetime')">Vælg livstid</button>
         </article>
       </div>
 
       <div class="membership-terms">
-        Betaling er ikke aktiveret endnu. Valgte planer gemmes som demo/test i din lokale cache og brugerprofil i Cloud. Gratisversionen og almindelig træning er altid tilgængelig.
+        Betalte medlemskaber gennemføres via sikker Stripe Checkout. Premium aktiveres først, når betalingen er bekræftet af Stripe. Gratisversionen og almindelig træning er altid tilgængelig.
       </div>
     </div>
   </section>
@@ -2042,17 +2818,17 @@
         Din gratis prøveperiode er udløbet. Du kan fortsætte gratis med begrænsede funktioner eller vælge et medlemskab for at få adgang til alle Premium-funktioner.
       </div>
       <div class="membership-popup-plans">
-        <button class="membership-popup-option" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span id="membershipPopupPriceQuarterly">59 kr. · 15 AI Requests/md.</span></button>
-        <button class="membership-popup-option best" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span id="membershipPopupPriceYearly">199 kr. · 15 AI Requests/md. · Bedste værdi</span></button>
-        <button class="membership-popup-option" onclick="selectMembershipPlan('lifetime')"><strong>🥇 Livstid</strong><span id="membershipPopupPriceLifetime">449 kr. · 30 AI Requests/md.</span></button>
+        <button class="membership-popup-option" type="button" data-membership-select="quarterly" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span id="membershipPopupPriceQuarterly">59 kr. · 15 AI Requests/md.</span></button>
+        <button class="membership-popup-option best" type="button" data-membership-select="yearly" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span id="membershipPopupPriceYearly">199 kr. · 15 AI Requests/md. · Bedste værdi</span></button>
+        <button class="membership-popup-option" type="button" data-membership-select="lifetime" onclick="selectMembershipPlan('lifetime')"><strong>🥇 Livstid</strong><span id="membershipPopupPriceLifetime">449 kr. · 30 AI Requests/md.</span></button>
       </div>
-      <button class="membership-plan-btn membership-popup-free" onclick="selectMembershipPlan('free')">📘 Fortsæt gratis · 3 AI Requests</button>
+      <button class="membership-plan-btn membership-popup-free" type="button" data-membership-select="free" onclick="selectMembershipPlan('free')">📘 Fortsæt gratis · 3 AI Requests</button>
     </div>
   </div>
 
-  <div class="modal" id="modal">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
     <div class="modal-panel">
-      <div class="modal-head"><div class="modal-title" id="modalTitle">Træningsdashboard</div><button class="close" onclick="closeModal()">×</button></div>
+      <div class="modal-head"><div class="modal-title" id="modalTitle">Træningsdashboard</div><button class="close" type="button" onclick="closeModal()" aria-label="Luk dialog">×</button></div>
       <div id="modalContent"></div>
     </div>
   </div>
@@ -2131,6 +2907,7 @@
         });
       }
     });
+    window.Work4itExerciseCatalog = catalog;
 
     let slotCounter = 0;
     let totalSeconds = 0;
@@ -2379,7 +3156,28 @@
       renderSaved();
     }
 
-    function toggleSidebar() { $("sidebar").classList.toggle("open"); $("overlay").classList.toggle("show"); }
+    function toggleSidebar(forceOpen) {
+      if (window.WorkitMenuView?.setOpen) {
+        window.WorkitMenuView.setOpen(forceOpen);
+        return;
+      }
+      const sidebar = $("sidebar");
+      const overlay = $("overlay");
+      if (!sidebar || !overlay) return;
+      const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !sidebar.classList.contains("open");
+      sidebar.classList.toggle("open", shouldOpen);
+      sidebar.setAttribute("aria-hidden", String(!shouldOpen));
+      document.querySelector(".menu-toggle-btn")?.setAttribute("aria-expanded", String(shouldOpen));
+      overlay.classList.toggle("show", shouldOpen);
+      document.body.classList.toggle("sidebar-open", shouldOpen);
+    }
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && $("sidebar")?.classList.contains("open")) {
+        toggleSidebar(false);
+      }
+    });
+    window.toggleSidebar = toggleSidebar;
 
     function toggleSidebarAccordion(sectionName) {
       document.querySelectorAll(".sidebar-accordion").forEach(section => {
@@ -2388,6 +3186,7 @@
         section.querySelector(":scope > .sidebar-accordion-toggle")?.setAttribute("aria-expanded", String(shouldOpen));
       });
     }
+    window.toggleSidebarAccordion = toggleSidebarAccordion;
 
     function setActiveSidebarItem(item) {
       document.querySelectorAll(".sidebar-item.active").forEach(active => active.classList.remove("active"));
@@ -2449,57 +3248,41 @@
 
     function openHelpAboutDialog() {
       if ($("sidebar").classList.contains("open")) toggleSidebar();
-      $("modalTitle").textContent = "Hjælp / Om appen";
+      const locale = window.Work4itContent?.defaultLocale || "da";
+      const help = window.Work4itContent?.locales?.[locale]?.help || window.Work4itContent?.locales?.da?.help || {};
+      const actionLabels = help.actions || {};
+      const featureCards = (help.features || []).map(feature => `
+          <section class="about-feature">
+            <span class="about-feature-icon" aria-hidden="true">${esc(feature.icon || "✓")}</span>
+            <h3>${esc(feature.title)}</h3>
+            <p>${esc(feature.text)}</p>
+          </section>`).join("");
+      const valuePoints = (help.valuePoints || []).map(point => `<li>${esc(point)}</li>`).join("");
+      $("modalTitle").textContent = help.title || "Hjælp / Om Work4it";
       $("modalContent").innerHTML = `
-        <div class="about-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="Work4it"></div>
+        <div class="about-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="${esc(help.logoAlt || "Work4it")}"></div>
         <p class="about-intro">
-          <strong>Work4it samler hele din træningsrejse ét sted.</strong>
-          Appen hjælper dig med at skabe struktur, gennemføre gode træningspas og se den fremgang,
-          som ellers let forsvinder i løse noter og hukommelse. Du bestemmer retningen, mens Work4it
-          gør data, planlægning og opfølgning lettere.
+          <strong>${esc(help.introStrong || "")}</strong>
+          ${esc(help.intro || "")}
         </p>
+        ${valuePoints ? `<h3>${esc(help.valueTitle || "Hvorfor Work4it?")}</h3><ul class="about-value-list">${valuePoints}</ul>` : ""}
         <div class="about-feature-grid">
-          <section class="about-feature">
-            <h3>Træningsprogrammer</h3>
-            <p>Opret egne træningspas eller få genereret målrettede planer med flere træningsdage. Tilføj, erstat og flyt øvelser, og registrér sæt, reps, vægt, pauser og cardio-data.</p>
-          </section>
-          <section class="about-feature">
-            <h3>AI-funktioner</h3>
-            <p>AI Træningsassistenten kan hjælpe med programforslag, øvelsesvalg og ændringer via naturlige kommandoer. Forslagene tager højde for mål, erfaring, fokusområder og dagens motivation.</p>
-          </section>
-          <section class="about-feature">
-            <h3>Historik</h3>
-            <p>Afsluttede træningssessioner gemmes som historik, så du kan genfinde tidligere præstationer og følge kontinuiteten uden at ændre selve programskabelonen.</p>
-          </section>
-          <section class="about-feature">
-            <h3>Statistik</h3>
-            <p>Dashboardet samler blandt andet estimeret 1RM, træningsvolumen, kalorieestimat, gennemførte sæt og cardio-statistik. Det gør udviklingen synlig og lettere at handle på.</p>
-          </section>
-          <section class="about-feature">
-            <h3>Cloud-backup</h3>
-            <p>Når du er logget ind, synkroniseres understøttede brugerdata med Firebase. Lokal lagring fungerer fortsat som cache og fallback, så appen er robust ved midlertidige forbindelsesproblemer.</p>
-          </section>
-          <section class="about-feature">
-            <h3>Kropsmålinger</h3>
-            <p>Registrér højde, vægt, fedtprocent, muskelmasse og kropsmål. BMI beregnes automatisk, og historikken gør det muligt at se ændringer over tid.</p>
-          </section>
-          <section class="about-feature">
-            <h3>Personlige rekorder</h3>
-            <p>Work4it fremhæver dine bedste løft, højeste estimerede 1RM og stærkeste træningsresultater. Hver registrering kan blive et konkret bevis på, at indsatsen flytter noget.</p>
-          </section>
-          <section class="about-feature">
-            <h3>Medlemskab</h3>
-            <p>Gratisversionen indeholder de grundlæggende træningsfunktioner og 3 AI Requests. Premium-planerne giver flere AI Requests og adgang til de udvidede analyse- og planlægningsfunktioner.</p>
-          </section>
-          <section class="about-feature future">
-            <h3>Fremtidige funktioner</h3>
-            <p>Work4it er bygget til at kunne vokse med blandt andet forbedret screenshot-import, mere avancerede AI-anbefalinger, stærkere cloud-synkronisering, flere diagrammer og senere sikker betalingsintegration. Nye funktioner skal gøre træningen enklere, ikke mere kompliceret.</p>
-          </section>
+          ${featureCards}
+          ${help.premium ? `<section class="about-feature future">
+            <span class="about-feature-icon" aria-hidden="true">${esc(help.premium.icon || "⭐")}</span>
+            <h3>${esc(help.premium.title)}</h3>
+            <p>${esc(help.premium.text)}</p>
+          </section>` : ""}
+          ${help.feedback ? `<section class="about-feature future">
+            <span class="about-feature-icon" aria-hidden="true">${esc(help.feedback.icon || "📝")}</span>
+            <h3>${esc(help.feedback.title)}</h3>
+            <p>${esc(help.feedback.text)}</p>
+          </section>` : ""}
         </div>
-        <p class="about-closing">Fremgang behøver ikke være perfekt. Den skal bare kunne fortsætte. Work4it hjælper dig med at se næste skridt og huske, hvor langt du allerede er kommet.</p>
+        <p class="about-closing">${esc(help.closing || "")}</p>
         <div class="row">
-          <button class="small-btn" type="button" onclick="closeModal(); openContactDialog();">Kontakt</button>
-          <button class="small-btn" type="button" onclick="closeModal()">Luk</button>
+          <button class="small-btn" type="button" onclick="closeModal(); openContactDialog();">${esc(actionLabels.contact || "Kontakt")}</button>
+          <button class="small-btn" type="button" onclick="closeModal()">${esc(actionLabels.close || "Luk")}</button>
         </div>`;
       openModal();
     }
@@ -3271,7 +4054,7 @@
         <details class="custom-box" style="margin:10px;">
           <summary class="custom-title">Opret egen ${activeMovementFilter === "Calisthenics" ? "Calisthenics-øvelse" : "øvelse"}</summary>
           <div class="replacement-toolbar" style="margin-top:10px;">
-            <input class="field wide" id="pickerCustomExerciseName" placeholder="Navn på øvelse" onkeyup="if(event.key==='Enter') addCustomExerciseFromPicker(event)">
+            <input class="field wide" id="pickerCustomExerciseName" aria-label="Navn på ny øvelse" placeholder="Navn på øvelse" onkeyup="if(event.key==='Enter') addCustomExerciseFromPicker(event)">
             <select class="field" id="pickerCustomExerciseType">
               ${optionList(["Hjemme","Center"], activeMovementFilter === "Calisthenics" ? "Hjemme" : "Center", tt)}
             </select>
@@ -3514,9 +4297,9 @@
         <details class="custom-box">
           <summary class="custom-title">Tilføj ny øvelse til arkivet</summary>
           <div class="replacement-toolbar" style="margin-top:10px;">
-            <select class="field" id="replacementNewMuscle">${replacementMuscleOptions(currentMuscle).replace('<option value="Alle" >Alle muskelgrupper</option>', "")}</select>
-            <select class="field" id="replacementNewType">${optionList(["Center","Hjemme"], "Center", tt)}</select>
-            <input class="field wide" id="replacementNewName" placeholder="${t("exerciseNamePlaceholder")}" onkeyup="if(event.key==='Enter') addCustomReplacement()">
+            <select class="field" id="replacementNewMuscle" aria-label="Muskelgruppe for ny øvelse">${replacementMuscleOptions(currentMuscle).replace('<option value="Alle" >Alle muskelgrupper</option>', "")}</select>
+            <select class="field" id="replacementNewType" aria-label="Træningssted for ny øvelse">${optionList(["Center","Hjemme"], "Center", tt)}</select>
+            <input class="field wide" id="replacementNewName" aria-label="${t("exerciseNamePlaceholder")}" placeholder="${t("exerciseNamePlaceholder")}" onkeyup="if(event.key==='Enter') addCustomReplacement()">
             <button class="small-btn wide" type="button" onclick="addCustomReplacement()">${t("addBtn")}</button>
           </div>
         </details>
@@ -3602,7 +4385,7 @@
           ].map(([value,label]) => `<button class="small-btn replacement-preset" type="button" onclick="suggestExerciseReplacements('${value}')">${label}</button>`).join("")}
         </div>
         <div class="replacement-ai-row">
-          <input class="field" id="replacementAiInput" placeholder="F.eks. Jeg har kun håndvægte" onkeyup="if(event.key==='Enter') suggestExerciseReplacements('free')">
+          <input class="field" id="replacementAiInput" aria-label="Skriv krav til AI-erstatning" placeholder="F.eks. Jeg har kun håndvægte" onkeyup="if(event.key==='Enter') suggestExerciseReplacements('free')">
           <button class="small-btn orange" type="button" onclick="suggestExerciseReplacements('free')">Find forslag</button>
         </div>
         <div class="replacement-results" id="replacementResults"><div class="progress-empty">Vælg et forslag eller beskriv, hvad du har brug for.</div></div>`;
@@ -3746,11 +4529,11 @@
           <div class="set-row">
             <div>${i}</div>
             <div class="previous">${esc(data.prev || "-")}</div>
-            <div><input class="weight" placeholder="kg" value="${esc(data.weight || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
-            <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
+            <div><input class="weight" aria-label="Vægt i kg for sæt ${i}" placeholder="kg" value="${esc(data.weight || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
+            <div><input class="reps" aria-label="Reps for sæt ${i}" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div class="pause-control" id="pause-control-${slot}-${i}">
               <div class="pause-progress" id="pause-progress-${slot}-${i}" role="progressbar" aria-label="Pause" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="pause-progress-fill"></span></div>
-              <input class="pause" id="pause-${slot}-${i}" inputmode="numeric" pattern="[0-9:]*" autocomplete="off" placeholder="00:00" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="sanitizePauseInput(this); markPauseManual(this)" onblur="normalizePauseInput(this)">
+              <input class="pause" id="pause-${slot}-${i}" aria-label="Pausetid for sæt ${i}" inputmode="numeric" pattern="[0-9:]*" autocomplete="off" placeholder="00:00" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="sanitizePauseInput(this); markPauseManual(this)" onblur="normalizePauseInput(this)">
               <button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})" aria-label="Start eller pause pausetimer">▶</button>
               <button class="timer-btn" onclick="resetPause('${slot}',${i})" aria-label="Nulstil pausetimer">↺</button>
             </div>
@@ -4862,6 +5645,46 @@
       updateEstimatedTime();
       updateWorkoutButtonVisibility();
     }
+    function closeViewsForLoginRouting() {
+      window.WorkitWindowManager?.closeNonAuthWindows?.();
+      ["savedDropdown", "trashDropdown", "muscleMenu"].forEach(id => {
+        const element = $(id);
+        if (element) element.style.display = "none";
+      });
+      $("sidebar")?.classList.remove("open");
+      $("overlay")?.classList.remove("show");
+      document.body.classList.remove("sidebar-open");
+    }
+
+    function activeWorkoutAutosave() {
+      const saved = readLocalJson("active_workout_autosave", null);
+      const status = normalizeSessionStatus(saved?.session?.sessionStatus);
+      return saved?.session && ["in_progress", "paused"].includes(status) ? saved : null;
+    }
+
+    function routeAfterLogin() {
+      closeViewsForLoginRouting();
+      const saved = activeWorkoutAutosave();
+      if (saved) {
+        loadAutosave();
+        if (!hasActiveWorkoutSession()) throw new Error("Den aktive træning kunne ikke gendannes.");
+        showTrainingSession();
+        $("autosaveStatus").textContent = sessionStatus === "paused"
+          ? "Aktiv træning gendannet på pause"
+          : "Aktiv træning gendannet";
+        window.WorkitViewState?.save?.("program");
+        return "active";
+      }
+      resetWorkoutCanvas("Klar til ny træning");
+      setExercisePickerContext("Alle");
+      window.WorkitViewState?.save?.("program");
+      return "empty";
+    }
+
+    window.WorkitWorkoutRouting = {
+      routeAfterLogin,
+      hasActiveWorkout: () => Boolean(activeWorkoutAutosave())
+    };
     function newWorkout(type = "strength") {
       if (hasActiveWorkoutSession()) {
         alert("Der er allerede en aktiv træning. Genoptag eller afslut den, før du opretter et nyt træningspas.");
@@ -5385,6 +6208,7 @@
       const max = Math.max(1, ...chartVals);
       const bars = chartVals.length ? chartVals.map(v => `<div class="bar" style="height:${Math.max(8,Math.round((v/max)*145))}px"></div>`).join("") : `<span class="helper-text">${t("noHistory")}</span>`;
       $("modalTitle").textContent = slot ? `${t("simulateBtn")}: ${$(`name-${slot}`).textContent}` : t("dashboard").replace("📊 ", "");
+      $("modalContent").classList.add("brand-surface", "dashboard-brand-surface");
       $("modalContent").innerHTML = `
         <div class="dash-grid">
           <div class="dash-card"><div class="dash-label">${t("bestOneRm")}</div><div class="dash-value">${bestOne ? kg(bestOne) : "-"}</div></div>
@@ -5418,7 +6242,7 @@
       const best = Math.max(...sets.map(s => oneRm(s.w,s.r)));
       const factor = 1 + numberValue(improve)/100;
       const newOne = best * factor;
-      return `<div class="section">${t("simulation")}</div><div class="row"><input class="field" id="simPercent" type="number" step="0.5" value="${numberValue(improve)}"><button class="small-btn" onclick="openDashboard('${slot}', $('simPercent').value)">${t("simulateBtn")}</button><button class="small-btn" onclick="openDashboard('${slot}',5)">5%</button><button class="small-btn" onclick="openDashboard('${slot}',10)">10%</button></div>${table([t("measureHeader"),t("resultHeader")], [[t("newEstimatedOneRm"), kg(newOne)], [t("workingWeight5"), kg(newOne/(1+5/30))], [t("workingWeight8"), kg(newOne/(1+8/30))], [t("workingWeight12"), kg(newOne/(1+12/30))], [t("expectedVolume"), vol(sets.reduce((a,s)=>a+volume(s.w,s.r),0)*factor)]])}`;
+      return `<div class="section">${t("simulation")}</div><div class="row"><input class="field" id="simPercent" type="number" step="0.5" aria-label="Forventet styrkeforbedring i procent" value="${numberValue(improve)}"><button class="small-btn" onclick="openDashboard('${slot}', $('simPercent').value)">${t("simulateBtn")}</button><button class="small-btn" onclick="openDashboard('${slot}',5)">5%</button><button class="small-btn" onclick="openDashboard('${slot}',10)">10%</button></div>${table([t("measureHeader"),t("resultHeader")], [[t("newEstimatedOneRm"), kg(newOne)], [t("workingWeight5"), kg(newOne/(1+5/30))], [t("workingWeight8"), kg(newOne/(1+8/30))], [t("workingWeight12"), kg(newOne/(1+12/30))], [t("expectedVolume"), vol(sets.reduce((a,s)=>a+volume(s.w,s.r),0)*factor)]])}`;
     }
     function openModal() {
       const modal = $("modal");
@@ -5433,6 +6257,7 @@
       if (!modal) return;
       modal.style.display = "none";
       modal.setAttribute("aria-hidden", "true");
+      $("modalContent")?.classList.remove("brand-surface", "dashboard-brand-surface");
     }
 
     function openContactDialog() {
@@ -5442,13 +6267,13 @@
         <form class="contact-form" onsubmit="sendContactMessage(event)">
           <p class="contact-note">Skriv din besked her. Din mailapp åbnes med beskeden adresseret til Mikehenriksen85@gmail.com.</p>
           <label>Navn
-            <input id="contactName" name="name" autocomplete="name" placeholder="Dit navn">
+            <input id="contactName" name="name" autocomplete="name" aria-label="Dit navn" placeholder="Dit navn">
           </label>
           <label>Din e-mail
-            <input id="contactEmail" name="email" type="email" autocomplete="email" placeholder="din@email.dk">
+            <input id="contactEmail" name="email" type="email" autocomplete="email" aria-label="Din e-mailadresse" placeholder="din@email.dk">
           </label>
           <label>Besked
-            <textarea id="contactMessage" name="message" required placeholder="Skriv din besked..."></textarea>
+            <textarea id="contactMessage" name="message" required aria-label="Besked til Work4it" placeholder="Skriv din besked..."></textarea>
           </label>
           <button class="small-btn" type="submit">Åbn mail til afsendelse</button>
         </form>`;
@@ -5481,14 +6306,40 @@
       "addCardioExercise", "generateCardioProgram", "suggestProgram", "addExercise",
       "addMuscleExercise", "removeExercise", "replaceExercise", "replaceExerciseByIndex",
       "updateExercise", "updatePause", "updatePauseSet", "updateWorkoutTime",
-      "optimizeWorkout", "renameProgram", "adaptWorkout"
+      "optimizeWorkout", "renameProgram", "adaptWorkout", "resizeWorkout"
     ]);
+
+    function currentProfileFieldDisplay(field) {
+      const profile = window.TrainingWizardStore?.getProfile?.() || {};
+      const value = profile[field];
+      return value === undefined || value === null || value === ""
+        ? "ikke angivet"
+        : profileFieldDisplay(field, value);
+    }
+
+    function trainingPreferenceDisplay(field, value) {
+      if (field === "trainingGoals") {
+        const labels = ["primary", "secondary", "tertiary"]
+          .map(priority => value?.[priority])
+          .filter(Boolean)
+          .map(goal => window.TrainingGoalEngine?.profile?.(goal)?.label || goal);
+        return labels.length ? labels.join(" → ") : "ikke valgt";
+      }
+      if (field === "trainingGoalPriority" || field === "goal") return window.TrainingGoalEngine?.profile?.(value)?.label || value;
+      if (field === "experience") return { beginner: "Nybegynder", light_intermediate: "Let øvet", intermediate: "Øvet", experienced: "Erfaren" }[value] || value;
+      if (field === "preferredTrainingStyle") return { gym: "Fitnesscenter", calisthenics: "Calisthenics", hybrid: "Begge dele" }[value] || value;
+      if (field === "exercisePreference") return { variation: "Variation", consistent: "Faste øvelser", mixed: "Lidt af begge dele" }[value] || value;
+      if (field === "availableEquipment") return Array.isArray(value) ? value.join(", ") : String(value || "");
+      if (field === "focusAreas") return Array.isArray(value) ? value.join(", ") : String(value || "");
+      if (field === "motivation") return { low: "Lav", normal: "Normal", high: "Høj" }[value] || value;
+      return String(value ?? "");
+    }
 
     function copilotActionSummary(action) {
       const value = action.value ?? "";
       const summaries = {
-        updateProfile: `${profileFieldLabel(action.field)} til ${profileFieldDisplay(action.field, value)}`,
-        updateTrainingPreference: `træningsindstillingen ${action.field} til ${String(value)}`,
+        updateProfile: `${profileFieldLabel(action.field)} fra ${currentProfileFieldDisplay(action.field)} til ${profileFieldDisplay(action.field, value)}`,
+        updateTrainingPreference: `træningsindstillingen ${action.field} til ${trainingPreferenceDisplay(action.field, value)}`,
         moveExercise: `flytte ${action.exerciseName} til Dag ${action.day}`,
         moveExerciseByIndex: `flytte øvelse ${action.exerciseIndex} til Dag ${action.day}`,
         addCardioExercise: `tilføje ${action.exerciseName} som cardio`,
@@ -5505,7 +6356,8 @@
         updateWorkoutTime: `ændre den registrerede tid til ${action.value}`,
         optimizeWorkout: `tilpasse ${action.mode || "træningspasset"} efter din profil`,
         renameProgram: `omdøbe træningspasset til ${action.name}`,
-        adaptWorkout: `tilpasse træningspasset til begrænsningen: ${action.originalInput || action.constraint}`
+        adaptWorkout: `tilpasse træningspasset til begrænsningen: ${action.originalInput || action.constraint}`,
+        resizeWorkout: `ændre træningspasset til ${action.exerciseCount} øvelser`
       };
       return summaries[action.action] || "anvende den foreslåede ændring";
     }
@@ -5561,9 +6413,13 @@
         ? "Alternativer: behold programmet uændret, tilpas kun dagens træning eller opret et separat skånsomt træningspas."
         : action.action === "suggestProgram"
           ? "Alternativer: kortere pas, færre øvelser eller et program med en anden træningsstil."
+          : action.action === "resizeWorkout"
+            ? "Alternativer: behold nuværende længde, forkort kun dagens pas eller opret et separat kort program."
           : action.action === "replaceExercise"
             ? "Alternativer: vælg en lettere variant, en hjemmevariant eller behold den nuværende øvelse."
-            : "Alternativer: behold den nuværende værdi eller annullér og skriv et mere præcist ønske.";
+            : action.action === "updateTrainingPreference"
+              ? "Alternativer: opdatér kun profilindstillingen, skriv en mere præcis prioritering eller annullér."
+              : "Alternativer: behold den nuværende værdi eller annullér og skriv et mere præcist ønske.";
       container.textContent = alternatives;
     }
 
@@ -5583,6 +6439,34 @@
         pendingCopilotHistory = null;
       }
     }
+
+    function formatAiResetDate(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return "";
+      return new Intl.DateTimeFormat("da-DK", { day: "numeric", month: "short" }).format(date);
+    }
+
+    function updateAiRequestCounterDisplay(detail = window.Work4itAIRequestCounter?.getSnapshot?.()) {
+      const box = $("aiRequestCounter");
+      const remainingEl = $("aiRequestRemaining");
+      if (!box || !remainingEl || !detail) return;
+      const limit = Number(detail.aiRequestLimit) || 0;
+      const used = Number(detail.aiRequestsUsed) || 0;
+      const remaining = Math.max(0, Number(detail.remaining ?? (limit - used)) || 0);
+      const reset = detail.membershipType === "free"
+        ? "Gratis nulstilles ikke"
+        : detail.aiResetDate
+          ? `Nulstilles ${formatAiResetDate(detail.aiResetDate)}`
+          : "Månedlig nulstilling";
+      remainingEl.textContent = `${remaining}/${limit}`;
+      box.classList.toggle("warning", remaining > 0 && remaining <= 2);
+      box.classList.toggle("empty", remaining <= 0);
+      box.querySelector("span").innerHTML = `<strong id="aiRequestRemaining">${remaining}/${limit}</strong> AI Requests tilbage · ${esc(reset)}`;
+      const upgrade = box.querySelector(".ai-request-upgrade");
+      if (upgrade) upgrade.textContent = remaining <= 0 ? "Opgradér" : "Se medlemskab";
+    }
+
     function slotIds() { return [...document.querySelectorAll(".exercise")].map(b => b.id.replace("block-", "")); }
 
     function optimizeCurrentWorkoutForGoal(mode = "all") {
@@ -5775,7 +6659,8 @@
         gender: "Dit køn",
         bodyFat: "Din fedtprocent",
         muscleMass: "Din muskelmasse",
-        personalGoal: "Dit personlige mål"
+        personalGoal: "Dit personlige mål",
+        limitations: "Dine træningsbegrænsninger"
       }[field] || "Din profil";
     }
 
@@ -5787,6 +6672,7 @@
       if (field === "heightCm") return `${String(value).replace(".", ",")} cm`;
       if (field === "bodyFat") return `${String(value).replace(".", ",")}%`;
       if (field === "age") return `${value} år`;
+      if (Array.isArray(value)) return value.join(", ");
       return value;
     }
 
@@ -5845,7 +6731,7 @@
       if (!slots.length) {
         const created = createCopilotProgram({
           goal: action.constraint === "low_impact" ? "general_health" : null,
-          style: ["no_equipment", "arm_injury"].includes(action.constraint) ? "home" : null,
+          style: ["no_equipment", "arm_injury", "home_training"].includes(action.constraint) ? "home" : null,
           level: "beginner"
         });
         if (!created.success) return { success: false, changed: false, message: "Der kunne ikke oprettes et sikkert udgangspunkt for tilpasningen." };
@@ -5863,6 +6749,10 @@
         const muscle = $(`name-${slot}`)?.dataset.muscle || "";
         const normalized = normalizedExerciseSearch(name);
         if (action.constraint === "avoid_legs" && /lår|baller/.test(muscle)) removeSlots.push(slot);
+        if (action.constraint === "knee_friendly" && /(squat|lunge|jump|hop|leg extension|front squat|bulgarian|trappeløb|stair|burpee)/.test(normalized)) {
+          const replacement = replacementFor(slot, exercise => !/(squat|lunge|jump|hop|leg extension|front squat|bulgarian|trappeløb|stair|burpee)/i.test(exercise.name));
+          if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
+        }
         if (action.constraint === "avoid_shoulder_press" && /(shoulder press|overhead press|arnold press|skulderpres)/.test(normalized)) {
           const replacement = replacementFor(slot, exercise => !/(press|overhead|arnold)/i.test(exercise.name));
           if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
@@ -5877,6 +6767,14 @@
             : exercise => exercise.type === "Hjemme" && equipmentCategory(exercise) === "Kropsvægt";
           if (!predicate(resolveExerciseDefinition(name) || {})) {
             const replacement = replacementFor(slot, predicate);
+            if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
+          }
+        }
+        if (action.constraint === "home_training") {
+          const definition = resolveExerciseDefinition(name) || {};
+          const isHomeFriendly = definition.type === "Hjemme" || ["Kropsvægt", "Håndvægte", "Elastik", "Kettlebell"].includes(equipmentCategory(definition));
+          if (!isHomeFriendly) {
+            const replacement = replacementFor(slot, exercise => exercise.type === "Hjemme" || ["Kropsvægt", "Håndvægte", "Elastik", "Kettlebell"].includes(equipmentCategory(exercise)));
             if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
           }
         }
@@ -5905,6 +6803,55 @@
       autoSave();
       updateEstimatedTime();
       return { success: true, changed: changed > 0, message: changed ? `${changed} programændring${changed === 1 ? "" : "er"} er implementeret.` : "Programmet opfyldte allerede begrænsningen." };
+    }
+
+    function resizeCurrentWorkout(action) {
+      const target = Number(action.exerciseCount);
+      if (!Number.isInteger(target) || target < 1 || target > 12) {
+        return { success: false, changed: false, message: "Antal øvelser skal være mellem 1 og 12." };
+      }
+      let slots = slotIds();
+      let changed = 0;
+      if (!slots.length) {
+        const created = createCopilotProgram({ originalInput: action.originalInput });
+        if (!created.success) return { success: false, changed: false, message: "Der kunne ikke oprettes et program at tilpasse." };
+        slots = slotIds();
+        changed++;
+      }
+      while (slotIds().length > target) {
+        const last = slotIds().at(-1);
+        if (!last) break;
+        removeExercise(last);
+        changed++;
+      }
+      const context = trainingContext();
+      const focusMuscles = (context.focusAreas || []).flatMap(area => {
+        if (area === "Bryst") return ["Bryst"];
+        if (area === "Skuldre") return ["Skuldre"];
+        if (area === "Arme") return ["Biceps", "Triceps"];
+        if (area === "Ben") return ["Forside lår", "Bagside lår & baller"];
+        if (area === "Core") return ["Mave", "Nedre ryg / lænd"];
+        if (area === "Ryg") return ["Øvre ryg"];
+        return [];
+      });
+      const fallbackMuscles = focusMuscles.length ? focusMuscles : ["Bryst", "Øvre ryg", "Skuldre", "Forside lår", "Biceps", "Triceps", "Mave"];
+      activeExerciseCountPreference = Math.max(Number(activeExerciseCountPreference) || 0, target);
+      let guard = 0;
+      while (slotIds().length < target && guard < 30) {
+        const muscle = fallbackMuscles[guard % fallbackMuscles.length];
+        const result = addGoalExerciseForMuscle(muscle);
+        if (result === "added") changed++;
+        guard++;
+      }
+      autoSave();
+      updateEstimatedTime();
+      return {
+        success: slotIds().length === target,
+        changed: changed > 0,
+        message: slotIds().length === target
+          ? `Træningspasset er nu tilpasset til ${target} øvelse${target === 1 ? "" : "r"}.`
+          : `Træningspasset kunne kun tilpasses til ${slotIds().length} øvelse${slotIds().length === 1 ? "" : "r"}.`
+      };
     }
 
     function executeCopilotAction(action) {
@@ -5950,6 +6897,19 @@
           if (!["muscle_gain", "weight_loss", "strength", "general_health", "cardio"].includes(action.value)) return { success: false, message: "Træningsmålet blev ikke genkendt." };
           updates.goal = action.value;
           message = `Dit træningsmål er opdateret til ${window.TrainingGoalEngine?.profile?.(action.value)?.label || action.value}. Fremtidige forslag tilpasses målet.`;
+        } else if (action.field === "trainingGoals") {
+          const goals = ["muscle_gain", "weight_loss", "strength", "general_health", "cardio"];
+          const nextGoals = {
+            primary: action.value?.primary || "",
+            secondary: action.value?.secondary || "",
+            tertiary: action.value?.tertiary || ""
+          };
+          const selected = Object.values(nextGoals).filter(Boolean);
+          if (!nextGoals.primary || selected.some(goal => !goals.includes(goal))) return { success: false, message: "Målprioriteringen blev ikke genkendt." };
+          if (new Set(selected).size !== selected.length) return { success: false, message: "Samme mål kan ikke vælges flere gange." };
+          updates.trainingGoals = nextGoals;
+          updates.goal = nextGoals.primary;
+          message = `Dine prioriterede mål er opdateret til ${trainingPreferenceDisplay("trainingGoals", nextGoals)}.`;
         } else if (action.field === "trainingGoalPriority") {
           const priorities = ["primary", "secondary", "tertiary"];
           const goals = ["muscle_gain", "weight_loss", "strength", "general_health", "cardio"];
@@ -5973,6 +6933,14 @@
           if (!requested.length) return { success: false, message: "Ingen gyldige fokusområder blev fundet." };
           updates.focusAreas = [...new Set([...(profile.focusAreas || []), ...requested])];
           message = `${requested.join(" og ")} er tilføjet som fokusområde. Fremtidige forslag er opdateret.`;
+        } else if (action.field === "availableEquipment") {
+          const allowed = ["Håndvægte", "Kropsvægt", "Elastik", "Kettlebell", "Maskiner", "Kabel", "Vægtstang", "Pull-up bar"];
+          const requested = (Array.isArray(action.value) ? action.value : []).filter(item => allowed.includes(item));
+          if (!requested.length) return { success: false, message: "Intet gyldigt udstyr blev fundet." };
+          updates.availableEquipment = action.mode === "replace"
+            ? [...new Set(requested)]
+            : [...new Set([...(profile.availableEquipment || []), ...requested])];
+          message = `Dit tilgængelige udstyr er opdateret til ${updates.availableEquipment.join(", ")}.`;
         } else if (action.field === "trainingDaysPerWeek") {
           const days = Number(action.value);
           if (!Number.isInteger(days) || days < 1 || days > 7) return { success: false, message: "Antal træningsdage skal være mellem 1 og 7." };
@@ -6054,6 +7022,8 @@
       if (action.action === "suggestProgram") return createCopilotProgram(action);
 
       if (action.action === "adaptWorkout") return adaptCurrentWorkout(action);
+
+      if (action.action === "resizeWorkout") return resizeCurrentWorkout(action);
 
       if (action.action === "optimizeWorkout") {
         const success = optimizeCurrentWorkoutForGoal(action.mode || "all");
@@ -6224,13 +7194,19 @@
       return null;
     }
 
-    function runCopilot() {
-      if (!openPremiumFeature("copilot")) return;
+    async function runCopilot() {
       const cmd = $("copilotInput").value.trim();
       if (!cmd) return;
-      const requestUsage = window.Work4itAISystem?.requestUsage?.(window.Membership?.getMembership?.() || {}, true);
-      if (requestUsage && !requestUsage.allowed) {
-        feedback(`Du har brugt månedens ${requestUsage.limit} AI Requests. Grænsen nulstilles i næste kalendermåned.`, true);
+      const consume = await window.Work4itAIRequestCounter?.consumeRequest?.();
+      updateAiRequestCounterDisplay(consume);
+      if (consume && !consume.allowed) {
+        const resetText = consume.membershipType === "free"
+          ? "Gratisversionens 3 AI Requests er brugt."
+          : consume.aiResetDate
+            ? `Grænsen nulstilles ${formatAiResetDate(consume.aiResetDate)}.`
+            : "Grænsen nulstilles næste måned.";
+        feedback(`${resetText} Opgradér for flere AI Requests.`, true);
+        window.Membership?.openView?.();
         return;
       }
       const aiContext = window.Work4itAISystem?.buildContext?.() || null;
@@ -6392,7 +7368,17 @@
       if (!Array.isArray(generated) || !generated.length) return;
       const programs = getPrograms();
       const createdAt = new Date().toISOString();
-      const programId = `wizard_program_${Date.now()}`;
+      const reusableWizardId = [
+        event.detail?.programId,
+        window.TrainingWizardStore?.getLastActiveProgramId?.(),
+        currentSavedProgramId
+      ].find(id => {
+        const value = String(id || "");
+        return value.startsWith("wizard_program_") && programs.some(program => program.id === value);
+      });
+      const programId = reusableWizardId || `wizard_program_${Date.now()}`;
+      const existingProgramIndex = programs.findIndex(program => program.id === programId);
+      const existingProgram = existingProgramIndex >= 0 ? programs[existingProgramIndex] : null;
       const days = generated.map((day, dayIndex) => {
         const title = day.title || `Wizard træningspas ${dayIndex + 1}`;
         const exercises = (day.exercises || []).map((exercise, exerciseIndex) => {
@@ -6456,18 +7442,24 @@
         id: programId,
         title: `${goalLabel} · ${days.length} dage`,
         goal: event.detail?.goal || currentTrainingGoal(),
-        savedAt: createdAt,
+        savedAt: existingProgram?.savedAt || createdAt,
+        updatedAt: createdAt,
         activeDayIndex: 0,
         days
       });
-      setPrograms([...programs, window.WorkoutProgramStore.clone(currentProgramSession)]);
+      const nextPrograms = [...programs];
+      if (existingProgramIndex >= 0) nextPrograms[existingProgramIndex] = window.WorkoutProgramStore.clone(currentProgramSession);
+      else nextPrograms.push(window.WorkoutProgramStore.clone(currentProgramSession));
+      setPrograms(nextPrograms);
       currentSavedProgramId = programId;
       currentProgramDayIndex = 0;
       window.TrainingWizardStore?.setLastActiveProgramId?.(programId);
       renderProgramDay(0);
       autoSave();
       renderSaved();
-      $("autosaveStatus").textContent = `${days.length} træningsdage oprettet`;
+      $("autosaveStatus").textContent = existingProgramIndex >= 0
+        ? `${days.length} træningsdage opdateret`
+        : `${days.length} træningsdage oprettet`;
     }
 
     function preferredDailyProgramId() {
@@ -6768,12 +7760,14 @@
         structure: "screenshot_import",
         workoutIntensity: "medium",
         exercises: (day.exercises || []).map(exercise => {
-          const muscle = inferImportedMuscle(exercise.name);
+          const muscle = exercise.muscle || inferImportedMuscle(exercise.matchedName || exercise.name);
+          const name = exercise.matchedName || exercise.name;
           return {
             ...exercise,
+            name,
             muscle,
             goal: currentTrainingGoal(),
-            role: window.TrainingGoalEngine?.exerciseRole?.(exercise.name, muscle) || "accessory",
+            role: window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory",
             exerciseType: muscle === "Cardio" ? "cardio" : "strength",
             trainingStyle: "gym"
           };
@@ -6781,7 +7775,7 @@
       }));
       const program = window.WorkoutProgramStore.createProgram({
         id,
-        title: imported.title || "Importeret træningspas",
+        title: imported.programName || imported.title || "Importeret træningspas",
         goal: currentTrainingGoal(),
         days
       });
@@ -6815,6 +7809,7 @@
     window.addEventListener("daily-motivation:changed", updateDailyMotivationDisplay);
     window.addEventListener("screenshot-import:approved", createProgramFromScreenshot);
     window.addEventListener("training-profile:updated", updateEstimatedCalories);
+    window.addEventListener("ai-requests:changed", event => updateAiRequestCounterDisplay(event.detail));
     window.addEventListener("firestore:data-hydrated", () => {
       loadCustom();
       renderSaved();
@@ -6822,6 +7817,8 @@
       loadAutosave();
       updateDailyMotivationDisplay();
       updateEstimatedCalories();
+      window.Work4itAIRequestCounter?.refresh?.();
+      updateAiRequestCounterDisplay();
       window.refreshProfileAccountView?.();
       window.Membership?.render?.();
       $("autosaveStatus").textContent = "Data synkroniseret fra Firebase";
@@ -6832,12 +7829,24 @@
     window.addEventListener("firestore:fallback-active", () => {
       $("autosaveStatus").textContent = "Offline: bruger lokale data";
     });
+    window.addEventListener("firestore:sync-status", event => {
+      const status = event.detail?.status || "";
+      const message = event.detail?.message || "";
+      const labels = {
+        syncing: "Synkroniserer...",
+        synced: "Synkroniseret",
+        offline: "Offline",
+        failed: "Synkronisering mislykkedes"
+      };
+      $("autosaveStatus").textContent = message || labels[status] || $("autosaveStatus").textContent;
+    });
     window.addEventListener("firestore:user-cache-cleared", () => {
       resetWorkoutCanvas("Log ind for at se dine træningsdata");
       renderSaved();
       renderTrash();
       updateDailyMotivationDisplay();
       updateEstimatedCalories();
+      updateAiRequestCounterDisplay();
       window.refreshProfileAccountView?.();
     });
 
@@ -6858,31 +7867,39 @@
       updateWorkoutProgress();
       updateDailyMotivationDisplay();
       updateEstimatedCalories();
+      window.Work4itAIRequestCounter?.refresh?.();
+      updateAiRequestCounterDisplay();
       window.dispatchEvent(new CustomEvent("training-app:ready"));
     };
   </script>
   <script>
     window.ENABLE_PROFILE_WIZARD = true;
     window.ENABLE_DAILY_START_WIZARD = true;
+    window.ENABLE_FIXED_LOGIN_ROUTING = true;
   </script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
-  <script src="screenshot-import.js?v=20260620-import1"></script>
+  <script src="screenshot-import.js?v=20260628-import2"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-system.js?v=20260621-assistant2"></script>
-  <script src="ai-copilot-actions.js?v=20260621-assistant2"></script>
+  <script src="ai-system.js?v=20260628-ai20"></script>
+  <script src="ai-copilot-actions.js?v=20260628-ai20"></script>
+  <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
-  <script src="auth-gate.js?v=20260619-gdpr1"></script>
-  <script src="profile-account.js?v=20260622-password-change1"></script>
-  <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
+  <script src="auth-gate.js?v=20260628-auth-ready1"></script>
+  <script src="theme-service.js?v=20260627-theme1"></script>
+  <script src="profile-account.js?v=20260627-theme1"></script>
+  <script src="profile-wizard.js?v=20260701-profile-save-split1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
-  <script src="wizard-controller.js?v=20260621-textfit1"></script>
-  <script src="membership.js?v=20260621-cloud-primary1"></script>
-  <script type="module" src="firebase-config.js?v=20260614-auth2"></script>
-  <script type="module" src="auth-service.js?v=20260622-password-change1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260622-persistence1"></script>
+  <script src="wizard-controller.js?v=20260701-profile-save-split1"></script>
+  <script src="stripe-config.js?v=20260629-priceids1"></script>
+  <script src="membership.js?v=20260630-stripe-ready1"></script>
+  <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
+  <script type="module" src="stripe-checkout.js?v=20260630-stripe-ready1"></script>
+  <script type="module" src="auth-service.js?v=20260630-user-doc1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260701-auto-backup1"></script>
+  <script type="module" src="ai-request-counter.js?v=20260629-ai-requests1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
