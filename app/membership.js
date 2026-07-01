@@ -37,6 +37,7 @@
     activeTier: "early_adopter",
     source: "fallback"
   };
+  let activeCheckoutPlan = "";
   const stripeCheckoutState = {
     ready: Boolean(window.Work4itStripeCheckout?.createCheckout),
     retryAllowed: false,
@@ -372,9 +373,9 @@
         button.textContent = stripeCheckoutState.failed ? "Prøv betaling igen" : button.dataset.defaultText;
         return;
       }
-      button.disabled = true;
-      button.setAttribute("aria-busy", "true");
-      button.textContent = "Indlæser sikker betaling...";
+      button.disabled = false;
+      button.setAttribute("aria-busy", "false");
+      button.textContent = button.dataset.defaultText;
     });
   }
 
@@ -409,7 +410,18 @@
   async function startStripeCheckout(plan) {
     const button = document.querySelector(`[data-membership-select="${plan}"]`);
     const defaultText = button?.dataset.defaultText || button?.textContent || "";
+    if (activeCheckoutPlan) {
+      showConfirmation("Stripe Checkout åbner allerede. Vent et øjeblik...");
+      return;
+    }
     try {
+      activeCheckoutPlan = plan;
+      const stripePlan = window.Work4itStripeConfig?.getPlan?.(plan);
+      console.log("[Work4it Stripe] Starter checkout", {
+        plan,
+        priceId: stripePlan?.priceId || null,
+        origin: window.location.origin
+      });
       if (button) {
         button.disabled = true;
         button.textContent = "Åbner sikker betaling...";
@@ -425,6 +437,8 @@
       const message = window.Work4itStripeCheckout?.friendlyError?.(error) || error?.message || "Stripe Checkout kunne ikke startes.";
       showConfirmation(message);
       console.error("[Work4it Stripe] Checkout failed", error);
+    } finally {
+      activeCheckoutPlan = "";
     }
   }
 
@@ -484,6 +498,7 @@
         event.preventDefault();
         selectPlan(plan);
       };
+      button.addEventListener("click", activate);
       button.addEventListener("touchend", activate, { passive: false });
       button.addEventListener("pointerup", activate);
     });
@@ -505,6 +520,12 @@
 
   function selectPlan(plan, now = new Date()) {
     if (isPaidPlan(plan)) {
+      const current = getMembership(now);
+      const activePlan = current.membershipStatus === "active" ? current.selectedPlan || current.membershipType : "";
+      if (activePlan === plan) {
+        showConfirmation(`${PLAN_LABELS[plan]} er allerede aktiv.`);
+        return current;
+      }
       startStripeCheckout(plan);
       return getMembership(now);
     }

@@ -450,6 +450,27 @@
     return true;
   }
 
+  function cloudProfileErrorMessage(error) {
+    const code = error?.code || "";
+    if (code === "permission-denied") return "Profil gemt lokalt – du mangler adgang til Cloud.";
+    if (code === "unavailable") return "Profil gemt lokalt – Cloud er midlertidigt utilgængelig.";
+    if (/Cloud er ikke klar|Firebase Auth UID|ikke logget/i.test(error?.message || "")) {
+      return "Profil gemt lokalt – Cloud-login er ikke klar endnu.";
+    }
+    return "Profil gemt lokalt – Cloud ikke tilgængelig.";
+  }
+
+  function logProfileCloudError(error, profile) {
+    console.error("[Work4it Profile] Cloud-gemning af profil fejlede", {
+      path: "users/{uid}/profile/main",
+      uid: window.FirestoreDataService?.getActiveUid?.() || window.FirebaseAuthService?.getCurrentUser?.()?.uid || null,
+      authUser: window.FirebaseAuthService?.getCurrentUser?.() || null,
+      code: error?.code || "unknown",
+      message: error?.message || String(error || "Ukendt fejl"),
+      profileUpdatedAt: profile?.updatedAt || null
+    });
+  }
+
   function scheduleProfileAutosave() {
     window.clearTimeout(profileAutosaveTimer);
     profileAutosaveTimer = window.setTimeout(async () => {
@@ -464,9 +485,10 @@
           feedback.textContent = "Profil gemt automatisk i Cloud ☁️";
           feedback.style.color = "";
         }
-      } catch {
+      } catch (error) {
+        logProfileCloudError(error, profile);
         if (feedback) {
-          feedback.textContent = "Profil gemt lokalt – Cloud ikke tilgængelig";
+          feedback.textContent = cloudProfileErrorMessage(error);
           feedback.style.color = "#fbbf24";
         }
       }
@@ -490,10 +512,11 @@
         feedback.style.color = "";
       }
     } catch (error) {
+      logProfileCloudError(error, profile);
       saveMeasurementSnapshot(profile);
       updateSidebarProfileIdentity();
       if (feedback) {
-        feedback.textContent = "Profil gemt lokalt – Cloud ikke tilgængelig";
+        feedback.textContent = cloudProfileErrorMessage(error);
         feedback.style.color = "#fbbf24";
       }
     }

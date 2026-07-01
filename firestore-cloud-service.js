@@ -225,6 +225,19 @@ function authUid() {
   return window.FirebaseAuthService?.getCurrentUser?.()?.uid || "";
 }
 
+function ensureCloudSessionFromAuth(operation = "Firestore") {
+  const authenticatedUid = authUid();
+  if (!authenticatedUid) return "";
+  if (!activeUid) {
+    activeUid = authenticatedUid;
+    storageScope?.setActiveUid(activeUid);
+  }
+  if (activeUid === authenticatedUid && !cloudEnabled) {
+    cloudEnabled = true;
+  }
+  return authenticatedUid;
+}
+
 function reportFirestoreError(operation, pathSegments, error, uid = activeUid || authUid()) {
   console.error("Work4it Firestore-fejl", {
     operation,
@@ -236,6 +249,7 @@ function reportFirestoreError(operation, pathSegments, error, uid = activeUid ||
 }
 
 function assertCloudUser(operation = "Firestore") {
+  ensureCloudSessionFromAuth(operation);
   const uid = activeUid || "";
   const authenticatedUid = authUid();
   if (!uid || !cloudEnabled) {
@@ -344,6 +358,15 @@ async function saveProfileToCloud(profile) {
     return true;
   } catch (error) {
     reportFirestoreError("setDoc", path, error);
+    console.error("[Work4it Cloud] Profilgemning fejlede", {
+      operation: "setDoc",
+      path: firestorePath(path),
+      activeUid,
+      authUid: authUid() || null,
+      cloudEnabled,
+      code: error?.code || "unknown",
+      message: error?.message || String(error || "Ukendt fejl")
+    });
     window.dispatchEvent(new CustomEvent("firestore:profile-save-failed", {
       detail: { uid: activeUid, path: firestorePath(path), error }
     }));

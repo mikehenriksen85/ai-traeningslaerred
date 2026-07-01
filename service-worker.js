@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v53-auto-backup1";
+const CACHE_NAME = "work4it-shell-v54-cloudsave-fix1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -25,11 +25,11 @@ const APP_SHELL = [
   "./password-visibility.js?v=20260621-password-toggle1",
   "./auth-gate.js?v=20260628-auth-ready1",
   "./theme-service.js?v=20260627-theme1",
-  "./profile-account.js?v=20260627-theme1",
+  "./profile-account.js?v=20260701-cloudsave-fix1",
   "./profile-wizard.js?v=20260701-profile-save-split1",
   "./firebase-config.js?v=20260628-auth-ready1",
   "./auth-service.js?v=20260630-user-doc1",
-  "./firestore-cloud-service.js?v=20260701-auto-backup1"
+  "./firestore-cloud-service.js?v=20260701-cloudsave-fix1"
 ];
 
 self.addEventListener("install", event => {
