@@ -681,18 +681,32 @@
       width: 100%;
       min-width: 0;
     }
-    .pause-control input { width: 100%; min-width: 0; }
-    .pause-progress {
+    .pause-timer-shell {
       position: relative;
-      grid-column: 1 / -1;
       width: 100%;
-      height: 10px;
+      min-width: 0;
       overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      background: rgba(255,255,255,.07);
+      border-radius: 6px;
+    }
+    .pause-control input {
+      width: 100%;
+      min-width: 0;
+      padding-bottom: 11px;
+    }
+    .pause-progress {
+      position: absolute;
+      left: 1px;
+      right: 1px;
+      bottom: 1px;
+      width: 100%;
+      height: 5px;
+      overflow: hidden;
+      border: 0;
+      border-radius: 0 0 5px 5px;
+      background: rgba(255,255,255,.09);
       opacity: 0;
-      transition: opacity .15s ease, border-color .2s ease, background .2s ease;
+      pointer-events: none;
+      transition: opacity .15s ease, background .2s ease;
     }
     .pause-control.started .pause-progress { opacity: 1; }
     .pause-progress-fill {
@@ -705,7 +719,7 @@
       transition: transform .95s linear, background .2s ease;
     }
     .pause-control.paused .pause-progress-fill { background: #f59e0b; }
-    .pause-control.complete .pause-progress { border-color: var(--green); background: rgba(34,197,94,.18); }
+    .pause-control.complete .pause-progress { background: rgba(34,197,94,.18); }
     .pause-control.complete .pause-progress-fill { background: var(--green); }
     .pause-control.complete .pause-progress::after {
       content: "Færdig";
@@ -714,7 +728,7 @@
       display: grid;
       place-items: center;
       color: var(--text-primary);
-      font-size: 8px;
+      font-size: 0;
       font-weight: var(--font-weight-bold);
       line-height: 1;
     }
@@ -1712,6 +1726,7 @@
       .set-complete-control input { width: 1px; min-width: 0; }
       .pause-control { grid-template-columns: minmax(0, 1fr) 32px 32px; gap: 2px; }
       .pause-control input { width: 100%; }
+      .pause-timer-shell .pause { min-height: 36px; padding-bottom: 11px; }
       .timer-btn { width: 32px; height: 36px; padding: 0; }
       .set-analytics { margin-left: 0; }
       .set-complete-control { width: 44px; height: 44px; }
@@ -2552,9 +2567,9 @@
               </select>
             </label>
             <label class="profile-form-field">Højde (cm)<input id="profileHeight" type="number" min="50" max="250" step="0.1"></label>
-            <label class="profile-form-field">Vægt (kg)<input id="profileWeight" type="number" min="1" step="0.1"></label>
+            <label class="profile-form-field">Vægt (kg)<input id="profileWeight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" min="1" step="0.1" oninput="sanitizeKgInput(this)"></label>
             <label class="profile-form-field">Fedtprocent (%)<input id="profileBodyFat" type="number" min="0" max="100" step="0.1"></label>
-            <label class="profile-form-field">Muskelmasse (kg)<input id="profileMuscleMass" type="number" min="0" step="0.1"></label>
+            <label class="profile-form-field">Muskelmasse (kg)<input id="profileMuscleMass" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" min="0" step="0.1" oninput="sanitizeKgInput(this)"></label>
             <label class="profile-form-field wide">Personligt mål<input id="profilePersonalGoal" placeholder="F.eks. Ned på 85 kg eller Bænkpres 100 kg"></label>
           </div>
         </section>
@@ -2687,10 +2702,10 @@
         <div class="progress-panel">
           <div class="measure-form">
             <div class="measure-field"><label for="bodyHeight">Højde (cm)</label><input class="field" id="bodyHeight" type="number" min="50" step="0.1" oninput="updateBodyBmi()"></div>
-            <div class="measure-field"><label for="bodyWeight">Vægt (kg)</label><input class="field" id="bodyWeight" type="number" min="1" step="0.1" oninput="updateBodyBmi()"></div>
+            <div class="measure-field"><label for="bodyWeight">Vægt (kg)</label><input class="field" id="bodyWeight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" min="1" step="0.1" oninput="sanitizeKgInput(this); updateBodyBmi()"></div>
             <div class="measure-field"><label for="bodyBmi">BMI</label><input class="field" id="bodyBmi" readonly></div>
             <div class="measure-field"><label for="bodyFat">Fedtprocent (%)</label><input class="field" id="bodyFat" type="number" min="0" step="0.1"></div>
-            <div class="measure-field"><label for="bodyMuscle">Muskelmasse (kg)</label><input class="field" id="bodyMuscle" type="number" min="0" step="0.1"></div>
+            <div class="measure-field"><label for="bodyMuscle">Muskelmasse (kg)</label><input class="field" id="bodyMuscle" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" min="0" step="0.1" oninput="sanitizeKgInput(this)"></div>
             <div class="measure-field"><label for="bodyWaist">Taljemål (cm)</label><input class="field" id="bodyWaist" type="number" min="0" step="0.1"></div>
             <div class="measure-field"><label for="bodyChest">Brystmål (cm)</label><input class="field" id="bodyChest" type="number" min="0" step="0.1"></div>
             <div class="measure-field"><label for="bodyHip">Hoftemål (cm)</label><input class="field" id="bodyHip" type="number" min="0" step="0.1"></div>
@@ -3353,6 +3368,22 @@
       window.location.href = appUrl();
     }
     function numberValue(v) { const n = parseFloat(String(v || "").replace(",", ".").replace(/[^\d.]/g, "")); return Number.isFinite(n) ? n : 0; }
+    function sanitizeDecimalNumberInput(input) {
+      if (!input) return "";
+      const original = String(input.value || "");
+      const prefersComma = original.includes(",") && !original.includes(".");
+      const normalized = original
+        .replace(/[^\d.,]/g, "")
+        .replace(/[.,]/, "#")
+        .replace(/[.,]/g, "")
+        .replace("#", prefersComma ? "," : ".");
+      input.value = normalized;
+      return normalized;
+    }
+    function sanitizeKgInput(input) {
+      return sanitizeDecimalNumberInput(input);
+    }
+    window.sanitizeKgInput = sanitizeKgInput;
     function oneRm(w, r) { return w > 0 && r > 0 ? w * (1 + r / 30) : 0; }
     function volume(w, r) { return w > 0 && r > 0 ? w * r : 0; }
     function kg(v) { return `${v.toFixed(1).replace(".", ",")} kg`; }
@@ -4507,11 +4538,13 @@
           <div class="set-row">
             <div>${i}</div>
             <div class="previous">${esc(data.prev || "-")}</div>
-            <div><input class="weight" placeholder="kg" value="${esc(data.weight || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
+            <div><input class="weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="kg" value="${esc(data.weight || "")}" oninput="sanitizeKgInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div class="pause-control" id="pause-control-${slot}-${i}">
-              <div class="pause-progress" id="pause-progress-${slot}-${i}" role="progressbar" aria-label="Pause" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="pause-progress-fill"></span></div>
-              <input class="pause" id="pause-${slot}-${i}" inputmode="numeric" pattern="[0-9:]*" autocomplete="off" placeholder="00:00" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="sanitizePauseInput(this); markPauseManual(this)" onblur="normalizePauseInput(this)">
+              <div class="pause-timer-shell">
+                <input class="pause" id="pause-${slot}-${i}" inputmode="numeric" pattern="[0-9:]*" autocomplete="off" placeholder="00:00" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="sanitizePauseInput(this); markPauseManual(this)" onblur="normalizePauseInput(this)">
+                <div class="pause-progress" id="pause-progress-${slot}-${i}" role="progressbar" aria-label="Pause" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="pause-progress-fill"></span></div>
+              </div>
               <button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})" aria-label="Start eller pause pausetimer">▶</button>
               <button class="timer-btn" onclick="resetPause('${slot}',${i})" aria-label="Nulstil pausetimer">↺</button>
             </div>
@@ -7831,7 +7864,7 @@
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
-  <script src="screenshot-import.js?v=20260628-import2"></script>
+  <script src="screenshot-import.js?v=20260701-kg-input1"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-system.js?v=20260628-ai20"></script>
@@ -7845,12 +7878,12 @@
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260629-priceids1"></script>
-  <script src="membership.js?v=20260701-membership-mobile-fix1"></script>
+  <script src="membership.js?v=20260701-membership-status-fix1"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
   <script type="module" src="stripe-checkout.js?v=20260701-membership-mobile-fix1"></script>
   <script type="module" src="auth-service.js?v=20260630-user-doc1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260630-cloud-primary2"></script>
-  <script type="module" src="ai-request-counter.js?v=20260629-ai-requests1"></script>
+  <script type="module" src="ai-request-counter.js?v=20260701-membership-status-fix1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v55-membership-mobile-fix1";
+const CACHE_NAME = "work4it-shell-v58-kg-input1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -11,16 +11,16 @@ const APP_SHELL = [
   "./calorie-estimator.js?v=20260615-cardio1",
   "./training-goal-engine.js?v=20260620-calisthenics1",
   "./workout-program-store.js?v=20260615-days1",
-  "./screenshot-import.js?v=20260628-import2",
+  "./screenshot-import.js?v=20260701-kg-input1",
   "./wizard-store.js?v=20260621-cloud-primary1",
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",
   "./stripe-config.js?v=20260629-priceids1",
-  "./membership.js?v=20260701-membership-mobile-fix1",
+  "./membership.js?v=20260701-membership-status-fix1",
   "./stripe-checkout.js?v=20260701-membership-mobile-fix1",
   "./ai-system.js?v=20260628-ai20",
   "./ai-copilot-actions.js?v=20260628-ai20",
-  "./ai-request-counter.js?v=20260629-ai-requests1",
+  "./ai-request-counter.js?v=20260701-membership-status-fix1",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
   "./auth-gate.js?v=20260628-auth-ready1",

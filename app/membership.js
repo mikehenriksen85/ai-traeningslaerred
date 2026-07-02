@@ -119,8 +119,37 @@
     };
   }
 
+  function createFreeFallback(now = new Date()) {
+    const details = planDetails("free");
+    return {
+      membershipType: "free",
+      trialStartDate: null,
+      trialEndDate: null,
+      membershipStartDate: null,
+      membershipEndDate: null,
+      isPremium: false,
+      membershipStatus: "free",
+      selectedPlan: "free",
+      priceDkk: details.priceDkk,
+      aiRequestLimit: details.aiRequestLimit,
+      aiRequestPeriod: details.aiRequestPeriod,
+      aiRequestsUsed: 0,
+      aiResetDate: null,
+      lastRequestTimestamp: null,
+      lastMembershipPopupDate: null,
+      pricingStrategyVersion: PRICING_STRATEGY_VERSION,
+      pricingTierAtPurchase: null,
+      priceDkkAtPurchase: null,
+      priceLocked: false,
+      registeredUserCountAtSelection: null,
+      selectedAt: null,
+      updatedAt: iso(now),
+      source: "free_fallback"
+    };
+  }
+
   function normalize(value, now = new Date()) {
-    if (!value || typeof value !== "object") return createTrial(now);
+    if (!value || typeof value !== "object") return createFreeFallback(now);
     const allowed = ["trial", "free", "quarterly", "yearly", "lifetime"];
     const membershipType = allowed.includes(value.membershipType) ? value.membershipType : "free";
     const selectedPlan = allowed.includes(value.selectedPlan) ? value.selectedPlan : membershipType;
@@ -203,7 +232,7 @@
 
   function getMembership(now = new Date()) {
     const existing = read();
-    const current = evaluate(existing || createTrial(now), now);
+    const current = evaluate(existing || createFreeFallback(now), now);
     return write(current);
   }
 
@@ -646,6 +675,7 @@
     getPricingContext: () => ({ ...pricingContext }),
     getPlanDetails: planDetails,
     createTrial,
+    createFreeFallback,
     normalize,
     evaluate,
     getMembership,
@@ -682,8 +712,18 @@
     appendConfirmation(event.detail?.message || "Sikker betaling kunne ikke indlæses. Prøv igen.");
   });
   window.addEventListener("membership:cloud-saving", () => appendConfirmation("Gemmer i Cloud..."));
-  window.addEventListener("membership:cloud-saved", () => appendConfirmation("Gemt i Cloud ☁️"));
-  window.addEventListener("membership:cloud-failed", () => appendConfirmation("Gemt lokalt – Cloud ikke tilgængelig."));
+  window.addEventListener("membership:cloud-saved", () => {
+    render(getMembership());
+    appendConfirmation("Gemt i Cloud ☁️");
+  });
+  window.addEventListener("membership:cloud-failed", () => {
+    render(getMembership());
+    appendConfirmation("Gemt lokalt – Cloud ikke tilgængelig.");
+  });
+  window.addEventListener("membership:changed", event => render(event.detail || getMembership()));
+  window.addEventListener("firestore:data-hydrated", () => render(getMembership()));
+  window.addEventListener("firestore:sync-completed", () => render(getMembership()));
+  window.addEventListener("firestore:user-cache-cleared", () => render(createFreeFallback()));
   window.addEventListener("firestore:user-ready", showStartupPopupWhenFree);
   window.addEventListener("workit:window-closed", showStartupPopupWhenFree);
   window.setTimeout(() => {

@@ -534,7 +534,7 @@
       <label class="screenshot-field wide">Work4it-match<select class="field import-exercise-match">${suggestionOptions}</select></label>
       <label class="screenshot-field">Sæt<input class="field import-exercise-sets" type="number" min="1" max="20" value="${exercise.setCount}"></label>
       <label class="screenshot-field">Reps<input class="field import-exercise-reps" value="${escapeHtml(exercise.reps)}"></label>
-      <label class="screenshot-field">Kg<input class="field import-exercise-weight" inputmode="decimal" value="${escapeHtml(exercise.weight)}"></label>
+      <label class="screenshot-field">Kg<input class="field import-exercise-weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" value="${escapeHtml(exercise.weight)}" oninput="window.sanitizeKgInput?.(this)"></label>
       <label class="screenshot-field">Pause<input class="field import-exercise-pause" value="${escapeHtml(exercise.pause)}"></label>
       <label class="screenshot-field wide">Noter<input class="field import-exercise-notes" value="${escapeHtml(exercise.notes)}"></label>
       <div class="screenshot-match-status wide">${escapeHtml(matchText)}${warnings ? `<div class="screenshot-field-warnings">${warnings}</div>` : ""}</div>

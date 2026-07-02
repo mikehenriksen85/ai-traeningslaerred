@@ -17,6 +17,7 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
   const MONTHLY_TYPES = new Set(["trial", "quarterly", "yearly", "lifetime"]);
   let snapshot = {
     membershipType: "free",
+    membershipStatus: "free",
     aiRequestLimit: FREE_LIMIT,
     aiRequestsUsed: 0,
     aiResetDate: null,
@@ -44,6 +45,21 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
     return ["trial", "free", "quarterly", "yearly", "lifetime"].includes(value) ? value : "free";
   }
 
+  function normalizeMembershipStatus(value, membershipType = "free") {
+    if (value === "active") return "active";
+    if (membershipType === "trial") return "trial";
+    if (membershipType === "free") return "free";
+    return "pending_payment";
+  }
+
+  function effectiveMembershipType(data = {}) {
+    const membershipType = normalizeMembershipType(data.membershipType);
+    const membershipStatus = normalizeMembershipStatus(data.membershipStatus, membershipType);
+    if (membershipType === "trial" && membershipStatus === "trial") return "trial";
+    if (["quarterly", "yearly", "lifetime"].includes(membershipType) && membershipStatus === "active") return membershipType;
+    return "free";
+  }
+
   function limitFor(type) {
     if (type === "lifetime") return LIFETIME_LIMIT;
     if (MONTHLY_TYPES.has(type)) return PREMIUM_LIMIT;
@@ -51,7 +67,9 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
   }
 
   function normalizeUsage(data = {}, now = new Date()) {
-    const membershipType = normalizeMembershipType(data.membershipType);
+    const rawMembershipType = normalizeMembershipType(data.membershipType);
+    const membershipStatus = normalizeMembershipStatus(data.membershipStatus, rawMembershipType);
+    const membershipType = effectiveMembershipType({ membershipType: rawMembershipType, membershipStatus });
     const aiRequestLimit = limitFor(membershipType);
     const monthly = MONTHLY_TYPES.has(membershipType);
     let aiRequestsUsed = Math.max(0, Number(data.aiRequestsUsed) || 0);
@@ -65,6 +83,7 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
     const remaining = Math.max(0, aiRequestLimit - aiRequestsUsed);
     return {
       membershipType,
+      membershipStatus,
       aiRequestLimit,
       aiRequestsUsed,
       aiResetDate,
@@ -112,17 +131,22 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
       const normalized = normalizeUsage({
         ...data,
         membershipType: normalizeMembershipType(data.membershipType || membership.membershipType),
+        membershipStatus: data.membershipStatus || membership.membershipStatus,
         source: "firestore"
       });
-      await setDoc(reference, {
-        membershipType: normalized.membershipType,
+      const payload = {
         aiRequestLimit: normalized.aiRequestLimit,
         aiRequestsUsed: normalized.aiRequestsUsed,
         aiResetDate: normalized.aiResetDate,
         lastRequestTimestamp: normalized.lastRequestTimestamp,
         updatedAt: nowIso(),
         firestoreUpdatedAt: serverTimestamp()
-      }, { merge: true });
+      };
+      if (!current.exists()) {
+        payload.membershipType = normalized.membershipType;
+        payload.membershipStatus = normalized.membershipStatus;
+      }
+      await setDoc(reference, payload, { merge: true });
       snapshot = normalized;
       writeLocal({ ...normalized, source: "cache" });
       snapshot = { ...normalized, source: "firestore" };
@@ -162,18 +186,23 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
         const normalized = normalizeUsage({
           ...cloudData,
           membershipType: normalizeMembershipType(cloudData.membershipType || membership.membershipType),
+          membershipStatus: cloudData.membershipStatus || membership.membershipStatus,
           source: "firestore"
         });
         if (normalized.remaining <= 0) {
-          transaction.set(reference, {
-            membershipType: normalized.membershipType,
+          const payload = {
             aiRequestLimit: normalized.aiRequestLimit,
             aiRequestsUsed: normalized.aiRequestsUsed,
             aiResetDate: normalized.aiResetDate,
             lastRequestTimestamp: normalized.lastRequestTimestamp,
             updatedAt: nowIso(),
             firestoreUpdatedAt: serverTimestamp()
-          }, { merge: true });
+          };
+          if (!current.exists()) {
+            payload.membershipType = normalized.membershipType;
+            payload.membershipStatus = normalized.membershipStatus;
+          }
+          transaction.set(reference, payload, { merge: true });
           return { ...normalized, allowed: false };
         }
         const next = normalizeUsage({
@@ -182,15 +211,19 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
           lastRequestTimestamp: nowIso(),
           source: "firestore"
         });
-        transaction.set(reference, {
-          membershipType: next.membershipType,
+        const payload = {
           aiRequestLimit: next.aiRequestLimit,
           aiRequestsUsed: next.aiRequestsUsed,
           aiResetDate: next.aiResetDate,
           lastRequestTimestamp: next.lastRequestTimestamp,
           updatedAt: nowIso(),
           firestoreUpdatedAt: serverTimestamp()
-        }, { merge: true });
+        };
+        if (!current.exists()) {
+          payload.membershipType = next.membershipType;
+          payload.membershipStatus = next.membershipStatus;
+        }
+        transaction.set(reference, payload, { merge: true });
         return next;
       });
       snapshot = result;
