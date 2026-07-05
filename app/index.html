@@ -505,12 +505,30 @@
     .session-banner-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
     .session-view-title { color: var(--text-accent); font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); }
     .session-status-badge { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; color: var(--text-success); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
-    .session-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .session-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .session-control-btn { min-height: 42px; border: 1px solid var(--border); border-radius: 6px; background: var(--input); color: var(--text-primary); cursor: pointer; font-weight: var(--font-weight-semibold); }
     .session-control-btn.pause { color: var(--orange); border-color: var(--orange); }
     .session-control-btn.resume { color: var(--text-success); border-color: var(--text-success); }
     .session-control-btn.finish { color: var(--text-danger); border-color: var(--text-danger); }
     .session-control-btn.close-session { color: var(--text-accent); }
+    .session-finish-zone {
+      display: none;
+      margin: 18px 0 22px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    body[data-workout-view="session"] .session-finish-zone.session-only {
+      display: block !important;
+    }
+    .session-finish-zone .session-control-btn.finish {
+      width: 100%;
+      min-height: 48px;
+      font-size: var(--font-size-button);
+      font-weight: var(--font-weight-bold);
+      border-color: var(--red);
+      color: var(--text-danger);
+      background: rgba(239,68,68,.08);
+    }
     .session-dialog-actions { display: grid; gap: 8px; margin-top: 16px; }
     .session-dialog-actions button { min-height: 44px; }
     .stats { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(0,0,0,.18); padding: 9px 12px; border-radius: 6px; color: var(--text-secondary); font-size: var(--font-size-body); }
@@ -546,12 +564,24 @@
     #globalTimer { color: var(--text-success); }
     #autosaveStatus { color: var(--text-accent); font-size: var(--font-size-small); margin-left: auto; }
     #estimatedTime { color: var(--text-primary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: normal; }
-    .workout-progress { display: flex; align-items: center; gap: 8px; margin-left: 4px; }
-    .progress-ring {
+    .workout-progress { display: none; }
+    .set-progress-pill {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-accent);
+      background: rgba(58,147,255,.08);
+      border: 1px solid rgba(58,147,255,.25);
+      border-radius: 4px;
+      padding: 3px 7px 3px 5px;
+      line-height: var(--line-height-control);
+    }
+    .set-progress-pill.active { display: inline-flex; }
+    .set-progress-ring {
       --progress: 0%;
-      width: 58px;
-      height: 58px;
-      flex: 0 0 58px;
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
       border-radius: 50%;
       display: grid;
       place-items: center;
@@ -559,11 +589,10 @@
       position: relative;
       transition: background .25s ease;
     }
-    .progress-ring::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--card); }
-    .progress-ring.complete { background: conic-gradient(var(--green) 100%, rgba(255,255,255,.1) 0); }
-    #progressPercent { position: relative; z-index: 1; color: var(--text-primary); font-size: var(--font-size-body); font-weight: var(--font-weight-bold); }
-    #progressComplete { display: none; max-width: 92px; color: var(--text-success); font-size: var(--font-size-small); line-height: var(--line-height-control); font-weight: var(--font-weight-bold); }
-    #progressComplete.show { display: block; }
+    .set-progress-ring::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--card); }
+    .set-progress-ring.complete { background: conic-gradient(var(--green) 100%, rgba(255,255,255,.1) 0); }
+    .set-progress-percent { position: relative; z-index: 1; color: var(--text-primary); font-size: 9px; font-weight: var(--font-weight-bold); }
+    .set-progress-label { color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; }
     .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--blue); color: var(--text-primary); border: 0; border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
 
     .exercise { background: rgba(0,0,0,.12); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 18px; }
@@ -1334,7 +1363,7 @@
       line-height: var(--line-height-body);
     }
     .section-title, .mini-title, .trash-meta, #autosaveStatus, #estimatedTime,
-    #progressPercent, #progressComplete, .exercise-transition, .list-count,
+    .set-progress-percent, .set-progress-label, .exercise-transition, .list-count,
     .badge, .table-head, .previous, .set-analytics, .muscle-item small,
     #copilotFeedback, .dash-label, .development-stat span, .change-badge,
     .chart-toolbar label, .measure-field label, .measure-date, .profile-login {
@@ -1353,7 +1382,7 @@
     .sidebar-item { color: var(--text-secondary); }
     .profile-login, #autosaveStatus, .copilot-title, .section, .progress-section-title,
     .modal-title { color: var(--text-accent); }
-    .exercise-name, .custom-title, .list-count, #progressComplete, #copilotFeedback {
+    .exercise-name, .custom-title, .list-count, #copilotFeedback {
       color: var(--text-success);
     }
     .top-btn, .dashboard-btn, .copilot-btn, .measure-save {
@@ -1367,7 +1396,7 @@
       line-height: var(--line-height-control);
       letter-spacing: 0;
     }
-    #estimatedTime, #progressPercent, .dash-value, .development-stat b {
+    #estimatedTime, .set-progress-percent, .dash-value, .development-stat b {
       color: var(--text-primary);
       font-weight: var(--font-weight-semibold);
       line-height: var(--line-height-heading);
@@ -2390,7 +2419,6 @@
         <div class="session-controls">
           <button class="session-control-btn pause" id="pauseWorkoutBtn" onclick="pauseWorkoutSession()">⏸ Pause træning</button>
           <button class="session-control-btn resume" id="resumeWorkoutBtn" onclick="resumeWorkoutSession()">▶ Fortsæt træning</button>
-          <button class="session-control-btn finish" id="stopBtn" onclick="finishWorkout()">⏹ Afslut træning</button>
           <button class="session-control-btn close-session" onclick="closeTrainingWindow()">✕ Luk træningsvindue</button>
         </div>
       </section>
@@ -2398,12 +2426,6 @@
         <span id="estimatedTime">Estimeret tid: 0 min</span>
         <span id="timeUsedLabel">Tid brugt:</span>
         <span id="globalTimer">00:00:00</span>
-        <div class="workout-progress" aria-label="Gennemført træningspas">
-          <div class="progress-ring" id="progressRing" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-            <span id="progressPercent">0%</span>
-          </div>
-          <span id="progressComplete">Program gennemført!</span>
-        </div>
         <span id="autosaveStatus">Klar til første øvelse</span>
       </div>
       <div class="daily-motivation-summary program-only" id="dailyMotivationSummary" hidden>
@@ -2416,6 +2438,9 @@
       </section>
       <button class="dashboard-btn program-only" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
       <div id="exercises"></div>
+      <div class="session-finish-zone session-only">
+        <button class="session-control-btn finish" id="stopBtn" onclick="finishWorkout()">⏹ Afslut træning</button>
+      </div>
       <div class="add-zone">
         <div class="movement-picker">
           <button class="movement-btn active" data-movement="Alle" onclick="setMovementFilter('Alle', event)">Alle</button>
@@ -4585,7 +4610,16 @@
               <span class="set-complete-icon" aria-hidden="true">✓</span>
             </label>
           </div>
-          <div class="set-analytics"><span class="pill" id="orm-${slot}-${i}">1RM: -</span><span class="pill green" id="vol-${slot}-${i}">Volumen: -</span></div>
+          <div class="set-analytics">
+            <span class="pill" id="orm-${slot}-${i}">1RM: -</span>
+            <span class="pill green" id="vol-${slot}-${i}">Volumen: -</span>
+            <span class="set-progress-pill" id="set-progress-${slot}-${i}">
+              <span class="set-progress-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span class="set-progress-percent">0%</span>
+              </span>
+              <span class="set-progress-label">Fremdrift</span>
+            </span>
+          </div>
         `;
         container.appendChild(block);
         restorePauseTimer(slot, i, data.pauseTimer);
@@ -4601,16 +4635,27 @@
       const totalSets = checkboxes.length;
       const completedSets = checkboxes.filter(checkbox => checkbox.checked).length;
       const percent = totalSets ? Math.round((completedSets / totalSets) * 100) : 0;
-      const ring = $("progressRing");
-      const label = $("progressPercent");
-      const completeMessage = $("progressComplete");
-      if (!ring || !label || !completeMessage) return;
+      const setCheckboxes = [...document.querySelectorAll('.set-block input[type="checkbox"]')];
+      document.querySelectorAll(".set-progress-pill").forEach(pill => {
+        pill.classList.remove("active");
+        pill.setAttribute("aria-hidden", "true");
+      });
+      if (!setCheckboxes.length) return;
+      const activeCheckbox = setCheckboxes.find(checkbox => !checkbox.checked) || setCheckboxes[setCheckboxes.length - 1];
+      const targetBlock = activeCheckbox.closest(".set-block");
+      const pill = targetBlock?.querySelector(".set-progress-pill");
+      const ring = pill?.querySelector(".set-progress-ring");
+      const label = pill?.querySelector(".set-progress-percent");
+      const text = pill?.querySelector(".set-progress-label");
+      if (!pill || !ring || !label || !text) return;
+      pill.classList.add("active");
+      pill.setAttribute("aria-hidden", "false");
       ring.style.setProperty("--progress", `${percent}%`);
       ring.classList.toggle("complete", totalSets > 0 && percent === 100);
       ring.setAttribute("aria-valuenow", percent);
       ring.setAttribute("aria-label", `${completedSets} af ${totalSets} træningsdele gennemført`);
       label.textContent = `${percent}%`;
-      completeMessage.classList.toggle("show", totalSets > 0 && percent === 100);
+      text.textContent = percent === 100 ? "Gennemført" : "Fremdrift";
     }
 
     function collectSetData(slot) {
@@ -4677,8 +4722,11 @@
 
     function maybeStartAutoPause(cb, slot, wasCompleted) {
       if (!cb.checked || wasCompleted || !isAutoPauseEnabled()) return;
-      const row = cb.closest(".set-row");
-      const pauseInput = row?.querySelector(".pause");
+      const completedBlock = cb.closest(".set-block");
+      const nextBlock = completedBlock?.nextElementSibling;
+      if (!nextBlock?.classList?.contains("set-block")) return;
+      if (nextBlock.querySelector('input[type="checkbox"]')?.checked) return;
+      const pauseInput = nextBlock.querySelector(".pause");
       const match = pauseInput?.id?.match(/^pause-(.+)-(\d+)$/);
       const set = match ? Number(match[2]) : 0;
       if (!set) return;
