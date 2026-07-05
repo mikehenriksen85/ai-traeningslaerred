@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v58-kg-input1";
+const CACHE_NAME = "work4it-shell-v59-auto-pause1";
 const APP_SHELL = [
   "./",
   "./index.html",

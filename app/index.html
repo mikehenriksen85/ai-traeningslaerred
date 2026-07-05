@@ -2547,6 +2547,14 @@
               </label>
             </div>
             <div class="theme-save-feedback" id="themeSaveFeedback" aria-live="polite"></div>
+            <label class="theme-option" style="margin-top:12px;">
+              <input type="checkbox" id="autoPauseEnabled" onchange="setAutoPauseEnabled(this.checked)">
+              <span>
+                <span class="theme-option-title">Start pause automatisk</span>
+                <span class="theme-option-copy">Når et sæt markeres som færdigt, starter pausetimeren automatisk. Slå fra, hvis du vil starte pauser manuelt.</span>
+              </span>
+            </label>
+            <div class="theme-save-feedback" id="autoPauseFeedback" aria-live="polite"></div>
           </section>
         </div>
 
@@ -3057,6 +3065,30 @@
       try {
         localStorage.removeItem(key);
       } catch {}
+    }
+    const AUTO_PAUSE_KEY = "work4it_auto_pause_enabled";
+    function isAutoPauseEnabled() {
+      try {
+        return localStorage.getItem(AUTO_PAUSE_KEY) !== "false";
+      } catch {
+        return true;
+      }
+    }
+    function updateAutoPauseSettingUi() {
+      const checkbox = $("autoPauseEnabled");
+      if (checkbox) checkbox.checked = isAutoPauseEnabled();
+    }
+    function setAutoPauseEnabled(enabled) {
+      try {
+        localStorage.setItem(AUTO_PAUSE_KEY, enabled ? "true" : "false");
+      } catch {}
+      updateAutoPauseSettingUi();
+      const feedback = $("autoPauseFeedback");
+      if (feedback) {
+        feedback.textContent = enabled
+          ? "Auto-pause er slået til."
+          : "Auto-pause er slået fra. Du starter pauser manuelt.";
+      }
     }
     function t(key) { return (translations[currentLanguage] || translations.da)[key] || translations.da[key] || key; }
     function tm(muscle) { return (translations[currentLanguage]?.muscles || translations.da.muscles)[muscle] || muscle; }
@@ -4643,10 +4675,27 @@
       autoSave();
     }
 
+    function maybeStartAutoPause(cb, slot, wasCompleted) {
+      if (!cb.checked || wasCompleted || !isAutoPauseEnabled()) return;
+      const row = cb.closest(".set-row");
+      const pauseInput = row?.querySelector(".pause");
+      const match = pauseInput?.id?.match(/^pause-(.+)-(\d+)$/);
+      const set = match ? Number(match[2]) : 0;
+      if (!set) return;
+      const key = pauseKey(slot, set);
+      const timer = pauseTimers[key];
+      if (timer?.running || (timer && Number(timer.remaining) <= 0)) return;
+      if (parsePause(pauseInput.value) <= 0 && !(timer?.remaining > 0 || timer?.total > 0)) return;
+      togglePause(slot, set);
+    }
+
     function toggleCompleted(cb, slot) {
-      cb.closest(".set-block").classList.toggle("completed", cb.checked);
+      const block = cb.closest(".set-block");
+      const wasCompleted = block?.classList.contains("completed") || false;
+      block?.classList.toggle("completed", cb.checked);
       updateAnalytics(slot);
       updateWorkoutProgress();
+      maybeStartAutoPause(cb, slot, wasCompleted);
       autoSave();
     }
 
@@ -7848,6 +7897,7 @@
         $("exercises").innerHTML = "";
       }
       applyLanguage(currentLanguage);
+      updateAutoPauseSettingUi();
       updateWorkoutProgress();
       updateDailyMotivationDisplay();
       updateEstimatedCalories();
