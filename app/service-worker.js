@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v67-resume-state1";
+const CACHE_NAME = "work4it-shell-v68-ai-coach1";
 const APP_SHELL = [
   "./",
   "./index.html",

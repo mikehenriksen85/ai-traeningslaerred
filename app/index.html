@@ -867,6 +867,104 @@
     }
     .exercise-picker-list { min-height: 0; overflow-y: auto; }
     .copilot { border-top: 1px dashed var(--border); padding-top: 18px; }
+    .ai-coach-fab {
+      position: fixed;
+      right: max(16px, env(safe-area-inset-right, 0px) + 16px);
+      bottom: max(18px, env(safe-area-inset-bottom, 0px) + 18px);
+      z-index: 1250;
+      min-height: 52px;
+      max-width: min(210px, calc(100vw - 32px));
+      border: 1px solid rgba(59,130,246,.55);
+      border-radius: 999px;
+      padding: 0 18px;
+      color: var(--text-primary);
+      background: linear-gradient(135deg, var(--blue), #2563eb);
+      box-shadow: 0 16px 32px rgba(0,0,0,.35);
+      font: inherit;
+      font-weight: var(--font-weight-bold);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .ai-coach-fab:hover,
+    .ai-coach-fab:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 38px rgba(0,0,0,.42);
+      outline: none;
+    }
+    body.auth-locked .ai-coach-fab,
+    body.sidebar-open .ai-coach-fab,
+    body.ai-coach-open .ai-coach-fab { display: none; }
+    main.canvas { padding-bottom: max(92px, env(safe-area-inset-bottom, 0px) + 82px); }
+    .ai-coach-panel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1600;
+      align-items: flex-end;
+      justify-content: center;
+      padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+      background: rgba(2,6,23,.62);
+    }
+    .ai-coach-panel.open { display: flex; }
+    .ai-coach-sheet {
+      width: min(760px, 100%);
+      max-height: min(82vh, 720px);
+      max-height: min(82dvh, 720px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid rgba(59,130,246,.35);
+      border-radius: 14px 14px 8px 8px;
+      background: var(--card);
+      box-shadow: 0 -18px 48px rgba(0,0,0,.48);
+      padding: 16px;
+    }
+    .ai-coach-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .ai-coach-title { color: var(--text-primary); font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); line-height: var(--line-height-heading); }
+    .ai-coach-context { margin-top: 3px; color: var(--text-secondary); font-size: var(--font-size-small); line-height: 1.4; }
+    .ai-coach-sheet .copilot { display: grid; gap: 12px; border-top: 0; padding-top: 0; }
+    .ai-coach-suggestions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ai-coach-suggestion {
+      min-height: 38px;
+      border: 1px solid rgba(59,130,246,.35);
+      border-radius: 999px;
+      padding: 7px 11px;
+      color: var(--text-accent);
+      background: rgba(59,130,246,.08);
+      font: inherit;
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+    }
+    @media (min-width: 900px) {
+      .ai-coach-panel { align-items: center; }
+      .ai-coach-sheet { border-radius: 10px; }
+    }
+    @media (max-width: 560px) {
+      .ai-coach-fab {
+        min-height: 48px;
+        padding: 0 14px;
+        font-size: var(--font-size-small);
+      }
+      .ai-coach-panel { padding: 0; }
+      .ai-coach-sheet {
+        max-height: 88dvh;
+        border-right: 0;
+        border-left: 0;
+        border-bottom: 0;
+        border-radius: 16px 16px 0 0;
+        padding: 14px;
+      }
+      .copilot-bar { flex-direction: column; }
+      .copilot-btn { min-height: 44px; }
+    }
     .copilot-title { color: var(--text-accent); font-weight: var(--font-weight-bold); margin-bottom: 10px; }
     .ai-request-counter { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; background: rgba(59,130,246,.08); color: var(--text-secondary); font-size: var(--font-size-small); }
     .ai-request-counter strong { color: var(--text-primary); }
@@ -2485,6 +2583,12 @@
           const menu = document.getElementById("muscleMenu");
           if (menu) menu.style.display = "none";
           if (typeof window !== "undefined") window.exercisePickerMuscle = "";
+        } else if (id === "ai-coach") {
+          document.getElementById("aiCoachPanel")?.classList.remove("open");
+          document.getElementById("aiCoachPanel")?.setAttribute("aria-hidden", "true");
+          document.getElementById("aiCoachPanel")?.setAttribute("aria-hidden", "true");
+          document.body.classList.remove("ai-coach-open");
+          document.getElementById("aiCoachButton")?.setAttribute("aria-expanded", "false");
         }
       }
       function closeActiveSurface(reason = "close") {
@@ -2576,6 +2680,8 @@
           const generator = document.getElementById("programGeneratorAccess");
           if (generator) generator.hidden = true;
           document.getElementById("membershipPopup")?.classList.remove("open");
+          document.getElementById("aiCoachPanel")?.classList.remove("open");
+          document.body.classList.remove("ai-coach-open");
           document.querySelectorAll(".progress-view.open, .calorie-view.open, .profile-account-view.open, .membership-view.open, .wizard-shell.open").forEach(view => {
             view.classList.remove("open");
             view.setAttribute("aria-hidden", "true");
@@ -2669,24 +2775,38 @@
         </div>
         <button class="add-btn" onclick="toggleMuscleMenu(event)">âž• TilfÃ¸j ny Ã¸velse</button>
       </div>
-      <div class="copilot program-only" id="copilotAccess">
+      <div class="program-actions program-only">
+        <button class="program-action-btn share" onclick="shareCurrentProgram()">ðŸ”— Del trÃ¦ningspas</button>
+        <button class="program-action-btn delete" onclick="deleteCurrentProgram()">ðŸ—‘ Slet trÃ¦ningspas</button>
+      </div>
+    </section>
+  </main>
+
+  <button class="ai-coach-fab" id="aiCoachButton" type="button" onclick="openAiCoach()" aria-controls="aiCoachPanel" aria-expanded="false">âœ¨ AI Coach</button>
+  <section class="ai-coach-panel" id="aiCoachPanel" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="aiCoachTitle">
+    <div class="ai-coach-sheet">
+      <div class="ai-coach-head">
+        <div>
+          <div class="ai-coach-title" id="aiCoachTitle">âœ¨ AI Coach</div>
+          <div class="ai-coach-context" id="aiCoachContext">Klar til at hjÃ¦lpe med dit trÃ¦ningspas.</div>
+        </div>
+        <button class="close" type="button" onclick="closeAiCoach()" aria-label="Luk AI Coach">Ã—</button>
+      </div>
+      <div class="copilot" id="copilotAccess">
         <div class="copilot-title">âœ¨ AI TrÃ¦ningsassistent (Profil, programmer og trÃ¦ningspas)</div>
         <div class="ai-request-counter" id="aiRequestCounter" aria-live="polite">
           <span><strong id="aiRequestRemaining">-</strong> AI Requests tilbage</span>
           <button class="ai-request-upgrade" type="button" onclick="openMembershipView()">Se medlemskab</button>
         </div>
+        <div class="ai-coach-suggestions" id="aiCoachSuggestions" aria-label="AI forslag"></div>
         <div class="copilot-bar">
-          <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'Lav et styrkeprogram', 'Jeg har kun hÃ¥ndvÃ¦gte' eller 'Opdater min vÃ¦gt til 88 kg'">
+          <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'Lav et styrkeprogram', 'Jeg har kun hÃ¥ndvÃ¦gte' eller 'Opdater min vÃ¦gt til 88 kg'" onkeydown="if(event.key==='Enter') runCopilot()">
           <button class="copilot-btn" onclick="runCopilot()">KÃ¸r</button>
         </div>
         <div id="copilotFeedback"></div>
-        <div class="program-actions">
-          <button class="program-action-btn share" onclick="shareCurrentProgram()">ðŸ”— Del trÃ¦ningspas</button>
-          <button class="program-action-btn delete" onclick="deleteCurrentProgram()">ðŸ—‘ Slet trÃ¦ningspas</button>
-        </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
   <section class="calorie-view" id="calorieView" aria-hidden="true">
     <div class="calorie-view-shell">
@@ -3466,6 +3586,7 @@
       } catch {}
       window.WorkitViewState?.save?.(normalized);
       saveAppResumeState(normalized);
+      if ($("aiCoachPanel")?.classList.contains("open")) renderAiCoachContext();
     }
 
     function currentAppView() {
@@ -7022,6 +7143,138 @@
         );
         pendingCopilotHistory = null;
       }
+    }
+
+    function activeExerciseNameForCoach() {
+      const parsed = parsePauseComponentKey(activePauseComponentKey);
+      if (parsed?.slot) return $(`name-${parsed.slot}`)?.textContent || "";
+      const firstSlot = slotIds()[0];
+      return firstSlot ? $(`name-${firstSlot}`)?.textContent || "" : "";
+    }
+
+    function aiCoachContext() {
+      if ($("profileAccountView")?.classList.contains("open")) {
+        return {
+          label: "Profil og konto",
+          description: "AI kan foreslÃ¥ profilÃ¦ndringer, mÃ¥l, trÃ¦ningsstil og sikre at oplysningerne passer til dine planer.",
+          suggestions: [
+            "Hvad bør jeg fokusere på ud fra min profil?",
+            "Opdater min vægt til 90 kg",
+            "Jeg vil træne 4 dage om ugen"
+          ]
+        };
+      }
+      if ($("membershipView")?.classList.contains("open")) {
+        return {
+          label: "Medlemskab",
+          description: "AI kan forklare forskellen pÃ¥ planerne og hvad dine AI Requests bruges til.",
+          suggestions: [
+            "Hvad får jeg med Premium?",
+            "Hvor mange AI Requests har jeg tilbage?",
+            "Hvilken plan passer bedst til mig?"
+          ]
+        };
+      }
+      if ($("progressView")?.classList.contains("open")) {
+        return {
+          label: "Min udvikling",
+          description: "AI kan hjÃ¦lpe dig med at forstÃ¥ udvikling, plateauer og nÃ¦ste realistiske skridt.",
+          suggestions: [
+            "Hvordan forbedrer jeg min progression?",
+            "Hvorfor står min styrke stille?",
+            "Hvad bør jeg justere næste uge?"
+          ]
+        };
+      }
+      if ($("calorieView")?.classList.contains("open")) {
+        return {
+          label: "Kalorie-estimat",
+          description: "AI kan forklare estimatet og give praktiske rÃ¥d til energi, vÃ¦gttab og restitution.",
+          suggestions: [
+            "Hvordan bruger jeg kalorieestimatet?",
+            "Hvordan taber jeg mig sikkert?",
+            "Hvordan kombinerer jeg styrke og vægttab?"
+          ]
+        };
+      }
+      if (currentWorkoutView === "session" && hasActiveWorkoutSession()) {
+        const exercise = activeExerciseNameForCoach();
+        return {
+          label: "Aktiv trÃ¦ning",
+          description: exercise
+            ? `Du er i gang. AI kan hjÃ¦lpe med sÃ¦t, pauser, progression og alternativer til ${exercise}.`
+            : "Du er i gang. AI kan hjÃ¦lpe med sÃ¦t, pauser, progression og justeringer.",
+          suggestions: [
+            "Tilpas dagens træning efter min motivation",
+            "Sæt pause til 90 sekunder",
+            exercise ? `Find et alternativ til ${exercise}` : "Foreslå en lettere øvelse"
+          ]
+        };
+      }
+      const exercise = activeExerciseNameForCoach();
+      return {
+        label: "TrÃ¦ningsprogram",
+        description: exercise
+          ? `AI kan optimere programmet, Ã¦ndre Ã¸velser og foreslÃ¥ alternativer. Aktivt fokus: ${exercise}.`
+          : "AI kan oprette, optimere og tilpasse trÃ¦ningsprogrammer efter dine mÃ¥l.",
+        suggestions: [
+          "Optimer træningspasset efter min profil",
+          "Lav et program til muskelopbygning",
+          "Jeg har kun 20 minutter"
+        ]
+      };
+    }
+
+    function renderAiCoachContext() {
+      const context = aiCoachContext();
+      const label = $("aiCoachContext");
+      const suggestions = $("aiCoachSuggestions");
+      if (label) label.textContent = `${context.label}: ${context.description}`;
+      if (suggestions) {
+        suggestions.innerHTML = context.suggestions
+          .filter(Boolean)
+          .map(text => `<button class="ai-coach-suggestion" type="button" onclick="useAiCoachSuggestion('${encodeURIComponent(text)}')">${esc(text)}</button>`)
+          .join("");
+      }
+      return context;
+    }
+
+    function openAiCoach() {
+      renderAiCoachContext();
+      const panel = $("aiCoachPanel");
+      const sheet = panel?.querySelector(".ai-coach-sheet");
+      if (!panel || !sheet) return;
+      window.WorkitMenuManager?.openSurface?.("ai-coach", {
+        roots: [sheet],
+        close: () => closeAiCoach(false)
+      });
+      panel.classList.add("open");
+      panel.setAttribute("aria-hidden", "false");
+      document.body.classList.add("ai-coach-open");
+      $("aiCoachButton")?.setAttribute("aria-expanded", "true");
+      updateAiRequestCounterDisplay();
+      window.requestAnimationFrame(() => $("copilotInput")?.focus?.({ preventScroll: true }));
+    }
+
+    function closeAiCoach(notifyManager = true) {
+      if (notifyManager && window.WorkitMenuManager?.isSurfaceOpen?.("ai-coach")) {
+        window.WorkitMenuManager.closeSurface("ai-coach");
+        return;
+      }
+      const panel = $("aiCoachPanel");
+      panel?.classList.remove("open");
+      panel?.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("ai-coach-open");
+      $("aiCoachButton")?.setAttribute("aria-expanded", "false");
+      if (notifyManager) window.WorkitMenuManager?.notifySurfaceClosed?.("ai-coach");
+    }
+
+    function useAiCoachSuggestion(encodedText) {
+      const text = decodeURIComponent(encodedText || "");
+      const input = $("copilotInput");
+      if (!input) return;
+      input.value = text;
+      input.focus();
     }
 
     function formatAiResetDate(value) {
