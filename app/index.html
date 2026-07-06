@@ -1633,6 +1633,9 @@
       border-radius: 8px;
       padding: 16px;
       scroll-margin-top: 20px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .membership-plan.best { border-color: var(--green); box-shadow: 0 0 0 1px rgba(34,197,94,.16); }
     .membership-plan.active {
@@ -1681,6 +1684,7 @@
       overflow-wrap: anywhere;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      pointer-events: auto;
     }
     .membership-plan-btn[aria-pressed="true"] {
       outline: 2px solid rgba(59,130,246,.45);
@@ -2405,6 +2409,18 @@
         ".membership-view",
         ".wizard-shell"
       ];
+      const menuState = {
+        activeSurface: null,
+        activePanel: null,
+        historyToken: 0
+      };
+      function elementList(value) {
+        const list = typeof value === "function" ? value() : value;
+        return (Array.isArray(list) ? list : [list]).filter(Boolean);
+      }
+      function containsTarget(roots, target) {
+        return elementList(roots).some(root => root === target || root.contains?.(target));
+      }
       function setWorkspaceHidden(hidden) {
         document.querySelectorAll(workspaceSelectors.join(",")).forEach(element => {
           if (element.id === "sidebar" || element.closest("#sidebar")) return;
@@ -2417,26 +2433,184 @@
           }
         });
       }
-      function setSidebarOpen(forceOpen) {
+      function pushMenuHistory(id) {
+        try {
+          const state = { ...(history.state || {}), workitMenuToken: ++menuState.historyToken, workitMenuId: id };
+          history.pushState(state, "", location.href);
+        } catch (error) {
+          console.warn("[Work4it menu] Kunne ikke oprette historik-state.", error);
+        }
+      }
+      function closeActivePanel(reason = "close") {
+        const panel = menuState.activePanel;
+        if (!panel) return false;
+        menuState.activePanel = null;
+        panel.close?.(reason);
+        return true;
+      }
+      function openPanel(id, options = {}) {
+        if (menuState.activePanel?.id === id) return menuState.activePanel;
+        closeActivePanel("switch-panel");
+        menuState.activePanel = { id, roots: options.roots || [], close: options.close };
+        if (options.history !== false) pushMenuHistory(id);
+        return menuState.activePanel;
+      }
+      function notifyPanelClosed(id) {
+        if (!id || menuState.activePanel?.id === id) menuState.activePanel = null;
+      }
+      function applySidebarOpen(shouldOpen) {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
         if (!sidebar || !overlay) return;
-        const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !sidebar.classList.contains("open");
         sidebar.classList.toggle("open", shouldOpen);
         sidebar.setAttribute("aria-hidden", String(!shouldOpen));
         overlay.classList.toggle("show", shouldOpen);
         document.body.classList.toggle("sidebar-open", shouldOpen);
         setWorkspaceHidden(shouldOpen);
       }
+      function closeSurfaceDom(id, reason = "close") {
+        if (id === "sidebar") {
+          closeActivePanel(reason);
+          applySidebarOpen(false);
+        } else if (id === "modal") {
+          const modal = document.getElementById("modal");
+          if (modal) {
+            modal.style.display = "none";
+            modal.setAttribute("aria-hidden", "true");
+            document.getElementById("modalContent")?.classList.remove("brand-surface", "dashboard-brand-surface");
+          }
+        } else if (id === "membership-popup") {
+          document.getElementById("membershipPopup")?.classList.remove("open");
+        } else if (id === "exercise-picker") {
+          const menu = document.getElementById("muscleMenu");
+          if (menu) menu.style.display = "none";
+          if (typeof window !== "undefined") window.exercisePickerMuscle = "";
+        }
+      }
+      function closeActiveSurface(reason = "close") {
+        const surface = menuState.activeSurface;
+        if (!surface) {
+          closeActivePanel(reason);
+          return false;
+        }
+        menuState.activeSurface = null;
+        surface.close?.(reason);
+        return true;
+      }
+      function openSurface(id, options = {}) {
+        if (menuState.activeSurface?.id === id) return menuState.activeSurface;
+        closeActivePanel("surface-open");
+        closeActiveSurface("switch-surface");
+        menuState.activeSurface = {
+          id,
+          roots: options.roots || [],
+          close: options.close || ((reason) => closeSurfaceDom(id, reason))
+        };
+        if (options.history !== false) pushMenuHistory(id);
+        return menuState.activeSurface;
+      }
+      function notifySurfaceClosed(id) {
+        if (!id || menuState.activeSurface?.id === id) menuState.activeSurface = null;
+      }
+      function setSidebarOpen(forceOpen) {
+        const sidebar = document.getElementById("sidebar");
+        const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !sidebar?.classList.contains("open");
+        if (shouldOpen) {
+          openSurface("sidebar", {
+            roots: () => [document.getElementById("sidebar")],
+            close: () => applySidebarOpen(false)
+          });
+          applySidebarOpen(true);
+        } else if (menuState.activeSurface?.id === "sidebar") {
+          closeActiveSurface("manual-close");
+        } else {
+          applySidebarOpen(false);
+        }
+      }
       window.toggleSidebar = setSidebarOpen;
+      window.WorkitMenuManager = {
+        openSurface,
+        closeActiveSurface,
+        closeSurface(id, reason = "manual-close") {
+          if (menuState.activeSurface?.id === id) return closeActiveSurface(reason);
+          closeSurfaceDom(id, reason);
+          return false;
+        },
+        notifySurfaceClosed,
+        isSurfaceOpen(id) {
+          return menuState.activeSurface?.id === id;
+        },
+        openPanel,
+        closeActivePanel,
+        closePanel(id, reason = "manual-close") {
+          if (menuState.activePanel?.id === id) return closeActivePanel(reason);
+          return false;
+        },
+        notifyPanelClosed,
+        isPanelOpen(id) {
+          return menuState.activePanel?.id === id;
+        },
+        closeAll(reason = "close-all") {
+          closeActivePanel(reason);
+          closeActiveSurface(reason);
+        }
+      };
+      window.WorkitWindowManager = {
+        canOpen(id) {
+          const roots = id === "membership-popup"
+            ? () => [document.querySelector("#membershipPopup .membership-popup-panel"), document.getElementById("membershipPopup")]
+            : () => [document.getElementById(id), document.querySelector(`#${id} .modal-panel`)];
+          openSurface(id, { roots, close: (reason) => closeSurfaceDom(id, reason) });
+          return true;
+        },
+        notifyClosed(id) {
+          notifySurfaceClosed(id);
+        },
+        closeNonAuthWindows() {
+          closeActivePanel("auth-route");
+          closeActiveSurface("auth-route");
+          ["savedDropdown", "trashDropdown", "countPicker"].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.style.display = "none";
+          });
+          const generator = document.getElementById("programGeneratorAccess");
+          if (generator) generator.hidden = true;
+          document.getElementById("membershipPopup")?.classList.remove("open");
+          document.querySelectorAll(".progress-view.open, .calorie-view.open, .profile-account-view.open, .membership-view.open, .wizard-shell.open").forEach(view => {
+            view.classList.remove("open");
+            view.setAttribute("aria-hidden", "true");
+          });
+          const modal = document.getElementById("modal");
+          if (modal) {
+            modal.style.display = "none";
+            modal.setAttribute("aria-hidden", "true");
+          }
+          applySidebarOpen(false);
+        }
+      };
       window.WorkitMenuView = {
         setOpen: setSidebarOpen,
         setWorkspaceHidden
       };
-      document.addEventListener("keydown", event => {
-        if (event.key === "Escape" && document.getElementById("sidebar")?.classList.contains("open")) {
-          setSidebarOpen(false);
+      document.addEventListener("pointerdown", event => {
+        const target = event.target;
+        const panel = menuState.activePanel;
+        if (panel && !containsTarget(panel.roots, target)) {
+          closeActivePanel("outside");
+          return;
         }
+        const surface = menuState.activeSurface;
+        if (surface?.id && surface.id !== "sidebar" && !containsTarget(surface.roots, target)) {
+          closeActiveSurface("outside");
+        }
+      }, true);
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          if (closeActivePanel("escape") || closeActiveSurface("escape")) event.preventDefault();
+        }
+      });
+      window.addEventListener("popstate", () => {
+        closeActivePanel("browser-back") || closeActiveSurface("browser-back");
       });
     })();
   </script>
@@ -3263,7 +3437,7 @@
     }
 
     document.addEventListener("keydown", event => {
-      if (event.key === "Escape" && $("sidebar")?.classList.contains("open")) {
+      if (!window.WorkitMenuManager && event.key === "Escape" && $("sidebar")?.classList.contains("open")) {
         toggleSidebar(false);
       }
     });
@@ -3290,7 +3464,13 @@
     function toggleGeneratorMenu() {
       const generator = $("programGeneratorAccess");
       if (!generator) return;
-      generator.hidden = !generator.hidden;
+      if (!generator.hidden) {
+        generator.hidden = true;
+        $("countPicker").style.display = "none";
+        return;
+      }
+      window.WorkitMenuManager?.closeActivePanel?.("generator-open");
+      generator.hidden = false;
     }
 
     function openProfileWizardFromMenu() {
@@ -3850,6 +4030,14 @@
         ? Math.min(5, Number($("automaticExerciseCount")?.value || selectedAutomaticExerciseCount))
         : ($("automaticExerciseCount")?.value || selectedAutomaticExerciseCount));
       $("countPicker").style.display = "block";
+      window.WorkitMenuManager?.openPanel?.("count-picker", {
+        roots: [$("programGeneratorAccess"), $("countPicker")],
+        close: () => {
+          $("countPicker").style.display = "none";
+          $("cardioGoalPicker").style.display = "none";
+          $("calisthenicsTemplatePicker").style.display = "none";
+        }
+      });
     }
 
     function generateSelectedAutomaticProgram() {
@@ -3909,6 +4097,7 @@
         addExercise(ex.name, muscle, plannedSetsForExercise(ex.name, muscle, i), plan);
       }
       $("programType").value = "";
+      window.WorkitMenuManager?.closePanel?.("count-picker");
       $("countPicker").style.display = "none";
       pendingProgram = "";
       autoSave();
@@ -4000,6 +4189,7 @@
       });
       renderDayNavigation();
       $("programType").value = "";
+      window.WorkitMenuManager?.closePanel?.("count-picker");
       $("countPicker").style.display = "none";
       $("calisthenicsTemplatePicker").style.display = "none";
       pendingProgram = "";
@@ -4127,6 +4317,11 @@
       const menu = $("muscleMenu");
       if (!menu) return;
       menu.style.display = "flex";
+      window.WorkitMenuManager?.openSurface?.("exercise-picker", {
+        roots: [menu, document.querySelector(".add-zone .add-btn")],
+        close: () => closeExercisePicker(false),
+        history: false
+      });
       window.requestAnimationFrame(positionExercisePickerMenu);
     }
 
@@ -4169,9 +4364,10 @@
         </details>`;
     }
 
-    function closeExercisePicker() {
+    function closeExercisePicker(notifyManager = true) {
       if ($("muscleMenu")) $("muscleMenu").style.display = "none";
       exercisePickerMuscle = "";
+      if (notifyManager) window.WorkitMenuManager?.notifySurfaceClosed?.("exercise-picker");
     }
 
     function toggleMuscleMenu(event) {
@@ -4243,7 +4439,12 @@
       autoSave();
     }
 
-    document.addEventListener("click", closeExercisePicker);
+    document.addEventListener("click", event => {
+      const menu = $("muscleMenu");
+      if (!menu || menu.style.display !== "flex") return;
+      if (menu.contains(event.target) || event.target.closest?.(".add-zone .add-btn")) return;
+      closeExercisePicker();
+    });
     window.addEventListener("resize", positionExercisePickerMenu);
     window.addEventListener("scroll", positionExercisePickerMenu, true);
 
@@ -5676,7 +5877,20 @@
       $("savedSelect").innerHTML = list.length ? `<option value="">${t("selectProgram")}</option>` + list.map(p => `<option value="${p.id}">${esc(p.title)} - ${new Date(p.savedAt).toLocaleDateString("da-DK")}</option>`).join("") : `<option value="">${t("noSavedPrograms")}</option>`;
       $("savedEmpty").style.display = list.length ? "none" : "block";
     }
-    function toggleSavedDropdown() { renderSaved(); $("savedDropdown").style.display = $("savedDropdown").style.display === "block" ? "none" : "block"; }
+    function toggleSavedDropdown() {
+      const dropdown = $("savedDropdown");
+      if (!dropdown) return;
+      if (window.WorkitMenuManager?.isPanelOpen?.("saved-dropdown")) {
+        window.WorkitMenuManager.closePanel("saved-dropdown");
+        return;
+      }
+      renderSaved();
+      dropdown.style.display = "block";
+      window.WorkitMenuManager?.openPanel?.("saved-dropdown", {
+        roots: [dropdown, $("savedWorkoutsNavItem")],
+        close: () => { dropdown.style.display = "none"; }
+      });
+    }
     function daysLeftInTrash(deletedAt) {
       const expires = new Date(deletedAt).getTime() + 30 * 24 * 60 * 60 * 1000;
       return Math.max(1, Math.ceil((expires - Date.now()) / 86400000));
@@ -5695,7 +5909,20 @@
       `).join("");
       $("trashEmpty").style.display = list.length ? "none" : "block";
     }
-    function toggleTrashDropdown() { renderTrash(); $("trashDropdown").style.display = $("trashDropdown").style.display === "block" ? "none" : "block"; }
+    function toggleTrashDropdown() {
+      const dropdown = $("trashDropdown");
+      if (!dropdown) return;
+      if (window.WorkitMenuManager?.isPanelOpen?.("trash-dropdown")) {
+        window.WorkitMenuManager.closePanel("trash-dropdown");
+        return;
+      }
+      renderTrash();
+      dropdown.style.display = "block";
+      window.WorkitMenuManager?.openPanel?.("trash-dropdown", {
+        roots: [dropdown, $("trashNavItem")],
+        close: () => { dropdown.style.display = "none"; }
+      });
+    }
     function saveCanvasState() {
       const programs = getPrograms();
       const isNewProgram = !currentSavedProgramId;
@@ -6497,17 +6724,26 @@
     function openModal() {
       const modal = $("modal");
       if (!modal) return;
+      window.WorkitMenuManager?.openSurface?.("modal", {
+        roots: [modal.querySelector(".modal-panel")],
+        close: () => closeModal(false)
+      });
       modal.style.display = "flex";
       modal.inert = false;
       modal.setAttribute("aria-hidden", "false");
       window.requestAnimationFrame(() => modal.querySelector("button, input, select, textarea")?.focus?.());
     }
-    function closeModal() {
+    function closeModal(notifyManager = true) {
       const modal = $("modal");
       if (!modal) return;
+      if (notifyManager && window.WorkitMenuManager?.isSurfaceOpen?.("modal")) {
+        window.WorkitMenuManager.closeSurface("modal");
+        return;
+      }
       modal.style.display = "none";
       modal.setAttribute("aria-hidden", "true");
       $("modalContent")?.classList.remove("brand-surface", "dashboard-brand-surface");
+      if (notifyManager) window.WorkitMenuManager?.notifySurfaceClosed?.("modal");
     }
 
     function openContactDialog() {
@@ -8118,7 +8354,7 @@
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260706-premium-6m1"></script>
-  <script src="membership.js?v=20260706-premium-6m1"></script>
+  <script src="membership.js?v=20260706-membership-touch1"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
   <script type="module" src="stripe-checkout.js?v=20260706-premium-6m1"></script>
   <script type="module" src="auth-service.js?v=20260630-user-doc1"></script>

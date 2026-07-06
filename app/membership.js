@@ -40,6 +40,8 @@
     source: "fallback"
   };
   let activeCheckoutPlan = "";
+  let membershipActivationBound = false;
+  let lastMembershipActivation = { plan: "", at: 0 };
   const stripeCheckoutState = {
     ready: Boolean(window.Work4itStripeCheckout?.createCheckout),
     retryAllowed: false,
@@ -506,6 +508,46 @@
     });
   }
 
+  function closestMembershipTrigger(event) {
+    const target = event.target;
+    if (!target?.closest) return null;
+    const trigger = target.closest("[data-membership-select], [data-membership-plan]");
+    if (!trigger) return null;
+    if (trigger.matches("[data-membership-plan]") && target.closest("button,a,input,select,textarea") && !target.closest("[data-membership-select]")) {
+      return null;
+    }
+    return trigger;
+  }
+
+  function planFromTrigger(trigger) {
+    return trigger?.dataset?.membershipSelect || trigger?.dataset?.membershipPlan || "";
+  }
+
+  function activateMembershipFromEvent(event) {
+    const trigger = closestMembershipTrigger(event);
+    const plan = planFromTrigger(trigger);
+    if (!plan) return;
+    const isPointerMouse = event.type === "pointerup" && event.pointerType === "mouse";
+    if (isPointerMouse) return;
+    const now = Date.now();
+    if (lastMembershipActivation.plan === plan && now - lastMembershipActivation.at < 700) {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      return;
+    }
+    lastMembershipActivation = { plan, at: now };
+    event.preventDefault?.();
+    event.stopPropagation?.();
+    if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+    if (trigger.tagName === "BUTTON" && trigger.disabled) {
+      trigger.disabled = false;
+    }
+    if (isPaidPlan(plan)) {
+      showConfirmation("Forbereder sikker betaling...");
+    }
+    selectPlan(plan);
+  }
+
   function clearMenuStateBeforeOpen() {
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("overlay");
@@ -520,26 +562,26 @@
   }
 
   function bindMembershipActivation() {
+    if (!membershipActivationBound) {
+      membershipActivationBound = true;
+      document.addEventListener("pointerup", activateMembershipFromEvent, true);
+      document.addEventListener("touchend", activateMembershipFromEvent, { capture: true, passive: false });
+      document.addEventListener("click", activateMembershipFromEvent, true);
+    }
     document.querySelectorAll("[data-membership-select]").forEach(button => {
-      if (button.dataset.membershipBound === "true") return;
       button.dataset.membershipBound = "true";
-      const activate = event => {
-        if (event.type === "pointerup" && event.pointerType === "mouse") return;
-        const now = Date.now();
-        const lastActivatedAt = Number(button.dataset.lastMembershipActivation || 0);
-        if (now - lastActivatedAt < 450) {
-          event.preventDefault();
-          return;
-        }
-        button.dataset.lastMembershipActivation = String(now);
-        const plan = button.dataset.membershipSelect;
-        if (!plan) return;
+    });
+    document.querySelectorAll("[data-membership-plan]").forEach(card => {
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      if (card.dataset.membershipKeyBound === "true") return;
+      card.dataset.membershipKeyBound = "true";
+      card.addEventListener("keydown", event => {
+        if (!["Enter", " "].includes(event.key)) return;
         event.preventDefault();
-        selectPlan(plan);
-      };
-      button.addEventListener("click", activate);
-      button.addEventListener("touchend", activate, { passive: false });
-      button.addEventListener("pointerup", activate);
+        const plan = card.dataset.membershipPlan;
+        if (plan) selectPlan(plan);
+      });
     });
   }
 
