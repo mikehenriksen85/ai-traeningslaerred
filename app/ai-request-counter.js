@@ -13,8 +13,7 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
   const LOCAL_KEY = "work4it_ai_request_usage_v1";
   const FREE_LIMIT = 3;
   const PREMIUM_LIMIT = 15;
-  const LIFETIME_LIMIT = 30;
-  const MONTHLY_TYPES = new Set(["trial", "quarterly", "yearly", "lifetime"]);
+  const MONTHLY_TYPES = new Set(["trial", "quarterly", "semiannual", "yearly", "lifetime"]);
   let snapshot = {
     membershipType: "free",
     membershipStatus: "free",
@@ -42,7 +41,7 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
   }
 
   function normalizeMembershipType(value) {
-    return ["trial", "free", "quarterly", "yearly", "lifetime"].includes(value) ? value : "free";
+    return ["trial", "free", "quarterly", "semiannual", "yearly", "lifetime"].includes(value) ? value : "free";
   }
 
   function normalizeMembershipStatus(value, membershipType = "free") {
@@ -56,12 +55,11 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
     const membershipType = normalizeMembershipType(data.membershipType);
     const membershipStatus = normalizeMembershipStatus(data.membershipStatus, membershipType);
     if (membershipType === "trial" && membershipStatus === "trial") return "trial";
-    if (["quarterly", "yearly", "lifetime"].includes(membershipType) && membershipStatus === "active") return membershipType;
+    if (["quarterly", "semiannual", "yearly", "lifetime"].includes(membershipType) && membershipStatus === "active") return membershipType;
     return "free";
   }
 
   function limitFor(type) {
-    if (type === "lifetime") return LIFETIME_LIMIT;
     if (MONTHLY_TYPES.has(type)) return PREMIUM_LIMIT;
     return FREE_LIMIT;
   }
@@ -263,8 +261,7 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
     getSnapshot,
     limits: {
       free: FREE_LIMIT,
-      premium: PREMIUM_LIMIT,
-      lifetime: LIFETIME_LIMIT
+      premium: PREMIUM_LIMIT
     }
   };
 

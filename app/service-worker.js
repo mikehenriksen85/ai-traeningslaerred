@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v62-finish-bottom1";
+const CACHE_NAME = "work4it-shell-v64-active-pause1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -15,12 +15,12 @@ const APP_SHELL = [
   "./wizard-store.js?v=20260621-cloud-primary1",
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",
-  "./stripe-config.js?v=20260629-priceids1",
-  "./membership.js?v=20260701-membership-status-fix1",
-  "./stripe-checkout.js?v=20260701-membership-mobile-fix1",
+  "./stripe-config.js?v=20260706-premium-6m1",
+  "./membership.js?v=20260706-premium-6m1",
+  "./stripe-checkout.js?v=20260706-premium-6m1",
   "./ai-system.js?v=20260628-ai20",
   "./ai-copilot-actions.js?v=20260628-ai20",
-  "./ai-request-counter.js?v=20260701-membership-status-fix1",
+  "./ai-request-counter.js?v=20260706-premium-6m1",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
   "./auth-gate.js?v=20260628-auth-ready1",

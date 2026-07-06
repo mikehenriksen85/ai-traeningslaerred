@@ -5,7 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { auth, db, functions } from "./firebase-config.js?v=20260628-auth-ready1";
 
-const PAID_PLANS = new Set(["quarterly", "yearly", "lifetime"]);
+const PAID_PLANS = new Set(["quarterly", "semiannual", "yearly"]);
 
 function currentUser() {
   return auth.currentUser ||

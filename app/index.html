@@ -565,18 +565,45 @@
     #autosaveStatus { color: var(--text-accent); font-size: var(--font-size-small); margin-left: auto; }
     #estimatedTime { color: var(--text-primary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: normal; }
     .workout-progress { display: none; }
-    .set-progress-pill {
+    .active-pause-component {
       display: none;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      margin: 9px 0 4px 28px;
+      padding: 10px;
+      border: 1px solid rgba(34,197,94,.52);
+      border-left: 4px solid var(--green);
+      border-radius: 8px;
+      background: rgba(34,197,94,.1);
+      box-shadow: 0 10px 24px rgba(0,0,0,.16);
+    }
+    .active-pause-component.active { display: grid; }
+    .active-pause-main { display: grid; gap: 8px; min-width: 0; }
+    .active-pause-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      color: var(--text-primary);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-bold);
+      line-height: var(--line-height-control);
+    }
+    .active-pause-title { color: var(--text-success); overflow-wrap: anywhere; }
+    .active-pause-meta { color: var(--text-secondary); white-space: nowrap; }
+    .active-pause-controls { display: flex; align-items: center; gap: 7px; min-width: 0; }
+    .set-progress-pill {
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: var(--text-accent);
-      background: rgba(58,147,255,.08);
-      border: 1px solid rgba(58,147,255,.25);
+      color: var(--text-success);
+      background: rgba(34,197,94,.12);
+      border: 1px solid rgba(34,197,94,.3);
       border-radius: 4px;
       padding: 3px 7px 3px 5px;
       line-height: var(--line-height-control);
     }
-    .set-progress-pill.active { display: inline-flex; }
     .set-progress-ring {
       --progress: 0%;
       width: 28px;
@@ -666,6 +693,7 @@
     .table-head { color: var(--text-secondary); border-bottom: 1px solid var(--border); padding-bottom: 7px; margin-top: 12px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
     .set-block { border-bottom: 1px solid rgba(49,61,73,.45); padding: 7px 0; }
     .set-block.completed { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.42); border-radius: 6px; box-shadow: inset 3px 0 0 var(--green); }
+    .set-block.active-pause-set { border-color: rgba(34,197,94,.7); background: rgba(34,197,94,.14); box-shadow: inset 4px 0 0 var(--green); }
     .set-row input { width: 92%; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 5px 3px; text-align: center; font-size: var(--font-size-small); }
     .set-complete-control { position: relative; display: grid; place-items: center; width: 44px; height: 44px; margin-inline: auto; cursor: pointer; }
     .set-complete-control input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
@@ -709,6 +737,13 @@
       align-items: center;
       width: 100%;
       min-width: 0;
+    }
+    .pause-inline-status {
+      color: var(--text-secondary);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-control);
+      word-break: keep-all;
     }
     .pause-timer-shell {
       position: relative;
@@ -761,7 +796,7 @@
       font-weight: var(--font-weight-bold);
       line-height: 1;
     }
-    .timer-btn { width: 25px; height: 25px; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; cursor: pointer; }
+    .timer-btn { width: 32px; min-width: 32px; height: 32px; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; cursor: pointer; }
     .timer-btn.running { color: var(--orange); border-color: var(--orange); }
     .set-analytics { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0 28px; font-size: var(--font-size-small); }
     .pill { color: var(--text-accent); background: rgba(58,147,255,.08); border: 1px solid rgba(58,147,255,.25); border-radius: 4px; padding: 3px 7px; }
@@ -1758,6 +1793,10 @@
       .pause-timer-shell .pause { min-height: 36px; padding-bottom: 11px; }
       .timer-btn { width: 32px; height: 36px; padding: 0; }
       .set-analytics { margin-left: 0; }
+      .active-pause-component { grid-template-columns: 1fr; margin-left: 0; }
+      .active-pause-controls { align-items: stretch; }
+      .active-pause-controls .pause-control { flex: 1 1 auto; }
+      .active-pause-controls .set-progress-pill { align-self: center; }
       .set-complete-control { width: 44px; height: 44px; }
       .set-complete-icon { width: 40px; height: 40px; font-size: 24px; }
       .square, .close { min-width: 40px; min-height: 40px; }
@@ -2808,6 +2847,17 @@
           <button class="membership-plan-btn primary" type="button" data-membership-select="quarterly" onclick="selectMembershipPlan('quarterly')">Vælg 3 måneder</button>
         </article>
 
+        <article class="membership-plan" data-membership-plan="semiannual">
+          <div class="membership-plan-name">Premium 6 måneder</div>
+          <div class="membership-price" id="membershipPriceSemiannual">109 kr.</div>
+          <div class="membership-price-note">15 AI Requests/md.</div>
+          <ul>
+            <li>Alle Premium-funktioner</li>
+            <li>God balance mellem fleksibilitet og pris</li>
+          </ul>
+          <button class="membership-plan-btn primary" type="button" data-membership-select="semiannual" onclick="selectMembershipPlan('semiannual')">Vælg 6 måneder</button>
+        </article>
+
         <article class="membership-plan best" data-membership-plan="yearly">
           <div class="membership-best-badge">Bedste værdi</div>
           <div class="membership-plan-name">Premium 12 måneder</div>
@@ -2818,17 +2868,6 @@
             <li>Laveste pris pr. måned</li>
           </ul>
           <button class="membership-plan-btn best" type="button" data-membership-select="yearly" onclick="selectMembershipPlan('yearly')">Vælg 12 måneder</button>
-        </article>
-
-        <article class="membership-plan" data-membership-plan="lifetime">
-          <div class="membership-plan-name">Livstid</div>
-          <div class="membership-price" id="membershipPriceLifetime">449 kr.</div>
-          <div class="membership-price-note">30 AI Requests/md.</div>
-          <ul>
-            <li>Permanent Premium-adgang</li>
-            <li>Alle nuværende Premium-funktioner</li>
-          </ul>
-          <button class="membership-plan-btn primary" type="button" data-membership-select="lifetime" onclick="selectMembershipPlan('lifetime')">Vælg livstid</button>
         </article>
       </div>
 
@@ -2846,8 +2885,8 @@
       </div>
       <div class="membership-popup-plans">
         <button class="membership-popup-option" type="button" data-membership-select="quarterly" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span id="membershipPopupPriceQuarterly">59 kr. · 15 AI Requests/md.</span></button>
+        <button class="membership-popup-option" type="button" data-membership-select="semiannual" onclick="selectMembershipPlan('semiannual')"><strong>🥈 6 måneder</strong><span id="membershipPopupPriceSemiannual">109 kr. · 15 AI Requests/md.</span></button>
         <button class="membership-popup-option best" type="button" data-membership-select="yearly" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span id="membershipPopupPriceYearly">199 kr. · 15 AI Requests/md. · Bedste værdi</span></button>
-        <button class="membership-popup-option" type="button" data-membership-select="lifetime" onclick="selectMembershipPlan('lifetime')"><strong>🥇 Livstid</strong><span id="membershipPopupPriceLifetime">449 kr. · 30 AI Requests/md.</span></button>
       </div>
       <button class="membership-plan-btn membership-popup-free" type="button" data-membership-select="free" onclick="selectMembershipPlan('free')">📘 Fortsæt gratis · 3 AI Requests</button>
     </div>
@@ -2958,6 +2997,7 @@
     let currentLanguage = "da";
     let autosaveDebounce = null;
     const pauseTimers = {};
+    let activePauseComponentKey = "";
     let pauseAudioContext = null;
 
     const translations = {
@@ -4591,34 +4631,46 @@
         const pauseManual = data.pauseManual === true || (data.pauseManual === undefined && Boolean(data.pause));
         const block = document.createElement("div");
         block.className = "set-block" + (data.completed ? " completed" : "");
+        block.dataset.pauseKey = pauseKey(slot, i);
         block.innerHTML = `
           <div class="set-row">
             <div>${i}</div>
             <div class="previous">${esc(data.prev || "-")}</div>
             <div><input class="weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="kg" value="${esc(data.weight || "")}" oninput="sanitizeKgInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
-            <div class="pause-control" id="pause-control-${slot}-${i}">
-              <div class="pause-timer-shell">
-                <input class="pause" id="pause-${slot}-${i}" inputmode="numeric" pattern="[0-9:]*" autocomplete="off" placeholder="00:00" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="sanitizePauseInput(this); markPauseManual(this)" onblur="normalizePauseInput(this)">
-                <div class="pause-progress" id="pause-progress-${slot}-${i}" role="progressbar" aria-label="Pause" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="pause-progress-fill"></span></div>
-              </div>
-              <button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})" aria-label="Start eller pause pausetimer">▶</button>
-              <button class="timer-btn" onclick="resetPause('${slot}',${i})" aria-label="Nulstil pausetimer">↺</button>
-            </div>
+            <div class="pause-inline-status" id="pause-inline-${slot}-${i}">${esc(pauseValue)}</div>
             <label class="set-complete-control" title="Markér sæt ${i} som færdigt">
               <input type="checkbox" ${data.completed ? "checked" : ""} onchange="toggleCompleted(this,'${slot}')" aria-label="Sæt ${i} færdigt">
               <span class="set-complete-icon" aria-hidden="true">✓</span>
             </label>
           </div>
-          <div class="set-analytics">
-            <span class="pill" id="orm-${slot}-${i}">1RM: -</span>
-            <span class="pill green" id="vol-${slot}-${i}">Volumen: -</span>
+          <div class="active-pause-component" id="active-pause-${slot}-${i}" aria-hidden="true">
+            <div class="active-pause-main">
+              <div class="active-pause-head">
+                <span class="active-pause-title">Aktiv pause</span>
+                <span class="active-pause-meta" id="active-pause-meta-${slot}-${i}">Sæt ${i}</span>
+              </div>
+              <div class="active-pause-controls">
+                <div class="pause-control" id="pause-control-${slot}-${i}">
+                  <div class="pause-timer-shell">
+                    <input class="pause" id="pause-${slot}-${i}" inputmode="numeric" pattern="[0-9:]*" autocomplete="off" placeholder="00:00" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="sanitizePauseInput(this); markPauseManual(this)" onblur="normalizePauseInput(this)">
+                    <div class="pause-progress" id="pause-progress-${slot}-${i}" role="progressbar" aria-label="Pause" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="pause-progress-fill"></span></div>
+                  </div>
+                  <button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})" aria-label="Start eller pause pausetimer">▶</button>
+                  <button class="timer-btn" onclick="resetPause('${slot}',${i})" aria-label="Nulstil pausetimer">↺</button>
+                </div>
+              </div>
+            </div>
             <span class="set-progress-pill" id="set-progress-${slot}-${i}">
               <span class="set-progress-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                 <span class="set-progress-percent">0%</span>
               </span>
               <span class="set-progress-label">Fremdrift</span>
             </span>
+          </div>
+          <div class="set-analytics">
+            <span class="pill" id="orm-${slot}-${i}">1RM: -</span>
+            <span class="pill green" id="vol-${slot}-${i}">Volumen: -</span>
           </div>
         `;
         container.appendChild(block);
@@ -4636,26 +4688,69 @@
       const completedSets = checkboxes.filter(checkbox => checkbox.checked).length;
       const percent = totalSets ? Math.round((completedSets / totalSets) * 100) : 0;
       const setCheckboxes = [...document.querySelectorAll('.set-block input[type="checkbox"]')];
-      document.querySelectorAll(".set-progress-pill").forEach(pill => {
-        pill.classList.remove("active");
-        pill.setAttribute("aria-hidden", "true");
+      if (!setCheckboxes.length) {
+        activePauseComponentKey = "";
+        renderActivePauseComponent();
+        return;
+      }
+      if (!activePauseComponentKey || !pauseComponentForKey(activePauseComponentKey)) {
+        const activeCheckbox = setCheckboxes.find(checkbox => !checkbox.checked) || setCheckboxes[setCheckboxes.length - 1];
+        const targetBlock = activeCheckbox.closest(".set-block");
+        activePauseComponentKey = targetBlock?.dataset.pauseKey || "";
+      }
+      renderActivePauseComponent({ percent, completedSets, totalSets });
+    }
+
+    function parsePauseComponentKey(key) {
+      const match = String(key || "").match(/^(.*)-(\d+)$/);
+      return match ? { slot: match[1], set: Number(match[2]) } : null;
+    }
+
+    function pauseComponentForKey(key) {
+      const parsed = parsePauseComponentKey(key);
+      return parsed ? $(`active-pause-${parsed.slot}-${parsed.set}`) : null;
+    }
+
+    function blockForPauseKey(key) {
+      return pauseComponentForKey(key)?.closest(".set-block") || null;
+    }
+
+    function renderActivePauseComponent(progress = null) {
+      document.querySelectorAll(".active-pause-component").forEach(component => {
+        component.classList.remove("active");
+        component.setAttribute("aria-hidden", "true");
       });
-      if (!setCheckboxes.length) return;
-      const activeCheckbox = setCheckboxes.find(checkbox => !checkbox.checked) || setCheckboxes[setCheckboxes.length - 1];
-      const targetBlock = activeCheckbox.closest(".set-block");
-      const pill = targetBlock?.querySelector(".set-progress-pill");
+      document.querySelectorAll(".set-block.active-pause-set").forEach(block => block.classList.remove("active-pause-set"));
+      const component = pauseComponentForKey(activePauseComponentKey);
+      const block = blockForPauseKey(activePauseComponentKey);
+      if (!component || !block) return;
+      component.classList.add("active");
+      component.setAttribute("aria-hidden", "false");
+      block.classList.add("active-pause-set");
+      if (!progress) {
+        const checkboxes = [...document.querySelectorAll('.set-block input[type="checkbox"], .cardio-completed')];
+        const totalSets = checkboxes.length;
+        const completedSets = checkboxes.filter(checkbox => checkbox.checked).length;
+        const percent = totalSets ? Math.round((completedSets / totalSets) * 100) : 0;
+        progress = { percent, completedSets, totalSets };
+      }
+      updateActivePauseProgress(component, progress);
+    }
+
+    function updateActivePauseProgress(component, { percent = 0, completedSets = 0, totalSets = 0 } = {}) {
+      const pill = component?.querySelector(".set-progress-pill");
       const ring = pill?.querySelector(".set-progress-ring");
       const label = pill?.querySelector(".set-progress-percent");
       const text = pill?.querySelector(".set-progress-label");
+      const meta = component?.querySelector(".active-pause-meta");
       if (!pill || !ring || !label || !text) return;
-      pill.classList.add("active");
-      pill.setAttribute("aria-hidden", "false");
       ring.style.setProperty("--progress", `${percent}%`);
       ring.classList.toggle("complete", totalSets > 0 && percent === 100);
       ring.setAttribute("aria-valuenow", percent);
       ring.setAttribute("aria-label", `${completedSets} af ${totalSets} træningsdele gennemført`);
       label.textContent = `${percent}%`;
       text.textContent = percent === 100 ? "Gennemført" : "Fremdrift";
+      if (meta) meta.textContent = `${completedSets}/${totalSets} sæt`;
     }
 
     function collectSetData(slot) {
@@ -4686,6 +4781,8 @@
       input.dataset.pauseManual = "true";
       const match = input.id.match(/^pause-(.+)-(\d+)$/);
       if (match) {
+        const inline = $(`pause-inline-${match[1]}-${match[2]}`);
+        if (inline) inline.textContent = input.value || "00:00";
         const key = pauseKey(match[1], Number(match[2]));
         const timer = pauseTimers[key];
         if (timer && !timer.running) {
@@ -4720,21 +4817,56 @@
       autoSave();
     }
 
+    function setActivePauseComponent(slot, set, options = {}) {
+      const key = pauseKey(slot, set);
+      if (!pauseComponentForKey(key)) return false;
+      activePauseComponentKey = key;
+      renderActivePauseComponent();
+      if (options.start === true) {
+        const timer = pauseTimers[key];
+        const input = $(`pause-${slot}-${set}`);
+        if (!timer?.running && (parsePause(input?.value) > 0 || timer?.remaining > 0 || timer?.total > 0)) {
+          togglePause(slot, set);
+        }
+      }
+      return true;
+    }
+
+    function nextSetBlockFrom(block) {
+      const setsContainer = block?.parentElement;
+      if (!setsContainer) return null;
+      const blocks = [...setsContainer.querySelectorAll(".set-block")];
+      const index = blocks.indexOf(block);
+      return index >= 0 ? blocks[index + 1] || null : null;
+    }
+
+    function moveActivePauseToNextSet(slot, set) {
+      const currentBlock = blockForPauseKey(pauseKey(slot, set));
+      const nextBlock = nextSetBlockFrom(currentBlock);
+      if (!nextBlock) {
+        renderActivePauseComponent();
+        return false;
+      }
+      const nextPause = nextBlock.querySelector(".pause");
+      const match = nextPause?.id?.match(/^pause-(.+)-(\d+)$/);
+      if (!match) return false;
+      return setActivePauseComponent(match[1], Number(match[2]));
+    }
+
     function maybeStartAutoPause(cb, slot, wasCompleted) {
-      if (!cb.checked || wasCompleted || !isAutoPauseEnabled()) return;
+      if (!cb.checked || wasCompleted) return;
       const completedBlock = cb.closest(".set-block");
-      const nextBlock = completedBlock?.nextElementSibling;
-      if (!nextBlock?.classList?.contains("set-block")) return;
-      if (nextBlock.querySelector('input[type="checkbox"]')?.checked) return;
-      const pauseInput = nextBlock.querySelector(".pause");
+      const pauseInput = completedBlock?.querySelector(".pause");
       const match = pauseInput?.id?.match(/^pause-(.+)-(\d+)$/);
       const set = match ? Number(match[2]) : 0;
       if (!set) return;
       const key = pauseKey(slot, set);
       const timer = pauseTimers[key];
       if (timer?.running || (timer && Number(timer.remaining) <= 0)) return;
+      setActivePauseComponent(slot, set);
+      if (!isAutoPauseEnabled()) return;
       if (parsePause(pauseInput.value) <= 0 && !(timer?.remaining > 0 || timer?.total > 0)) return;
-      togglePause(slot, set);
+      setActivePauseComponent(slot, set, { start: true });
     }
 
     function toggleCompleted(cb, slot) {
@@ -4769,6 +4901,9 @@
       const total = Math.max(1, Number(timer.total) || 1);
       const remaining = Math.max(0, Math.min(total, Number(timer.remaining) || 0));
       const ratio = remaining / total;
+      const parsed = parsePauseComponentKey(key);
+      const inline = parsed ? $(`pause-inline-${parsed.slot}-${parsed.set}`) : null;
+      if (inline) inline.textContent = formatPause(remaining);
       control.classList.add("started");
       control.classList.toggle("paused", !timer.running && remaining > 0 && !options.reset);
       control.classList.toggle("complete", options.complete === true || remaining === 0);
@@ -4784,6 +4919,8 @@
           delete pauseTimers[key];
         }
       });
+      if (!slot || activePauseComponentKey.startsWith(`${slot}-`)) activePauseComponentKey = "";
+      renderActivePauseComponent();
     }
     function restorePauseTimer(slot, set, savedTimer) {
       if (!savedTimer || !Number(savedTimer.total)) return;
@@ -4816,6 +4953,8 @@
       const input = $(`pause-${slot}-${set}`);
       const btn = $(`pause-btn-${slot}-${set}`);
       if (pauseTimers[key]?.running) return stopPause(key);
+      activePauseComponentKey = key;
+      renderActivePauseComponent();
       ensurePauseAudioContext();
       const existing = pauseTimers[key];
       const inputSeconds = parsePause(input.value);
@@ -4847,6 +4986,7 @@
           pauseTimers[key].remaining = 0;
           input.value = formatPause(0);
           stopPause(key, { complete: true });
+          moveActivePauseToNextSet(slot, set);
           missionCompleteSound();
         }
       }, 1000);
@@ -4868,6 +5008,8 @@
       const total = pauseTimers[key]?.total || parsePause(input.value);
       stopPause(key);
       input.value = total ? formatPause(total) : "";
+      const inline = $(`pause-inline-${slot}-${set}`);
+      if (inline) inline.textContent = input.value || "00:00";
       if (pauseTimers[key]) {
         pauseTimers[key].total = total;
         pauseTimers[key].remaining = total;
@@ -7975,13 +8117,13 @@
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
-  <script src="stripe-config.js?v=20260629-priceids1"></script>
-  <script src="membership.js?v=20260701-membership-status-fix1"></script>
+  <script src="stripe-config.js?v=20260706-premium-6m1"></script>
+  <script src="membership.js?v=20260706-premium-6m1"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
-  <script type="module" src="stripe-checkout.js?v=20260701-membership-mobile-fix1"></script>
+  <script type="module" src="stripe-checkout.js?v=20260706-premium-6m1"></script>
   <script type="module" src="auth-service.js?v=20260630-user-doc1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260630-cloud-primary2"></script>
-  <script type="module" src="ai-request-counter.js?v=20260701-membership-status-fix1"></script>
+  <script type="module" src="ai-request-counter.js?v=20260706-premium-6m1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {

@@ -25,20 +25,20 @@ const PLAN_CONFIG = Object.freeze({
     aiRequestLimit: 15,
     aiRequestPeriod: "monthly"
   }),
+  semiannual: Object.freeze({
+    label: "Work4it Premium 6 måneder",
+    priceId: "price_1TomK2J8DJiiK3vD4SfYI4tq",
+    fallbackPriceDkk: 109,
+    months: 6,
+    aiRequestLimit: 15,
+    aiRequestPeriod: "monthly"
+  }),
   yearly: Object.freeze({
     label: "Work4it Premium 12 måneder",
     priceId: "price_1Tnhf9J8DJiiK3vDpQe8srVl",
     fallbackPriceDkk: 199,
     months: 12,
     aiRequestLimit: 15,
-    aiRequestPeriod: "monthly"
-  }),
-  lifetime: Object.freeze({
-    label: "Work4it Premium Livstid",
-    priceId: "price_1TnhfNJ8DJiiK3vDCYTp8C4e",
-    fallbackPriceDkk: 449,
-    months: null,
-    aiRequestLimit: 30,
     aiRequestPeriod: "monthly"
   })
 });
@@ -270,6 +270,7 @@ exports.createStripeCheckoutSession = onCall({
       plan,
       priceId: config.priceId,
       priceDkk: String(priceDkk),
+      membershipDurationMonths: config.months == null ? "" : String(config.months),
       pricingTier: tier.activeTier,
       registeredUserCount: tier.registeredUserCount == null ? "" : String(tier.registeredUserCount)
     }
@@ -280,6 +281,7 @@ exports.createStripeCheckoutSession = onCall({
     plan,
     priceId: config.priceId,
     priceDkk,
+    membershipDurationMonths: config.months,
     pricingTier: tier.activeTier,
     status: "created",
     stripeCustomerId: customerId,
@@ -352,6 +354,7 @@ async function activateMembershipFromSession(session) {
       membershipType: plan,
       membershipStatus: "active",
       membershipPrice: priceDkk,
+      membershipDurationMonths: config.months,
       membershipStartedAt: admin.firestore.Timestamp.fromDate(now),
       membershipExpiresAt: expiresAt ? admin.firestore.Timestamp.fromDate(expiresAt) : null,
       stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id || null,

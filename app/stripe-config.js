@@ -9,6 +9,16 @@
       label: "Premium 3 måneder",
       priceId: "price_1TnhepJ8DJiiK3vDoqAb7oqY",
       priceDkk: 59,
+      membershipDurationMonths: 3,
+      aiRequestLimit: 15,
+      aiRequestPeriod: "monthly"
+    }),
+    semiannual: Object.freeze({
+      plan: "semiannual",
+      label: "Premium 6 måneder",
+      priceId: "price_1TomK2J8DJiiK3vD4SfYI4tq",
+      priceDkk: 109,
+      membershipDurationMonths: 6,
       aiRequestLimit: 15,
       aiRequestPeriod: "monthly"
     }),
@@ -17,15 +27,8 @@
       label: "Premium 12 måneder",
       priceId: "price_1Tnhf9J8DJiiK3vDpQe8srVl",
       priceDkk: 199,
+      membershipDurationMonths: 12,
       aiRequestLimit: 15,
-      aiRequestPeriod: "monthly"
-    }),
-    lifetime: Object.freeze({
-      plan: "lifetime",
-      label: "Livstid",
-      priceId: "price_1TnhfNJ8DJiiK3vDCYTp8C4e",
-      priceDkk: 449,
-      aiRequestLimit: 30,
       aiRequestPeriod: "monthly"
     })
   });

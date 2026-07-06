@@ -16,19 +16,21 @@
     trial: "Premium-prøveperiode",
     free: "Gratis version",
     quarterly: "Premium 3 måneder",
+    semiannual: "Premium 6 måneder",
     yearly: "Premium 12 måneder",
-    lifetime: "Premium livstid"
+    lifetime: "Premium livstid (legacy)"
   };
   const PRICE_TIERS = Object.freeze({
-    early_adopter: Object.freeze({ quarterly: 59, yearly: 199, lifetime: 449 }),
-    standard: Object.freeze({ quarterly: 79, yearly: 249, lifetime: 499 })
+    early_adopter: Object.freeze({ quarterly: 59, semiannual: 109, yearly: 199 }),
+    standard: Object.freeze({ quarterly: 79, semiannual: 129, yearly: 249 })
   });
   const PLAN_DETAILS = {
-    trial: { priceDkk: 0, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
-    free: { priceDkk: 0, aiRequestLimit: 3, aiRequestPeriod: "included" },
-    quarterly: { priceDkk: 59, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
-    yearly: { priceDkk: 199, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
-    lifetime: { priceDkk: 449, aiRequestLimit: 30, aiRequestPeriod: "monthly" }
+    trial: { priceDkk: 0, membershipDurationMonths: null, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    free: { priceDkk: 0, membershipDurationMonths: null, aiRequestLimit: 3, aiRequestPeriod: "included" },
+    quarterly: { priceDkk: 59, membershipDurationMonths: 3, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    semiannual: { priceDkk: 109, membershipDurationMonths: 6, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    yearly: { priceDkk: 199, membershipDurationMonths: 12, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    lifetime: { priceDkk: 449, membershipDurationMonths: null, aiRequestLimit: 15, aiRequestPeriod: "monthly" }
   };
   let pricingContext = {
     strategyVersion: PRICING_STRATEGY_VERSION,
@@ -60,6 +62,9 @@
         : Object.prototype.hasOwnProperty.call(tierPrices, plan)
           ? tierPrices[plan]
           : base.priceDkk,
+      membershipDurationMonths: Number.isFinite(Number(stripePlan?.membershipDurationMonths))
+        ? Number(stripePlan.membershipDurationMonths)
+        : base.membershipDurationMonths,
       stripePriceId: stripePlan?.priceId || null
     };
   }
@@ -105,6 +110,7 @@
       priceDkk: details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
       aiRequestPeriod: details.aiRequestPeriod,
+      membershipDurationMonths: details.membershipDurationMonths,
       aiRequestsUsed: 0,
       aiResetDate: null,
       lastRequestTimestamp: null,
@@ -133,6 +139,7 @@
       priceDkk: details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
       aiRequestPeriod: details.aiRequestPeriod,
+      membershipDurationMonths: details.membershipDurationMonths,
       aiRequestsUsed: 0,
       aiResetDate: null,
       lastRequestTimestamp: null,
@@ -150,10 +157,10 @@
 
   function normalize(value, now = new Date()) {
     if (!value || typeof value !== "object") return createFreeFallback(now);
-    const allowed = ["trial", "free", "quarterly", "yearly", "lifetime"];
+    const allowed = ["trial", "free", "quarterly", "semiannual", "yearly", "lifetime"];
     const membershipType = allowed.includes(value.membershipType) ? value.membershipType : "free";
     const selectedPlan = allowed.includes(value.selectedPlan) ? value.selectedPlan : membershipType;
-    const paidPlan = ["quarterly", "yearly", "lifetime"].includes(selectedPlan);
+    const paidPlan = ["quarterly", "semiannual", "yearly", "lifetime"].includes(selectedPlan);
     const storedPrice = Number(value.priceDkkAtPurchase ?? value.priceDkk);
     const hasLockedPrice = paidPlan && Number.isFinite(storedPrice) && storedPrice > 0 && Boolean(value.membershipStartDate || value.priceLocked);
     const purchaseTier = value.pricingTierAtPurchase || (hasLockedPrice ? "legacy" : null);
@@ -170,6 +177,9 @@
       priceDkk: hasLockedPrice ? storedPrice : details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
       aiRequestPeriod: details.aiRequestPeriod,
+      membershipDurationMonths: Number.isFinite(Number(value.membershipDurationMonths))
+        ? Number(value.membershipDurationMonths)
+        : details.membershipDurationMonths,
       aiRequestsUsed: Number.isFinite(Number(value.aiRequestsUsed)) ? Math.max(0, Number(value.aiRequestsUsed)) : 0,
       aiResetDate: value.aiResetDate || null,
       lastRequestTimestamp: value.lastRequestTimestamp || null,
@@ -215,7 +225,7 @@
     const expiry = parseDate(next.membershipEndDate);
     const trialEnd = parseDate(next.trialEndDate);
     const trialExpired = next.membershipType === "trial" && trialEnd && trialEnd <= now;
-    const paidExpired = ["quarterly", "yearly"].includes(next.membershipType) && expiry && expiry <= now;
+    const paidExpired = ["quarterly", "semiannual", "yearly"].includes(next.membershipType) && expiry && expiry <= now;
 
     if (trialExpired || paidExpired) {
       next.membershipType = "free";
@@ -260,15 +270,15 @@
 
   function renderPricing() {
     const quarterly = planDetails("quarterly");
+    const semiannual = planDetails("semiannual");
     const yearly = planDetails("yearly");
-    const lifetime = planDetails("lifetime");
     const values = {
       membershipPriceQuarterly: formatPrice(quarterly.priceDkk),
+      membershipPriceSemiannual: formatPrice(semiannual.priceDkk),
       membershipPriceYearly: formatPrice(yearly.priceDkk),
-      membershipPriceLifetime: formatPrice(lifetime.priceDkk),
       membershipPopupPriceQuarterly: `${formatPrice(quarterly.priceDkk)} · 15 AI Requests/md.`,
-      membershipPopupPriceYearly: `${formatPrice(yearly.priceDkk)} · 15 AI Requests/md. · Bedste værdi`,
-      membershipPopupPriceLifetime: `${formatPrice(lifetime.priceDkk)} · 30 AI Requests/md.`
+      membershipPopupPriceSemiannual: `${formatPrice(semiannual.priceDkk)} · 15 AI Requests/md.`,
+      membershipPopupPriceYearly: `${formatPrice(yearly.priceDkk)} · 15 AI Requests/md. · Bedste værdi`
     };
     Object.entries(values).forEach(([id, value]) => {
       const element = document.getElementById(id);
@@ -324,9 +334,9 @@
       statusDate.textContent = "Hvis du har gennemført betaling, opdaterer Work4it automatisk Cloud-status om lidt.";
       if (navStatus) navStatus.textContent = "Afventer";
     } else if (data.membershipType === "lifetime") {
-      statusCopy.textContent = `Permanent Premium-adgang med 30 AI Requests pr. måned. Valgt til ${formatPrice(data.priceDkkAtPurchase || data.priceDkk)}.`;
+      statusCopy.textContent = `Legacy Premium-adgang med 15 AI Requests pr. måned. Valgt til ${formatPrice(data.priceDkkAtPurchase || data.priceDkk)}.`;
       statusDate.textContent = `Medlemskabet blev valgt ${formatDate(data.membershipStartDate)}.`;
-      if (navStatus) navStatus.textContent = "Livstid";
+      if (navStatus) navStatus.textContent = "Legacy";
     } else {
       statusCopy.textContent = `Fuld Premium-adgang med 15 AI Requests pr. måned. Valgt til ${formatPrice(data.priceDkkAtPurchase || data.priceDkk)}.`;
       statusDate.textContent = `${remaining} ${remaining === 1 ? "dag" : "dage"} tilbage. Udløber ${formatDate(data.membershipEndDate)}.`;
@@ -367,7 +377,7 @@
   }
 
   function isPaidPlan(plan) {
-    return ["quarterly", "yearly", "lifetime"].includes(plan);
+    return ["quarterly", "semiannual", "yearly"].includes(plan);
   }
 
   function setStripeCheckoutReady(ready = true) {
@@ -418,7 +428,7 @@
     stripeCheckoutState.retryAllowed = true;
     updatePaidButtonsState();
     showConfirmation("Indlæser sikker betaling...");
-    stripeCheckoutState.pendingImport = import(`./stripe-checkout.js?v=20260630-stripe-ready1&retry=${Date.now()}`)
+    stripeCheckoutState.pendingImport = import(`./stripe-checkout.js?v=20260706-premium-6m1&retry=${Date.now()}`)
       .then(() => {
         if (!window.Work4itStripeCheckout?.createCheckout) {
           throw new Error("Stripe Checkout blev indlæst, men blev ikke klar.");
@@ -567,6 +577,7 @@
       priceDkk: details.priceDkk,
       aiRequestLimit: details.aiRequestLimit,
       aiRequestPeriod: details.aiRequestPeriod,
+      membershipDurationMonths: details.membershipDurationMonths,
       pricingStrategyVersion: PRICING_STRATEGY_VERSION,
       updatedAt: iso(now)
     };
@@ -577,6 +588,7 @@
       next.isPremium = false;
       next.membershipStartDate = null;
       next.membershipEndDate = null;
+      next.membershipDurationMonths = null;
       next.aiRequestsUsed = Math.min(Number(current.aiRequestsUsed) || 0, details.aiRequestLimit);
       next.aiResetDate = null;
       next.lastMembershipPopupDate = iso(now);
