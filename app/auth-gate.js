@@ -2,11 +2,15 @@
   "use strict";
 
   const LAST_VIEW_KEY = "work4it:lastActiveView";
+  const RESUME_STATE_KEY = "work4it:resumeState";
+  const LAST_ACTIVITY_KEY = "work4it:lastUserActivityAt";
   const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
   const REDIRECT_PENDING_KEY = "work4it:authRedirectPending";
   const PRIVACY_VERSION = "2026-06-19";
+  const SESSION_GRACE_MS = 90 * 60 * 1000;
   const restoreableViews = new Set([
     "program",
+    "session",
     "today",
     "profile",
     "membership",
@@ -17,6 +21,7 @@
   let appReady = false;
   let cloudReady = false;
   let routingAttempted = false;
+  let pendingGateTimer = null;
 
   function byId(id) {
     return document.getElementById(id);
@@ -30,6 +35,7 @@
   }
 
   function closeNonAuthWindows() {
+    existingWindowManager?.closeNonAuthWindows?.();
     document.getElementById("profile-wizard-root")?.remove();
     document.getElementById("daily-start-wizard-root")?.remove();
     document.getElementById("membershipPopup")?.classList.remove("open");
@@ -57,14 +63,17 @@
     return candidates.find(([name, element]) => name !== except && isVisible(element))?.[0] || "";
   }
 
+  const existingWindowManager = window.WorkitWindowManager || {};
   window.WorkitWindowManager = {
     closeNonAuthWindows,
     activeWindow,
     canOpen(name) {
+      if (existingWindowManager.canOpen) return existingWindowManager.canOpen(name);
       const service = window.FirebaseAuthService;
       return Boolean(service?.isInitialized?.() && service?.getCurrentUser?.() && !activeWindow(name));
     },
     notifyClosed(name) {
+      existingWindowManager.notifyClosed?.(name);
       window.dispatchEvent(new CustomEvent("workit:window-closed", { detail: { name } }));
     }
   };
@@ -118,7 +127,33 @@
     try {
       sessionStorage.setItem(LAST_VIEW_KEY, normalized);
       localStorage.setItem(LAST_VIEW_KEY, normalized);
+      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
     } catch {}
+  }
+
+  function clearResumeState() {
+    [sessionStorage, localStorage].forEach(storage => {
+      try {
+        storage.removeItem(LAST_VIEW_KEY);
+        storage.removeItem(RESUME_STATE_KEY);
+        storage.removeItem(LAST_ACTIVITY_KEY);
+      } catch {}
+    });
+  }
+
+  function hasRecentActivity() {
+    try {
+      const value = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || sessionStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+      return Number.isFinite(value) && value > 0 && Date.now() - value < SESSION_GRACE_MS;
+    } catch {
+      return false;
+    }
+  }
+
+  function clearPendingGateTimer() {
+    if (!pendingGateTimer) return;
+    window.clearTimeout(pendingGateTimer);
+    pendingGateTimer = null;
   }
 
   function setAppInert(locked) {
@@ -304,6 +339,7 @@
       return;
     }
     if (verifiedUser) {
+      clearPendingGateTimer();
       clearGoogleRedirectPending();
       routingAttempted = false;
       cloudReady = false;
@@ -336,6 +372,18 @@
       }
       routingAttempted = false;
       cloudReady = false;
+      if (!detail.error && hasRecentActivity()) {
+        clearPendingGateTimer();
+        showLoading("Gendanner Firebase-session...");
+        setFeedback("Kontrollerer stadig loginstatus. Appen Ã¥bnes automatisk, hvis sessionen er gyldig.");
+        pendingGateTimer = window.setTimeout(() => {
+          if (window.FirebaseAuthService?.getCurrentUser?.()) return;
+          clearGateIdentity();
+          showGate();
+          setFeedback("Log ind for at fortsÃ¦tte.");
+        }, 8000);
+        return;
+      }
       clearGateIdentity();
       showGate();
       setFeedback(detail.error ? authErrorMessage(detail.error) : "Log ind for at fortsætte.");
@@ -367,6 +415,7 @@
     key: LAST_VIEW_KEY,
     save: saveLastActiveView,
     get: readLastActiveView,
+    clear: clearResumeState,
     restore: () => {
       routingAttempted = false;
       routeAfterLoginWhenReady();

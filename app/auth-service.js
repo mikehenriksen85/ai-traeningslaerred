@@ -238,6 +238,7 @@ async function loginWithGoogle() {
 }
 
 async function logout() {
+  window.WorkitViewState?.clear?.();
   return signOut(auth);
 }
 

@@ -211,6 +211,7 @@
     const service = window.FirebaseAuthService;
     if (!service?.logout) return;
     try {
+      window.WorkitViewState?.clear?.();
       await service.logout();
       setAuthFeedback("Du er nu logget ud.");
       renderAccountStatus();
