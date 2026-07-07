@@ -40,6 +40,9 @@
     source: "fallback"
   };
   let activeCheckoutPlan = "";
+  let activeCheckoutAttempt = 0;
+  let checkoutAttemptSerial = 0;
+  let suppressMembershipClickUntil = 0;
   let membershipActivationBound = false;
   let lastMembershipActivation = { plan: "", at: 0 };
   const stripeCheckoutState = {
@@ -449,12 +452,21 @@
   }
 
   async function startStripeCheckout(plan) {
+    if (!isPaidPlan(plan)) {
+      console.warn("[Work4it Membership] Stripe checkout ignored for non-paid plan", { plan });
+      return selectPlan("free");
+    }
+
     const button = document.querySelector(`[data-membership-select="${plan}"]`);
     const defaultText = button?.dataset.defaultText || button?.textContent || "";
     if (activeCheckoutPlan) {
       showConfirmation("Stripe Checkout åbner allerede. Vent et øjeblik...");
       return;
     }
+
+    const attempt = ++checkoutAttemptSerial;
+    activeCheckoutAttempt = attempt;
+
     try {
       activeCheckoutPlan = plan;
       const stripePlan = window.Work4itStripeConfig?.getPlan?.(plan);
@@ -468,6 +480,10 @@
         button.textContent = "Åbner sikker betaling...";
       }
       await ensureStripeCheckoutReady();
+      if (activeCheckoutAttempt !== attempt || activeCheckoutPlan !== plan) {
+        console.info("[Work4it Stripe] Checkout attempt cancelled before redirect", { plan, attempt });
+        return;
+      }
       showConfirmation("Åbner sikker Stripe-betaling...");
       await window.Work4itStripeCheckout.createCheckout(plan);
     } catch (error) {
@@ -475,11 +491,18 @@
         button.disabled = false;
         button.textContent = defaultText || `Vælg ${PLAN_LABELS[plan]}`;
       }
-      const message = window.Work4itStripeCheckout?.friendlyError?.(error) || error?.message || "Stripe Checkout kunne ikke startes.";
-      showConfirmation(message);
+      if (activeCheckoutAttempt === attempt && activeCheckoutPlan === plan) {
+        const message = window.Work4itStripeCheckout?.friendlyError?.(error) || error?.message || "Stripe Checkout kunne ikke startes.";
+        showConfirmation(message);
+      } else {
+        console.info("[Work4it Stripe] Ignored stale checkout error", { plan, attempt, error });
+      }
       console.error("[Work4it Stripe] Checkout failed", error);
     } finally {
-      activeCheckoutPlan = "";
+      if (activeCheckoutAttempt === attempt) {
+        activeCheckoutPlan = "";
+        activeCheckoutAttempt = 0;
+      }
     }
   }
 
@@ -527,14 +550,29 @@
     const trigger = closestMembershipTrigger(event);
     const plan = planFromTrigger(trigger);
     if (!plan) return;
+
+    const now = Date.now();
     const isPointerMouse = event.type === "pointerup" && event.pointerType === "mouse";
     if (isPointerMouse) return;
-    const now = Date.now();
-    if (lastMembershipActivation.plan === plan && now - lastMembershipActivation.at < 700) {
+
+    if (event.type === "click" && now < suppressMembershipClickUntil) {
       event.preventDefault?.();
       event.stopPropagation?.();
+      if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
       return;
     }
+
+    if (event.type === "pointerup" || event.type === "touchend") {
+      suppressMembershipClickUntil = now + 950;
+    }
+
+    if (now - lastMembershipActivation.at < 700) {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+      return;
+    }
+
     lastMembershipActivation = { plan, at: now };
     event.preventDefault?.();
     event.stopPropagation?.();
@@ -612,6 +650,10 @@
     }
 
     const current = getMembership(now);
+    if (plan === "free") {
+      activeCheckoutPlan = "";
+      activeCheckoutAttempt = 0;
+    }
     const details = planDetails(plan);
     const next = {
       ...current,

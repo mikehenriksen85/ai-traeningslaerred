@@ -1874,19 +1874,17 @@
       .desktop-table-label { display: none; }
       .mobile-table-label { display: inline; }
       .table-head, .set-row {
-        grid-template-columns: 22px 38px 44px minmax(62px, 1fr) 44px;
-        grid-template-areas:
-          "set previous weight reps complete"
-          "pause pause pause pause pause";
-        gap: 3px;
+        grid-template-columns: 26px 42px minmax(54px, .82fr) minmax(76px, 1.18fr) 48px;
+        grid-template-areas: "set previous weight reps complete";
+        gap: 4px;
       }
       .table-head > :nth-child(1), .set-row > :nth-child(1) { grid-area: set; }
       .table-head > :nth-child(2), .set-row > :nth-child(2) { grid-area: previous; }
       .table-head > :nth-child(3), .set-row > :nth-child(3) { grid-area: weight; }
       .table-head > :nth-child(4), .set-row > :nth-child(4) { grid-area: reps; }
-      .table-head > :nth-child(5), .set-row > :nth-child(5) { grid-area: pause; }
+      .table-head > :nth-child(5), .set-row > :nth-child(5) { display: none; }
       .table-head > :nth-child(6), .set-row > :nth-child(6) { grid-area: complete; }
-      .table-head { font-size: var(--font-size-compact); }
+      .table-head { font-size: var(--font-size-compact); align-items: end; }
       .set-row input { width: 100%; min-width: 0; }
       .set-row .reps { padding-inline: 4px; font-size: 16px !important; }
       .set-complete-control input { width: 1px; min-width: 0; }
@@ -8739,7 +8737,7 @@
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260706-premium-6m1"></script>
-  <script src="membership.js?v=20260706-membership-touch1"></script>
+  <script src="membership.js?v=20260707-free-flow1"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
   <script type="module" src="stripe-checkout.js?v=20260706-premium-6m1"></script>
   <script type="module" src="auth-service.js?v=20260706-resume-state1"></script>
@@ -8748,7 +8746,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260707-mobile-set-row1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
