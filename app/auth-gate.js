@@ -375,12 +375,12 @@
       if (!detail.error && hasRecentActivity()) {
         clearPendingGateTimer();
         showLoading("Gendanner Firebase-session...");
-        setFeedback("Kontrollerer stadig loginstatus. Appen Ã¥bnes automatisk, hvis sessionen er gyldig.");
+        setFeedback("Kontrollerer stadig loginstatus. Appen åbnes automatisk, hvis sessionen er gyldig.");
         pendingGateTimer = window.setTimeout(() => {
           if (window.FirebaseAuthService?.getCurrentUser?.()) return;
           clearGateIdentity();
           showGate();
-          setFeedback("Log ind for at fortsÃ¦tte.");
+          setFeedback("Log ind for at fortsætte.");
         }, 8000);
         return;
       }
