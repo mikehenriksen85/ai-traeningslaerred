@@ -622,11 +622,46 @@
     .set-progress-label { color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; }
     .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--blue); color: var(--text-primary); border: 0; border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
 
-    .exercise { background: rgba(0,0,0,.12); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 18px; }
+    .exercise { background: rgba(0,0,0,.12); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 18px; transition: border-color .16s ease, box-shadow .16s ease, opacity .16s ease, transform .16s ease; }
     .exercise-transition { display: none; color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); margin-bottom: 9px; }
     .exercise-transition.show { display: block; }
     .exercise-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 2.4fr); gap: 12px; align-items: start; margin-bottom: 10px; }
+    .exercise-title-row { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+    .exercise-drag-handle {
+      flex: 0 0 auto;
+      width: 32px;
+      min-height: 32px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(148,163,184,.32);
+      border-radius: 6px;
+      background: rgba(15,23,42,.48);
+      color: var(--text-secondary);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .exercise-drag-handle:active { cursor: grabbing; }
+    .exercise-drag-handle:focus-visible { outline: 3px solid rgba(59,130,246,.5); outline-offset: 2px; }
     .exercise-name { color: var(--text-success); font-size: var(--font-size-h3); font-weight: var(--font-weight-semibold); min-width: 0; line-height: var(--line-height-heading); overflow-wrap: anywhere; }
+    .exercise.dragging {
+      opacity: .76;
+      border-color: var(--green);
+      box-shadow: 0 18px 36px rgba(0,0,0,.34), 0 0 0 2px rgba(34,197,94,.22);
+      transform: scale(.995);
+      z-index: 4;
+    }
+    .exercise-drop-marker {
+      height: 7px;
+      margin: -5px 0 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      box-shadow: 0 0 18px rgba(34,197,94,.38);
+    }
+    body.exercise-dragging { cursor: grabbing; }
     .exercise-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; justify-content: stretch; align-items: stretch; }
     .exercise-actions .danger-slot { grid-column: auto; }
     .small-btn { min-width: 0; max-width: 100%; background: var(--input); border: 1px solid var(--border); color: var(--text-accent); border-radius: 5px; padding: 6px 6px; min-height: 32px; cursor: pointer; white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; text-align: center; }
@@ -4615,6 +4650,118 @@
     window.addEventListener("resize", positionExercisePickerMenu);
     window.addEventListener("scroll", positionExercisePickerMenu, true);
 
+    const exerciseDragState = {
+      block: null,
+      marker: null,
+      pointerId: null,
+      handle: null,
+      lastClientY: 0,
+      scrollFrame: 0
+    };
+
+    function bindExerciseDragHandle(block) {
+      const handle = block?.querySelector?.(".exercise-drag-handle");
+      if (!handle || handle.dataset.dragBound === "true") return;
+      handle.dataset.dragBound = "true";
+      handle.addEventListener("pointerdown", event => startExerciseDrag(event, block));
+    }
+
+    function startExerciseDrag(event, block) {
+      if (!block || event.button && event.button !== 0) return;
+      const container = $("exercises");
+      if (!container || container.querySelectorAll(".exercise").length < 2) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const marker = document.createElement("div");
+      marker.className = "exercise-drop-marker";
+      block.after(marker);
+      exerciseDragState.block = block;
+      exerciseDragState.marker = marker;
+      exerciseDragState.pointerId = event.pointerId;
+      exerciseDragState.handle = event.currentTarget;
+      exerciseDragState.lastClientY = event.clientY;
+      block.classList.add("dragging");
+      document.body.classList.add("exercise-dragging");
+      try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch (_) {}
+      window.addEventListener("pointermove", moveExerciseDrag, { passive: false });
+      window.addEventListener("pointerup", finishExerciseDrag, { passive: false });
+      window.addEventListener("pointercancel", cancelExerciseDrag, { passive: false });
+      startExerciseAutoScroll();
+    }
+
+    function moveExerciseDrag(event) {
+      const { block, marker } = exerciseDragState;
+      if (!block || !marker) return;
+      event.preventDefault();
+      exerciseDragState.lastClientY = event.clientY;
+      const container = $("exercises");
+      const siblings = [...container.querySelectorAll(".exercise:not(.dragging)")];
+      const before = siblings.find(sibling => {
+        const rect = sibling.getBoundingClientRect();
+        return event.clientY < rect.top + rect.height / 2;
+      });
+      container.insertBefore(marker, before || null);
+    }
+
+    function startExerciseAutoScroll() {
+      if (exerciseDragState.scrollFrame) return;
+      const tick = () => {
+        if (!exerciseDragState.block) {
+          exerciseDragState.scrollFrame = 0;
+          return;
+        }
+        const edge = 82;
+        const y = exerciseDragState.lastClientY;
+        const bottom = window.innerHeight - edge;
+        let delta = 0;
+        if (y < edge) delta = -14;
+        else if (y > bottom) delta = 14;
+        if (delta) window.scrollBy({ top: delta, behavior: "auto" });
+        exerciseDragState.scrollFrame = requestAnimationFrame(tick);
+      };
+      exerciseDragState.scrollFrame = requestAnimationFrame(tick);
+    }
+
+    function finishExerciseDrag(event) {
+      event?.preventDefault?.();
+      const { block, marker, handle, pointerId } = exerciseDragState;
+      if (block && marker?.parentNode) {
+        marker.parentNode.insertBefore(block, marker);
+        block.classList.remove("dragging");
+        marker.remove();
+        updateWorkoutProgress();
+        updateEstimatedTime();
+        updateEstimatedCalories();
+        autoSave();
+        $("autosaveStatus").textContent = "Øvelsesrækkefølge gemt";
+      }
+      try { handle?.releasePointerCapture?.(pointerId); } catch (_) {}
+      cleanupExerciseDrag();
+    }
+
+    function cancelExerciseDrag(event) {
+      event?.preventDefault?.();
+      const { block, marker, handle, pointerId } = exerciseDragState;
+      block?.classList.remove("dragging");
+      marker?.remove();
+      try { handle?.releasePointerCapture?.(pointerId); } catch (_) {}
+      cleanupExerciseDrag();
+    }
+
+    function cleanupExerciseDrag() {
+      if (exerciseDragState.scrollFrame) cancelAnimationFrame(exerciseDragState.scrollFrame);
+      exerciseDragState.block = null;
+      exerciseDragState.marker = null;
+      exerciseDragState.pointerId = null;
+      exerciseDragState.handle = null;
+      exerciseDragState.lastClientY = 0;
+      exerciseDragState.scrollFrame = 0;
+      document.body.classList.remove("exercise-dragging");
+      window.removeEventListener("pointermove", moveExerciseDrag);
+      window.removeEventListener("pointerup", finishExerciseDrag);
+      window.removeEventListener("pointercancel", cancelExerciseDrag);
+    }
+
     function addExercise(name = null, muscle = "Ryg", savedSets = null, metadata = null) {
       if (!name) name = `${t("chooseExercisePrefix")} ${t("exerciseHeader").toLowerCase()}...`;
       if (muscleGroupKeys.includes(name)) {
@@ -4636,7 +4783,10 @@
       block.innerHTML = `
         <div class="exercise-transition" id="transition-${slot}"></div>
         <div class="exercise-head">
-          <div class="exercise-name" id="name-${slot}" data-muscle="${esc(muscle)}">${esc(name)}</div>
+          <div class="exercise-title-row">
+            <button class="exercise-drag-handle" type="button" aria-label="Flyt øvelse" title="Hold og træk for at flytte øvelsen">⠿</button>
+            <div class="exercise-name" id="name-${slot}" data-muscle="${esc(muscle)}">${esc(name)}</div>
+          </div>
           <div class="exercise-actions">
             <button class="small-btn" onclick="openExerciseDemo('${slot}')">Demo</button>
             <button class="small-btn orange" onclick="openReplacementDialog('${slot}')" title="Erstat øvelse" aria-label="Erstat øvelse">🔄 Erstat</button>
@@ -4656,6 +4806,7 @@
         <div class="set-controls"><span>${t("adjustSets")}</span><button class="square" onclick="changeSets('${slot}',-1)">-</button><b id="count-${slot}">2</b><button class="square" onclick="changeSets('${slot}',1)">+</button></div>
       `;
       $("exercises").appendChild(block);
+      bindExerciseDragHandle(block);
       if (isCardio) {
         block.querySelector(".table-head").style.display = "none";
         block.querySelector(".set-controls").style.display = "none";
@@ -8737,7 +8888,7 @@
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260706-premium-6m1"></script>
-  <script src="membership.js?v=20260707-free-flow1"></script>
+  <script src="membership.js?v=20260707-free-flow2"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
   <script type="module" src="stripe-checkout.js?v=20260706-premium-6m1"></script>
   <script type="module" src="auth-service.js?v=20260706-resume-state1"></script>
@@ -8746,7 +8897,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260707-mobile-set-row1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260707-exercise-reorder1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

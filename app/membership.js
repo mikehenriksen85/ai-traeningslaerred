@@ -599,16 +599,20 @@
     });
   }
 
+  function bindMembershipElement(element) {
+    if (!element || element.dataset.membershipBound === "true") return;
+    element.dataset.membershipBound = "true";
+    element.addEventListener("pointerup", activateMembershipFromEvent, { capture: true });
+    element.addEventListener("touchend", activateMembershipFromEvent, { capture: true, passive: false });
+    element.addEventListener("click", activateMembershipFromEvent, { capture: true });
+  }
+
   function bindMembershipActivation() {
     if (!membershipActivationBound) {
       membershipActivationBound = true;
-      document.addEventListener("pointerup", activateMembershipFromEvent, true);
-      document.addEventListener("touchend", activateMembershipFromEvent, { capture: true, passive: false });
-      document.addEventListener("click", activateMembershipFromEvent, true);
+      console.info("[Work4it Membership] Using direct plan bindings for membership selection.");
     }
-    document.querySelectorAll("[data-membership-select]").forEach(button => {
-      button.dataset.membershipBound = "true";
-    });
+    document.querySelectorAll("[data-membership-select], [data-membership-plan]").forEach(bindMembershipElement);
     document.querySelectorAll("[data-membership-plan]").forEach(card => {
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
