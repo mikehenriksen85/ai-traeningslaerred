@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v73-exercise-reorder1";
+const CACHE_NAME = "work4it-shell-v74-default-one-set1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -11,7 +11,7 @@ const APP_SHELL = [
   "./calorie-estimator.js?v=20260615-cardio1",
   "./training-goal-engine.js?v=20260620-calisthenics1",
   "./workout-program-store.js?v=20260615-days1",
-  "./screenshot-import.js?v=20260701-kg-input1",
+  "./screenshot-import.js?v=20260710-default-one-set1",
   "./wizard-store.js?v=20260621-cloud-primary1",
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",

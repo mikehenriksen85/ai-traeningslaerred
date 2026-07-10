@@ -7,6 +7,10 @@
   let state = createState();
   let scriptPromise = null;
 
+  function defaultNewExerciseSetCount() {
+    return Math.max(1, Number(window.Work4itDefaults?.newExerciseSetCount) || 1);
+  }
+
   function createState() {
     return {
       file: null,
@@ -316,7 +320,7 @@
           matchConfidence: match.confidence,
           matchStatus: match.status,
           matchSuggestions: match.suggestions,
-          setCount: prescription.setCount || 3,
+          setCount: prescription.setCount || defaultNewExerciseSetCount(),
           setCountInferred: !prescription.setCount,
           reps: prescription.reps || "",
           weight: prescription.weight,
@@ -589,7 +593,7 @@
       matchConfidence: 0,
       matchStatus: "needs_review",
       matchSuggestions: getCatalog().slice(0, 8).map(item => ({ name: item.name, muscle: item.muscle, confidence: 0 })),
-      setCount: 3,
+      setCount: defaultNewExerciseSetCount(),
       reps: "",
       weight: "",
       pause: "",

@@ -3917,6 +3917,16 @@
       return trainingContext().goal || "general_health";
     }
 
+    const DEFAULT_NEW_EXERCISE_SET_COUNT = 1;
+    window.Work4itDefaults = Object.freeze({
+      ...(window.Work4itDefaults || {}),
+      newExerciseSetCount: DEFAULT_NEW_EXERCISE_SET_COUNT
+    });
+
+    function defaultNewExerciseSetCount() {
+      return DEFAULT_NEW_EXERCISE_SET_COUNT;
+    }
+
     function currentTrainingGoals() {
       const context = trainingContext();
       return window.TrainingGoalEngine?.normalizeGoalPriorities?.(
@@ -3944,7 +3954,7 @@
         context.experience || "intermediate",
         position
       ) || {
-        sets: 3,
+        sets: defaultNewExerciseSetCount(),
         targetReps: "8-12",
         pauseSeconds: suggestedPauseSeconds(name, muscle, false),
         role: "accessory",
@@ -3954,7 +3964,7 @@
 
     function plannedSetsForExercise(name, muscle, position = 0) {
       const plan = goalPrescription(name, muscle, position);
-      return Array.from({ length: plan.sets }, () => ({
+      return Array.from({ length: defaultNewExerciseSetCount() }, () => ({
         prev: "-",
         completed: false,
         weight: "",
@@ -4374,16 +4384,17 @@
       currentProgramDayIndex = 0;
       activeExerciseCountPreference = selected.length;
       setExercisePickerContext("Calisthenics");
-      selected.forEach(([name, muscle, sets, targetReps, pauseSeconds], position) => {
+      selected.forEach(([name, muscle, _templateSets, targetReps, pauseSeconds], position) => {
+        const setCount = defaultNewExerciseSetCount();
         const plan = {
           ...goalPrescription(name, muscle, position),
-          sets,
+          sets: setCount,
           targetReps,
           pauseSeconds,
           trainingStyle: "calisthenics",
           template: templateKey
         };
-        const savedSets = Array.from({ length: sets }, () => ({
+        const savedSets = Array.from({ length: setCount }, () => ({
           prev: "-", completed: false, weight: "", reps: "", targetReps,
           pause: formatPause(pauseSeconds), pauseManual: false
         }));
@@ -4803,7 +4814,7 @@
           <div>${t("ok")}</div>
         </div>
         <div id="sets-${slot}"></div>
-        <div class="set-controls"><span>${t("adjustSets")}</span><button class="square" onclick="changeSets('${slot}',-1)">-</button><b id="count-${slot}">2</b><button class="square" onclick="changeSets('${slot}',1)">+</button></div>
+        <div class="set-controls"><span>${t("adjustSets")}</span><button class="square" onclick="changeSets('${slot}',-1)">-</button><b id="count-${slot}">${defaultNewExerciseSetCount()}</b><button class="square" onclick="changeSets('${slot}',1)">+</button></div>
       `;
       $("exercises").appendChild(block);
       bindExerciseDragHandle(block);
@@ -7697,7 +7708,7 @@
         used.add(exercise.name);
         const plan = window.TrainingGoalEngine?.prescription?.(exercise.name, exercise.muscle, goal, level, index)
           || goalPrescription(exercise.name, exercise.muscle, index);
-        const sets = Array.from({ length: plan.sets || 3 }, () => ({
+        const sets = Array.from({ length: defaultNewExerciseSetCount() }, () => ({
           prev: "", completed: false, weight: "", reps: "", targetReps: plan.targetReps || "8-12",
           pause: formatPause(plan.pauseSeconds || 60), pauseManual: false
         }));
@@ -8378,7 +8389,7 @@
               sets: []
             };
           }
-          const setCount = Math.max(1, Number(exercise.sets) || 3);
+          const setCount = defaultNewExerciseSetCount();
           const plan = {
             ...goalPrescription(exercise.name, exercise.muscle, exerciseIndex),
             ...exercise,
@@ -8874,7 +8885,7 @@
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
-  <script src="screenshot-import.js?v=20260701-kg-input1"></script>
+  <script src="screenshot-import.js?v=20260710-default-one-set1"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-system.js?v=20260628-ai20"></script>
@@ -8897,7 +8908,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260707-exercise-reorder1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260710-default-one-set1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
