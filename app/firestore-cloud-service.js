@@ -28,6 +28,7 @@ const KEYS = {
   customExercises: "custom_exercises",
   trash: "deleted_workout_programs",
   activeWorkout: "active_workout_autosave",
+  exerciseHistory: "work4it_exercise_history_v1",
   lastProgram: "last_active_program_id",
   theme: "work4it_theme"
 };
@@ -47,7 +48,8 @@ const PATHS = {
   legacySettings: uid => ["users", uid, "profile", "appState"],
   membership: uid => ["users", uid, "membership", "main"],
   appState: (uid, stateId = "main") => ["users", uid, "appState", stateId],
-  activeWorkout: uid => ["users", uid, "activeWorkout", "current"]
+  activeWorkout: uid => ["users", uid, "activeWorkout", "current"],
+  exerciseHistory: uid => ["users", uid, "records", "exerciseHistory"]
 };
 const storageScope = window.WorkitStorageScope;
 let activeUid = "";
@@ -496,6 +498,7 @@ async function syncAllLocalData(uid = activeUid) {
       upsertCollection(["users", uid, COLLECTIONS.imports], parseLocal(KEYS.imports, []), "import"),
       upsertCollection(["users", uid, COLLECTIONS.customExercises], parseLocal(KEYS.customExercises, []), "exercise"),
       upsertCollection(["users", uid, COLLECTIONS.trash], parseLocal(KEYS.trash, []), "deleted"),
+      upsertDocument(doc(db, ...PATHS.exerciseHistory(uid)), parseLocal(KEYS.exerciseHistory, {})),
       syncActiveWorkout(uid)
     ]);
     await setSyncMetadata(uid, {
@@ -562,7 +565,8 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
       aiHistory,
       imports,
       customExercises,
-      trash
+      trash,
+      exerciseHistory
     ] = await Promise.all([
       profileSnapshot,
       userSnapshot,
@@ -578,7 +582,8 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
       readCollection(["users", uid, COLLECTIONS.aiHistory]),
       readCollection(["users", uid, COLLECTIONS.imports]),
       readCollection(["users", uid, COLLECTIONS.customExercises]),
-      readCollection(["users", uid, COLLECTIONS.trash])
+      readCollection(["users", uid, COLLECTIONS.trash]),
+      getDocument(PATHS.exerciseHistory(uid))
     ]);
 
     const cloudProfile = profile.exists() ? cleanDocument(profile.data()) : null;
@@ -591,13 +596,14 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     if (daily.exists()) writeLocal(KEYS.daily, cleanDocument(daily.data()));
     else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.daily, null);
     const rootUserData = userRoot.exists() ? cleanDocument(userRoot.data()) : null;
-    if (membership.data || rootUserData?.role) {
+    const rootIsPermanentAdmin = window.Work4itAdminConfig?.isPermanentAdminUser?.(rootUserData);
+    if (membership.data || rootIsPermanentAdmin) {
       writeLocal(KEYS.membership, {
         ...(membership.data || {}),
-        ...(rootUserData?.role ? {
-          role: rootUserData.role,
-          membership: rootUserData.membership || membership.data?.membership || undefined,
-          aiRequests: rootUserData.aiRequests ?? membership.data?.aiRequests
+        ...(rootIsPermanentAdmin ? window.Work4itAdminConfig.adminMembershipOverlay?.() : {}),
+        ...(rootIsPermanentAdmin ? {
+          email: rootUserData?.email || "",
+          displayName: rootUserData?.displayName || ""
         } : {})
       });
     }
@@ -640,6 +646,8 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     writeCloudCollection(KEYS.imports, imports);
     writeCloudCollection(KEYS.customExercises, customExercises);
     writeCloudCollection(KEYS.trash, trash);
+    if (exerciseHistory.exists()) writeLocal(KEYS.exerciseHistory, cleanDocument(exerciseHistory.data()));
+    else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.exerciseHistory, null);
 
     if (activeWorkout.exists()) {
       const remoteAutosave = cleanDocument(activeWorkout.data());
@@ -652,7 +660,7 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
 
     localFingerprint = currentLocalFingerprint();
     const cloudHasData = hasCloudProfile || daily.exists() || Boolean(membership.data) || Boolean(settings.data || appState.data) ||
-      activeWorkout.exists() || workoutDraft.exists() || [programs, sessions, measurements, aiHistory, imports, customExercises, trash]
+      activeWorkout.exists() || workoutDraft.exists() || exerciseHistory.exists() || [programs, sessions, measurements, aiHistory, imports, customExercises, trash]
         .some(values => values.length > 0);
     window.dispatchEvent(new CustomEvent("firestore:data-hydrated", {
       detail: { uid, source: "firestore", authoritative: !preserveLocalWhenCloudEmpty, cloudHasData }
@@ -837,6 +845,11 @@ window.addEventListener("membership:changed", event => {
     window.dispatchEvent(new CustomEvent("firestore:membership-save-failed", { detail: { error } }));
   });
 });
+window.addEventListener("exercise-history:changed", event => {
+  if (!event.detail) return;
+  queueSync();
+});
+
 window.addEventListener("work4it:theme-changed", event => {
   const theme = event.detail?.theme || "work4it";
   const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
@@ -915,7 +928,8 @@ async function exportCurrentUserData(uid = activeUid) {
     customExercises,
     deletedPrograms,
     trashAlias,
-    records
+    records,
+    exerciseHistory
   ] = await Promise.all([
     readDoc(...PATHS.profile(uid)),
     readDoc(...PATHS.daily(uid)),
@@ -933,7 +947,8 @@ async function exportCurrentUserData(uid = activeUid) {
     readCollection(["users", uid, "customExercises"]),
     readCollection(["users", uid, "deletedPrograms"]),
     readCollection(["users", uid, "trash"]),
-    readCollection(["users", uid, "records"])
+    readCollection(["users", uid, "records"]),
+    readDoc(...PATHS.exerciseHistory(uid))
   ]);
 
   return {
@@ -954,6 +969,7 @@ async function exportCurrentUserData(uid = activeUid) {
     customExercises,
     trash: { deletedPrograms, trashAlias },
     records,
+    exerciseHistory,
     localCacheBackup: storageScope?.exportCurrentUserData?.() || {}
   };
 }
@@ -1015,6 +1031,12 @@ window.FirestoreDataService = {
   syncAllLocalData,
   clearActiveWorkout,
   hydrateFromFirestore,
+  saveExerciseHistoryToCloud: async history => {
+    assertCloudUser("Øvelseshistorik");
+    await upsertDocument(doc(db, ...PATHS.exerciseHistory(activeUid)), history);
+    localFingerprint = currentLocalFingerprint();
+    return true;
+  },
   exportCurrentUserData,
   deleteCurrentUserData,
   requestMigration: async () => {

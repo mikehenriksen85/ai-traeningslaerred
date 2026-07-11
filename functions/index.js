@@ -51,9 +51,31 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8767"
 ]);
 
+function isPermanentAdminEmail(email) {
+  return ADMIN_EMAILS.has(String(email || "").trim().toLowerCase());
+}
+
 function isAdminRequest(request) {
   const email = String(request.auth?.token?.email || "").toLowerCase();
-  return Boolean(request.auth?.uid && ADMIN_EMAILS.has(email));
+  return Boolean(request.auth?.uid && isPermanentAdminEmail(email));
+}
+
+function adminMembershipPayload() {
+  return {
+    role: "admin",
+    membership: "lifetime",
+    membershipType: "premium_12",
+    membershipStatus: "active",
+    selectedPlan: "premium_12",
+    isPremium: true,
+    aiRequestLimit: -1,
+    aiRequestsUsed: 0,
+    aiRequests: -1,
+    aiRequestPeriod: "unlimited",
+    aiResetDate: null,
+    lastRequestTimestamp: null,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
 }
 
 function authTimestamp(value) {
@@ -92,9 +114,9 @@ async function ensureFirestoreUserForAuthRecord(userRecord) {
   ]);
   const existingUser = userSnapshot.exists ? userSnapshot.data() || {} : {};
   const membershipData = membershipSnapshot.exists ? membershipSnapshot.data() || {} : {};
-  const userRole = existingUser.role === "admin" ? "admin" : "";
+  const userRole = isPermanentAdminEmail(userRecord.email) ? "admin" : "";
   const membershipType = userRole
-    ? existingUser.membership || "lifetime"
+    ? "lifetime"
     : normalizeMembershipType(existingUser.membership || membershipData.membershipType || "free", userRole);
   const providerIds = authProviderIds(userRecord);
   const createdAt = existingUser.createdAt || authTimestamp(userRecord.metadata?.creationTime);
@@ -106,7 +128,8 @@ async function ensureFirestoreUserForAuthRecord(userRecord) {
     emailVerified: Boolean(userRecord.emailVerified),
     providerIds,
     membership: membershipType,
-    ...(userRole ? { role: userRole } : {}),
+    role: userRole || admin.firestore.FieldValue.delete(),
+    aiRequests: userRole ? -1 : admin.firestore.FieldValue.delete(),
     createdAt,
     lastLoginAt: authTimestamp(userRecord.metadata?.lastSignInTime),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -127,20 +150,29 @@ async function ensureFirestoreUserForAuthRecord(userRecord) {
   await Promise.all([
     userRef.set(rootPayload, { merge: true }),
     profileRef.set(profilePayload, { merge: true }),
-    membershipSnapshot.exists
-      ? Promise.resolve()
-      : membershipRef.set({
-        membershipType: "free",
-        membershipStatus: "free",
-        selectedPlan: "free",
-        isPremium: false,
-        aiRequestLimit: 3,
-        aiRequestsUsed: 0,
-        aiResetDate: null,
-        lastRequestTimestamp: null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    userRole
+      ? membershipRef.set({
+        ...adminMembershipPayload(),
+        createdAt: membershipSnapshot.exists ? (membershipData.createdAt || admin.firestore.FieldValue.serverTimestamp()) : admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true })
+      : membershipSnapshot.exists
+        ? membershipRef.set({
+          role: admin.firestore.FieldValue.delete(),
+          aiRequests: admin.firestore.FieldValue.delete(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
+        : membershipRef.set({
+          membershipType: "free",
+          membershipStatus: "free",
+          selectedPlan: "free",
+          isPremium: false,
+          aiRequestLimit: 3,
+          aiRequestsUsed: 0,
+          aiResetDate: null,
+          lastRequestTimestamp: null,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
   ]);
 
   return {
@@ -246,8 +278,11 @@ exports.createStripeCheckoutSession = onCall({
     throw new HttpsError("unauthenticated", "Du skal være logget ind for at købe Premium.");
   }
 
-  const userSnapshot = await admin.firestore().doc(`users/${uid}`).get();
-  if (userSnapshot.exists && userSnapshot.data()?.role === "admin") {
+  const [userSnapshot, authUser] = await Promise.all([
+    admin.firestore().doc(`users/${uid}`).get(),
+    admin.auth().getUser(uid).catch(() => null)
+  ]);
+  if (isPermanentAdminEmail(authUser?.email) || (userSnapshot.exists && userSnapshot.data()?.role === "admin" && isPermanentAdminEmail(userSnapshot.data()?.email))) {
     throw new HttpsError("failed-precondition", "Administrator har allerede fuld adgang og kan ikke sendes til Stripe Checkout.");
   }
 
@@ -368,6 +403,23 @@ async function activateMembershipFromSession(session) {
   const priceId = session.metadata?.priceId || config.priceId;
   const membershipRef = admin.firestore().doc(`users/${uid}/membership/main`);
   const checkoutRef = admin.firestore().doc(`users/${uid}/checkoutSessions/${session.id}`);
+  const authUser = await admin.auth().getUser(uid).catch(() => null);
+  if (isPermanentAdminEmail(authUser?.email)) {
+    await Promise.all([
+      admin.firestore().doc(`users/${uid}`).set({
+        role: "admin",
+        membership: "lifetime",
+        aiRequests: -1,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }),
+      membershipRef.set(adminMembershipPayload(), { merge: true }),
+      checkoutRef.set({
+        status: "ignored_admin",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true })
+    ]);
+    return;
+  }
 
   await admin.firestore().runTransaction(async transaction => {
     transaction.set(membershipRef, {

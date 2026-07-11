@@ -17,6 +17,7 @@ import {
   updatePassword
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
+  deleteField,
   doc,
   getDoc,
   serverTimestamp,
@@ -30,6 +31,29 @@ let authStateChecked = false;
 let authInitError = null;
 const PRIVACY_CONSENT_KEY = "work4it:privacyConsent";
 const REDIRECT_PENDING_KEY = "work4it:authRedirectPending";
+
+function isPermanentAdminUser(user) {
+  return Boolean(window.Work4itAdminConfig?.isPermanentAdminUser?.(user)) ||
+    String(user?.email || "").trim().toLowerCase() === "mikehenriksen85@gmail.com";
+}
+
+function permanentAdminMembershipPayload() {
+  return {
+    role: "admin",
+    membership: "lifetime",
+    membershipType: "premium_12",
+    membershipStatus: "active",
+    selectedPlan: "premium_12",
+    isPremium: true,
+    aiRequestLimit: -1,
+    aiRequestsUsed: 0,
+    aiRequests: -1,
+    aiRequestPeriod: "unlimited",
+    aiResetDate: null,
+    lastRequestTimestamp: null,
+    updatedAt: serverTimestamp()
+  };
+}
 
 function markRedirectPending() {
   const value = String(Date.now());
@@ -85,6 +109,7 @@ async function ensureUserDocument(user) {
     getDoc(membershipReference)
   ]);
   const existingUser = userSnapshot.exists() ? userSnapshot.data() : {};
+  const isPermanentAdmin = isPermanentAdminUser(user);
   const normalizedMembership = value => ({
     quarterly: "premium_3",
     semiannual: "premium_6",
@@ -94,8 +119,8 @@ async function ensureUserDocument(user) {
   }[value] || value);
   const rawMembershipType = existingUser?.membership || membershipSnapshot.data()?.membershipType;
   const mappedMembershipType = normalizedMembership(rawMembershipType);
-  const membershipType = existingUser?.role === "admin"
-    ? rawMembershipType || "lifetime"
+  const membershipType = isPermanentAdmin
+    ? "lifetime"
     : ["free", "premium_3", "premium_6", "premium_12"].includes(mappedMembershipType)
       ? mappedMembershipType
     : "free";
@@ -107,7 +132,9 @@ async function ensureUserDocument(user) {
     photoURL: user.photoURL || "",
     emailVerified: Boolean(user.emailVerified),
     providerIds,
-    membership: membershipType,
+    membership: isPermanentAdmin ? "lifetime" : membershipType,
+    role: isPermanentAdmin ? "admin" : deleteField(),
+    aiRequests: isPermanentAdmin ? -1 : deleteField(),
     createdAt: existingUser?.createdAt || serverTimestamp(),
     lastLoginAt: serverTimestamp(),
     updatedAt: serverTimestamp()
@@ -127,7 +154,12 @@ async function ensureUserDocument(user) {
     updatedAt: serverTimestamp()
   }, { merge: true });
 
-  if (!membershipSnapshot.exists()) {
+  if (isPermanentAdmin) {
+    await setDoc(membershipReference, {
+      ...permanentAdminMembershipPayload(),
+      createdAt: membershipSnapshot.exists() ? (membershipSnapshot.data()?.createdAt || serverTimestamp()) : serverTimestamp()
+    }, { merge: true });
+  } else if (!membershipSnapshot.exists()) {
     await setDoc(membershipReference, {
       membershipType: "free",
       membershipStatus: "free",
@@ -137,7 +169,15 @@ async function ensureUserDocument(user) {
       aiRequestsUsed: 0,
       aiResetDate: null,
       lastRequestTimestamp: null,
+      role: deleteField(),
+      aiRequests: deleteField(),
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } else if (membershipSnapshot.data()?.role === "admin") {
+    await setDoc(membershipReference, {
+      role: deleteField(),
+      aiRequests: deleteField(),
       updatedAt: serverTimestamp()
     }, { merge: true });
   }

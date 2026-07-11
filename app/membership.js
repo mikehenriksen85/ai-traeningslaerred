@@ -54,6 +54,11 @@
     pendingImport: null
   };
 
+  function isPermanentAdminIdentity(value = {}) {
+    return Boolean(window.Work4itAdminConfig?.isPermanentAdminUser?.(value)) ||
+      Boolean(window.Work4itAdminConfig?.isCurrentUserAdmin?.());
+  };
+
   function normalizedPricingTier(value) {
     return value === "standard" ? "standard" : "early_adopter";
   }
@@ -129,7 +134,7 @@
 
   function normalize(value, now = new Date()) {
     if (!value || typeof value !== "object") return createFreeFallback(now);
-    const admin = value.role === "admin";
+    const admin = isPermanentAdminIdentity(value);
     const allowed = ["free", "premium_3", "premium_6", "premium_12"];
     const normalizePlan = plan => {
       const mapped = PLAN_ALIASES[plan] || plan;
@@ -170,6 +175,7 @@
       selectedPlan,
       priceDkk: hasLockedPrice ? storedPrice : details.priceDkk,
       aiRequestLimit: admin ? -1 : details.aiRequestLimit,
+      aiRequests: admin ? -1 : undefined,
       aiRequestPeriod: admin ? "unlimited" : details.aiRequestPeriod,
       membershipDurationMonths: Number.isFinite(Number(value.membershipDurationMonths))
         ? Number(value.membershipDurationMonths)
@@ -234,7 +240,10 @@
 
   function getMembership(now = new Date()) {
     const existing = read();
-    const current = evaluate(existing || createFreeFallback(now), now);
+    const adminOverlay = window.Work4itAdminConfig?.isCurrentUserAdmin?.()
+      ? window.Work4itAdminConfig.adminMembershipOverlay?.()
+      : null;
+    const current = evaluate(adminOverlay ? { ...(existing || {}), ...adminOverlay } : (existing || createFreeFallback(now)), now);
     return write(current);
   }
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="da">
 <head>
   <meta charset="UTF-8">
@@ -4116,9 +4116,69 @@
       };
     }
 
+    const EXERCISE_HISTORY_KEY = "work4it_exercise_history_v1";
+
+    function normalizeExerciseHistoryText(value) {
+      return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9æøå]+/gi, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    function exerciseHistoryKey(name, muscle = "") {
+      const exercise = normalizeExerciseHistoryText(name);
+      const group = normalizeExerciseHistoryText(muscle);
+      return [exercise, group].filter(Boolean).join("__");
+    }
+
+    function readExerciseHistory() {
+      const history = readLocalJson(EXERCISE_HISTORY_KEY, { exercises: {}, updatedAt: "" });
+      return history && typeof history === "object"
+        ? { exercises: history.exercises || {}, updatedAt: history.updatedAt || "" }
+        : { exercises: {}, updatedAt: "" };
+    }
+
+    function latestExerciseHistory(name, muscle = "") {
+      const history = readExerciseHistory();
+      const key = exerciseHistoryKey(name, muscle);
+      if (history.exercises[key]) return history.exercises[key];
+      const normalizedName = normalizeExerciseHistoryText(name);
+      return Object.values(history.exercises).find(entry => entry.normalizedName === normalizedName) || null;
+    }
+
+    function formatExerciseHistoryLabel(entry) {
+      if (!entry) return "-";
+      const parts = [];
+      if (entry.weight !== "" && entry.weight != null) parts.push(`${entry.weight}kg`);
+      if (entry.reps !== "" && entry.reps != null) parts.push(`${entry.reps}r`);
+      const pauseSeconds = Math.max(0, Number(entry.pauseSeconds) || parsePause(entry.pause || ""));
+      if (pauseSeconds) parts.push(formatPause(pauseSeconds));
+      return parts.length ? parts.join(" · ") : "-";
+    }
+
+    function applyExerciseHistoryToSet(set, historyEntry, options = {}) {
+      if (!historyEntry || !set) return set;
+      const next = { ...set };
+      const previousLabel = formatExerciseHistoryLabel(historyEntry);
+      if (previousLabel !== "-") next.prev = previousLabel;
+      if (options.fillInputs !== false) {
+        if (!next.weight && historyEntry.weight !== "" && historyEntry.weight != null) next.weight = String(historyEntry.weight);
+        if (!next.reps && historyEntry.reps !== "" && historyEntry.reps != null) next.reps = String(historyEntry.reps);
+      }
+      const pauseSeconds = Math.max(0, Number(historyEntry.pauseSeconds) || parsePause(historyEntry.pause || ""));
+      if (pauseSeconds && !next.pauseManual) {
+        next.pause = formatPause(pauseSeconds);
+        next.pauseManual = false;
+      }
+      return next;
+    }
+
     function plannedSetsForExercise(name, muscle, position = 0) {
       const plan = goalPrescription(name, muscle, position);
-      return Array.from({ length: defaultNewExerciseSetCount() }, () => ({
+      const historyEntry = latestExerciseHistory(name, muscle);
+      return Array.from({ length: defaultNewExerciseSetCount() }, () => applyExerciseHistoryToSet({
         prev: "-",
         completed: false,
         weight: "",
@@ -4126,7 +4186,7 @@
         targetReps: plan.targetReps,
         pause: formatPause(plan.pauseSeconds),
         pauseManual: false
-      }));
+      }, historyEntry));
     }
 
     function exercisePauseCategory(name, muscle) {
@@ -4942,8 +5002,10 @@
       block.dataset.role = plan.role || window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory";
       block.dataset.exerciseType = isCardio ? "cardio" : "strength";
       block.dataset.trainingStyle = plan.trainingStyle || catalog.find(exercise => exercise.name === name && exercise.muscle === muscle)?.trainingStyle || "gym";
+      const historyEntry = latestExerciseHistory(name, muscle);
+      const historyPause = historyEntry ? Math.max(0, Number(historyEntry.pauseSeconds) || parsePause(historyEntry.pause || "")) : 0;
       const savedExercisePause = parsePause(metadata?.pause || "") || parsePause(savedSets?.find(set => set?.pause)?.pause || "");
-      const exercisePause = savedExercisePause || Math.max(0, Number(plan.pauseSeconds) || suggestedPauseSeconds(name, muscle, false));
+      const exercisePause = savedExercisePause || historyPause || Math.max(0, Number(plan.pauseSeconds) || suggestedPauseSeconds(name, muscle, false));
       const exercisePauseManualValue = metadata?.pauseManual === true || savedSets?.some(set => set?.pauseManual === true);
       block.dataset.exercisePauseSeconds = String(exercisePause);
       block.dataset.exercisePauseManual = exercisePauseManualValue ? "true" : "false";
@@ -5265,8 +5327,17 @@
       const isCardio = muscle === "Cardio";
       const plan = goalPrescription(name, muscle, slotIds().indexOf(slot));
       const definition = catalog.find(exercise => exercise.name === name && exercise.muscle === muscle);
+      const historyEntry = latestExerciseHistory(name, muscle);
+      if (historyEntry && !isCardio) {
+        data.forEach((set, index) => {
+          data[index] = applyExerciseHistoryToSet(set, historyEntry, {
+            fillInputs: !set.completed && !set.weight && !set.reps
+          });
+        });
+      }
       if (exerciseBlock?.dataset.pauseInitialized !== "true") {
-        const suggestedPauseSecondsValue = Math.max(0, Number(plan.pauseSeconds) || suggestedPauseSeconds(name, muscle, false));
+        const historyPauseSeconds = historyEntry ? Math.max(0, Number(historyEntry.pauseSeconds) || parsePause(historyEntry.pause || "")) : 0;
+        const suggestedPauseSecondsValue = historyPauseSeconds || Math.max(0, Number(plan.pauseSeconds) || suggestedPauseSeconds(name, muscle, false));
         const suggestedPause = formatPause(suggestedPauseSecondsValue);
         if (exerciseBlock) {
           exerciseBlock.dataset.exercisePauseSeconds = String(suggestedPauseSecondsValue);
@@ -5314,7 +5385,11 @@
     function renderSets(slot, count, saved = null) {
       const container = $(`sets-${slot}`);
       const nameElement = $(`name-${slot}`);
-      const plan = goalPrescription(nameElement?.textContent, nameElement?.dataset.muscle, slotIds().indexOf(slot));
+      const exerciseName = nameElement?.textContent || "";
+      const exerciseMuscle = nameElement?.dataset.muscle || "";
+      const plan = goalPrescription(exerciseName, exerciseMuscle, slotIds().indexOf(slot));
+      const historyEntry = latestExerciseHistory(exerciseName, exerciseMuscle);
+      const historyPreviousLabel = formatExerciseHistoryLabel(historyEntry);
       const defaultPause = formatPause(plan.pauseSeconds);
       const exercisePauseValue = formatPause(exercisePauseSeconds(slot) || parsePause(defaultPause));
       const exercisePauseManualValue = exercisePauseManual(slot);
@@ -5330,7 +5405,7 @@
         block.innerHTML = `
           <div class="set-row">
             <div>${i}</div>
-            <div class="previous">${esc(data.prev || "-")}</div>
+            <div class="previous" title="${esc(historyPreviousLabel !== "-" ? historyPreviousLabel : data.prev || "-")}">${esc(historyPreviousLabel !== "-" ? historyPreviousLabel : data.prev || "-")}</div>
             <div><input class="weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="kg" value="${esc(data.weight || "")}" oninput="sanitizeKgInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div><input class="reps" type="text" inputmode="numeric" pattern="[0-9]*(-[0-9]*)?" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="sanitizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();" onblur="normalizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div class="pause-inline-status" id="pause-inline-${slot}-${i}">${esc(pauseValue)}</div>
@@ -5566,6 +5641,7 @@
       updateAnalytics(slot);
       updateWorkoutProgress();
       maybeStartAutoPause(cb, slot, wasCompleted);
+      if (cb.checked && !wasCompleted) setCompleteSound();
       autoSave();
     }
 
@@ -5718,25 +5794,67 @@
       return pauseAudioContext;
     }
 
-    function missionCompleteSound() {
+    function playToneSequence(notes = [], options = {}) {
       const ctx = ensurePauseAudioContext();
       if (!ctx) return;
-      const start = ctx.currentTime + .02;
-      [523.25, 659.25, 783.99].forEach((frequency, index) => {
+      const start = ctx.currentTime + 0.018;
+      const master = ctx.createGain();
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-18, start);
+      compressor.knee.setValueAtTime(16, start);
+      compressor.ratio.setValueAtTime(6, start);
+      compressor.attack.setValueAtTime(0.004, start);
+      compressor.release.setValueAtTime(0.18, start);
+      master.gain.setValueAtTime(0.0001, start);
+      master.gain.exponentialRampToValueAtTime(options.masterGain || 0.34, start + 0.025);
+      master.gain.exponentialRampToValueAtTime(0.0001, start + (options.totalDuration || 0.72));
+      master.connect(compressor);
+      compressor.connect(ctx.destination);
+      notes.forEach((note, index) => {
+        const noteStart = start + (note.delay ?? index * (options.spacing || 0.12));
+        const duration = note.duration || options.noteDuration || 0.2;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        const noteStart = start + index * .14;
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(frequency, noteStart);
-        gain.gain.setValueAtTime(.001, noteStart);
-        gain.gain.exponentialRampToValueAtTime(.16, noteStart + .02);
-        gain.gain.exponentialRampToValueAtTime(.001, noteStart + .22);
+        osc.type = note.type || options.type || "triangle";
+        osc.frequency.setValueAtTime(note.frequency, noteStart);
+        if (note.slideTo) osc.frequency.exponentialRampToValueAtTime(note.slideTo, noteStart + duration * 0.82);
+        gain.gain.setValueAtTime(0.0001, noteStart);
+        gain.gain.exponentialRampToValueAtTime(note.gain || options.noteGain || 0.22, noteStart + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + duration);
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(master);
         osc.start(noteStart);
-        osc.stop(noteStart + .24);
+        osc.stop(noteStart + duration + 0.04);
       });
+    }
+
+    function setCompleteSound() {
+      playToneSequence([
+        { frequency: 880, duration: 0.09, gain: 0.2 },
+        { frequency: 1174.66, delay: 0.075, duration: 0.13, gain: 0.24 }
+      ], { masterGain: 0.3, totalDuration: 0.34, type: "triangle" });
+      navigator.vibrate?.(35);
+    }
+
+    function missionCompleteSound() {
+      playToneSequence([
+        { frequency: 523.25, duration: 0.18, gain: 0.22 },
+        { frequency: 659.25, delay: 0.12, duration: 0.18, gain: 0.24 },
+        { frequency: 783.99, delay: 0.24, duration: 0.22, gain: 0.26, type: "sine" },
+        { frequency: 1046.5, delay: 0.39, duration: 0.24, gain: 0.2, type: "triangle" }
+      ], { masterGain: 0.36, totalDuration: 0.76, spacing: 0.12, type: "triangle" });
       navigator.vibrate?.([80, 40, 120]);
+    }
+
+    function workoutCompleteSound() {
+      playToneSequence([
+        { frequency: 392, duration: 0.18, gain: 0.2 },
+        { frequency: 523.25, delay: 0.13, duration: 0.2, gain: 0.23 },
+        { frequency: 659.25, delay: 0.27, duration: 0.22, gain: 0.24 },
+        { frequency: 783.99, delay: 0.42, duration: 0.26, gain: 0.25 },
+        { frequency: 1046.5, delay: 0.61, duration: 0.34, gain: 0.2, type: "sine" }
+      ], { masterGain: 0.38, totalDuration: 1.15, spacing: 0.14, type: "triangle" });
+      navigator.vibrate?.([90, 45, 90, 45, 150]);
     }
 
     function activeProgramDay() {
@@ -6844,12 +6962,14 @@
       const entries = history();
       if (entry.totalVolume || entry.estimatedCalories || entry.exercises.length) entries.push(entry);
       writeLocalJson("training_analytics_history", entries);
+      updateExerciseHistoryFromCompletedWorkout();
       const finishedSession = cloneWorkoutData(activeWorkoutSession);
       const sessionChanged = workoutStructureSnapshot(finishedSession) !== finishedSession?.templateSnapshot;
       if (sessionChanged && confirm("Vil du også gemme disse ændringer i selve programmet?")) {
         applySessionChangesToProgram(finishedSession);
       }
       clearActiveWorkoutAfterFinish();
+      workoutCompleteSound();
       showProgramView({ captureSession: false });
       updateWorkoutButtonVisibility();
       $("autosaveStatus").textContent = "Sidste træning afsluttet og gemt";
@@ -6857,6 +6977,51 @@
         console.warn("[Work4it] Træningshistorik kunne ikke synkroniseres straks efter afslutning.", error);
       });
       alert(`${t("workoutFinished")}\n${t("volumeHeader")}: ${vol(entry.totalVolume)}\n${t("bestOneRm")}: ${entry.bestOneRm ? kg(entry.bestOneRm) : "-"}\nEstimeret kalorieforbrug: ${entry.estimatedCalories} kcal`);
+    }
+
+    function latestUsableSetForHistory(sets) {
+      const completedWithData = sets.filter(set => set.completed && (set.weight || set.reps));
+      const anyWithData = sets.filter(set => set.weight || set.reps);
+      const completedOnly = sets.filter(set => set.completed);
+      const source = completedWithData.length ? completedWithData : anyWithData.length ? anyWithData : completedOnly;
+      return source.length ? source[source.length - 1] : null;
+    }
+
+    function updateExerciseHistoryFromCompletedWorkout() {
+      const history = readExerciseHistory();
+      const nextExercises = { ...(history.exercises || {}) };
+      const updatedAt = new Date().toISOString();
+      slotIds().forEach(slot => {
+        const block = exerciseBlockForSlot(slot);
+        if (!block || block.dataset.exerciseType === "cardio") return;
+        const name = $(`name-${slot}`)?.textContent?.trim() || "";
+        const muscle = $(`name-${slot}`)?.dataset.muscle || "";
+        if (!name || muscleGroupKeys.includes(name)) return;
+        const sets = collectSetData(slot);
+        const sourceSet = latestUsableSetForHistory(sets);
+        if (!sourceSet) return;
+        const pauseSeconds = exercisePauseSeconds(slot);
+        const key = exerciseHistoryKey(name, muscle);
+        const entry = {
+          key,
+          name,
+          muscle,
+          normalizedName: normalizeExerciseHistoryText(name),
+          weight: sourceSet.weight || "",
+          reps: sourceSet.reps || "",
+          pause: formatPause(pauseSeconds),
+          pauseSeconds,
+          updatedAt,
+          sourceSessionId: activeSessionId || "",
+          sourceProgramId: currentProgramSession?.id || currentSavedProgramId || "",
+          sourceDayId: activeProgramDay()?.id || "day_1"
+        };
+        entry.previousLabel = formatExerciseHistoryLabel(entry);
+        nextExercises[key] = entry;
+      });
+      const nextHistory = { exercises: nextExercises, updatedAt };
+      writeLocalJson(EXERCISE_HISTORY_KEY, nextHistory);
+      window.dispatchEvent(new CustomEvent("exercise-history:changed", { detail: nextHistory }));
     }
 
     function collectAnalyticsEntry() {
@@ -8592,7 +8757,7 @@
             muscle: exercise.muscle,
             goal: plan.goal,
             role: plan.role,
-            sets: Array.from({ length: setCount }, () => ({
+            sets: Array.from({ length: setCount }, () => applyExerciseHistoryToSet({
               prev: "-",
               completed: false,
               weight: "",
@@ -8600,7 +8765,7 @@
               targetReps: plan.targetReps || "",
               pause,
               pauseManual: false
-            }))
+            }, latestExerciseHistory(exercise.name, exercise.muscle)))
           };
         });
         return {
@@ -8932,17 +9097,23 @@
         goal: currentTrainingGoal(),
         structure: "screenshot_import",
         workoutIntensity: "medium",
-        exercises: (day.exercises || []).map(exercise => {
+        exercises: (day.exercises || []).map((exercise, exerciseIndex) => {
           const muscle = exercise.muscle || inferImportedMuscle(exercise.matchedName || exercise.name);
           const name = exercise.matchedName || exercise.name;
+          const isCardio = muscle === "Cardio" || exercise.exerciseType === "cardio";
+          const importedSets = Array.isArray(exercise.sets) ? exercise.sets : [];
+          const historyEntry = latestExerciseHistory(name, muscle);
+          const sets = isCardio ? [] : (importedSets.length ? importedSets : plannedSetsForExercise(name, muscle, exerciseIndex))
+            .map(set => applyExerciseHistoryToSet(set, historyEntry));
           return {
             ...exercise,
             name,
             muscle,
             goal: currentTrainingGoal(),
             role: window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory",
-            exerciseType: muscle === "Cardio" ? "cardio" : "strength",
-            trainingStyle: "gym"
+            exerciseType: isCardio ? "cardio" : "strength",
+            trainingStyle: "gym",
+            sets
           };
         })
       }));
@@ -9075,6 +9246,7 @@
     window.ENABLE_DAILY_START_WIZARD = true;
     window.ENABLE_FIXED_LOGIN_ROUTING = true;
   </script>
+  <script src="admin-config.js?v=20260711-permanent-admin1"></script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
@@ -9091,17 +9263,17 @@
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
-  <script src="stripe-config.js?v=20260711-membership-v2"></script>
-  <script src="membership.js?v=20260711-membership-v2"></script>
+  <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
+  <script src="membership.js?v=20260711-permanent-admin1"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
-  <script type="module" src="stripe-checkout.js?v=20260711-membership-v2"></script>
-  <script type="module" src="auth-service.js?v=20260711-membership-v2"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260711-membership-v2"></script>
-  <script type="module" src="ai-request-counter.js?v=20260711-membership-v2"></script>
+  <script type="module" src="stripe-checkout.js?v=20260711-permanent-admin1"></script>
+  <script type="module" src="auth-service.js?v=20260711-permanent-admin1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260711-exercise-history1"></script>
+  <script type="module" src="ai-request-counter.js?v=20260711-permanent-admin1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260710-admin1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260711-exercise-history1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
@@ -9109,13 +9281,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-

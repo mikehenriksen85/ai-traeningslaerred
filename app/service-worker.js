@@ -1,7 +1,8 @@
-const CACHE_NAME = "work4it-shell-v80-sticky-workout-top";
+const CACHE_NAME = "work4it-shell-v83-exercise-history";
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./admin-config.js?v=20260711-exercise-history1",
   "./manifest.webmanifest",
   "./work4it-app-icon-192.png",
   "./work4it-app-icon-512.png",
@@ -15,12 +16,12 @@ const APP_SHELL = [
   "./wizard-store.js?v=20260621-cloud-primary1",
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",
-  "./stripe-config.js?v=20260711-sticky-workout-top",
-  "./membership.js?v=20260711-sticky-workout-top",
-  "./stripe-checkout.js?v=20260711-sticky-workout-top",
+  "./stripe-config.js?v=20260711-exercise-history1",
+  "./membership.js?v=20260711-exercise-history1",
+  "./stripe-checkout.js?v=20260711-exercise-history1",
   "./ai-system.js?v=20260710-admin1",
   "./ai-copilot-actions.js?v=20260628-ai20",
-  "./ai-request-counter.js?v=20260711-sticky-workout-top",
+  "./ai-request-counter.js?v=20260711-exercise-history1",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
   "./auth-gate.js?v=20260706-resume-state1",
@@ -28,8 +29,8 @@ const APP_SHELL = [
   "./profile-account.js?v=20260706-resume-state1",
   "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260628-auth-ready1",
-  "./auth-service.js?v=20260711-sticky-workout-top",
-  "./firestore-cloud-service.js?v=20260711-sticky-workout-top"
+  "./auth-service.js?v=20260711-exercise-history1",
+  "./firestore-cloud-service.js?v=20260711-exercise-history1"
 ];
 
 self.addEventListener("install", event => {

@@ -33,6 +33,10 @@ async function createCheckout(plan) {
   }
 
   const user = currentUser();
+  if (window.Work4itAdminConfig?.isPermanentAdminUser?.(user)) {
+    window.Membership?.showConfirmation?.("Administrator har allerede fuld adgang. Stripe Checkout er deaktiveret.");
+    return { admin: true, skipped: true };
+  }
   if (!user) {
     window.Work4itAuthGate?.showLogin?.("Log ind for at købe Premium.");
     throw new Error("Log ind for at købe Premium.");

@@ -151,7 +151,8 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
       const membership = window.Membership?.getMembership?.() || {};
       const normalized = normalizeUsage({
         ...data,
-        role: data.role || membership.role || "",
+        role: window.Work4itAdminConfig?.isCurrentUserAdmin?.() ? "admin" : (data.role || membership.role || ""),
+        email: data.email || membership.email || "",
         membershipType: normalizeMembershipType(data.membershipType || membership.membershipType),
         membershipStatus: data.membershipStatus || membership.membershipStatus,
         source: "firestore"
@@ -207,7 +208,8 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
         const membership = window.Membership?.getMembership?.() || {};
         const normalized = normalizeUsage({
           ...cloudData,
-          role: cloudData.role || membership.role || "",
+          role: window.Work4itAdminConfig?.isCurrentUserAdmin?.() ? "admin" : (cloudData.role || membership.role || ""),
+          email: cloudData.email || membership.email || "",
           membershipType: normalizeMembershipType(cloudData.membershipType || membership.membershipType),
           membershipStatus: cloudData.membershipStatus || membership.membershipStatus,
           source: "firestore"
