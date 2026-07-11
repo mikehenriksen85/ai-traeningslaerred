@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v74-default-one-set1";
+const CACHE_NAME = "work4it-shell-v80-sticky-workout-top";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -11,16 +11,16 @@ const APP_SHELL = [
   "./calorie-estimator.js?v=20260615-cardio1",
   "./training-goal-engine.js?v=20260620-calisthenics1",
   "./workout-program-store.js?v=20260615-days1",
-  "./screenshot-import.js?v=20260710-default-one-set1",
+  "./screenshot-import.js?v=20260710-reps-input1",
   "./wizard-store.js?v=20260621-cloud-primary1",
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",
-  "./stripe-config.js?v=20260706-premium-6m1",
-  "./membership.js?v=20260707-free-flow2",
-  "./stripe-checkout.js?v=20260706-premium-6m1",
-  "./ai-system.js?v=20260628-ai20",
+  "./stripe-config.js?v=20260711-sticky-workout-top",
+  "./membership.js?v=20260711-sticky-workout-top",
+  "./stripe-checkout.js?v=20260711-sticky-workout-top",
+  "./ai-system.js?v=20260710-admin1",
   "./ai-copilot-actions.js?v=20260628-ai20",
-  "./ai-request-counter.js?v=20260706-premium-6m1",
+  "./ai-request-counter.js?v=20260711-sticky-workout-top",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
   "./auth-gate.js?v=20260706-resume-state1",
@@ -28,8 +28,8 @@ const APP_SHELL = [
   "./profile-account.js?v=20260706-resume-state1",
   "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260628-auth-ready1",
-  "./auth-service.js?v=20260706-resume-state1",
-  "./firestore-cloud-service.js?v=20260630-cloud-primary2"
+  "./auth-service.js?v=20260711-sticky-workout-top",
+  "./firestore-cloud-service.js?v=20260711-sticky-workout-top"
 ];
 
 self.addEventListener("install", event => {

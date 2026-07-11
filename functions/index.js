@@ -17,7 +17,7 @@ const ADMIN_EMAILS = new Set([
 
 const EARLY_ADOPTER_LIMIT = 500;
 const PLAN_CONFIG = Object.freeze({
-  quarterly: Object.freeze({
+  premium_3: Object.freeze({
     label: "Work4it Premium 3 måneder",
     priceId: "price_1TnhepJ8DJiiK3vDoqAb7oqY",
     fallbackPriceDkk: 59,
@@ -25,7 +25,7 @@ const PLAN_CONFIG = Object.freeze({
     aiRequestLimit: 15,
     aiRequestPeriod: "monthly"
   }),
-  semiannual: Object.freeze({
+  premium_6: Object.freeze({
     label: "Work4it Premium 6 måneder",
     priceId: "price_1TomK2J8DJiiK3vD4SfYI4tq",
     fallbackPriceDkk: 109,
@@ -33,7 +33,7 @@ const PLAN_CONFIG = Object.freeze({
     aiRequestLimit: 15,
     aiRequestPeriod: "monthly"
   }),
-  yearly: Object.freeze({
+  premium_12: Object.freeze({
     label: "Work4it Premium 12 måneder",
     priceId: "price_1Tnhf9J8DJiiK3vDpQe8srVl",
     fallbackPriceDkk: 199,
@@ -69,6 +69,17 @@ function authProviderIds(userRecord) {
     .filter(Boolean);
 }
 
+function normalizeMembershipType(value, role = "") {
+  const mapped = {
+    quarterly: "premium_3",
+    semiannual: "premium_6",
+    yearly: "premium_12",
+    lifetime: role === "admin" ? "premium_12" : "premium_12",
+    trial: "free"
+  }[value] || value;
+  return ["free", "premium_3", "premium_6", "premium_12"].includes(mapped) ? mapped : "free";
+}
+
 async function ensureFirestoreUserForAuthRecord(userRecord) {
   if (!userRecord?.uid) return { uid: "", changed: false };
   const uid = userRecord.uid;
@@ -81,7 +92,10 @@ async function ensureFirestoreUserForAuthRecord(userRecord) {
   ]);
   const existingUser = userSnapshot.exists ? userSnapshot.data() || {} : {};
   const membershipData = membershipSnapshot.exists ? membershipSnapshot.data() || {} : {};
-  const membershipType = existingUser.membership || membershipData.membershipType || "free";
+  const userRole = existingUser.role === "admin" ? "admin" : "";
+  const membershipType = userRole
+    ? existingUser.membership || "lifetime"
+    : normalizeMembershipType(existingUser.membership || membershipData.membershipType || "free", userRole);
   const providerIds = authProviderIds(userRecord);
   const createdAt = existingUser.createdAt || authTimestamp(userRecord.metadata?.creationTime);
   const rootPayload = {
@@ -92,6 +106,7 @@ async function ensureFirestoreUserForAuthRecord(userRecord) {
     emailVerified: Boolean(userRecord.emailVerified),
     providerIds,
     membership: membershipType,
+    ...(userRole ? { role: userRole } : {}),
     createdAt,
     lastLoginAt: authTimestamp(userRecord.metadata?.lastSignInTime),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -229,6 +244,11 @@ exports.createStripeCheckoutSession = onCall({
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError("unauthenticated", "Du skal være logget ind for at købe Premium.");
+  }
+
+  const userSnapshot = await admin.firestore().doc(`users/${uid}`).get();
+  if (userSnapshot.exists && userSnapshot.data()?.role === "admin") {
+    throw new HttpsError("failed-precondition", "Administrator har allerede fuld adgang og kan ikke sendes til Stripe Checkout.");
   }
 
   const plan = String(request.data?.plan || "");

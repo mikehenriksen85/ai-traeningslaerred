@@ -85,7 +85,20 @@ async function ensureUserDocument(user) {
     getDoc(membershipReference)
   ]);
   const existingUser = userSnapshot.exists() ? userSnapshot.data() : {};
-  const membershipType = existingUser?.membership || membershipSnapshot.data()?.membershipType || "free";
+  const normalizedMembership = value => ({
+    quarterly: "premium_3",
+    semiannual: "premium_6",
+    yearly: "premium_12",
+    lifetime: "premium_12",
+    trial: "free"
+  }[value] || value);
+  const rawMembershipType = existingUser?.membership || membershipSnapshot.data()?.membershipType;
+  const mappedMembershipType = normalizedMembership(rawMembershipType);
+  const membershipType = existingUser?.role === "admin"
+    ? rawMembershipType || "lifetime"
+    : ["free", "premium_3", "premium_6", "premium_12"].includes(mappedMembershipType)
+      ? mappedMembershipType
+    : "free";
 
   await setDoc(userReference, {
     uid: user.uid,

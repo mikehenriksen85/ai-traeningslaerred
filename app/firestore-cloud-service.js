@@ -46,7 +46,6 @@ const PATHS = {
   settings: uid => ["users", uid, "settings", "main"],
   legacySettings: uid => ["users", uid, "profile", "appState"],
   membership: uid => ["users", uid, "membership", "main"],
-  legacyMembership: uid => ["users", uid, "profile", "membership"],
   appState: (uid, stateId = "main") => ["users", uid, "appState", stateId],
   activeWorkout: uid => ["users", uid, "activeWorkout", "current"]
 };
@@ -457,6 +456,16 @@ async function syncActiveWorkout(uid) {
   else await deleteDoc(draftReference).catch(() => {});
 }
 
+async function clearActiveWorkout(uid = activeUid) {
+  if (!uid || !cloudEnabled) return false;
+  assertCloudUser("Ryd aktiv træning");
+  await deleteDoc(doc(db, ...PATHS.activeWorkout(uid))).catch(error => {
+    reportFirestoreError("clearActiveWorkout", PATHS.activeWorkout(uid), error, uid);
+    throw error;
+  });
+  return true;
+}
+
 async function syncAllLocalData(uid = activeUid) {
   if (!uid || !cloudEnabled) return false;
   if (syncInProgress) {
@@ -533,12 +542,14 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
   try {
     assertCloudUser("Cloud-hentning");
     const profileSnapshot = getDocument(PATHS.profile(uid));
+    const userSnapshot = getDocument(["users", uid]);
     const dailySnapshot = getDocument(PATHS.daily(uid));
-    const membershipSnapshot = readDocumentDataWithFallback(PATHS.membership(uid), PATHS.legacyMembership(uid));
+    const membershipSnapshot = getDocument(PATHS.membership(uid));
     const settingsSnapshot = readDocumentDataWithFallback(PATHS.settings(uid), PATHS.legacySettings(uid));
     const appStateSnapshot = readDocumentDataWithFallback(PATHS.appState(uid, "main"), PATHS.legacySettings(uid));
     const [
       profile,
+      userRoot,
       daily,
       membership,
       settings,
@@ -554,6 +565,7 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
       trash
     ] = await Promise.all([
       profileSnapshot,
+      userSnapshot,
       dailySnapshot,
       membershipSnapshot,
       settingsSnapshot,
@@ -578,7 +590,17 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     }
     if (daily.exists()) writeLocal(KEYS.daily, cleanDocument(daily.data()));
     else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.daily, null);
-    if (membership.data) writeLocal(KEYS.membership, membership.data);
+    const rootUserData = userRoot.exists() ? cleanDocument(userRoot.data()) : null;
+    if (membership.data || rootUserData?.role) {
+      writeLocal(KEYS.membership, {
+        ...(membership.data || {}),
+        ...(rootUserData?.role ? {
+          role: rootUserData.role,
+          membership: rootUserData.membership || membership.data?.membership || undefined,
+          aiRequests: rootUserData.aiRequests ?? membership.data?.aiRequests
+        } : {})
+      });
+    }
     else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.membership, null);
     const state = { ...(settings.data || {}), ...(appState.data || {}) };
     if (Object.keys(state).length) {
@@ -973,8 +995,7 @@ async function deleteCurrentUserData(uid = activeUid) {
     deleteDoc(doc(db, ...PATHS.activeWorkout(uid))).catch(() => {}),
     deleteDoc(doc(db, ...PATHS.profile(uid))).catch(() => {}),
     deleteDoc(doc(db, ...PATHS.daily(uid))).catch(() => {}),
-    deleteDoc(doc(db, ...PATHS.legacyMembership(uid))).catch(() => {}),
-    deleteDoc(doc(db, ...PATHS.legacySettings(uid))).catch(() => {}),
+      deleteDoc(doc(db, ...PATHS.legacySettings(uid))).catch(() => {}),
     deleteDoc(doc(db, ...PATHS.syncMetadata(uid))).catch(() => {}),
     deleteDoc(doc(db, "users", uid)).catch(() => {})
   ]);
@@ -992,6 +1013,7 @@ window.FirestoreDataService = {
   saveMembershipToCloud,
   refreshFromCloud,
   syncAllLocalData,
+  clearActiveWorkout,
   hydrateFromFirestore,
   exportCurrentUserData,
   deleteCurrentUserData,

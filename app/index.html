@@ -621,6 +621,51 @@
     .set-progress-percent { position: relative; z-index: 1; color: var(--text-primary); font-size: 9px; font-weight: var(--font-weight-bold); }
     .set-progress-label { color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; }
     .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--blue); color: var(--text-primary); border: 0; border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+    .workout-sticky-top {
+      position: sticky;
+      top: calc(68px + env(safe-area-inset-top, 0px));
+      z-index: 70;
+      display: grid;
+      gap: 10px;
+      margin: 0 0 14px;
+      padding: 10px;
+      border: 1px solid rgba(59,130,246,.28);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--card), rgba(15,23,42,.92) 18%);
+      box-shadow: 0 14px 30px rgba(0,0,0,.24);
+      backdrop-filter: blur(16px);
+    }
+    .workout-sticky-top .top-controls,
+    .workout-sticky-top .stats,
+    .workout-sticky-top .calorie-panel,
+    .workout-sticky-top .dashboard-btn {
+      margin: 0;
+    }
+    .workout-sticky-top .stats {
+      border: 1px solid rgba(148,163,184,.18);
+    }
+    .workout-sticky-top .calorie-panel {
+      padding: 10px 12px;
+      border-radius: 7px;
+    }
+    .workout-sticky-top .calorie-title {
+      font-size: var(--font-size-body);
+    }
+    .workout-sticky-top .calorie-value {
+      font-size: 1.35rem;
+    }
+    #exercises {
+      max-height: clamp(360px, 62dvh, 820px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: 4px;
+      scroll-padding-top: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    #exercises:empty {
+      max-height: none;
+      overflow: visible;
+    }
 
     .exercise { background: rgba(0,0,0,.12); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 18px; transition: border-color .16s ease, box-shadow .16s ease, opacity .16s ease, transform .16s ease; }
     .exercise-transition { display: none; color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); margin-bottom: 9px; }
@@ -1898,6 +1943,34 @@
       .membership-hero-logo { width: min(220px, 76vw); max-height: 130px; }
       input, select, textarea { font-size: 16px !important; }
       .canvas { padding: 12px; }
+      .workout-sticky-top {
+        top: calc(62px + env(safe-area-inset-top, 0px));
+        gap: 8px;
+        margin-bottom: 12px;
+        padding: 8px;
+        border-radius: 7px;
+      }
+      .workout-sticky-top .top-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .workout-sticky-top .stats {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 6px 8px;
+        align-items: center;
+      }
+      .workout-sticky-top #autosaveStatus {
+        grid-column: 1 / -1;
+        margin-left: 0;
+      }
+      .workout-sticky-top .calorie-value {
+        font-size: 1.12rem;
+      }
+      #exercises {
+        max-height: max(320px, calc(100dvh - 330px));
+        padding-right: 2px;
+      }
       .top-controls { grid-template-columns: 1fr; }
       .session-banner-head { align-items: flex-start; flex-direction: column; }
       .session-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2420,7 +2493,7 @@
       </button>
       <div class="sidebar-accordion-panel">
         <button class="sidebar-item" id="profileAccountNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileSetup()">Profil og konto</button>
-        <button class="sidebar-item sidebar-subitem" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">10 dage</span></button>
+        <button class="sidebar-item sidebar-subitem" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">Gratis</span></button>
         <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
       </div>
     </section>
@@ -2758,10 +2831,11 @@
       <div class="work4it-landing-hero program-only brand-fade-in"><img class="brand-hero-logo" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
       <div id="workoutTitle" role="button" tabindex="0" aria-label="Redigér programnavn" title="Tryk for at ændre programnavnet" onclick="beginProgramTitleEdit()" onkeydown="handleProgramTitleKey(event)">Mit nye træningspas</div>
       <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
-      <div class="top-controls program-only">
-        <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem ændringer</button>
-        <button class="top-btn start-btn" id="timerBtn" onclick="toggleWorkoutTimer()">▶ Start Træning</button>
-      </div>
+      <div class="workout-sticky-top" id="workoutStickyTop" aria-label="Træningsstatus og hurtige handlinger">
+        <div class="top-controls program-only">
+          <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem ændringer</button>
+          <button class="top-btn start-btn" id="timerBtn" onclick="toggleWorkoutTimer()">▶ Start Træning</button>
+        </div>
       <section class="session-banner session-only" id="trainingSessionView" aria-label="Aktiv træningssession">
         <div class="session-banner-head">
           <div class="session-view-title">Aktiv træning</div>
@@ -2788,7 +2862,8 @@
         <div class="calorie-value missing" id="calorieEstimateValue">Mangler data til kalorie-estimat</div>
       </section>
       <button class="dashboard-btn program-only" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
-      <div id="exercises"></div>
+      </div>
+      <div id="exercises" aria-label="Øvelsesliste"></div>
       <div class="session-finish-zone session-only">
         <button class="session-control-btn finish" id="stopBtn" onclick="finishWorkout()">⏹ Afslut træning</button>
       </div>
@@ -3127,11 +3202,10 @@
 
       <div class="membership-status">
         <article class="membership-status-card">
-          <div class="membership-eyebrow">10 dage gratis prøveperiode</div>
-          <div class="membership-status-name" id="membershipStatusName">Premium-prøveperiode</div>
-          <div class="membership-status-copy" id="membershipStatusCopy">Fuld adgang til alle Premium-funktioner uden betalingskrav.</div>
+          <div class="membership-eyebrow">Work4it-medlemskab</div>
+          <div class="membership-status-name" id="membershipStatusName">Gratis version</div>
+          <div class="membership-status-copy" id="membershipStatusCopy">Basal adgang til træning og 3 AI Requests.</div>
           <div class="membership-date" id="membershipStatusDate"></div>
-          <button class="membership-plan-btn primary" id="startTrialBtn" onclick="startMembershipTrial()" style="margin-top:12px;">Start gratis prøveperiode</button>
           <div class="membership-confirmation" id="membershipConfirmation"></div>
         </article>
         <article class="membership-benefits">
@@ -3162,7 +3236,7 @@
           <button class="membership-plan-btn" type="button" data-membership-select="free" onclick="selectMembershipPlan('free')">Fortsæt gratis</button>
         </article>
 
-        <article class="membership-plan" data-membership-plan="quarterly">
+        <article class="membership-plan" data-membership-plan="premium_3">
           <div class="membership-plan-name">Premium 3 måneder</div>
           <div class="membership-price" id="membershipPriceQuarterly">59 kr.</div>
           <div class="membership-price-note">15 AI Requests/md.</div>
@@ -3170,10 +3244,10 @@
             <li>Alle Premium-funktioner</li>
             <li>Sikker betaling via Stripe Checkout</li>
           </ul>
-          <button class="membership-plan-btn primary" type="button" data-membership-select="quarterly" onclick="selectMembershipPlan('quarterly')">Vælg 3 måneder</button>
+          <button class="membership-plan-btn primary" type="button" data-membership-select="premium_3" onclick="selectMembershipPlan('premium_3')">Vælg 3 måneder</button>
         </article>
 
-        <article class="membership-plan" data-membership-plan="semiannual">
+        <article class="membership-plan" data-membership-plan="premium_6">
           <div class="membership-plan-name">Premium 6 måneder</div>
           <div class="membership-price" id="membershipPriceSemiannual">109 kr.</div>
           <div class="membership-price-note">15 AI Requests/md.</div>
@@ -3181,10 +3255,10 @@
             <li>Alle Premium-funktioner</li>
             <li>God balance mellem fleksibilitet og pris</li>
           </ul>
-          <button class="membership-plan-btn primary" type="button" data-membership-select="semiannual" onclick="selectMembershipPlan('semiannual')">Vælg 6 måneder</button>
+          <button class="membership-plan-btn primary" type="button" data-membership-select="premium_6" onclick="selectMembershipPlan('premium_6')">Vælg 6 måneder</button>
         </article>
 
-        <article class="membership-plan best" data-membership-plan="yearly">
+        <article class="membership-plan best" data-membership-plan="premium_12">
           <div class="membership-best-badge">Bedste værdi</div>
           <div class="membership-plan-name">Premium 12 måneder</div>
           <div class="membership-price" id="membershipPriceYearly">199 kr.</div>
@@ -3193,7 +3267,7 @@
             <li>Alle Premium-funktioner</li>
             <li>Laveste pris pr. måned</li>
           </ul>
-          <button class="membership-plan-btn best" type="button" data-membership-select="yearly" onclick="selectMembershipPlan('yearly')">Vælg 12 måneder</button>
+          <button class="membership-plan-btn best" type="button" data-membership-select="premium_12" onclick="selectMembershipPlan('premium_12')">Vælg 12 måneder</button>
         </article>
       </div>
 
@@ -3205,14 +3279,14 @@
 
   <div class="membership-popup" id="membershipPopup" role="dialog" aria-modal="true" aria-labelledby="membershipPopupTitle">
     <div class="membership-popup-panel">
-      <div class="membership-popup-title" id="membershipPopupTitle">🎉 Tak fordi du har prøvet appen</div>
+      <div class="membership-popup-title" id="membershipPopupTitle">💎 Vælg dit Work4it-medlemskab</div>
       <div class="membership-popup-copy">
-        Din gratis prøveperiode er udløbet. Du kan fortsætte gratis med begrænsede funktioner eller vælge et medlemskab for at få adgang til alle Premium-funktioner.
+        Du kan fortsætte gratis med basale funktioner eller vælge et medlemskab for at få adgang til alle Premium-funktioner.
       </div>
       <div class="membership-popup-plans">
-        <button class="membership-popup-option" type="button" data-membership-select="quarterly" onclick="selectMembershipPlan('quarterly')"><strong>🥉 3 måneder</strong><span id="membershipPopupPriceQuarterly">59 kr. · 15 AI Requests/md.</span></button>
-        <button class="membership-popup-option" type="button" data-membership-select="semiannual" onclick="selectMembershipPlan('semiannual')"><strong>🥈 6 måneder</strong><span id="membershipPopupPriceSemiannual">109 kr. · 15 AI Requests/md.</span></button>
-        <button class="membership-popup-option best" type="button" data-membership-select="yearly" onclick="selectMembershipPlan('yearly')"><strong>🥈 12 måneder</strong><span id="membershipPopupPriceYearly">199 kr. · 15 AI Requests/md. · Bedste værdi</span></button>
+        <button class="membership-popup-option" type="button" data-membership-select="premium_3" onclick="selectMembershipPlan('premium_3')"><strong>🥉 3 måneder</strong><span id="membershipPopupPriceQuarterly">59 kr. · 15 AI Requests/md.</span></button>
+        <button class="membership-popup-option" type="button" data-membership-select="premium_6" onclick="selectMembershipPlan('premium_6')"><strong>🥈 6 måneder</strong><span id="membershipPopupPriceSemiannual">109 kr. · 15 AI Requests/md.</span></button>
+        <button class="membership-popup-option best" type="button" data-membership-select="premium_12" onclick="selectMembershipPlan('premium_12')"><strong>🥈 12 måneder</strong><span id="membershipPopupPriceYearly">199 kr. · 15 AI Requests/md. · Bedste værdi</span></button>
       </div>
       <button class="membership-plan-btn membership-popup-free" type="button" data-membership-select="free" onclick="selectMembershipPlan('free')">📘 Fortsæt gratis · 3 AI Requests</button>
     </div>
@@ -3434,6 +3508,11 @@
 
     function $(id) { return document.getElementById(id); }
     function esc(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+    function notifyLocalStorageChanged(key, value = null) {
+      window.dispatchEvent(new CustomEvent("workit-storage:changed", {
+        detail: { key, value, changedAt: new Date().toISOString() }
+      }));
+    }
     function readLocalJson(key, fallback) {
       try {
         const parsed = JSON.parse(localStorage.getItem(key) || "null");
@@ -3445,6 +3524,7 @@
     function writeLocalJson(key, value) {
       try {
         localStorage.setItem(key, JSON.stringify(value));
+        notifyLocalStorageChanged(key, value);
         return true;
       } catch {
         const status = $("autosaveStatus");
@@ -3455,6 +3535,7 @@
     function removeLocalValue(key) {
       try {
         localStorage.removeItem(key);
+        notifyLocalStorageChanged(key, null);
       } catch {}
     }
     const AUTO_PAUSE_KEY = "work4it_auto_pause_enabled";
@@ -3863,6 +3944,27 @@
       return sanitizeDecimalNumberInput(input);
     }
     window.sanitizeKgInput = sanitizeKgInput;
+    function sanitizeRepsInput(input) {
+      if (!input) return "";
+      const parts = String(input.value || "")
+        .replace(/[–—]/g, "-")
+        .replace(/[^\d-]/g, "")
+        .split("-");
+      const first = (parts.shift() || "").slice(0, 3);
+      const second = parts.join("").slice(0, 3);
+      const hadRange = String(input.value || "").includes("-");
+      const value = hadRange && first ? `${first}${second ? `-${second}` : "-"}` : first;
+      input.value = value;
+      return value;
+    }
+    function normalizeRepsInput(input) {
+      if (!input) return "";
+      sanitizeRepsInput(input);
+      input.value = String(input.value || "").replace(/-$/, "");
+      return input.value;
+    }
+    window.sanitizeRepsInput = sanitizeRepsInput;
+    window.normalizeRepsInput = normalizeRepsInput;
     function oneRm(w, r) { return w > 0 && r > 0 ? w * (1 + r / 30) : 0; }
     function volume(w, r) { return w > 0 && r > 0 ? w * r : 0; }
     function kg(v) { return `${v.toFixed(1).replace(".", ",")} kg`; }
@@ -3894,6 +3996,54 @@
       sanitizePauseInput(input);
       input.value = formatPause(parsePause(input.value));
       markPauseManual(input);
+    }
+
+    function exerciseBlockForSlot(slot) {
+      return $(`block-${slot}`);
+    }
+
+    function defaultPauseSecondsForSlot(slot) {
+      const nameElement = $(`name-${slot}`);
+      const plan = goalPrescription(nameElement?.textContent, nameElement?.dataset.muscle, slotIds().indexOf(slot));
+      return Math.max(0, Number(plan.pauseSeconds) || suggestedPauseSeconds(nameElement?.textContent, nameElement?.dataset.muscle, false));
+    }
+
+    function exercisePauseSeconds(slot) {
+      const block = exerciseBlockForSlot(slot);
+      const stored = parsePause(block?.dataset.exercisePauseSeconds || "");
+      return stored || defaultPauseSecondsForSlot(slot);
+    }
+
+    function exercisePauseManual(slot) {
+      return exerciseBlockForSlot(slot)?.dataset.exercisePauseManual === "true";
+    }
+
+    function setExercisePauseSeconds(slot, seconds, options = {}) {
+      const block = exerciseBlockForSlot(slot);
+      if (!block) return;
+      const normalized = Math.max(0, Math.floor(Number(seconds) || 0));
+      const formatted = formatPause(normalized);
+      const manual = options.manual === true || exercisePauseManual(slot);
+      block.dataset.exercisePauseSeconds = String(normalized);
+      block.dataset.exercisePauseManual = manual ? "true" : "false";
+      block.querySelectorAll(".pause").forEach(input => {
+        input.value = formatted;
+        input.dataset.pauseManual = manual ? "true" : "false";
+      });
+      block.querySelectorAll(".pause-inline-status").forEach(inline => {
+        inline.textContent = formatted;
+      });
+      Object.keys(pauseTimers).forEach(key => {
+        if (!key.startsWith(`${slot}-`)) return;
+        const timer = pauseTimers[key];
+        if (!timer) return;
+        timer.total = normalized;
+        timer.remaining = normalized;
+        timer.endsAt = timer.running ? Date.now() + normalized * 1000 : null;
+        updatePauseProgress(key, { reset: !timer.running });
+      });
+      updateEstimatedTime();
+      if (options.save !== false) scheduleAutoSave();
     }
 
     function trainingContext() {
@@ -4035,9 +4185,7 @@
           seconds += numberValue(exercise.cardio?.durationMinutes) * 60;
         } else {
           seconds += exercise.rows.length * 45;
-          exercise.rows.slice(0, -1).forEach(row => {
-            seconds += parsePause(row.querySelector(".pause")?.value);
-          });
+          seconds += Math.max(0, exercise.rows.length - 1) * exercisePauseSeconds(exercise.slot);
         }
         const transition = $(`transition-${exercise.slot}`);
         if (exerciseIndex > 0) {
@@ -4790,6 +4938,11 @@
       block.dataset.role = plan.role || window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory";
       block.dataset.exerciseType = isCardio ? "cardio" : "strength";
       block.dataset.trainingStyle = plan.trainingStyle || catalog.find(exercise => exercise.name === name && exercise.muscle === muscle)?.trainingStyle || "gym";
+      const savedExercisePause = parsePause(metadata?.pause || "") || parsePause(savedSets?.find(set => set?.pause)?.pause || "");
+      const exercisePause = savedExercisePause || Math.max(0, Number(plan.pauseSeconds) || suggestedPauseSeconds(name, muscle, false));
+      const exercisePauseManualValue = metadata?.pauseManual === true || savedSets?.some(set => set?.pauseManual === true);
+      block.dataset.exercisePauseSeconds = String(exercisePause);
+      block.dataset.exercisePauseManual = exercisePauseManualValue ? "true" : "false";
       block.dataset.pauseInitialized = savedSets || !name.toLowerCase().startsWith(t("chooseExercisePrefix").toLowerCase()) ? "true" : "false";
       block.innerHTML = `
         <div class="exercise-transition" id="transition-${slot}"></div>
@@ -5109,11 +5262,17 @@
       const plan = goalPrescription(name, muscle, slotIds().indexOf(slot));
       const definition = catalog.find(exercise => exercise.name === name && exercise.muscle === muscle);
       if (exerciseBlock?.dataset.pauseInitialized !== "true") {
-        const suggestedPause = formatPause(plan.pauseSeconds);
+        const suggestedPauseSecondsValue = Math.max(0, Number(plan.pauseSeconds) || suggestedPauseSeconds(name, muscle, false));
+        const suggestedPause = formatPause(suggestedPauseSecondsValue);
+        if (exerciseBlock) {
+          exerciseBlock.dataset.exercisePauseSeconds = String(suggestedPauseSecondsValue);
+          exerciseBlock.dataset.exercisePauseManual = "false";
+        }
         data.forEach(set => {
           if (!set.pauseManual) {
             set.pause = suggestedPause;
             set.targetReps = plan.targetReps;
+            set.pauseManual = false;
           }
         });
         exerciseBlock.dataset.pauseInitialized = "true";
@@ -5153,12 +5312,14 @@
       const nameElement = $(`name-${slot}`);
       const plan = goalPrescription(nameElement?.textContent, nameElement?.dataset.muscle, slotIds().indexOf(slot));
       const defaultPause = formatPause(plan.pauseSeconds);
+      const exercisePauseValue = formatPause(exercisePauseSeconds(slot) || parsePause(defaultPause));
+      const exercisePauseManualValue = exercisePauseManual(slot);
       container.innerHTML = "";
       for (let i = 1; i <= count; i++) {
         const data = saved?.[i-1] || {};
-        const pauseValue = formatPause(parsePause(data.pause || defaultPause));
+        const pauseValue = exercisePauseValue;
         const targetReps = data.targetReps || plan.targetReps || "";
-        const pauseManual = data.pauseManual === true || (data.pauseManual === undefined && Boolean(data.pause));
+        const pauseManual = exercisePauseManualValue;
         const block = document.createElement("div");
         block.className = "set-block" + (data.completed ? " completed" : "");
         block.dataset.pauseKey = pauseKey(slot, i);
@@ -5167,7 +5328,7 @@
             <div>${i}</div>
             <div class="previous">${esc(data.prev || "-")}</div>
             <div><input class="weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="kg" value="${esc(data.weight || "")}" oninput="sanitizeKgInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
-            <div><input class="reps" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="updateAnalytics('${slot}'); scheduleAutoSave();"></div>
+            <div><input class="reps" type="text" inputmode="numeric" pattern="[0-9]*(-[0-9]*)?" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="sanitizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();" onblur="normalizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div class="pause-inline-status" id="pause-inline-${slot}-${i}">${esc(pauseValue)}</div>
             <label class="set-complete-control" title="Markér sæt ${i} som færdigt">
               <input type="checkbox" ${data.completed ? "checked" : ""} onchange="toggleCompleted(this,'${slot}')" aria-label="Sæt ${i} færdigt">
@@ -5286,6 +5447,8 @@
     function collectSetData(slot) {
       const container = $(`sets-${slot}`);
       if (!container) return [];
+      const sharedPause = formatPause(exercisePauseSeconds(slot));
+      const sharedPauseManual = exercisePauseManual(slot);
       return [...container.querySelectorAll(".set-block")].map((row, index) => {
         const timer = pauseTimers[pauseKey(slot, index + 1)];
         return {
@@ -5294,8 +5457,8 @@
           weight: row.querySelector(".weight")?.value || "",
           reps: row.querySelector(".reps")?.value || "",
           targetReps: row.querySelector(".reps")?.dataset.targetReps || "",
-          pause: row.querySelector(".pause")?.value || "",
-          pauseManual: row.querySelector(".pause")?.dataset.pauseManual === "true",
+          pause: sharedPause,
+          pauseManual: sharedPauseManual,
           pauseTimer: timer ? {
             total: timer.total,
             remaining: timer.remaining,
@@ -5311,16 +5474,7 @@
       input.dataset.pauseManual = "true";
       const match = input.id.match(/^pause-(.+)-(\d+)$/);
       if (match) {
-        const inline = $(`pause-inline-${match[1]}-${match[2]}`);
-        if (inline) inline.textContent = input.value || "00:00";
-        const key = pauseKey(match[1], Number(match[2]));
-        const timer = pauseTimers[key];
-        if (timer && !timer.running) {
-          const seconds = parsePause(input.value);
-          timer.total = seconds;
-          timer.remaining = seconds;
-          updatePauseProgress(key, { reset: true });
-        }
+        setExercisePauseSeconds(match[1], parsePause(input.value), { manual: true, save: false });
       }
       updateEstimatedTime();
       scheduleAutoSave();
@@ -5332,14 +5486,16 @@
       const next = Math.max(1, current + delta);
       if (delta > 0 && next > current) {
         const previousSet = data[data.length - 1] || {};
+        const sharedPause = formatPause(exercisePauseSeconds(slot));
+        const sharedPauseManual = exercisePauseManual(slot);
         data.push({
           prev: "-",
           completed: false,
           weight: previousSet.weight || "",
           reps: previousSet.reps || "",
           targetReps: previousSet.targetReps || "",
-          pause: previousSet.pause || "",
-          pauseManual: previousSet.pauseManual === true
+          pause: sharedPause,
+          pauseManual: sharedPauseManual
         });
       }
       clearPauseTimers(slot);
@@ -5395,7 +5551,7 @@
       if (timer?.running || (timer && Number(timer.remaining) <= 0)) return;
       setActivePauseComponent(slot, set);
       if (!isAutoPauseEnabled()) return;
-      if (parsePause(pauseInput.value) <= 0 && !(timer?.remaining > 0 || timer?.total > 0)) return;
+      if (exercisePauseSeconds(slot) <= 0 && !(timer?.remaining > 0 || timer?.total > 0)) return;
       setActivePauseComponent(slot, set, { start: true });
     }
 
@@ -5487,7 +5643,7 @@
       renderActivePauseComponent();
       ensurePauseAudioContext();
       const existing = pauseTimers[key];
-      const inputSeconds = parsePause(input.value);
+      const inputSeconds = exercisePauseSeconds(slot);
       const seconds = existing?.remaining > 0
         ? existing.remaining
         : inputSeconds > 0
@@ -5535,7 +5691,7 @@
     function resetPause(slot, set) {
       const key = pauseKey(slot, set);
       const input = $(`pause-${slot}-${set}`);
-      const total = pauseTimers[key]?.total || parsePause(input.value);
+      const total = exercisePauseSeconds(slot) || pauseTimers[key]?.total || parsePause(input.value);
       stopPause(key);
       input.value = total ? formatPause(total) : "";
       const inline = $(`pause-inline-${slot}-${set}`);
@@ -5694,10 +5850,12 @@
       return JSON.stringify((state?.exercises || []).map(exercise => ({
         name: exercise.name,
         muscle: exercise.muscle,
-        role: exercise.role,
-        exerciseType: exercise.exerciseType || "strength",
-        trainingStyle: exercise.trainingStyle || "gym",
-        cardio: exercise.cardio ? {
+          role: exercise.role,
+          exerciseType: exercise.exerciseType || "strength",
+          trainingStyle: exercise.trainingStyle || "gym",
+          pause: exercise.pause || exercise.sets?.[0]?.pause || "",
+          pauseManual: exercise.pauseManual === true || exercise.sets?.some(set => set.pauseManual === true),
+          cardio: exercise.cardio ? {
           durationMinutes: exercise.cardio.durationMinutes || "",
           distanceKm: exercise.cardio.distanceKm || "",
           calories: exercise.cardio.calories || "",
@@ -5932,6 +6090,8 @@
             role: block.dataset.role || "accessory",
             exerciseType: block.dataset.exerciseType || "strength",
             trainingStyle: block.dataset.trainingStyle || "gym",
+            pause: formatPause(exercisePauseSeconds(slot)),
+            pauseManual: exercisePauseManual(slot),
             sets: collectSetData(slot),
             cardio: collectCardioData(slot)
           };
@@ -6649,6 +6809,23 @@
       return true;
     }
 
+    function clearActiveWorkoutAfterFinish() {
+      stopWorkoutTimerInterval();
+      clearPauseTimers();
+      activeWorkoutSession = null;
+      activeSessionId = "";
+      sessionStartedAt = null;
+      sessionCompletedAt = null;
+      sessionStatus = "not_started";
+      currentWorkoutView = "program";
+      document.body.dataset.workoutView = "program";
+      removeLocalValue("active_workout_autosave");
+      saveLastActiveView("program");
+      window.FirestoreDataService?.clearActiveWorkout?.().catch(error => {
+        console.warn("[Work4it] Aktiv cloud-træning kunne ikke ryddes efter afslutning.", error);
+      });
+    }
+
     function finishWorkout(options = {}) {
       if (!["in_progress", "paused"].includes(sessionStatus)) return;
       if (!options.skipConfirm && !confirm(t("finishConfirm"))) return;
@@ -6668,13 +6845,13 @@
       if (sessionChanged && confirm("Vil du også gemme disse ændringer i selve programmet?")) {
         applySessionChangesToProgram(finishedSession);
       }
-      activeWorkoutSession = null;
-      currentWorkoutView = "program";
-      document.body.dataset.workoutView = "program";
+      clearActiveWorkoutAfterFinish();
       showProgramView({ captureSession: false });
-      sessionStatus = "completed";
-      autoSave();
       updateWorkoutButtonVisibility();
+      $("autosaveStatus").textContent = "Sidste træning afsluttet og gemt";
+      window.FirestoreDataService?.syncAllLocalData?.().catch(error => {
+        console.warn("[Work4it] Træningshistorik kunne ikke synkroniseres straks efter afslutning.", error);
+      });
       alert(`${t("workoutFinished")}\n${t("volumeHeader")}: ${vol(entry.totalVolume)}\n${t("bestOneRm")}: ${entry.bestOneRm ? kg(entry.bestOneRm) : "-"}\nEstimeret kalorieforbrug: ${entry.estimatedCalories} kcal`);
     }
 
@@ -7447,6 +7624,15 @@
       const box = $("aiRequestCounter");
       const remainingEl = $("aiRequestRemaining");
       if (!box || !remainingEl || !detail) return;
+      const isAdmin = detail.isAdmin === true || detail.role === "admin" || Number(detail.aiRequestLimit) === -1;
+      if (isAdmin) {
+        remainingEl.textContent = "Ubegrænset";
+        box.classList.remove("warning", "empty");
+        box.querySelector("span").innerHTML = `<strong id="aiRequestRemaining">Ubegrænset</strong> AI Requests · Administrator`;
+        const upgrade = box.querySelector(".ai-request-upgrade");
+        if (upgrade) upgrade.textContent = "Administrator";
+        return;
+      }
       const limit = Number(detail.aiRequestLimit) || 0;
       const used = Number(detail.aiRequestsUsed) || 0;
       const remaining = Math.max(0, Number(detail.remaining ?? (limit - used)) || 0);
@@ -7480,10 +7666,14 @@
         }
         const current = collectSetData(slot);
         const desiredCount = mode === "pauses" ? current.length : plan.sets;
+        if (!exercisePauseManual(slot) && mode !== "volume") {
+          setExercisePauseSeconds(slot, plan.pauseSeconds, { manual: false, save: false });
+        }
         const updated = Array.from({ length: desiredCount }, (_, index) => {
           const set = { ...(current[index] || {}) };
           set.targetReps = plan.targetReps;
-          if (!set.pauseManual && mode !== "volume") set.pause = formatPause(plan.pauseSeconds);
+          set.pause = formatPause(exercisePauseSeconds(slot));
+          set.pauseManual = exercisePauseManual(slot);
           return set;
         });
         renderSets(slot, desiredCount, updated);
@@ -8055,17 +8245,15 @@
       if (action.action === "updatePauseSet") {
         const seconds = parsePause(action.value);
         let changed = 0;
-        document.querySelectorAll(".pause").forEach(input => {
-          const setNumber = Number(input.id.split("-").pop());
-          if (!action.setNumber || setNumber === Number(action.setNumber)) {
-            input.value = formatPause(seconds);
-            input.dataset.pauseManual = "true";
+        slotIds().forEach(slot => {
+          if (!action.setNumber || $(`pause-${slot}-${Number(action.setNumber)}`)) {
+            setExercisePauseSeconds(slot, seconds, { manual: true, save: false });
             changed++;
           }
         });
         updateEstimatedTime();
         autoSave();
-        return { success: changed > 0, changed: changed > 0, message: `${changed} pausefelt${changed === 1 ? "" : "er"} er opdateret.` };
+        return { success: changed > 0, changed: changed > 0, message: `${changed} øvelse${changed === 1 ? "" : "r"} har fået opdateret pause.` };
       }
 
       if (action.action === "updateWorkoutTime") {
@@ -8150,15 +8338,14 @@
         const seconds = parsePause(action.value);
         if (!Number.isFinite(seconds) || seconds < 0 || seconds > 3600) return { success: false, message: "Pausen skal være mellem 0 og 60 minutter." };
         let changed = 0;
-        document.querySelectorAll(".pause").forEach(input => {
-          input.value = formatPause(seconds);
-          input.dataset.pauseManual = "true";
+        slotIds().forEach(slot => {
+          setExercisePauseSeconds(slot, seconds, { manual: true, save: false });
           changed++;
         });
         if (!changed) return { success: false, message: "Tilføj først mindst én øvelse." };
         updateEstimatedTime();
         autoSave();
-        return { success: true, changed: true, message: `${changed} pausefelter er opdateret til ${formatPause(seconds)}.` };
+        return { success: true, changed: true, message: `${changed} øvelse${changed === 1 ? "" : "r"} har fået pause ${formatPause(seconds)}.` };
       }
 
       return { success: false, message: "Kommandoen kunne ikke behandles." };
@@ -8340,7 +8527,7 @@
       m = cmd.match(/øvelse\s*(\d+)\s*(?:til|=|:|hedder)\s*(.+)$/i);
       if (m) { const slot = slotIds()[parseInt(m[1])-1]; if (slot) { setExercise(slot, m[2].trim(), inferMuscle(m[2].trim(), $(`name-${slot}`).dataset.muscle)); feedback(`${t("exerciseChanged")} "${m[2].trim()}".`); $("copilotInput").value = ""; return; } }
       m = cmd.match(/(?:sæt\s*(\d+)\s*)?pause\s*(?:til|=|:)?\s*([0-9:.,\smtimersekund]+s?)/i);
-      if (m) { const target = m[1] ? parseInt(m[1]) : null, sec = parsePause(m[2]); let changed = 0; document.querySelectorAll(".pause").forEach(input => { const setNo = parseInt(input.id.split("-").pop()); if (!target || target === setNo) { input.value = formatPause(sec); input.dataset.pauseManual = "true"; changed++; } }); updateEstimatedTime(); autoSave(); feedback(`${changed} ${t("pauseFieldsChanged")}`); $("copilotInput").value = ""; return; }
+      if (m) { const target = m[1] ? parseInt(m[1]) : null, sec = parsePause(m[2]); let changed = 0; slotIds().forEach(slot => { if (!target || $(`pause-${slot}-${target}`)) { setExercisePauseSeconds(slot, sec, { manual: true, save: false }); changed++; } }); updateEstimatedTime(); autoSave(); feedback(`${changed} øvelse${changed === 1 ? "" : "r"} har fået opdateret pause.`); $("copilotInput").value = ""; return; }
       m = cmd.match(/(?:tid|timer|tid brugt)\s*(?:til|=|:)\s*([0-9:.,\smtimersekund]+s?)/i);
       if (m) { totalSeconds = parsePause(m[1]); $("globalTimer").textContent = formatTime(totalSeconds); updateEstimatedCalories(); autoSave(); feedback(`${t("timeChanged")} ${formatTime(totalSeconds)}.`); $("copilotInput").value = ""; return; }
       m = cmd.match(/^(.+?)\s+til\s+(.+)$/i);
@@ -8580,6 +8767,16 @@
           : motivation === "high"
             ? Math.min(6, currentCount + 1)
             : currentCount;
+        const pauseWasManual = exercisePauseManual(slot);
+        const currentPauseSeconds = exercisePauseSeconds(slot);
+        const adjustedPauseSeconds = pauseWasManual
+          ? currentPauseSeconds
+          : motivation === "low"
+            ? currentPauseSeconds + 15
+            : motivation === "high"
+              ? Math.max(30, currentPauseSeconds - 10)
+              : currentPauseSeconds;
+        setExercisePauseSeconds(slot, adjustedPauseSeconds, { manual: pauseWasManual, save: false });
         const data = collectSetData(slot).map(set => {
           const next = { ...set };
           if (motivation === "low" && numberValue(next.weight)) {
@@ -8588,16 +8785,8 @@
           if (motivation === "high" && numberValue(next.weight)) {
             next.weight = String(Math.round(numberValue(next.weight) * 1.025 * 2) / 2);
           }
-          if (!next.pauseManual) {
-            const seconds = parsePause(next.pause) ||
-              suggestedPauseSeconds($(`name-${slot}`)?.textContent, $(`name-${slot}`)?.dataset.muscle);
-            const adjusted = motivation === "low"
-              ? seconds + 15
-              : motivation === "high"
-                ? Math.max(30, seconds - 10)
-                : seconds;
-            next.pause = formatPause(adjusted);
-          }
+          next.pause = formatPause(adjustedPauseSeconds);
+          next.pauseManual = pauseWasManual;
           return next;
         });
         renderSets(slot, nextCount, data);
@@ -8885,10 +9074,10 @@
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
-  <script src="screenshot-import.js?v=20260710-default-one-set1"></script>
+  <script src="screenshot-import.js?v=20260710-reps-input1"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-system.js?v=20260628-ai20"></script>
+  <script src="ai-system.js?v=20260710-admin1"></script>
   <script src="ai-copilot-actions.js?v=20260628-ai20"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
@@ -8898,17 +9087,17 @@
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
-  <script src="stripe-config.js?v=20260706-premium-6m1"></script>
-  <script src="membership.js?v=20260707-free-flow2"></script>
+  <script src="stripe-config.js?v=20260711-membership-v2"></script>
+  <script src="membership.js?v=20260711-membership-v2"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
-  <script type="module" src="stripe-checkout.js?v=20260706-premium-6m1"></script>
-  <script type="module" src="auth-service.js?v=20260706-resume-state1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260630-cloud-primary2"></script>
-  <script type="module" src="ai-request-counter.js?v=20260706-premium-6m1"></script>
+  <script type="module" src="stripe-checkout.js?v=20260711-membership-v2"></script>
+  <script type="module" src="auth-service.js?v=20260711-membership-v2"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260711-membership-v2"></script>
+  <script type="module" src="ai-request-counter.js?v=20260711-membership-v2"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260710-default-one-set1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260710-admin1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

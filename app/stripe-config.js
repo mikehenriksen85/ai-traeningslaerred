@@ -4,8 +4,8 @@
   const STRIPE_ENVIRONMENT = "sandbox";
 
   const STRIPE_PLANS = Object.freeze({
-    quarterly: Object.freeze({
-      plan: "quarterly",
+    premium_3: Object.freeze({
+      plan: "premium_3",
       label: "Premium 3 måneder",
       priceId: "price_1TnhepJ8DJiiK3vDoqAb7oqY",
       priceDkk: 59,
@@ -13,8 +13,8 @@
       aiRequestLimit: 15,
       aiRequestPeriod: "monthly"
     }),
-    semiannual: Object.freeze({
-      plan: "semiannual",
+    premium_6: Object.freeze({
+      plan: "premium_6",
       label: "Premium 6 måneder",
       priceId: "price_1TomK2J8DJiiK3vD4SfYI4tq",
       priceDkk: 109,
@@ -22,8 +22,8 @@
       aiRequestLimit: 15,
       aiRequestPeriod: "monthly"
     }),
-    yearly: Object.freeze({
-      plan: "yearly",
+    premium_12: Object.freeze({
+      plan: "premium_12",
       label: "Premium 12 måneder",
       priceId: "price_1Tnhf9J8DJiiK3vDpQe8srVl",
       priceDkk: 199,

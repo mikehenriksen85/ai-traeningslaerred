@@ -1,36 +1,38 @@
 (function () {
   "use strict";
 
-  // Gratis/prøveperiode håndteres fortsat i klienten. Betalte planer må kun
+  // Gratis håndteres fortsat i klienten. Betalte planer må kun
   // aktiveres af Stripe-webhooken i Firebase Functions efter bekræftet betaling.
   // TODO: Flyt endelig produktionsadgang til serverbeskyttede claims, når Stripe
   // går fra test-mode til live.
   const CLIENT_MANAGED_DEMO = false;
   const STORAGE_KEY = "ai_training_membership_v1";
-  const TRIAL_DAYS = 10;
   const POPUP_INTERVAL_DAYS = 30;
   const DAY_MS = 24 * 60 * 60 * 1000;
   const PRICING_STRATEGY_VERSION = "1.0";
   const EARLY_ADOPTER_LIMIT = 500;
   const PLAN_LABELS = {
-    trial: "Premium-prøveperiode",
     free: "Gratis version",
-    quarterly: "Premium 3 måneder",
-    semiannual: "Premium 6 måneder",
-    yearly: "Premium 12 måneder",
-    lifetime: "Premium livstid (legacy)"
+    premium_3: "Premium 3 måneder",
+    premium_6: "Premium 6 måneder",
+    premium_12: "Premium 12 måneder"
   };
   const PRICE_TIERS = Object.freeze({
-    early_adopter: Object.freeze({ quarterly: 59, semiannual: 109, yearly: 199 }),
-    standard: Object.freeze({ quarterly: 79, semiannual: 129, yearly: 249 })
+    early_adopter: Object.freeze({ premium_3: 59, premium_6: 109, premium_12: 199 }),
+    standard: Object.freeze({ premium_3: 79, premium_6: 129, premium_12: 249 })
   });
   const PLAN_DETAILS = {
-    trial: { priceDkk: 0, membershipDurationMonths: null, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
     free: { priceDkk: 0, membershipDurationMonths: null, aiRequestLimit: 3, aiRequestPeriod: "included" },
-    quarterly: { priceDkk: 59, membershipDurationMonths: 3, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
-    semiannual: { priceDkk: 109, membershipDurationMonths: 6, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
-    yearly: { priceDkk: 199, membershipDurationMonths: 12, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
-    lifetime: { priceDkk: 449, membershipDurationMonths: null, aiRequestLimit: 15, aiRequestPeriod: "monthly" }
+    premium_3: { priceDkk: 59, membershipDurationMonths: 3, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    premium_6: { priceDkk: 109, membershipDurationMonths: 6, aiRequestLimit: 15, aiRequestPeriod: "monthly" },
+    premium_12: { priceDkk: 199, membershipDurationMonths: 12, aiRequestLimit: 15, aiRequestPeriod: "monthly" }
+  };
+  const PLAN_ALIASES = {
+    quarterly: "premium_3",
+    semiannual: "premium_6",
+    yearly: "premium_12",
+    lifetime: "premium_12",
+    trial: "free"
   };
   let pricingContext = {
     strategyVersion: PRICING_STRATEGY_VERSION,
@@ -83,10 +85,6 @@
     return date && Number.isFinite(date.getTime()) ? date : null;
   }
 
-  function addDays(date, days) {
-    return new Date(date.getTime() + days * DAY_MS);
-  }
-
   function addMonths(date, months) {
     const result = new Date(date);
     const originalDay = result.getDate();
@@ -101,41 +99,10 @@
     return new Date(date.getFullYear(), date.getMonth() + 1, 1, 0, 0, 0, 0).toISOString();
   }
 
-  function createTrial(now = new Date()) {
-    const details = planDetails("trial");
-    return {
-      membershipType: "trial",
-      trialStartDate: iso(now),
-      trialEndDate: iso(addDays(now, TRIAL_DAYS)),
-      membershipStartDate: null,
-      membershipEndDate: null,
-      isPremium: true,
-      membershipStatus: "trial",
-      selectedPlan: "trial",
-      priceDkk: details.priceDkk,
-      aiRequestLimit: details.aiRequestLimit,
-      aiRequestPeriod: details.aiRequestPeriod,
-      membershipDurationMonths: details.membershipDurationMonths,
-      aiRequestsUsed: 0,
-      aiResetDate: null,
-      lastRequestTimestamp: null,
-      lastMembershipPopupDate: null,
-      pricingStrategyVersion: PRICING_STRATEGY_VERSION,
-      pricingTierAtPurchase: null,
-      priceDkkAtPurchase: null,
-      priceLocked: false,
-      registeredUserCountAtSelection: null,
-      selectedAt: null,
-      updatedAt: iso(now)
-    };
-  }
-
   function createFreeFallback(now = new Date()) {
     const details = planDetails("free");
     return {
       membershipType: "free",
-      trialStartDate: null,
-      trialEndDate: null,
       membershipStartDate: null,
       membershipEndDate: null,
       isPremium: false,
@@ -162,26 +129,48 @@
 
   function normalize(value, now = new Date()) {
     if (!value || typeof value !== "object") return createFreeFallback(now);
-    const allowed = ["trial", "free", "quarterly", "semiannual", "yearly", "lifetime"];
-    const membershipType = allowed.includes(value.membershipType) ? value.membershipType : "free";
-    const selectedPlan = allowed.includes(value.selectedPlan) ? value.selectedPlan : membershipType;
-    const paidPlan = ["quarterly", "semiannual", "yearly", "lifetime"].includes(selectedPlan);
+    const admin = value.role === "admin";
+    const allowed = ["free", "premium_3", "premium_6", "premium_12"];
+    const normalizePlan = plan => {
+      const mapped = PLAN_ALIASES[plan] || plan;
+      return allowed.includes(mapped) ? mapped : "free";
+    };
+    const membershipType = admin ? "premium_12" : normalizePlan(value.membershipType);
+    const selectedPlan = admin ? "premium_12" : normalizePlan(value.selectedPlan || membershipType);
+    const paidPlan = ["premium_3", "premium_6", "premium_12"].includes(selectedPlan);
+    const migratedFromRetiredPlan = !admin && (value.membershipType === "lifetime" || value.selectedPlan === "lifetime");
     const storedPrice = Number(value.priceDkkAtPurchase ?? value.priceDkk);
     const hasLockedPrice = paidPlan && Number.isFinite(storedPrice) && storedPrice > 0 && Boolean(value.membershipStartDate || value.priceLocked);
-    const purchaseTier = value.pricingTierAtPurchase || (hasLockedPrice ? "legacy" : null);
+    const purchaseTier = ["standard", "early_adopter"].includes(value.pricingTierAtPurchase)
+      ? value.pricingTierAtPurchase
+      : null;
     const details = planDetails(selectedPlan, purchaseTier === "standard" ? "standard" : pricingContext.activeTier);
+    const startedAt = value.membershipStartDate || value.membershipStartedAt || (migratedFromRetiredPlan ? iso(now) : null);
+    const endDate = value.membershipEndDate ||
+      value.membershipExpiresAt ||
+      (migratedFromRetiredPlan ? iso(addMonths(parseDate(startedAt) || now, details.membershipDurationMonths || 12)) : null);
+    const activePaid = paidPlan && (value.membershipStatus === "active" || migratedFromRetiredPlan);
+    const normalizedStatus = admin
+      ? "active"
+      : membershipType === "free"
+        ? "free"
+        : activePaid
+          ? "active"
+          : value.membershipStatus === "pending_payment"
+            ? "pending_payment"
+            : "pending_payment";
     return {
       membershipType,
-      trialStartDate: value.trialStartDate || null,
-      trialEndDate: value.trialEndDate || null,
-      membershipStartDate: value.membershipStartDate || null,
-      membershipEndDate: value.membershipEndDate || null,
-      isPremium: value.membershipStatus === "active" || membershipType === "trial",
-      membershipStatus: value.membershipStatus || (membershipType === "free" ? "free" : membershipType === "trial" ? "trial" : "pending_payment"),
+      role: admin ? "admin" : "",
+      isAdmin: admin,
+      membershipStartDate: admin ? null : startedAt,
+      membershipEndDate: admin ? null : endDate,
+      isPremium: admin || activePaid,
+      membershipStatus: normalizedStatus,
       selectedPlan,
       priceDkk: hasLockedPrice ? storedPrice : details.priceDkk,
-      aiRequestLimit: details.aiRequestLimit,
-      aiRequestPeriod: details.aiRequestPeriod,
+      aiRequestLimit: admin ? -1 : details.aiRequestLimit,
+      aiRequestPeriod: admin ? "unlimited" : details.aiRequestPeriod,
       membershipDurationMonths: Number.isFinite(Number(value.membershipDurationMonths))
         ? Number(value.membershipDurationMonths)
         : details.membershipDurationMonths,
@@ -228,11 +217,9 @@
   function evaluate(data, now = new Date()) {
     const next = normalize(data, now);
     const expiry = parseDate(next.membershipEndDate);
-    const trialEnd = parseDate(next.trialEndDate);
-    const trialExpired = next.membershipType === "trial" && trialEnd && trialEnd <= now;
-    const paidExpired = ["quarterly", "semiannual", "yearly"].includes(next.membershipType) && expiry && expiry <= now;
+    const paidExpired = ["premium_3", "premium_6", "premium_12"].includes(next.membershipType) && expiry && expiry <= now;
 
-    if (trialExpired || paidExpired) {
+    if (!next.isAdmin && paidExpired) {
       next.membershipType = "free";
       next.selectedPlan = "free";
       next.isPremium = false;
@@ -240,7 +227,7 @@
       next.membershipStartDate = null;
       next.membershipEndDate = null;
     } else {
-      next.isPremium = next.membershipStatus === "active" || next.membershipType === "trial";
+      next.isPremium = next.isAdmin || next.membershipStatus === "active";
     }
     return next;
   }
@@ -252,9 +239,7 @@
   }
 
   function daysRemaining(data, now = new Date()) {
-    const end = data.membershipType === "trial"
-      ? parseDate(data.trialEndDate)
-      : parseDate(data.membershipEndDate);
+    const end = parseDate(data.membershipEndDate);
     return end ? Math.max(0, Math.ceil((end.getTime() - now.getTime()) / DAY_MS)) : null;
   }
 
@@ -274,16 +259,16 @@
   }
 
   function renderPricing() {
-    const quarterly = planDetails("quarterly");
-    const semiannual = planDetails("semiannual");
-    const yearly = planDetails("yearly");
+    const premium3 = planDetails("premium_3");
+    const premium6 = planDetails("premium_6");
+    const premium12 = planDetails("premium_12");
     const values = {
-      membershipPriceQuarterly: formatPrice(quarterly.priceDkk),
-      membershipPriceSemiannual: formatPrice(semiannual.priceDkk),
-      membershipPriceYearly: formatPrice(yearly.priceDkk),
-      membershipPopupPriceQuarterly: `${formatPrice(quarterly.priceDkk)} · 15 AI Requests/md.`,
-      membershipPopupPriceSemiannual: `${formatPrice(semiannual.priceDkk)} · 15 AI Requests/md.`,
-      membershipPopupPriceYearly: `${formatPrice(yearly.priceDkk)} · 15 AI Requests/md. · Bedste værdi`
+      membershipPriceQuarterly: formatPrice(premium3.priceDkk),
+      membershipPriceSemiannual: formatPrice(premium6.priceDkk),
+      membershipPriceYearly: formatPrice(premium12.priceDkk),
+      membershipPopupPriceQuarterly: `${formatPrice(premium3.priceDkk)} · 15 AI Requests/md.`,
+      membershipPopupPriceSemiannual: `${formatPrice(premium6.priceDkk)} · 15 AI Requests/md.`,
+      membershipPopupPriceYearly: `${formatPrice(premium12.priceDkk)} · 15 AI Requests/md. · Bedste værdi`
     };
     Object.entries(values).forEach(([id, value]) => {
       const element = document.getElementById(id);
@@ -318,17 +303,17 @@
     const statusCopy = document.getElementById("membershipStatusCopy");
     const statusDate = document.getElementById("membershipStatusDate");
     const navStatus = document.getElementById("membershipNavStatus");
-    const trialButton = document.getElementById("startTrialBtn");
     if (!statusName || !statusCopy || !statusDate) return;
 
     renderPricing();
     const remaining = daysRemaining(data);
     statusName.textContent = PLAN_LABELS[data.membershipType];
 
-    if (data.membershipType === "trial") {
-      statusCopy.textContent = `${remaining} ${remaining === 1 ? "dag" : "dage"} tilbage med fuld Premium-adgang.`;
-      statusDate.textContent = `Prøveperioden udløber ${formatDate(data.trialEndDate)}. Ingen betaling kræves.`;
-      if (navStatus) navStatus.textContent = `${remaining} dage`;
+    if (data.isAdmin) {
+      statusName.textContent = "Administrator";
+      statusCopy.textContent = "Fuld adgang til hele Work4it uden abonnementskontrol.";
+      statusDate.textContent = "AI Requests er ubegrænsede. Stripe Checkout er deaktiveret for administratorer.";
+      if (navStatus) navStatus.textContent = "Administrator";
     } else if (data.membershipType === "free") {
       statusCopy.textContent = "Gratis medlemskab med 3 AI Requests.";
       statusDate.textContent = "Dine brugerdata slettes aldrig, hvis du bruger gratisversionen.";
@@ -338,26 +323,12 @@
       statusCopy.textContent = "Premium aktiveres først, når Stripe har bekræftet betalingen.";
       statusDate.textContent = "Hvis du har gennemført betaling, opdaterer Work4it automatisk Cloud-status om lidt.";
       if (navStatus) navStatus.textContent = "Afventer";
-    } else if (data.membershipType === "lifetime") {
-      statusCopy.textContent = `Legacy Premium-adgang med 15 AI Requests pr. måned. Valgt til ${formatPrice(data.priceDkkAtPurchase || data.priceDkk)}.`;
-      statusDate.textContent = `Medlemskabet blev valgt ${formatDate(data.membershipStartDate)}.`;
-      if (navStatus) navStatus.textContent = "Legacy";
     } else {
       statusCopy.textContent = `Fuld Premium-adgang med 15 AI Requests pr. måned. Valgt til ${formatPrice(data.priceDkkAtPurchase || data.priceDkk)}.`;
-      statusDate.textContent = `${remaining} ${remaining === 1 ? "dag" : "dage"} tilbage. Udløber ${formatDate(data.membershipEndDate)}.`;
+      statusDate.textContent = remaining == null
+        ? "Medlemskabet er aktivt."
+        : `${remaining} ${remaining === 1 ? "dag" : "dage"} tilbage. Udløber ${formatDate(data.membershipEndDate)}.`;
       if (navStatus) navStatus.textContent = "Premium";
-    }
-
-    if (trialButton) {
-      const trialUsed = Boolean(data.trialStartDate);
-      trialButton.disabled = trialUsed;
-      trialButton.textContent = data.membershipType === "trial"
-        ? "Prøveperiode aktiv"
-        : trialUsed
-          ? "Prøveperiode brugt"
-          : "Start gratis prøveperiode";
-      trialButton.style.opacity = trialUsed ? ".65" : "1";
-      trialButton.style.cursor = trialUsed ? "default" : "pointer";
     }
 
     applyAccessState(data);
@@ -382,7 +353,7 @@
   }
 
   function isPaidPlan(plan) {
-    return ["quarterly", "semiannual", "yearly"].includes(plan);
+    return ["premium_3", "premium_6", "premium_12"].includes(plan);
   }
 
   function setStripeCheckoutReady(ready = true) {
@@ -452,6 +423,10 @@
   }
 
   async function startStripeCheckout(plan) {
+    if (getMembership().isAdmin) {
+      showConfirmation("Administrator har allerede fuld adgang. Stripe Checkout er deaktiveret.");
+      return;
+    }
     if (!isPaidPlan(plan)) {
       console.warn("[Work4it Membership] Stripe checkout ignored for non-paid plan", { plan });
       return selectPlan("free");
@@ -515,7 +490,9 @@
   }
 
   function updateActivePlanUi(data = getMembership()) {
-    const activePlan = data.membershipStatus === "active" || ["free", "trial"].includes(data.membershipType)
+    const activePlan = data.isAdmin
+      ? ""
+      : data.membershipStatus === "active" || data.membershipType === "free"
       ? data.selectedPlan || data.membershipType || "free"
       : "free";
     document.querySelectorAll("[data-membership-plan]").forEach(card => {
@@ -642,8 +619,14 @@
   }
 
   function selectPlan(plan, now = new Date()) {
+    const requestedPlan = PLAN_ALIASES[plan] || plan;
+    const current = getMembership(now);
+    if (current.isAdmin) {
+      showConfirmation("Administrator har allerede fuld adgang. Stripe Checkout er deaktiveret.");
+      return current;
+    }
+    plan = requestedPlan;
     if (isPaidPlan(plan)) {
-      const current = getMembership(now);
       const activePlan = current.membershipStatus === "active" ? current.selectedPlan || current.membershipType : "";
       if (activePlan === plan) {
         showConfirmation(`${PLAN_LABELS[plan]} er allerede aktiv.`);
@@ -653,7 +636,6 @@
       return getMembership(now);
     }
 
-    const current = getMembership(now);
     if (plan === "free") {
       activeCheckoutPlan = "";
       activeCheckoutAttempt = 0;
@@ -695,26 +677,6 @@
       : `${PLAN_LABELS[plan]} kræver sikker betaling via Stripe.`);
     window.dispatchEvent(new CustomEvent("membership:changed", { detail: saved }));
     return saved;
-  }
-
-  function startTrial(now = new Date()) {
-    const current = getMembership(now);
-    if (current.trialStartDate) {
-      showConfirmation("Den gratis prøveperiode er allerede startet eller tidligere brugt.");
-      return current;
-    }
-    const trial = write({
-      ...createTrial(now),
-      membershipStatus: "trial",
-      aiRequestsUsed: 0,
-      aiResetDate: nextMonthStart(now),
-      lastMembershipPopupDate: current.lastMembershipPopupDate,
-      updatedAt: iso(now)
-    });
-    window.dispatchEvent(new CustomEvent("membership:changed", { detail: trial }));
-    render(trial);
-    showConfirmation("Din 10 dages gratis Premium-prøveperiode er startet.");
-    return trial;
   }
 
   function openView() {
@@ -766,7 +728,6 @@
   window.Membership = {
     CLIENT_MANAGED_DEMO,
     STORAGE_KEY,
-    TRIAL_DAYS,
     POPUP_INTERVAL_DAYS,
     PLAN_DETAILS,
     PRICE_TIERS,
@@ -774,7 +735,6 @@
     EARLY_ADOPTER_LIMIT,
     getPricingContext: () => ({ ...pricingContext }),
     getPlanDetails: planDetails,
-    createTrial,
     createFreeFallback,
     normalize,
     evaluate,
@@ -782,7 +742,6 @@
     daysRemaining,
     popupIsDue,
     selectPlan,
-    startTrial,
     startStripeCheckout,
     render,
     initialize,
@@ -795,7 +754,6 @@
   window.openMembershipView = openView;
   window.closeMembershipView = closeView;
   window.selectMembershipPlan = selectPlan;
-  window.startMembershipTrial = startTrial;
   window.openPremiumFeature = requireFeature;
 
   window.addEventListener("training-app:ready", initialize, { once: true });

@@ -13,7 +13,14 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
   const LOCAL_KEY = "work4it_ai_request_usage_v1";
   const FREE_LIMIT = 3;
   const PREMIUM_LIMIT = 15;
-  const MONTHLY_TYPES = new Set(["trial", "quarterly", "semiannual", "yearly", "lifetime"]);
+  const MONTHLY_TYPES = new Set(["premium_3", "premium_6", "premium_12"]);
+  const PLAN_ALIASES = {
+    quarterly: "premium_3",
+    semiannual: "premium_6",
+    yearly: "premium_12",
+    lifetime: "premium_12",
+    trial: "free"
+  };
   let snapshot = {
     membershipType: "free",
     membershipStatus: "free",
@@ -41,21 +48,21 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
   }
 
   function normalizeMembershipType(value) {
-    return ["trial", "free", "quarterly", "semiannual", "yearly", "lifetime"].includes(value) ? value : "free";
+    const normalized = PLAN_ALIASES[value] || value;
+    return ["free", "premium_3", "premium_6", "premium_12"].includes(normalized) ? normalized : "free";
   }
 
   function normalizeMembershipStatus(value, membershipType = "free") {
     if (value === "active") return "active";
-    if (membershipType === "trial") return "trial";
     if (membershipType === "free") return "free";
     return "pending_payment";
   }
 
   function effectiveMembershipType(data = {}) {
+    if (data.role === "admin") return "premium_12";
     const membershipType = normalizeMembershipType(data.membershipType);
     const membershipStatus = normalizeMembershipStatus(data.membershipStatus, membershipType);
-    if (membershipType === "trial" && membershipStatus === "trial") return "trial";
-    if (["quarterly", "semiannual", "yearly", "lifetime"].includes(membershipType) && membershipStatus === "active") return membershipType;
+    if (MONTHLY_TYPES.has(membershipType) && membershipStatus === "active") return membershipType;
     return "free";
   }
 
@@ -65,6 +72,22 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
   }
 
   function normalizeUsage(data = {}, now = new Date()) {
+    const isAdmin = data.role === "admin";
+    if (isAdmin) {
+      return {
+        membershipType: "premium_12",
+        membershipStatus: "active",
+        role: "admin",
+        isAdmin: true,
+        aiRequestLimit: -1,
+        aiRequestsUsed: 0,
+        aiResetDate: null,
+        lastRequestTimestamp: data.lastRequestTimestamp || null,
+        remaining: -1,
+        allowed: true,
+        source: data.source || "admin"
+      };
+    }
     const rawMembershipType = normalizeMembershipType(data.membershipType);
     const membershipStatus = normalizeMembershipStatus(data.membershipStatus, rawMembershipType);
     const membershipType = effectiveMembershipType({ membershipType: rawMembershipType, membershipStatus });
@@ -128,6 +151,7 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
       const membership = window.Membership?.getMembership?.() || {};
       const normalized = normalizeUsage({
         ...data,
+        role: data.role || membership.role || "",
         membershipType: normalizeMembershipType(data.membershipType || membership.membershipType),
         membershipStatus: data.membershipStatus || membership.membershipStatus,
         source: "firestore"
@@ -183,10 +207,12 @@ import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
         const membership = window.Membership?.getMembership?.() || {};
         const normalized = normalizeUsage({
           ...cloudData,
+          role: cloudData.role || membership.role || "",
           membershipType: normalizeMembershipType(cloudData.membershipType || membership.membershipType),
           membershipStatus: cloudData.membershipStatus || membership.membershipStatus,
           source: "firestore"
         });
+        if (normalized.isAdmin) return normalized;
         if (normalized.remaining <= 0) {
           const payload = {
             aiRequestLimit: normalized.aiRequestLimit,

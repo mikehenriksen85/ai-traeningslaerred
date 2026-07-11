@@ -5,7 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { auth, db, functions } from "./firebase-config.js?v=20260628-auth-ready1";
 
-const PAID_PLANS = new Set(["quarterly", "semiannual", "yearly"]);
+const PAID_PLANS = new Set(["premium_3", "premium_6", "premium_12"]);
 
 function currentUser() {
   return auth.currentUser ||
@@ -73,7 +73,7 @@ async function waitForConfirmedMembership(sessionId = "", maxAttempts = 8) {
       await window.FirestoreDataService.refreshFromCloud();
       const membership = window.Membership?.getMembership?.();
       window.Membership?.render?.(membership);
-      if (membership?.membershipStatus === "active" || (membership?.isPremium === true && membership?.membershipType !== "trial")) {
+      if (membership?.role === "admin" || membership?.membershipStatus === "active" || membership?.isPremium === true) {
         window.Membership?.showConfirmation?.("Betaling bekræftet. Premium er aktivt ✓");
         window.Work4itAIRequestCounter?.refresh?.();
         return true;
