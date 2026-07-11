@@ -621,6 +621,10 @@
     .set-progress-percent { position: relative; z-index: 1; color: var(--text-primary); font-size: 9px; font-weight: var(--font-weight-bold); }
     .set-progress-label { color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; }
     .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--blue); color: var(--text-primary); border: 0; border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+    .canvas > .card > .workout-sticky-top {
+      position: sticky;
+      z-index: 70;
+    }
     .workout-sticky-top {
       position: sticky;
       top: calc(68px + env(safe-area-inset-top, 0px));
@@ -1954,7 +1958,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
       }
-      .workout-sticky-top .stats {
+      body[data-workout-view="session"] .workout-sticky-top .stats {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 6px 8px;
@@ -2853,15 +2857,15 @@
         <span id="globalTimer">00:00:00</span>
         <span id="autosaveStatus">Klar til første øvelse</span>
       </div>
-      <div class="daily-motivation-summary program-only" id="dailyMotivationSummary" hidden>
-        <span class="daily-motivation-value" id="dailyMotivationValue"></span>
-        <button class="daily-motivation-change" type="button" onclick="changeDailyMotivation()">Skift dagens motivation</button>
-      </div>
       <section class="calorie-panel session-only" id="caloriePanel" aria-live="polite">
         <div class="calorie-title">🔥 Estimeret kalorieforbrug</div>
         <div class="calorie-value missing" id="calorieEstimateValue">Mangler data til kalorie-estimat</div>
       </section>
       <button class="dashboard-btn program-only" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
+      </div>
+      <div class="daily-motivation-summary program-only" id="dailyMotivationSummary" hidden>
+        <span class="daily-motivation-value" id="dailyMotivationValue"></span>
+        <button class="daily-motivation-change" type="button" onclick="changeDailyMotivation()">Skift dagens motivation</button>
       </div>
       <div id="exercises" aria-label="Øvelsesliste"></div>
       <div class="session-finish-zone session-only">
