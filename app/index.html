@@ -3334,11 +3334,26 @@
       "Cardio": ["Løbebånd","Udendørs løb","Stairmaster / Stair Climber","Romaskine","Crosstrainer","Motionscykel","Air Bike","Spinning","Sjipning","Svømning","Rask gang","Hiking / Vandring","Trappeløb","Roning på vand","Assault Runner"]
     };
 
+    function hasTrainingEquipment(name) {
+      const value = String(name || "").toLowerCase();
+      return /(barbell|dumbbell|håndvægt|ez-bar|stang|cable|kabel|machine|maskine|smith|rack|landmine|pec deck|leg press|hack squat|leg extension|leg curl|lat pulldown|pulldown|pushdown|row|t-bar|meadows|preacher|ab wheel|stir-the-pot|farmer|suitcase|carry|kettlebell|elastik|band|ring|parallel bar|straight bar|bench|box|stairmaster|romaskine|crosstrainer|motionscykel|air bike|spinning|assault runner|løbebånd)/i.test(value);
+    }
+
+    function isBodyweightHomeExercise(name, muscle) {
+      if (muscle === "Cardio") return /(udendørs løb|rask gang|hiking|vandring|trappeløb|svømning)/i.test(String(name || ""));
+      if (hasTrainingEquipment(name)) return false;
+      return /(push-up|pushup|knee push|diamond push|decline push|archer push|pseudo planche|pike push|handstand|bodyweight squat|sissy squat|wall sit|walking lunge|reverse lunge|split squat|glute bridge|single-leg glute bridge|frog pump|hamstring slide|nordic|plank|side plank|dead bug|hollow body|reverse crunch|v-up|mountain climber|bird dog|superman|arch body|mcgill curl|hip hinge drill|quadruped|pistol squat|assisted pistol|scapular pull-up|negative pull-up|pull-ups|chin-ups|toes-to-bar|hanging knee|hanging leg|l-sit|dragon flag)/i.test(String(name || ""));
+    }
+
+    function exerciseLocationType(name, muscle) {
+      return isBodyweightHomeExercise(name, muscle) ? "Hjemme" : "Center";
+    }
+
     const catalog = Object.entries(exerciseLibrary).flatMap(([muscle, names]) =>
-      names.map((name, index) => ({
+      names.map(name => ({
         name,
         muscle,
-        type: index % 5 === 0 ? "Hjemme" : "Center",
+        type: exerciseLocationType(name, muscle),
         tags: [muscle.toLowerCase(), name.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase()]
       }))
     );
@@ -3365,13 +3380,13 @@
       const existing = catalog.find(exercise => exercise.name === name && exercise.muscle === muscle);
       if (existing) {
         existing.trainingStyle = "calisthenics";
-        existing.type = "Hjemme";
+        existing.type = exerciseLocationType(name, muscle);
         existing.tags = [...new Set([...(existing.tags || []), "calisthenics", "kropsvægt"])];
       } else {
         catalog.push({
           name,
           muscle,
-          type: "Hjemme",
+          type: exerciseLocationType(name, muscle),
           trainingStyle: "calisthenics",
           tags: [muscle.toLowerCase(), name.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase(), "calisthenics", "kropsvægt"]
         });
@@ -4842,7 +4857,7 @@
     function addCustomExerciseFromPicker(event = null) {
       event?.stopPropagation?.();
       const name = $("pickerCustomExerciseName")?.value.trim();
-      const type = $("pickerCustomExerciseType")?.value || "Hjemme";
+      const requestedType = $("pickerCustomExerciseType")?.value || "Hjemme";
       const muscle = exercisePickerMuscle;
       if (!name || !muscle) return alert("Skriv et navn på øvelsen.");
       if (catalog.some(exercise => normalizedExerciseSearch(exercise.name) === normalizedExerciseSearch(name) && exercise.muscle === muscle)) {
@@ -5212,7 +5227,7 @@
     function addCustomReplacement() {
       const name = $("replacementNewName")?.value.trim();
       const muscle = $("replacementNewMuscle")?.value;
-      const type = $("replacementNewType")?.value;
+      const requestedType = $("replacementNewType")?.value || "Center";
       if (!name) return alert(t("askExerciseName"));
       const currentType = $(`block-${replacementState.slot}`)?.dataset.exerciseType || "strength";
       if ((muscle === "Cardio" ? "cardio" : "strength") !== currentType) {
@@ -5222,7 +5237,7 @@
         return alert(t("exerciseExists"));
       }
       const trainingStyle = $(`block-${replacementState.slot}`)?.dataset.trainingStyle === "calisthenics" ? "calisthenics" : "gym";
-      const customExercise = { name, muscle, type, trainingStyle, tags: [name.toLowerCase(), muscle.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase(), trainingStyle], custom: true };
+      const customExercise = { name, muscle, type: requestedType === "Hjemme" && exerciseLocationType(name, muscle) === "Hjemme" ? "Hjemme" : "Center", trainingStyle, tags: [name.toLowerCase(), muscle.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase(), trainingStyle], custom: true };
       catalog.push(customExercise);
       saveCustomExercises();
       confirmExerciseReplacement(replacementState.slot, encodeURIComponent(name), encodeURIComponent(muscle));
@@ -8059,7 +8074,7 @@
       for (let index = 0; index < count; index++) {
         const muscle = muscles[index % Math.max(1, muscles.length)] || "Bryst";
         let pool = catalog.filter(exercise => exercise.muscle === muscle && !used.has(exercise.name));
-        if (style === "home") pool = pool.filter(exercise => exercise.type === "Hjemme" || equipmentCategory(exercise) === "Kropsvægt");
+        if (style === "home") pool = pool.filter(exercise => exercise.type === "Hjemme");
         if (style === "gym") pool = pool.filter(exercise => exercise.type === "Center");
         const ranked = window.TrainingGoalEngine?.rankExercises?.(pool, goal, index) || pool;
         const exercise = ranked[0] || catalog.find(item => item.muscle === muscle && !used.has(item.name));
@@ -8127,9 +8142,9 @@
         }
         if (action.constraint === "home_training") {
           const definition = resolveExerciseDefinition(name) || {};
-          const isHomeFriendly = definition.type === "Hjemme" || ["Kropsvægt", "Håndvægte", "Elastik", "Kettlebell"].includes(equipmentCategory(definition));
+          const isHomeFriendly = definition.type === "Hjemme";
           if (!isHomeFriendly) {
-            const replacement = replacementFor(slot, exercise => exercise.type === "Hjemme" || ["Kropsvægt", "Håndvægte", "Elastik", "Kettlebell"].includes(equipmentCategory(exercise)));
+            const replacement = replacementFor(slot, exercise => exercise.type === "Hjemme");
             if (replacement) { setExercise(slot, replacement.name, replacement.muscle); changed++; } else removeSlots.push(slot);
           }
         }
@@ -9268,12 +9283,12 @@
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
   <script type="module" src="stripe-checkout.js?v=20260711-permanent-admin1"></script>
   <script type="module" src="auth-service.js?v=20260711-permanent-admin1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260711-exercise-history1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260712-home-center1"></script>
   <script type="module" src="ai-request-counter.js?v=20260711-permanent-admin1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260711-exercise-history1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260712-home-center1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
