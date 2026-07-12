@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v84-home-center";
+const CACHE_NAME = "work4it-shell-v85-audit1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -29,7 +29,7 @@ const APP_SHELL = [
   "./profile-account.js?v=20260706-resume-state1",
   "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260628-auth-ready1",
-  "./auth-service.js?v=20260712-home-center1",
+  "./auth-service.js?v=20260712-audit1",
   "./firestore-cloud-service.js?v=20260712-home-center1"
 ];
 
@@ -86,3 +86,4 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+

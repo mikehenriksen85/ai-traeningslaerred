@@ -117,7 +117,7 @@ async function ensureUserDocument(user) {
     lifetime: "premium_12",
     trial: "free"
   }[value] || value);
-  const rawMembershipType = existingUser?.membership || membershipSnapshot.data()?.membershipType;
+  const rawMembershipType = membershipSnapshot.data()?.membershipType || existingUser?.membership;
   const mappedMembershipType = normalizedMembership(rawMembershipType);
   const membershipType = isPermanentAdmin
     ? "lifetime"
@@ -460,3 +460,4 @@ export {
   deleteAccountAndData,
   clearLoginCache
 };
+

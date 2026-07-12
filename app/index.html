@@ -9282,13 +9282,13 @@
   <script src="membership.js?v=20260711-permanent-admin1"></script>
   <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
   <script type="module" src="stripe-checkout.js?v=20260711-permanent-admin1"></script>
-  <script type="module" src="auth-service.js?v=20260711-permanent-admin1"></script>
+  <script type="module" src="auth-service.js?v=20260712-audit1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260712-home-center1"></script>
   <script type="module" src="ai-request-counter.js?v=20260711-permanent-admin1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260712-home-center1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260712-audit1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
@@ -9296,3 +9296,5 @@
   </script>
 </body>
 </html>
+
+

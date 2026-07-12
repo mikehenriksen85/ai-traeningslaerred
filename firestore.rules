@@ -10,9 +10,42 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isPermanentAdminEmail() {
+      return request.auth.token.email == "mikehenriksen85@gmail.com";
+    }
+
+    function clientUserRootWriteIsAllowed(userId) {
+      return isOwner(userId) &&
+        request.resource.data.uid == userId &&
+        request.resource.data.email == request.auth.token.email &&
+        (
+          (
+            isPermanentAdminEmail() &&
+            request.resource.data.role == "admin" &&
+            request.resource.data.membership == "lifetime" &&
+            request.resource.data.aiRequests == -1
+          ) ||
+          (
+            !isPermanentAdminEmail() &&
+            !request.resource.data.keys().hasAny(["role", "aiRequests"]) &&
+            !(request.resource.data.membership == "lifetime")
+          )
+        );
+    }
+
     function clientMembershipTypeIsAllowed() {
       return request.resource.data.membershipType in ["free", "trial"] &&
         request.resource.data.membershipStatus in ["free", "trial"];
+    }
+
+    function clientAdminMembershipIsAllowed() {
+      return isPermanentAdminEmail() &&
+        request.resource.data.role == "admin" &&
+        request.resource.data.membership == "lifetime" &&
+        request.resource.data.membershipStatus == "active" &&
+        request.resource.data.isPremium == true &&
+        request.resource.data.aiRequestLimit == -1 &&
+        request.resource.data.aiRequests == -1;
     }
 
     function isAiRequestUsageUpdate() {
@@ -31,7 +64,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, create, update, delete: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create, update: if clientUserRootWriteIsAllowed(userId);
+      allow delete: if isOwner(userId);
 
       match /profile/{profileId} {
         allow read, create, update, delete: if isOwner(userId);
@@ -72,11 +107,11 @@ service cloud.firestore {
         allow create: if
           isOwner(userId) &&
           membershipId == "main" &&
-          clientMembershipTypeIsAllowed();
+          (clientMembershipTypeIsAllowed() || clientAdminMembershipIsAllowed());
         allow update: if
           isOwner(userId) &&
           membershipId == "main" &&
-          (clientMembershipTypeIsAllowed() || isAiRequestUsageUpdate());
+          (clientMembershipTypeIsAllowed() || clientAdminMembershipIsAllowed() || isAiRequestUsageUpdate());
         allow delete: if
           isOwner(userId) &&
           membershipId == "main";
@@ -91,7 +126,6 @@ service cloud.firestore {
         allow read, create, update, delete: if isOwner(userId);
       }
 
-      // Aktiv app-path. "trash" beholdes som fremtidigt alias.
       match /deletedPrograms/{itemId} {
         allow read, create, update, delete: if isOwner(userId);
       }
@@ -104,7 +138,6 @@ service cloud.firestore {
         allow read, create, update, delete: if isOwner(userId);
       }
 
-      // Aktiv app-path. "aiHistory" beholdes som fremtidigt alias.
       match /aiCopilotHistory/{eventId} {
         allow read, create, update, delete: if isOwner(userId);
       }
@@ -138,13 +171,10 @@ service cloud.firestore {
       }
     }
 
-    // Medlemskab og AI-grænser er klientdata i demoen. Reglerne ovenfor
-    // beskytter kun ejerskab; de er ikke produktionssikker adgangskontrol.
-    // Senere backend/Cloud Functions skal skrive serverbeskyttede felter
-    // eller custom claims, som klienten ikke selv kan ændre.
+    // Medlemskab og AI-grænser er klientdata i demoen. Root-adminfelter
+    // beskyttes ovenfor; produktionssikker adgangskontrol bør senere flyttes
+    // til backend/Cloud Functions eller custom claims.
 
-    // Offentlig, ikke-personlig priskonfiguration. Dokumentet opdateres kun
-    // af en betroet backend/Cloud Function via Admin SDK.
     match /appConfig/{configId} {
       allow read: if configId == "pricing";
       allow create, update, delete: if false;
