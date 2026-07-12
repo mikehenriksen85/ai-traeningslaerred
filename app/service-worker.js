@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v94-program-cloud1";
+const CACHE_NAME = "work4it-shell-v95-menu-manager1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const APP_SHELL = [
   "./work4it-app-icon-512.png",
   "./work4it-logo-v1.png",
   "./work4it-hero-logo-v1.png",
+  "./workit-menu-manager.js?v=20260712-menu-manager1",
   "./storage-scope.js?v=20260621-cloud-primary1",
   "./calorie-estimator.js?v=20260615-cardio1",
   "./training-goal-engine.js?v=20260620-calisthenics1",
