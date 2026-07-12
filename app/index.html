@@ -485,16 +485,16 @@
     #workoutTitle.editing { cursor: default; }
     .program-title-input { width: 100%; min-height: 42px; box-sizing: border-box; border: 1px solid var(--blue); border-radius: 6px; padding: 4px 8px; background: var(--input); color: var(--text-primary); font: inherit; font-weight: inherit; line-height: var(--line-height-heading); }
     .program-title-input:focus { outline: 3px solid rgba(59,130,246,.22); outline-offset: 1px; }
-    .top-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-    .top-btn { border: 0; border-radius: 6px; color: var(--text-primary); padding: 11px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+    .top-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .top-btn { min-height: 40px; border: 0; border-radius: 6px; color: var(--text-primary); padding: 9px 10px; font-weight: var(--font-weight-semibold); cursor: pointer; white-space: normal; overflow-wrap: anywhere; }
     .save-btn { background: var(--green); }
     .start-btn { background: var(--blue); }
     .start-btn.active { background: var(--orange); }
-    .stop-btn { background: var(--red); display: none; grid-column: 1 / -1; }
+    .stop-btn { background: var(--red); display: none; }
     .session-only { display: none !important; }
     body[data-workout-view="session"] .program-only { display: none !important; }
     body[data-workout-view="session"] .session-only { display: block !important; }
-    body[data-workout-view="session"] .session-only.stats { display: flex !important; }
+    body[data-workout-view="session"] .session-only.stats { display: grid !important; }
     .session-banner {
       margin-bottom: 14px;
       padding: 12px;
@@ -630,9 +630,9 @@
       top: calc(68px + env(safe-area-inset-top, 0px));
       z-index: 70;
       display: grid;
-      gap: 10px;
-      margin: 0 0 14px;
-      padding: 10px;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 8px;
       border: 1px solid rgba(59,130,246,.28);
       border-radius: 8px;
       background: color-mix(in srgb, var(--card), rgba(15,23,42,.92) 18%);
@@ -641,22 +641,77 @@
     }
     .workout-sticky-top .top-controls,
     .workout-sticky-top .stats,
-    .workout-sticky-top .calorie-panel,
-    .workout-sticky-top .dashboard-btn {
+    .workout-sticky-top .calorie-panel {
       margin: 0;
     }
+    .workout-sticky-top .top-controls {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
     .workout-sticky-top .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+    .sticky-metric {
+      min-width: 0;
+      padding: 7px 8px;
       border: 1px solid rgba(148,163,184,.18);
+      border-radius: 7px;
+      background: rgba(15,23,42,.34);
+      color: var(--text-primary);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+    .sticky-metric-label {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: var(--font-weight-semibold);
+      line-height: 1.1;
+    }
+    .sticky-metric-value {
+      display: block;
+      margin-top: 2px;
+      color: var(--text-primary);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-bold);
     }
     .workout-sticky-top .calorie-panel {
-      padding: 10px 12px;
+      min-width: 0;
+      padding: 7px 8px;
       border-radius: 7px;
     }
     .workout-sticky-top .calorie-title {
-      font-size: var(--font-size-body);
+      color: var(--text-secondary);
+      font-size: 11px;
+      line-height: 1.1;
     }
     .workout-sticky-top .calorie-value {
-      font-size: 1.35rem;
+      margin-top: 2px;
+      font-size: var(--font-size-small);
+      line-height: 1.2;
+    }
+    .workout-sticky-top .calorie-value.missing {
+      font-size: 11px;
+    }
+    .workout-sticky-top #autosaveStatus {
+      margin: 0;
+      min-width: 0;
+      color: var(--text-accent);
+      font-size: 11px;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+    body.workit-transient-menu-open:not(.sidebar-open) .workout-sticky-top {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
     }
     #exercises {
       max-height: clamp(360px, 62dvh, 820px);
@@ -1949,27 +2004,35 @@
       .canvas { padding: 12px; }
       .workout-sticky-top {
         top: calc(62px + env(safe-area-inset-top, 0px));
-        gap: 8px;
-        margin-bottom: 12px;
-        padding: 8px;
+        gap: 6px;
+        margin-bottom: 10px;
+        padding: 7px;
         border-radius: 7px;
       }
       .workout-sticky-top .top-controls {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
+        gap: 6px;
       }
-      body[data-workout-view="session"] .workout-sticky-top .stats {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 6px 8px;
-        align-items: center;
+      .workout-sticky-top .top-btn,
+      .workout-sticky-top .session-control-btn {
+        min-height: 38px;
+        padding: 7px 6px;
+        font-size: var(--font-size-compact);
+      }
+      .workout-sticky-top .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .sticky-metric,
+      .workout-sticky-top .calorie-panel {
+        padding: 6px;
       }
       .workout-sticky-top #autosaveStatus {
         grid-column: 1 / -1;
-        margin-left: 0;
+        text-align: left;
       }
       .workout-sticky-top .calorie-value {
-        font-size: 1.12rem;
+        font-size: var(--font-size-compact);
       }
       #exercises {
         max-height: max(320px, calc(100dvh - 330px));
@@ -2649,22 +2712,30 @@
           console.warn("[Work4it menu] Kunne ikke oprette historik-state.", error);
         }
       }
+      function updateTransientMenuState() {
+        document.body.classList.toggle("workit-transient-menu-open", Boolean(menuState.activePanel || menuState.activeSurface));
+      }
       function closeActivePanel(reason = "close") {
         const panel = menuState.activePanel;
         if (!panel) return false;
         menuState.activePanel = null;
         panel.close?.(reason);
+        updateTransientMenuState();
         return true;
       }
       function openPanel(id, options = {}) {
         if (menuState.activePanel?.id === id) return menuState.activePanel;
         closeActivePanel("switch-panel");
         menuState.activePanel = { id, roots: options.roots || [], close: options.close };
+        updateTransientMenuState();
         if (options.history !== false) pushMenuHistory(id);
         return menuState.activePanel;
       }
       function notifyPanelClosed(id) {
-        if (!id || menuState.activePanel?.id === id) menuState.activePanel = null;
+        if (!id || menuState.activePanel?.id === id) {
+          menuState.activePanel = null;
+          updateTransientMenuState();
+        }
       }
       function applySidebarOpen(shouldOpen) {
         const sidebar = document.getElementById("sidebar");
@@ -2708,6 +2779,7 @@
         }
         menuState.activeSurface = null;
         surface.close?.(reason);
+        updateTransientMenuState();
         return true;
       }
       function openSurface(id, options = {}) {
@@ -2719,11 +2791,15 @@
           roots: options.roots || [],
           close: options.close || ((reason) => closeSurfaceDom(id, reason))
         };
+        updateTransientMenuState();
         if (options.history !== false) pushMenuHistory(id);
         return menuState.activeSurface;
       }
       function notifySurfaceClosed(id) {
-        if (!id || menuState.activeSurface?.id === id) menuState.activeSurface = null;
+        if (!id || menuState.activeSurface?.id === id) {
+          menuState.activeSurface = null;
+          updateTransientMenuState();
+        }
       }
       function setSidebarOpen(forceOpen) {
         const sidebar = document.getElementById("sidebar");
@@ -2836,41 +2912,38 @@
       <div id="workoutTitle" role="button" tabindex="0" aria-label="Redigér programnavn" title="Tryk for at ændre programnavnet" onclick="beginProgramTitleEdit()" onkeydown="handleProgramTitleKey(event)">Mit nye træningspas</div>
       <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
       <div class="workout-sticky-top" id="workoutStickyTop" aria-label="Træningsstatus og hurtige handlinger">
-        <div class="top-controls program-only">
-          <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem ændringer</button>
-          <button class="top-btn start-btn" id="timerBtn" onclick="toggleWorkoutTimer()">▶ Start Træning</button>
+        <div class="top-controls">
+          <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem</button>
+          <button class="top-btn start-btn program-only" id="timerBtn" onclick="toggleWorkoutTimer()">▶ Start Træning</button>
+          <button class="top-btn stop-btn session-only" id="stopBtn" onclick="finishWorkout()">⏹ Afslut</button>
         </div>
-      <section class="session-banner session-only" id="trainingSessionView" aria-label="Aktiv træningssession">
-        <div class="session-banner-head">
-          <div class="session-view-title">Aktiv træning</div>
-          <span class="session-status-badge" id="sessionStatusText">I gang</span>
+        <section class="session-banner session-only" id="trainingSessionView" aria-label="Aktiv træningssession">
+          <div class="session-banner-head">
+            <div class="session-view-title">Aktiv træning</div>
+            <span class="session-status-badge" id="sessionStatusText">I gang</span>
+          </div>
+          <div class="session-controls">
+            <button class="session-control-btn pause" id="pauseWorkoutBtn" onclick="pauseWorkoutSession()">⏸ Pause</button>
+            <button class="session-control-btn resume" id="resumeWorkoutBtn" onclick="resumeWorkoutSession()">▶ Fortsæt</button>
+            <button class="session-control-btn close-session" onclick="closeTrainingWindow()">✕ Luk</button>
+          </div>
+        </section>
+        <div class="stats">
+          <span class="sticky-metric" id="estimatedTime">Estimeret tid: 0 min</span>
+          <span class="sticky-metric"><span class="sticky-metric-label" id="timeUsedLabel">Tid brugt</span><span class="sticky-metric-value" id="globalTimer">00:00:00</span></span>
+          <section class="calorie-panel" id="caloriePanel" aria-live="polite">
+            <div class="calorie-title">🔥 Kalorier</div>
+            <div class="calorie-value missing" id="calorieEstimateValue">Mangler data</div>
+          </section>
+          <span id="autosaveStatus">Klar til første øvelse</span>
         </div>
-        <div class="session-controls">
-          <button class="session-control-btn pause" id="pauseWorkoutBtn" onclick="pauseWorkoutSession()">⏸ Pause træning</button>
-          <button class="session-control-btn resume" id="resumeWorkoutBtn" onclick="resumeWorkoutSession()">▶ Fortsæt træning</button>
-          <button class="session-control-btn close-session" onclick="closeTrainingWindow()">✕ Luk træningsvindue</button>
-        </div>
-      </section>
-      <div class="stats session-only">
-        <span id="estimatedTime">Estimeret tid: 0 min</span>
-        <span id="timeUsedLabel">Tid brugt:</span>
-        <span id="globalTimer">00:00:00</span>
-        <span id="autosaveStatus">Klar til første øvelse</span>
-      </div>
-      <section class="calorie-panel session-only" id="caloriePanel" aria-live="polite">
-        <div class="calorie-title">🔥 Estimeret kalorieforbrug</div>
-        <div class="calorie-value missing" id="calorieEstimateValue">Mangler data til kalorie-estimat</div>
-      </section>
-      <button class="dashboard-btn program-only" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
       </div>
       <div class="daily-motivation-summary program-only" id="dailyMotivationSummary" hidden>
         <span class="daily-motivation-value" id="dailyMotivationValue"></span>
         <button class="daily-motivation-change" type="button" onclick="changeDailyMotivation()">Skift dagens motivation</button>
       </div>
+      <button class="dashboard-btn program-only" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
       <div id="exercises" aria-label="Øvelsesliste"></div>
-      <div class="session-finish-zone session-only">
-        <button class="session-control-btn finish" id="stopBtn" onclick="finishWorkout()">⏹ Afslut træning</button>
-      </div>
       <div class="add-zone">
         <div class="movement-picker">
           <button class="movement-btn active" data-movement="Alle" onclick="setMovementFilter('Alle', event)">Alle</button>
@@ -3314,6 +3387,7 @@
       { key: "Triceps", category: "Push", emoji: "⚡" },
       { key: "Mave", category: "Stabilitet", emoji: "🧱" },
       { key: "Nedre ryg / lænd", category: "Stabilitet", emoji: "🛡️" },
+      { key: "FullBody", category: "FullBody", emoji: "🔄" },
       { key: "Cardio", category: "Cardio", emoji: "❤️" }
     ];
     const muscleGroupKeys = muscleGroups.map(group => group.key);
@@ -3331,6 +3405,7 @@
       "Triceps": ["Close-Grip Bench Press","Parallel Bar Dip","Cable Triceps Pushdown","Rope Pushdown","Overhead Cable Extension","Skull Crusher","EZ-Bar Lying Extension","Dumbbell Overhead Extension","Diamond Push-Up","JM Press","Machine Triceps Extension","Single-Arm Cable Extension","Bench Dip","Tate Press","Cross-Body Cable Extension","Assisted Dip","Bodyweight Triceps Extension","Cable Kickback","Cable Skull Crusher","Close-Grip Push-Up","Decline Skull Crusher","Dumbbell Kickback","EZ-Bar Overhead Extension","EZ-Bar Skull Crusher","Floor Skull Crusher","Incline Dumbbell Extension","Overhead Dumbbell Extension","PJR Pullover","Resistance Band Overhead Extension","Resistance Band Pushdown","Reverse-Grip Pushdown","Seated Overhead Dumbbell Extension","Single-Arm Dumbbell Extension","Single-Arm Overhead Cable Extension","Single-Arm Pushdown","Smith Machine Close-Grip Bench Press"],
       "Mave": ["Plank","Side Plank","Dead Bug","Hollow Body Hold","Ab Wheel Rollout","Cable Crunch","Hanging Knee Raise","Hanging Leg Raise","Reverse Crunch","Pallof Press","Bird Dog","Mountain Climber","Stir-the-Pot","V-Up","Farmer Carry","Bicycle Crunch","Cable Wood Chop","Captain's Chair Leg Raise","Crunch","Decline Crunch","Dragon Flag","Heel Touch","Hollow Hold","Jackknife Sit-Up","Kneeling Cable Crunch","L-Sit","Medicine Ball Slam","Plank Shoulder Tap","Russian Twist","Sit-Up","Stability Ball Pike","Swiss Ball Crunch","Toe Touch","Toes to Bar","TRX Pike","Windshield Wiper"],
       "Nedre ryg / lænd": ["Back Extension","Bird Dog","McGill Curl-Up","Good Morning","Romanian Deadlift","Deadlift","Rack Pull","Reverse Hyperextension","Superman Hold","Hip Hinge Drill","Cable Pull-Through","Kettlebell Swing","Jefferson Curl","Quadruped Hip Extension","Suitcase Carry"],
+      "FullBody": ["Burpee","Squat Thrust","Bear Crawl","Mountain Climber","Man Maker","Turkish Get-Up","Dumbbell Thruster","Kettlebell Swing","Farmer's Carry","Sled Push","Clean and Press","Devil Press","Battle Rope Slam","Jumping Jack","Inchworm","Sprawl","Medicine Ball Slam","Renegade Row","Wall Ball","Bodyweight Flow"],
       "Cardio": ["Løbebånd","Udendørs løb","Stairmaster / Stair Climber","Romaskine","Crosstrainer","Motionscykel","Air Bike","Spinning","Sjipning","Svømning","Rask gang","Hiking / Vandring","Trappeløb","Roning på vand","Assault Runner"]
     };
 
@@ -3342,7 +3417,7 @@
     function isBodyweightHomeExercise(name, muscle) {
       if (muscle === "Cardio") return /(udendørs løb|rask gang|hiking|vandring|trappeløb|svømning)/i.test(String(name || ""));
       if (hasTrainingEquipment(name)) return false;
-      return /(push-up|pushup|knee push|diamond push|decline push|archer push|pseudo planche|pike push|handstand|bodyweight squat|sissy squat|wall sit|walking lunge|reverse lunge|split squat|glute bridge|single-leg glute bridge|frog pump|hamstring slide|nordic|plank|side plank|dead bug|hollow body|reverse crunch|v-up|mountain climber|bird dog|superman|arch body|mcgill curl|hip hinge drill|quadruped|pistol squat|assisted pistol|scapular pull-up|negative pull-up|pull-ups|chin-ups|toes-to-bar|hanging knee|hanging leg|l-sit|dragon flag)/i.test(String(name || ""));
+      return /(push-up|pushup|knee push|diamond push|decline push|archer push|pseudo planche|pike push|handstand|bodyweight squat|sissy squat|wall sit|walking lunge|reverse lunge|split squat|glute bridge|single-leg glute bridge|frog pump|hamstring slide|nordic|plank|side plank|dead bug|hollow body|reverse crunch|v-up|mountain climber|bird dog|superman|arch body|mcgill curl|hip hinge drill|quadruped|pistol squat|assisted pistol|scapular pull-up|negative pull-up|pull-ups|chin-ups|toes-to-bar|hanging knee|hanging leg|l-sit|dragon flag|burpee|squat thrust|bear crawl|jumping jack|inchworm|sprawl|bodyweight flow)/i.test(String(name || ""));
     }
 
     function exerciseLocationType(name, muscle) {
@@ -3368,7 +3443,7 @@
         name,
         muscle,
         type: exerciseLocationType(name, muscle),
-        tags: [muscle.toLowerCase(), name.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase()]
+        tags: [...new Set([muscle.toLowerCase(), name.toLowerCase(), muscleGroupMeta(muscle).category.toLowerCase(), ...(muscle === "FullBody" ? ["full body", "fullbody", "helkrop", "helkropsøvelse"] : [])])]
       }))
     );
 
@@ -3388,7 +3463,10 @@
       ["Negative Muscle-up", "Øvre ryg"],
       ["Hollow Body Hold", "Mave"], ["Hanging Knee Raise", "Mave"], ["Hanging Leg Raise", "Mave"],
       ["L-Sit Tuck", "Mave"], ["L-Sit", "Mave"], ["Dragon Flag Progression", "Mave"],
-      ["Toes-to-Bar", "Mave"], ["Superman Hold", "Nedre ryg / lænd"], ["Arch Body Hold", "Nedre ryg / lænd"]
+      ["Toes-to-Bar", "Mave"], ["Superman Hold", "Nedre ryg / lænd"], ["Arch Body Hold", "Nedre ryg / lænd"],
+      ["Burpee", "FullBody"], ["Squat Thrust", "FullBody"], ["Bear Crawl", "FullBody"],
+      ["Mountain Climber", "FullBody"], ["Jumping Jack", "FullBody"], ["Inchworm", "FullBody"],
+      ["Sprawl", "FullBody"], ["Bodyweight Flow", "FullBody"]
     ];
     calisthenicsExerciseDefinitions.forEach(([name, muscle]) => {
       const existing = catalog.find(exercise => normalizeExerciseCatalogKey(exercise.name) === normalizeExerciseCatalogKey(name) && exercise.muscle === muscle);
@@ -3454,10 +3532,10 @@
         trashTitle: "Slettede træningspas",
         trashEmpty: "Papirkurven er tom.",
         defaultTitle: "Mit nye træningspas",
-        save: "💾 Gem ændringer",
+        save: "💾 Gem",
         start: "▶ Start Træning",
         pause: "⏸ Pause Træning",
-        stop: "⏹ Afslut Træning",
+        stop: "⏹ Afslut",
         timeUsed: "Tid brugt:",
         ready: "Klar til første øvelse",
         dashboard: "📊 Åbn træningsdashboard",
@@ -3466,7 +3544,7 @@
         copilotPlaceholder: "F.eks. 'Lav et styrkeprogram', 'Jeg har kun håndvægte' eller 'Opdater min vægt til 88 kg'",
         run: "Kør",
         chooseMuscle: "Hvilken muskelgruppe?",
-        muscles: { Bryst: "Bryst", "Øvre ryg": "Øvre ryg", Skuldre: "Skuldre", "Forside lår": "Forside lår", "Bagside lår & baller": "Bagside lår & baller", Biceps: "Biceps", Triceps: "Triceps", Mave: "Mave", "Nedre ryg / lænd": "Nedre ryg / lænd" },
+        muscles: { Bryst: "Bryst", "Øvre ryg": "Øvre ryg", Skuldre: "Skuldre", "Forside lår": "Forside lår", "Bagside lår & baller": "Bagside lår & baller", Biceps: "Biceps", Triceps: "Triceps", Mave: "Mave", "Nedre ryg / lænd": "Nedre ryg / lænd", FullBody: "FullBody" },
         types: { Alle: "Alle", Center: "Center", Hjemme: "Hjemme" },
         manualBtn: "Manuel",
         replaceBtn: "AI Erstat",
@@ -3535,7 +3613,7 @@
         aiReplacePlaceholder: "F.eks. øvre ryg, hjemme, tung...",
         askAi: "Spørg AI",
         programs: { fullbody: "Fullbody Pas", push: "Push Pas", pull: "Pull Pas", legs: "Legs Pas" },
-        categories: { Alle: "Alle", Push: "Push", Pull: "Pull", Stabilitet: "Stabilitet" }
+        categories: { Alle: "Alle", Push: "Push", Pull: "Pull", Stabilitet: "Stabilitet", FullBody: "FullBody", Cardio: "Cardio" }
       }
     };
 
@@ -3608,7 +3686,19 @@
           .filter(group => catalog.some(exercise => exercise.muscle === group.key && exercise.trainingStyle === "calisthenics"))
           .map(group => group.key);
       }
-      return muscleGroups.filter(group => movement === "Alle" || group.category === movement).map(group => group.key);
+      return muscleGroups
+        .filter(group => movement === "Alle" || group.category === movement)
+        .map(group => group.key);
+    }
+
+    function isFullBodySelection(muscle) {
+      return String(muscle || "").toLowerCase() === "fullbody";
+    }
+
+    function exerciseMatchesMuscleSelection(exercise, muscle) {
+      if (muscle === "Alle") return true;
+      if (isFullBodySelection(muscle)) return exercise.muscle === "FullBody";
+      return exercise.muscle === muscle;
     }
     function optionList(values, selected, mapper = v => v) {
       return values.map(v => `<option value="${esc(v)}" ${v === selected ? "selected" : ""}>${esc(mapper(v))}</option>`).join("");
@@ -4702,6 +4792,13 @@
         : movementMuscles();
     }
 
+    function resetExercisePickerScroll() {
+      const menu = $("muscleMenu");
+      const items = $("muscleMenuItems");
+      if (menu) menu.scrollTop = 0;
+      if (items) items.scrollTop = 0;
+    }
+
     function setExercisePickerContext(movement = "Alle", muscles = null) {
       activeMovementFilter = ["Alle", "Push", "Pull", "Stabilitet", "Cardio", "Calisthenics"].includes(movement) ? movement : "Alle";
       exercisePickerMuscleScope = Array.isArray(muscles) && muscles.length
@@ -4717,6 +4814,7 @@
       const muscles = availablePickerMuscles();
       if (muscles.length === 1) exercisePickerMuscle = muscles[0];
       renderMuscleMenu();
+      resetExercisePickerScroll();
       openExercisePickerMenu();
     }
 
@@ -4790,6 +4888,7 @@
           const meta = muscleGroupMeta(muscle);
           return `<button class="muscle-item" type="button" data-muscle="${esc(muscle)}" onclick="selectMuscle('${encodeURIComponent(muscle)}', event)">${meta.emoji} ${esc(tm(muscle))}<small>${esc(tc(meta.category))}</small></button>`;
         }).join("");
+        resetExercisePickerScroll();
         return;
       }
 
@@ -5214,10 +5313,10 @@
         const candidateType = exercise.muscle === "Cardio" ? "cardio" : "strength";
         return candidateType === currentType
           && (movement === "Alle" || meta.category === movement)
-          && (muscle === "Alle" || exercise.muscle === muscle)
+          && exerciseMatchesMuscleSelection(exercise, muscle)
           && (equipment === "Alle" || equipmentCategory(exercise) === equipment)
           && (location === "Alle" || exercise.type === location)
-          && (!search || normalizedExerciseSearch(exercise.name).includes(search));
+          && (!search || normalizedExerciseSearch([exercise.name, exercise.muscle, meta.category, ...(exercise.tags || [])].join(" ")).includes(search));
       });
       const currentName = normalizedExerciseSearch($(`name-${replacementState.slot}`)?.textContent);
       list = list.filter(exercise => normalizedExerciseSearch(exercise.name) !== currentName);
@@ -5492,10 +5591,11 @@
         renderActivePauseComponent();
         return;
       }
-      if (!activePauseComponentKey || !pauseComponentForKey(activePauseComponentKey)) {
-        const activeCheckbox = setCheckboxes.find(checkbox => !checkbox.checked) || setCheckboxes[setCheckboxes.length - 1];
-        const targetBlock = activeCheckbox.closest(".set-block");
-        activePauseComponentKey = targetBlock?.dataset.pauseKey || "";
+      const activeBlock = blockForPauseKey(activePauseComponentKey);
+      const activeChecked = activeBlock?.querySelector('input[type="checkbox"]')?.checked || false;
+      if (!activePauseComponentKey || !pauseComponentForKey(activePauseComponentKey) || !activeChecked) {
+        activePauseComponentKey = latestCompletedPauseKey();
+        stopOtherPauseTimers(activePauseComponentKey);
       }
       renderActivePauseComponent({ percent, completedSets, totalSets });
     }
@@ -5588,6 +5688,30 @@
       scheduleAutoSave();
     }
 
+    function latestCompletedPauseKey() {
+      const completedBlocks = [...document.querySelectorAll(".set-block")]
+        .filter(block => block.querySelector('input[type="checkbox"]')?.checked);
+      return completedBlocks[completedBlocks.length - 1]?.dataset.pauseKey || "";
+    }
+
+    function stopOtherPauseTimers(activeKey = "") {
+      Object.keys(pauseTimers).forEach(key => {
+        if (key !== activeKey && pauseTimers[key]?.running) stopPause(key);
+      });
+    }
+
+    function syncActivePauseToLatestCompleted(options = {}) {
+      const key = latestCompletedPauseKey();
+      if (!key) {
+        stopOtherPauseTimers("");
+        activePauseComponentKey = "";
+        renderActivePauseComponent();
+        return false;
+      }
+      const parsed = parsePauseComponentKey(key);
+      return parsed ? setActivePauseComponent(parsed.slot, parsed.set, options) : false;
+    }
+
     function changeSets(slot, delta) {
       const data = collectSetData(slot);
       const current = parseInt($(`count-${slot}`).textContent);
@@ -5615,6 +5739,7 @@
       const key = pauseKey(slot, set);
       if (!pauseComponentForKey(key)) return false;
       activePauseComponentKey = key;
+      stopOtherPauseTimers(key);
       renderActivePauseComponent();
       if (options.start === true) {
         const timer = pauseTimers[key];
@@ -5656,9 +5781,9 @@
       if (!set) return;
       const key = pauseKey(slot, set);
       const timer = pauseTimers[key];
-      if (timer?.running || (timer && Number(timer.remaining) <= 0)) return;
       setActivePauseComponent(slot, set);
       if (!isAutoPauseEnabled()) return;
+      if (timer?.running || (timer && Number(timer.remaining) <= 0)) return;
       if (exercisePauseSeconds(slot) <= 0 && !(timer?.remaining > 0 || timer?.total > 0)) return;
       setActivePauseComponent(slot, set, { start: true });
     }
@@ -5668,9 +5793,13 @@
       const wasCompleted = block?.classList.contains("completed") || false;
       block?.classList.toggle("completed", cb.checked);
       updateAnalytics(slot);
+      if (cb.checked && !wasCompleted) {
+        maybeStartAutoPause(cb, slot, wasCompleted);
+        setCompleteSound();
+      } else if (!cb.checked && block?.dataset.pauseKey === activePauseComponentKey) {
+        syncActivePauseToLatestCompleted();
+      }
       updateWorkoutProgress();
-      maybeStartAutoPause(cb, slot, wasCompleted);
-      if (cb.checked && !wasCompleted) setCompleteSound();
       autoSave();
     }
 
@@ -5749,6 +5878,7 @@
       const btn = $(`pause-btn-${slot}-${set}`);
       if (pauseTimers[key]?.running) return stopPause(key);
       activePauseComponentKey = key;
+      stopOtherPauseTimers(key);
       renderActivePauseComponent();
       ensurePauseAudioContext();
       const existing = pauseTimers[key];
@@ -5781,7 +5911,7 @@
           pauseTimers[key].remaining = 0;
           input.value = formatPause(0);
           stopPause(key, { complete: true });
-          moveActivePauseToNextSet(slot, set);
+          renderActivePauseComponent();
           missionCompleteSound();
         }
       }, 1000);
@@ -7975,7 +8105,12 @@
         "roning": "Romaskine",
         "svømning": "Svømning",
         "gang": "Rask gang",
-        "vandring": "Hiking / Vandring"
+        "vandring": "Hiking / Vandring",
+        "fullbody": "Burpee",
+        "full body": "Burpee",
+        "helkrop": "Burpee",
+        "helkropsøvelse": "Burpee",
+        "helkropsøvelser": "Burpee"
       };
       const requested = normalizedExerciseSearch(requestedName);
       const alias = aliases[requested];
@@ -9302,7 +9437,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260712-exercises2").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260712-sticky-compact1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
