@@ -88,7 +88,11 @@
       "auth/popup-closed-by-user": "Google-login blev lukket, før det var færdigt.",
       "auth/too-many-requests": "For mange forsøg. Vent lidt og prøv igen.",
       "auth/user-disabled": "Denne konto er deaktiveret.",
-      "auth/weak-password": "Adgangskoden skal være på mindst 6 tegn."
+      "auth/weak-password": "Adgangskoden skal være på mindst 6 tegn.",
+      "auth/unauthorized-domain": "Dette domæne er ikke godkendt til Google-login i Firebase.",
+      "auth/redirect-cancelled-by-user": "Google-login blev afbrudt, før det var færdigt.",
+      "auth/network-request-failed": "Netværksforbindelsen afbrød Google-login. Prøv igen.",
+      "auth/web-storage-unsupported": "Browseren blokerer nødvendig login-lagring. Prøv normal browsertilstand eller ryd login-cache."
     };
     return messages[error?.code] || error?.message || "Login kunne ikke gennemføres.";
   }
@@ -457,5 +461,7 @@
   clearGateIdentity();
   showLoading();
 })();
+
+
 
 

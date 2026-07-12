@@ -3,9 +3,19 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-aut
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { getFunctions } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
 
+const AUTH_DOMAIN_FALLBACK = "workout-b55ed.firebaseapp.com";
+const SAME_ORIGIN_AUTH_DOMAINS = new Set([
+  "app.work-4it.dk",
+  "work4it-app.web.app"
+]);
+const currentHostname = window.location?.hostname || "";
+const resolvedAuthDomain = SAME_ORIGIN_AUTH_DOMAINS.has(currentHostname)
+  ? currentHostname
+  : AUTH_DOMAIN_FALLBACK;
+
 const firebaseConfig = {
   apiKey: "AIzaSyBT0dbEXXb1lmVzhTHyfBw2r_DiwBWIphg",
-  authDomain: "workout-b55ed.firebaseapp.com",
+  authDomain: resolvedAuthDomain,
   projectId: "workout-b55ed",
   storageBucket: "workout-b55ed.firebasestorage.app",
   messagingSenderId: "873024449428",
@@ -19,6 +29,9 @@ const auth = getAuth(app);
 const functions = getFunctions(app, "europe-west1");
 
 console.log("[Work4it Firebase] firebaseConfig", firebaseConfig);
+console.log("[Work4it Firebase] resolved authDomain", resolvedAuthDomain, "for host", currentHostname);
 console.log("[Work4it Firebase] auth.currentUser at init", auth.currentUser);
 
 export { app, db, auth, functions };
+
+

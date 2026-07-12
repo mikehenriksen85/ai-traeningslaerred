@@ -6624,7 +6624,24 @@
       const programs = readLocalJson("saved_workout_programs", []);
       return Array.isArray(programs) ? programs.filter(program => program && typeof program === "object") : [];
     }
-    function setPrograms(p) { return writeLocalJson("saved_workout_programs", p); }
+    function setPrograms(p) {
+      const programs = Array.isArray(p) ? p : [];
+      const saved = writeLocalJson("saved_workout_programs", programs);
+      if (saved && window.FirestoreDataService?.isCloudPrimary?.()) {
+        window.FirestoreDataService.saveProgramsToCloud?.(programs).then(() => {
+          if ($("autosaveStatus")) $("autosaveStatus").textContent = "Træningspas gemt i Firebase";
+        }).catch(error => {
+          console.error("Work4it Firestore-fejl", {
+            operation: "saveProgramsToCloud",
+            path: `users/${window.FirestoreDataService?.getActiveUid?.() || "unknown"}/workouts`,
+            code: error?.code || "unknown",
+            message: error?.message || String(error || "Ukendt fejl")
+          });
+          if ($("autosaveStatus")) $("autosaveStatus").textContent = "Træningspas gemt lokalt - Cloud ikke tilgængelig";
+        });
+      }
+      return saved;
+    }
     function getTrash() {
       const stored = readLocalJson("deleted_workout_programs", []);
       const raw = Array.isArray(stored) ? stored.filter(program => program && typeof program === "object") : [];
@@ -9421,7 +9438,7 @@
   <script src="ai-copilot-actions.js?v=20260628-ai20"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
-  <script src="auth-gate.js?v=20260712-auth-unlock1"></script>
+  <script src="auth-gate.js?v=20260712-google-auth-domain1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="profile-account.js?v=20260706-resume-state1"></script>
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
@@ -9429,15 +9446,15 @@
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
   <script src="membership.js?v=20260711-permanent-admin1"></script>
-  <script type="module" src="firebase-config.js?v=20260628-auth-ready1"></script>
+  <script type="module" src="firebase-config.js?v=20260712-program-cloud1"></script>
   <script type="module" src="stripe-checkout.js?v=20260711-permanent-admin1"></script>
-  <script type="module" src="auth-service.js?v=20260712-audit1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260712-home-center1"></script>
+  <script type="module" src="auth-service.js?v=20260712-program-cloud1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260712-program-cloud1"></script>
   <script type="module" src="ai-request-counter.js?v=20260711-permanent-admin1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260712-auth-unlock1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260712-program-cloud1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
@@ -9445,6 +9462,10 @@
   </script>
 </body>
 </html>
+
+
+
+
 
 
 

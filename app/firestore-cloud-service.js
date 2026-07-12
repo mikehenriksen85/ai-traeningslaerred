@@ -1,4 +1,4 @@
-import { db } from "./firebase-config.js?v=20260628-auth-ready1";
+import { db } from "./firebase-config.js?v=20260712-program-cloud1";
 import {
   collection,
   deleteDoc,
@@ -33,6 +33,8 @@ const KEYS = {
   theme: "work4it_theme"
 };
 const COLLECTIONS = {
+  workouts: "workouts",
+  legacyPrograms: "programs",
   sessions: "workoutSessions",
   measurements: "bodyMeasurements",
   aiHistory: "aiCopilotHistory",
@@ -383,42 +385,92 @@ async function upsertCollection(pathSegments, values, prefix, fallbackUpdatedAt 
   }
 }
 
+function normalizeProgramForCloud(program, index = 0) {
+  const source = cleanDocument(program) || {};
+  const id = stableId(source, "program", index);
+  const days = Array.isArray(source.days) ? source.days.map((day, dayIndex) => ({
+    ...cleanDocument(day),
+    id: day?.id || `day_${dayIndex + 1}`,
+    position: Number.isFinite(Number(day?.position)) ? Number(day.position) : dayIndex
+  })) : [];
+  return {
+    ...source,
+    id,
+    version: source.version || 2,
+    status: source.status || "active",
+    days,
+    dayCount: days.length,
+    updatedAt: source.updatedAt || source.savedAt || new Date().toISOString()
+  };
+}
+
+async function writeProgramToCollection(uid, program, index = 0, collectionName = COLLECTIONS.workouts) {
+  const normalized = normalizeProgramForCloud(program, index);
+  const reference = doc(db, "users", uid, collectionName, normalized.id);
+  await setDoc(reference, {
+    ...normalized,
+    firestoreUpdatedAt: serverTimestamp()
+  }, { merge: true });
+  return normalized;
+}
+
+async function deleteProgramFromCollection(uid, programId, collectionName = COLLECTIONS.workouts) {
+  if (!uid || !programId) return;
+  const daySnapshots = await getDocs(collection(db, "users", uid, collectionName, programId, "days")).catch(() => null);
+  if (daySnapshots?.docs?.length) {
+    for (const daySnapshot of daySnapshots.docs) await deleteDoc(daySnapshot.ref);
+  }
+  await deleteDoc(doc(db, "users", uid, collectionName, programId)).catch(() => {});
+}
+
+async function readProgramCollection(uid, collectionName = COLLECTIONS.workouts) {
+  const programSnapshots = await getDocs(collection(db, "users", uid, collectionName));
+  const programs = [];
+  for (const [index, snapshot] of programSnapshots.docs.entries()) {
+    const data = cleanDocument(snapshot.data());
+    let days = Array.isArray(data.days) ? data.days : [];
+    if (!days.length) {
+      days = await readCollection(["users", uid, collectionName, snapshot.id, "days"]).catch(() => []);
+    }
+    days.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    programs.push(normalizeProgramForCloud({ ...data, id: snapshot.id, days }, index));
+  }
+  return programs;
+}
+
+async function saveProgramsToCloud(programs, uid = activeUid) {
+  if (!uid || !cloudEnabled) return false;
+  assertCloudUser("Gem træningsprogrammer");
+  const values = Array.isArray(programs) ? programs : [];
+  for (const [index, program] of values.entries()) {
+    await writeProgramToCollection(uid, program, index, COLLECTIONS.workouts);
+  }
+  localFingerprint = currentLocalFingerprint();
+  window.dispatchEvent(new CustomEvent("firestore:programs-saved", {
+    detail: { uid, count: values.length, path: `users/${uid}/${COLLECTIONS.workouts}` }
+  }));
+  return true;
+}
+
 async function syncPrograms(uid) {
   const localPrograms = parseLocal(KEYS.programs, []);
   const trashIds = new Set((parseLocal(KEYS.trash, []) || []).map(program => String(program?.id || "")));
-  const programCollection = collection(db, "users", uid, "programs");
   for (const [programIndex, program] of (Array.isArray(localPrograms) ? localPrograms : []).entries()) {
     const programId = stableId(program, "program", programIndex);
     if (trashIds.has(programId)) continue;
-    const programReference = doc(programCollection, programId);
+    const programReference = doc(db, "users", uid, COLLECTIONS.workouts, programId);
     const remoteSnapshot = await getDoc(programReference);
     const remoteProgram = remoteSnapshot.exists() ? cleanDocument(remoteSnapshot.data()) : null;
     if (!remoteProgram || timestampMillis(program) >= timestampMillis(remoteProgram)) {
-      const programData = cleanDocument(program);
-      const days = Array.isArray(programData.days) ? programData.days : [];
-      delete programData.days;
-      await setDoc(programReference, {
-        ...programData,
-        id: programId,
-        dayCount: days.length,
-        updatedAt: program.updatedAt || program.savedAt || new Date().toISOString(),
-        firestoreUpdatedAt: serverTimestamp()
-      }, { merge: true });
-      await upsertCollection(
-        ["users", uid, "programs", programId, "days"],
-        days,
-        "day",
-        program.updatedAt || program.savedAt || new Date().toISOString()
-      );
+      await writeProgramToCollection(uid, program, programIndex, COLLECTIONS.workouts);
     }
   }
 
   // Et program slettes kun målrettet, når det findes i brugerens papirkurv.
   for (const programId of trashIds) {
     if (!programId) continue;
-    const daySnapshots = await getDocs(collection(db, "users", uid, "programs", programId, "days"));
-    for (const daySnapshot of daySnapshots.docs) await deleteDoc(daySnapshot.ref);
-    await deleteDoc(doc(programCollection, programId));
+    await deleteProgramFromCollection(uid, programId, COLLECTIONS.workouts);
+    await deleteProgramFromCollection(uid, programId, COLLECTIONS.legacyPrograms);
   }
 }
 
@@ -528,13 +580,14 @@ async function syncAllLocalData(uid = activeUid) {
 }
 
 async function hydratePrograms(uid) {
-  const programSnapshots = await getDocs(collection(db, "users", uid, "programs"));
-  const programs = [];
-  for (const snapshot of programSnapshots.docs) {
-    const data = cleanDocument(snapshot.data());
-    const days = await readCollection(["users", uid, "programs", snapshot.id, "days"]);
-    days.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-    programs.push({ ...data, id: snapshot.id, days });
+  const primaryPrograms = await readProgramCollection(uid, COLLECTIONS.workouts);
+  const legacyPrograms = await readProgramCollection(uid, COLLECTIONS.legacyPrograms).catch(() => []);
+  const programs = mergeLists(legacyPrograms, primaryPrograms, "program");
+  if (legacyPrograms.length && programs.length) {
+    // Migrer gamle users/{uid}/programs til den nye autoritative users/{uid}/workouts collection.
+    await saveProgramsToCloud(programs, uid).catch(error => {
+      reportFirestoreError("migrateProgramsToWorkouts", ["users", uid, COLLECTIONS.workouts], error, uid);
+    });
   }
   return programs;
 }
@@ -885,15 +938,7 @@ window.setInterval(() => {
 }, 2000);
 
 async function exportPrograms(uid) {
-  const programSnapshots = await getDocs(collection(db, "users", uid, "programs"));
-  const programs = [];
-  for (const snapshot of programSnapshots.docs) {
-    const program = { ...cleanDocument(snapshot.data()), id: snapshot.id };
-    const days = await readCollection(["users", uid, "programs", snapshot.id, "days"]);
-    days.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-    programs.push({ ...program, days });
-  }
-  return programs;
+  return hydratePrograms(uid);
 }
 
 async function exportCurrentUserData(uid = activeUid) {
@@ -983,8 +1028,11 @@ async function deleteCollectionDocuments(pathSegments, nestedDelete = null) {
 }
 
 async function deleteAllPrograms(uid) {
-  await deleteCollectionDocuments(["users", uid, "programs"], async programId => {
-    await deleteCollectionDocuments(["users", uid, "programs", programId, "days"]);
+  await deleteCollectionDocuments(["users", uid, COLLECTIONS.workouts], async programId => {
+    await deleteCollectionDocuments(["users", uid, COLLECTIONS.workouts, programId, "days"]);
+  });
+  await deleteCollectionDocuments(["users", uid, COLLECTIONS.legacyPrograms], async programId => {
+    await deleteCollectionDocuments(["users", uid, COLLECTIONS.legacyPrograms, programId, "days"]);
   });
 }
 
@@ -1029,6 +1077,7 @@ window.FirestoreDataService = {
   saveMembershipToCloud,
   refreshFromCloud,
   syncAllLocalData,
+  saveProgramsToCloud,
   clearActiveWorkout,
   hydrateFromFirestore,
   saveExerciseHistoryToCloud: async history => {
@@ -1096,3 +1145,6 @@ window.addEventListener("firebase-auth:changed", () => {
 const existingUser = window.FirebaseAuthService?.getCurrentUser?.();
 if (existingUser) beginAuthenticatedUser(existingUser);
 loadPublicPricingConfig();
+
+
+

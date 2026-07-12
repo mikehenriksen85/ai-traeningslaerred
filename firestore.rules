@@ -160,6 +160,10 @@ service cloud.firestore {
 
       match /workouts/{workoutId} {
         allow read, create, update, delete: if isOwner(userId);
+
+        match /days/{dayId} {
+          allow read, create, update, delete: if isOwner(userId);
+        }
       }
 
       match /history/{historyId} {
@@ -185,3 +189,4 @@ service cloud.firestore {
     }
   }
 }
+

@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v92-auth-unlock1";
+const CACHE_NAME = "work4it-shell-v94-program-cloud1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -24,13 +24,13 @@ const APP_SHELL = [
   "./ai-request-counter.js?v=20260712-home-center1",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
-  "./auth-gate.js?v=20260712-auth-unlock1",
+  "./auth-gate.js?v=20260712-google-auth-domain1",
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260706-resume-state1",
   "./profile-wizard.js?v=20260620-calisthenics1",
-  "./firebase-config.js?v=20260628-auth-ready1",
-  "./auth-service.js?v=20260712-audit1",
-  "./firestore-cloud-service.js?v=20260712-home-center1"
+  "./firebase-config.js?v=20260712-program-cloud1",
+  "./auth-service.js?v=20260712-program-cloud1",
+  "./firestore-cloud-service.js?v=20260712-program-cloud1"
 ];
 
 self.addEventListener("install", event => {
@@ -86,6 +86,9 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+
+
+
 
 
 
