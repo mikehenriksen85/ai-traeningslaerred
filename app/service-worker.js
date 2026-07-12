@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v85-audit1";
+const CACHE_NAME = "work4it-shell-v87-exercises2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -86,4 +86,5 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+
 

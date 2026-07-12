@@ -3322,14 +3322,14 @@
     let exercisePickerMuscle = "";
 
     const exerciseLibrary = {
-      "Bryst": ["Barbell Bench Press","Dumbbell Bench Press","Incline Barbell Bench Press","Incline Dumbbell Press","Machine Chest Press","Push-ups","Weighted Push-ups","Chest Dips","Cable Fly","Dumbbell Fly","Pec Deck","Decline Bench Press","Close-Grip Bench Press","Landmine Press","Svend Press"],
-      "Øvre ryg": ["Pull-ups","Chin-ups","Lat Pulldown","Chest-Supported Row","Barbell Row","Seated Cable Row","One-Arm Dumbbell Row","T-Bar Row","Machine Row","Inverted Row","Face Pull","Rear Delt Row","Straight-Arm Pulldown","Meadows Row","Scapular Pull-up"],
-      "Skuldre": ["Overhead Press","Dumbbell Shoulder Press","Arnold Press","Machine Shoulder Press","Landmine Press","Lateral Raise","Cable Lateral Raise","Rear Delt Fly","Face Pull","Upright Row","Front Raise","Pike Push-up","Handstand Push-up Progression","Y-Raise","Scaption Raise"],
-      "Forside lår": ["Back Squat","Front Squat","Leg Press","Bulgarian Split Squat","Walking Lunge","Reverse Lunge","Hack Squat","Goblet Squat","Step-up","Leg Extension","Split Squat","Smith Machine Squat","Cyclist Squat","Sissy Squat","Wall Sit"],
-      "Bagside lår & baller": ["Romanian Deadlift","Hip Thrust","Glute Bridge","Good Morning","Nordic Hamstring Curl","Lying Leg Curl","Seated Leg Curl","Cable Pull-Through","Kettlebell Swing","Single-Leg Romanian Deadlift","Back Extension Glute Focus","Reverse Hyperextension","Frog Pump","Sumo Deadlift","Hamstring Slide Curl"],
-      "Biceps": ["Barbell Curl","Dumbbell Curl","Incline Dumbbell Curl","Hammer Curl","Preacher Curl","Cable Curl","EZ-Bar Curl","Concentration Curl","Spider Curl","Bayesian Cable Curl","Chin-up","Reverse Curl","Zottman Curl","Machine Curl","Drag Curl"],
-      "Triceps": ["Close-Grip Bench Press","Parallel Bar Dip","Cable Triceps Pushdown","Rope Pushdown","Overhead Cable Extension","Skull Crusher","EZ-Bar Lying Extension","Dumbbell Overhead Extension","Diamond Push-up","JM Press","Machine Triceps Extension","Single-Arm Cable Extension","Bench Dip","Tate Press","Cross-Body Cable Extension"],
-      "Mave": ["Plank","Side Plank","Dead Bug","Hollow Body Hold","Ab Wheel Rollout","Cable Crunch","Hanging Knee Raise","Hanging Leg Raise","Reverse Crunch","Pallof Press","Bird Dog","Mountain Climber","Stir-the-Pot","V-Up","Farmer Carry"],
+      "Bryst": ["Barbell Bench Press","Dumbbell Bench Press","Incline Barbell Bench Press","Incline Dumbbell Press","Machine Chest Press","Push-Up","Weighted Push-Up","Chest Dips","Cable Fly","Dumbbell Fly","Pec Deck","Decline Bench Press","Close-Grip Bench Press","Landmine Press","Svend Press","Assisted Chest Dip","Chest Dip","Chest Press Machine","Decline Barbell Bench Press","Decline Dumbbell Bench Press","Decline Dumbbell Fly","Decline Push-Up","Flat Dumbbell Bench Press","Floor Press","Guillotine Press","Hammer Strength Chest Press","Hex Press","High-to-Low Cable Fly","Incline Dumbbell Bench Press","Incline Dumbbell Fly","Incline Push-Up","Low-to-High Cable Fly","Pec Deck Fly","Plate Press","Ring Push-Up","Single-Arm Cable Press","Smith Machine Bench Press","Squeeze Press","Standing Cable Chest Press","Wide Push-Up","Wide-Grip Bench Press"],
+      "Øvre ryg": ["Pull-Up","Chin-Up","Lat Pulldown","Chest-Supported Row","Barbell Row","Seated Cable Row","One-Arm Dumbbell Row","T-Bar Row","Machine Row","Inverted Row","Face Pull","Rear Delt Row","Straight-Arm Pulldown","Meadows Row","Scapular Pull-up","Back Extension","Cable Row","Close-Grip Lat Pulldown","Deadlift","Dumbbell Row","Dumbbell Shrug","Farmer's Carry","Good Morning","Hyperextension","Machine Pullover","Neutral-Grip Pull-Up","Pendlay Row","Rack Pull","Reverse Hyperextension","Romanian Deadlift","Seal Row","Single-Arm Dumbbell Row","Snatch-Grip Deadlift","Shrug","TRX Row","Wide-Grip Lat Pulldown"],
+      "Skuldre": ["Overhead Press","Dumbbell Shoulder Press","Arnold Press","Machine Shoulder Press","Landmine Press","Lateral Raise","Cable Lateral Raise","Rear Delt Fly","Face Pull","Upright Row","Front Raise","Pike Push-Up","Handstand Push-up Progression","Y-Raise","Scaption Raise","Around the World","Behind-the-Neck Press","Bent-Over Lateral Raise","Bradford Press","Cable Rear Delt Fly","Cuban Press","Dumbbell Front Raise","Dumbbell Upright Row","Handstand Push-Up","Incline Rear Delt Raise","Kettlebell Press","Leaning Cable Lateral Raise","Machine Lateral Raise","Military Press","Plate Front Raise","Push Press","Reverse Pec Deck","Seated Dumbbell Press","Single-Arm Landmine Press","Smith Machine Shoulder Press"],
+      "Forside lår": ["Back Squat","Front Squat","Leg Press","Bulgarian Split Squat","Walking Lunge","Reverse Lunge","Hack Squat","Goblet Squat","Step-Up","Leg Extension","Split Squat","Smith Machine Squat","Cyclist Squat","Sissy Squat","Wall Sit","Belt Squat","Box Jump","Curtsy Lunge","Forward Lunge","Jump Squat","Pistol Squat","Side Lunge","Sumo Squat"],
+      "Bagside lår & baller": ["Romanian Deadlift","Hip Thrust","Glute Bridge","Good Morning","Nordic Hamstring Curl","Lying Leg Curl","Seated Leg Curl","Cable Pull-Through","Kettlebell Swing","Single-Leg Romanian Deadlift","Back Extension Glute Focus","Reverse Hyperextension","Frog Pump","Sumo Deadlift","Hamstring Slide Curl","Copenhagen Plank","Donkey Calf Raise","Seated Calf Raise","Single-Leg Calf Raise","Stiff-Leg Deadlift","Standing Calf Raise"],
+      "Biceps": ["Barbell Curl","Dumbbell Curl","Incline Dumbbell Curl","Hammer Curl","Preacher Curl","Cable Curl","EZ-Bar Curl","Concentration Curl","Spider Curl","Bayesian Cable Curl","Chin-Up","Reverse Curl","Zottman Curl","Machine Curl","Drag Curl","Alternating Dumbbell Curl","Assisted Chin-Up","Barbell Reverse Curl","Cable Preacher Curl","Close-Grip Chin-Up","Cross-Body Hammer Curl","Dumbbell Preacher Curl","High Cable Curl","Incline Hammer Curl","Machine Preacher Curl","Overhead Cable Curl","Resistance Band Curl","Rope Hammer Curl","Scott Curl","Seated Dumbbell Curl","Single-Arm Cable Curl","Standing Dumbbell Curl","TRX Biceps Curl"],
+      "Triceps": ["Close-Grip Bench Press","Parallel Bar Dip","Cable Triceps Pushdown","Rope Pushdown","Overhead Cable Extension","Skull Crusher","EZ-Bar Lying Extension","Dumbbell Overhead Extension","Diamond Push-Up","JM Press","Machine Triceps Extension","Single-Arm Cable Extension","Bench Dip","Tate Press","Cross-Body Cable Extension","Assisted Dip","Bodyweight Triceps Extension","Cable Kickback","Cable Skull Crusher","Close-Grip Push-Up","Decline Skull Crusher","Dumbbell Kickback","EZ-Bar Overhead Extension","EZ-Bar Skull Crusher","Floor Skull Crusher","Incline Dumbbell Extension","Overhead Dumbbell Extension","PJR Pullover","Resistance Band Overhead Extension","Resistance Band Pushdown","Reverse-Grip Pushdown","Seated Overhead Dumbbell Extension","Single-Arm Dumbbell Extension","Single-Arm Overhead Cable Extension","Single-Arm Pushdown","Smith Machine Close-Grip Bench Press"],
+      "Mave": ["Plank","Side Plank","Dead Bug","Hollow Body Hold","Ab Wheel Rollout","Cable Crunch","Hanging Knee Raise","Hanging Leg Raise","Reverse Crunch","Pallof Press","Bird Dog","Mountain Climber","Stir-the-Pot","V-Up","Farmer Carry","Bicycle Crunch","Cable Wood Chop","Captain's Chair Leg Raise","Crunch","Decline Crunch","Dragon Flag","Heel Touch","Hollow Hold","Jackknife Sit-Up","Kneeling Cable Crunch","L-Sit","Medicine Ball Slam","Plank Shoulder Tap","Russian Twist","Sit-Up","Stability Ball Pike","Swiss Ball Crunch","Toe Touch","Toes to Bar","TRX Pike","Windshield Wiper"],
       "Nedre ryg / lænd": ["Back Extension","Bird Dog","McGill Curl-Up","Good Morning","Romanian Deadlift","Deadlift","Rack Pull","Reverse Hyperextension","Superman Hold","Hip Hinge Drill","Cable Pull-Through","Kettlebell Swing","Jefferson Curl","Quadruped Hip Extension","Suitcase Carry"],
       "Cardio": ["Løbebånd","Udendørs løb","Stairmaster / Stair Climber","Romaskine","Crosstrainer","Motionscykel","Air Bike","Spinning","Sjipning","Svømning","Rask gang","Hiking / Vandring","Trappeløb","Roning på vand","Assault Runner"]
     };
@@ -3349,6 +3349,20 @@
       return isBodyweightHomeExercise(name, muscle) ? "Hjemme" : "Center";
     }
 
+    function normalizeExerciseCatalogKey(name) {
+      return String(name || "")
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/&/g, "and")
+        .replace(/\bups\b/g, "up")
+        .replace(/\bchinups\b/g, "chinup")
+        .replace(/\bpullups\b/g, "pullup")
+        .replace(/\bpushups\b/g, "pushup")
+        .replace(/\bchestdips\b/g, "chestdip")
+        .replace(/\btoestobar\b/g, "toetobar")
+        .replace(/[^a-z0-9]/g, "");
+    }
     const catalog = Object.entries(exerciseLibrary).flatMap(([muscle, names]) =>
       names.map(name => ({
         name,
@@ -3377,7 +3391,7 @@
       ["Toes-to-Bar", "Mave"], ["Superman Hold", "Nedre ryg / lænd"], ["Arch Body Hold", "Nedre ryg / lænd"]
     ];
     calisthenicsExerciseDefinitions.forEach(([name, muscle]) => {
-      const existing = catalog.find(exercise => exercise.name === name && exercise.muscle === muscle);
+      const existing = catalog.find(exercise => normalizeExerciseCatalogKey(exercise.name) === normalizeExerciseCatalogKey(name) && exercise.muscle === muscle);
       if (existing) {
         existing.trainingStyle = "calisthenics";
         existing.type = exerciseLocationType(name, muscle);
@@ -9288,7 +9302,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260712-audit1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260712-exercises2").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
@@ -9296,5 +9310,6 @@
   </script>
 </body>
 </html>
+
 
 
