@@ -9421,7 +9421,7 @@
   <script src="ai-copilot-actions.js?v=20260628-ai20"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
-  <script src="auth-gate.js?v=20260706-resume-state1"></script>
+  <script src="auth-gate.js?v=20260712-auth-unlock1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="profile-account.js?v=20260706-resume-state1"></script>
   <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
@@ -9437,7 +9437,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260712-sticky-compact1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260712-auth-unlock1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
@@ -9445,6 +9445,7 @@
   </script>
 </body>
 </html>
+
 
 
 

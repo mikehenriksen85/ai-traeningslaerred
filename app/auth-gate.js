@@ -186,6 +186,7 @@
     gate.classList.remove("loading");
     document.body.classList.add("auth-locked");
     setAppInert(true);
+    setActionsEnabled(Boolean(window.FirebaseAuthService));
     const copy = byId("authGateCopy");
     if (copy) copy.textContent = message;
     window.setTimeout(() => byId("authGateEmail")?.focus(), 0);
@@ -377,6 +378,7 @@
         showLoading("Gendanner Firebase-session...");
         setFeedback("Kontrollerer stadig loginstatus. Appen åbnes automatisk, hvis sessionen er gyldig.");
         pendingGateTimer = window.setTimeout(() => {
+          pendingGateTimer = null;
           if (window.FirebaseAuthService?.getCurrentUser?.()) return;
           clearGateIdentity();
           showGate();
@@ -455,3 +457,5 @@
   clearGateIdentity();
   showLoading();
 })();
+
+
