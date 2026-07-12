@@ -117,7 +117,7 @@ async function ensureFirestoreUserForAuthRecord(userRecord) {
   const userRole = isPermanentAdminEmail(userRecord.email) ? "admin" : "";
   const membershipType = userRole
     ? "lifetime"
-    : normalizeMembershipType(existingUser.membership || membershipData.membershipType || "free", userRole);
+    : normalizeMembershipType(membershipData.membershipType || existingUser.membership || "free", userRole);
   const providerIds = authProviderIds(userRecord);
   const createdAt = existingUser.createdAt || authTimestamp(userRecord.metadata?.creationTime);
   const rootPayload = {
@@ -504,3 +504,4 @@ exports.stripeWebhook = onRequest({
     response.status(500).send("Webhook handler failed");
   }
 });
+
