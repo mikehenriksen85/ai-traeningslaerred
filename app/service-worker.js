@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v96-stripe-google-login1";
+const CACHE_NAME = "work4it-shell-v97-ai-coach1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -20,8 +20,8 @@ const APP_SHELL = [
   "./stripe-config.js?v=20260712-home-center1",
   "./membership.js?v=20260712-home-center1",
   "./stripe-checkout.js?v=20260713-stripe-google-login1",
-  "./ai-system.js?v=20260710-admin1",
-  "./ai-copilot-actions.js?v=20260628-ai20",
+  "./ai-system.js?v=20260713-ai-coach1",
+  "./ai-copilot-actions.js?v=20260713-ai-coach1",
   "./ai-request-counter.js?v=20260713-stripe-google-login1",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",

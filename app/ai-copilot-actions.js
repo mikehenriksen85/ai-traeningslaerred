@@ -73,6 +73,18 @@
     return goals[normalize(value)];
   }
 
+  function parseSetDetails(value) {
+    const text = normalize(value);
+    const weight = text.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
+    const reps = text.match(/(\d+)\s*reps?\b/i);
+    const pause = text.match(/(\d+(?::\d+)?(?:[.,]\d+)?)\s*(sek(?:und(?:er)?)?|s|min(?:ut(?:ter)?)?|m)\b/i);
+    return {
+      weightKg: weight ? numberValue(weight[1]) : null,
+      reps: reps ? Number(reps[1]) : null,
+      pause: pause ? `${pause[1]} ${pause[2]}` : null
+    };
+  }
+
   function parse(command, context = null) {
     const text = normalize(command);
     if (!text) return null;
@@ -143,7 +155,11 @@
     if (/(dårlig kondition|poor conditioning|low fitness)/i.test(text)) {
       return { action: "advice", topic: text, originalInput: command };
     }
-    if (/(protein|kalorie|kalorier|motivation|plateau|står stille|calisthenics|kropsvægt|muscle-up|pull-up)/i.test(text)) {
+    if (/tilpas.*dagens træning.*motivation|adapt.*today.*motivation/i.test(text)) {
+      return { action: "optimizeWorkout", mode: "motivation", originalInput: command };
+    }
+    if (/(protein|kalorie|kalorier|motivation|plateau|står stille|calisthenics|kropsvægt|muscle-up|pull-up)/i.test(text) &&
+        !/(lav|generér|generer|opret|foreslå|create|generate|suggest).*(program|træningspas|workout)/i.test(text)) {
       return { action: "advice", topic: text, originalInput: command };
     }
     let constraintMatch = text.match(/(?:har kun|kun|only have)\s*(\d+)\s*(?:min|minutter|minutes)/i);
@@ -159,6 +175,11 @@
     resizeMatch = text.match(/(?:shorten|make shorter|extend|make longer|resize).*(?:workout|program).*(?:to\s+)?(\d+)\s*exercises/i);
     if (resizeMatch) return { action: "resizeWorkout", exerciseCount: Number(resizeMatch[1]), originalInput: command };
 
+    if (/(optimer|optimér|forbedr|tilpas|optimize|improve).*(program|træningspas|workout)/i.test(text)) {
+      const mode = /(pause|rest)/i.test(text) ? "pauses" : /(volumen|sæt|sets)/i.test(text) ? "volume" : "all";
+      return { action: "optimizeWorkout", mode, originalInput: command };
+    }
+
     const programIntent = /(lav|generér|generer|opret|foreslå|create|generate|suggest).*(program|træningspas|workout)/i.test(text);
     if (programIntent) {
       const goal = /vægttab|weight loss/.test(text) ? "weight_loss"
@@ -171,11 +192,19 @@
         : /hjemme|home/.test(text) ? "home"
         : /fitness|center|gym/.test(text) ? "gym"
         : null;
+      const programType = /calisthenics|street workout/.test(text) ? "calisthenics"
+        : /cardio|kondition/.test(text) ? "cardio"
+        : /stabilitet|stability|core/.test(text) ? "stability"
+        : /full\s*body|fullbody|helkrop/.test(text) ? "fullbody"
+        : /\bpull\b/.test(text) ? "pull"
+        : /\bpush\b/.test(text) ? "push"
+        : null;
       const level = /begynder|beginner/.test(text) ? "beginner"
         : /avanceret|advanced/.test(text) ? "experienced"
         : /øvet|intermediate/.test(text) ? "intermediate"
         : null;
-      return { action: "suggestProgram", goal, style, level, originalInput: command };
+      const durationMatch = text.match(/(\d+)\s*(?:min|minutter|minutes)\b/i);
+      return { action: "suggestProgram", goal, style, programType, level, durationMinutes: durationMatch ? Number(durationMatch[1]) : null, originalInput: command };
     }
 
     if (/(hvordan|hvad bør|how do|what should|råd|advice)/i.test(text)) {
@@ -407,6 +436,12 @@
     match = text.match(/^move\s+(.+?)\s+to\s+day\s+(\d+)$/i);
     if (match) return { action: "moveExercise", exerciseName: match[1].replace(/^exercise\s+/i, "").trim(), day: Number(match[2]) };
 
+    match = text.match(/^flyt\s+(.+?)\s+(før|efter)\s+(.+)$/i);
+    if (match) return { action: "reorderExercise", exerciseName: match[1].trim(), position: match[2] === "før" ? "before" : "after", targetExerciseName: match[3].trim() };
+
+    match = text.match(/^move\s+(.+?)\s+(before|after)\s+(.+)$/i);
+    if (match) return { action: "reorderExercise", exerciseName: match[1].trim(), position: match[2], targetExerciseName: match[3].trim() };
+
     match = text.match(/^tilføj\s+(\d+(?:[.,]\d+)?)\s*min(?:utter)?\s+(.+)$/i);
     if (match) {
       return {
@@ -466,6 +501,39 @@
     match = text.match(/^replace\s+(.+?)\s+with\s+(.+)$/i);
     if (match) return { action: "replaceExercise", exerciseName: match[1].trim(), replacementName: titleCase(match[2]) };
 
+    match = text.match(/^(?:find|foreslå|vis)\s+(?:et\s+)?alternativ\s+til\s+(.+)$/i);
+    if (match) return { action: "findExerciseAlternative", exerciseName: match[1].trim() };
+
+    if (/^(?:foreslå|find)\s+en\s+lettere\s+øvelse$/i.test(text)) {
+      return { action: "findExerciseAlternative", exerciseName: context?.activeProgram?.exercises?.[0]?.name || "" };
+    }
+
+    match = text.match(/^(?:sæt|ændr|opdater)\s+sæt\s+(\d+)\s+(?:i|på|for)\s+(.+?)\s+(?:til|med)\s+(.+)$/i);
+    if (match) {
+      return {
+        action: "updateExerciseSet",
+        setNumber: Number(match[1]),
+        exerciseName: match[2].trim(),
+        ...parseSetDetails(match[3])
+      };
+    }
+
+    match = text.match(/^(?:set|change|update)\s+set\s+(\d+)\s+(?:of|for|in)\s+(.+?)\s+(?:to|with)\s+(.+)$/i);
+    if (match) {
+      return {
+        action: "updateExerciseSet",
+        setNumber: Number(match[1]),
+        exerciseName: match[2].trim(),
+        ...parseSetDetails(match[3])
+      };
+    }
+
+    match = text.match(/^sæt\s+pause(?:n)?\s+(?:for|på)\s+(.+?)\s+til\s+(.+)$/i);
+    if (match) return { action: "updateExercisePause", exerciseName: match[1].trim(), value: match[2].trim() };
+
+    match = text.match(/^set\s+(?:the\s+)?rest(?:\s+time)?\s+(?:for|on)\s+(.+?)\s+to\s+(.+)$/i);
+    if (match) return { action: "updateExercisePause", exerciseName: match[1].trim(), value: match[2].trim() };
+
     match = text.match(/^sæt\s+(.+?)\s+til\s+(\d+)\s+sæt(?:\s+af\s+(\d+)\s+reps?)?(?:\s+(?:med|og)\s+(\d+(?:[.,]\d+)?)\s*kg)?$/i);
     if (match) {
       return {
@@ -521,6 +589,40 @@
     return null;
   }
 
+  function validateAction(action, context = {}) {
+    if (!action?.action) return { valid: false, message: "Kommandoen mangler en handling." };
+    const activeExercises = Array.isArray(context?.activeProgram?.exercises) ? context.activeProgram.exercises : [];
+    const hasExercise = name => activeExercises.some(exercise => {
+      const current = normalize(exercise.name);
+      const requested = normalize(name);
+      return current === requested || current.includes(requested) || requested.includes(current);
+    });
+    if (["addExercise", "removeExercise", "replaceExercise", "updateExercise", "updateExerciseSet", "updateExercisePause", "reorderExercise"].includes(action.action) && !String(action.exerciseName || "").trim()) {
+      return { valid: false, message: "Øvelsens navn mangler." };
+    }
+    if (["removeExercise", "replaceExercise", "updateExercise", "updateExerciseSet", "updateExercisePause", "reorderExercise"].includes(action.action) && activeExercises.length && !hasExercise(action.exerciseName)) {
+      return { valid: false, message: `Jeg kunne ikke finde "${action.exerciseName}" i det aktive træningspas.` };
+    }
+    if (["replaceExercise", "replaceExerciseByIndex"].includes(action.action) && !String(action.replacementName || "").trim()) {
+      return { valid: false, message: "Erstatningsøvelsen mangler." };
+    }
+    if (action.action === "reorderExercise" && (!String(action.targetExerciseName || "").trim() || normalize(action.exerciseName) === normalize(action.targetExerciseName))) {
+      return { valid: false, message: "Vælg to forskellige øvelser til omarrangeringen." };
+    }
+    if (action.action === "updateExerciseSet") {
+      if (!Number.isInteger(action.setNumber) || action.setNumber < 1 || action.setNumber > 20) return { valid: false, message: "Sætnummeret skal være mellem 1 og 20." };
+      if (action.weightKg == null && action.reps == null && !action.pause) return { valid: false, message: "Angiv KG, reps eller pause for sættet." };
+    }
+    if (action.action === "suggestProgram" && action.durationMinutes != null && (!Number.isFinite(action.durationMinutes) || action.durationMinutes < 5 || action.durationMinutes > 240)) {
+      return { valid: false, message: "Træningstiden skal være mellem 5 og 240 minutter." };
+    }
+    return { valid: true, message: "" };
+  }
+
+  function requiresRequest(action) {
+    return Boolean(action?.action) && !["blockedSecurity", "healthBoundary", "clarify", "switchDay", "showCardioSummary"].includes(action.action);
+  }
+
   function redactCommand(command) {
     return String(command || "")
       .replace(/((?:vægt|weight|fedtprocent|body fat|muskelmasse|muscle mass|alder|age|højde|height)[^\d]{0,20})\d+(?:[.,]\d+)?/gi, "$1[redacted]")
@@ -554,5 +656,5 @@
     }
   }
 
-  window.AICopilotActions = { parse, log, getHistory, redactCommand };
+  window.AICopilotActions = { parse, validateAction, requiresRequest, log, getHistory, redactCommand };
 })();

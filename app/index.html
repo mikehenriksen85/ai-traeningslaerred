@@ -1113,7 +1113,10 @@
     .copilot-bar { display: flex; gap: 8px; }
     .copilot-input { flex: 1; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 6px; padding: 11px; min-width: 0; }
     .copilot-btn { background: var(--blue); color: var(--text-primary); border: 0; border-radius: 6px; padding: 0 18px; font-weight: var(--font-weight-bold); cursor: pointer; }
+    .copilot-btn:disabled, .copilot-input:disabled { opacity: .65; cursor: wait; }
     #copilotFeedback { display: none; color: var(--text-success); margin-top: 8px; font-size: var(--font-size-body); }
+    #copilotFeedback[data-status="loading"] { color: var(--text-accent); }
+    #copilotFeedback[data-status="error"] { color: var(--text-danger); }
     #copilotFeedback.ai-change {
       padding: 9px 11px;
       border: 1px solid rgba(74, 222, 128, .45);
@@ -1127,6 +1130,8 @@
     .copilot-proposal-safety { padding: 9px; border-left: 3px solid var(--orange); background: rgba(245,158,11,.08); color: var(--text-primary); }
     .copilot-proposal-actions { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 7px; }
     .copilot-proposal-actions button { min-height: 42px; white-space: normal; }
+    .copilot-alternatives { display: grid; gap: 7px; }
+    .copilot-alternative { width: 100%; min-height: 42px; text-align: left; }
     @media (max-width: 560px) {
       .copilot-proposal-actions { grid-template-columns: 1fr; }
       .copilot-proposal-actions button { min-height: 44px; }
@@ -2749,9 +2754,9 @@
         <div class="ai-coach-suggestions" id="aiCoachSuggestions" aria-label="AI forslag"></div>
         <div class="copilot-bar">
           <input class="copilot-input" id="copilotInput" placeholder="F.eks. 'Lav et styrkeprogram', 'Jeg har kun håndvægte' eller 'Opdater min vægt til 88 kg'" onkeydown="if(event.key==='Enter') runCopilot()">
-          <button class="copilot-btn" onclick="runCopilot()">Kør</button>
+          <button class="copilot-btn" id="copilotRunButton" type="button" onclick="runCopilot()">Kør</button>
         </div>
-        <div id="copilotFeedback"></div>
+        <div id="copilotFeedback" role="status" aria-live="polite"></div>
       </div>
     </div>
   </section>
@@ -3933,6 +3938,27 @@
       if (options.save !== false) scheduleAutoSave();
     }
 
+    function setSingleSetPauseSeconds(slot, setNumber, seconds, options = {}) {
+      const input = $(`pause-${slot}-${setNumber}`);
+      if (!input) return false;
+      const normalized = Math.max(0, Math.floor(Number(seconds) || 0));
+      const formatted = formatPause(normalized);
+      input.value = formatted;
+      input.dataset.pauseManual = options.manual === false ? "false" : "true";
+      const inline = $(`pause-inline-${slot}-${setNumber}`);
+      if (inline) inline.textContent = formatted;
+      const timer = pauseTimers[pauseKey(slot, setNumber)];
+      if (timer) {
+        timer.total = normalized;
+        timer.remaining = normalized;
+        timer.endsAt = timer.running ? Date.now() + normalized * 1000 : null;
+        updatePauseProgress(pauseKey(slot, setNumber), { reset: !timer.running });
+      }
+      updateEstimatedTime();
+      if (options.save !== false) scheduleAutoSave();
+      return true;
+    }
+
     function trainingContext() {
       const wizardContext = window.TrainingWizardStore?.getContext?.() || {
         goal: "general_health",
@@ -4368,10 +4394,11 @@
         fullbody: muscleGroupKeys.filter(muscle => muscle !== "Cardio"),
         push: movementMuscles("Push"),
         pull: movementMuscles("Pull"),
+        stability: movementMuscles("Stabilitet"),
         legs: ["Forside lår", "Bagside lår & baller"]
       };
       const muscles = types[pendingProgram] || ["Ryg"];
-      const pickerMovement = pendingProgram === "push" ? "Push" : pendingProgram === "pull" ? "Pull" : "Alle";
+      const pickerMovement = pendingProgram === "push" ? "Push" : pendingProgram === "pull" ? "Pull" : pendingProgram === "stability" ? "Stabilitet" : "Alle";
       const pickerScope = pendingProgram === "legs" ? ["Forside lår", "Bagside lår & baller"] : null;
       setExercisePickerContext(pickerMovement, pickerScope);
       const context = trainingContext();
@@ -5288,9 +5315,9 @@
       container.innerHTML = "";
       for (let i = 1; i <= count; i++) {
         const data = saved?.[i-1] || {};
-        const pauseValue = exercisePauseValue;
+        const pauseValue = data.pauseManual ? formatPause(parsePause(data.pause)) : exercisePauseValue;
         const targetReps = data.targetReps || plan.targetReps || "";
-        const pauseManual = exercisePauseManualValue;
+        const pauseManual = data.pauseManual === true || (data.pauseManual == null && exercisePauseManualValue);
         const block = document.createElement("div");
         block.className = "set-block" + (data.completed ? " completed" : "");
         block.dataset.pauseKey = pauseKey(slot, i);
@@ -5419,18 +5446,17 @@
     function collectSetData(slot) {
       const container = $(`sets-${slot}`);
       if (!container) return [];
-      const sharedPause = formatPause(exercisePauseSeconds(slot));
-      const sharedPauseManual = exercisePauseManual(slot);
       return [...container.querySelectorAll(".set-block")].map((row, index) => {
         const timer = pauseTimers[pauseKey(slot, index + 1)];
+        const pauseInput = row.querySelector(".pause");
         return {
           prev: row.querySelector(".previous")?.textContent || "-",
           completed: row.querySelector('input[type="checkbox"]')?.checked || false,
           weight: row.querySelector(".weight")?.value || "",
           reps: row.querySelector(".reps")?.value || "",
           targetReps: row.querySelector(".reps")?.dataset.targetReps || "",
-          pause: sharedPause,
-          pauseManual: sharedPauseManual,
+          pause: formatPause(parsePause(pauseInput?.value || exercisePauseSeconds(slot))),
+          pauseManual: pauseInput?.dataset.pauseManual === "true",
           pauseTimer: timer ? {
             total: timer.total,
             remaining: timer.remaining,
@@ -6384,6 +6410,8 @@
       return true;
     }
 
+    let pendingProgramsCloudSave = Promise.resolve(false);
+
     function getPrograms() {
       const programs = readLocalJson("saved_workout_programs", []);
       return Array.isArray(programs) ? programs.filter(program => program && typeof program === "object") : [];
@@ -6392,8 +6420,9 @@
       const programs = Array.isArray(p) ? p : [];
       const saved = writeLocalJson("saved_workout_programs", programs);
       if (saved && window.FirestoreDataService?.isCloudPrimary?.()) {
-        window.FirestoreDataService.saveProgramsToCloud?.(programs).then(() => {
+        pendingProgramsCloudSave = window.FirestoreDataService.saveProgramsToCloud?.(programs).then(() => {
           if ($("autosaveStatus")) $("autosaveStatus").textContent = "Træningspas gemt i Firebase";
+          return true;
         }).catch(error => {
           console.error("Work4it Firestore-fejl", {
             operation: "saveProgramsToCloud",
@@ -6402,7 +6431,10 @@
             message: error?.message || String(error || "Ukendt fejl")
           });
           if ($("autosaveStatus")) $("autosaveStatus").textContent = "Træningspas gemt lokalt - Cloud ikke tilgængelig";
+          return { saved: false, error };
         });
+      } else {
+        pendingProgramsCloudSave = Promise.resolve(false);
       }
       return saved;
     }
@@ -7451,12 +7483,21 @@
 
     let pendingCopilotHistory = null;
     let pendingCopilotProposal = null;
+    let pendingCopilotAlternatives = [];
     const COPILOT_MUTATING_ACTIONS = new Set([
       "updateProfile", "updateTrainingPreference", "moveExercise", "moveExerciseByIndex",
       "addCardioExercise", "generateCardioProgram", "suggestProgram", "addExercise",
       "addMuscleExercise", "removeExercise", "replaceExercise", "replaceExerciseByIndex",
       "updateExercise", "updatePause", "updatePauseSet", "updateWorkoutTime",
-      "optimizeWorkout", "renameProgram", "adaptWorkout", "resizeWorkout"
+      "optimizeWorkout", "renameProgram", "adaptWorkout", "resizeWorkout",
+      "reorderExercise", "updateExerciseSet", "updateExercisePause"
+    ]);
+    const COPILOT_PROGRAM_ACTIONS = new Set([
+      "moveExercise", "moveExerciseByIndex", "addCardioExercise", "generateCardioProgram",
+      "suggestProgram", "addExercise", "addMuscleExercise", "removeExercise", "replaceExercise",
+      "replaceExerciseByIndex", "updateExercise", "updatePause", "updatePauseSet", "optimizeWorkout",
+      "renameProgram", "adaptWorkout", "resizeWorkout", "reorderExercise", "updateExerciseSet",
+      "updateExercisePause"
     ]);
 
     function currentProfileFieldDisplay(field) {
@@ -7494,7 +7535,7 @@
         moveExerciseByIndex: `flytte øvelse ${action.exerciseIndex} til Dag ${action.day}`,
         addCardioExercise: `tilføje ${action.exerciseName} som cardio`,
         generateCardioProgram: `oprette et cardio-program på ${action.durationMinutes || 30} minutter`,
-        suggestProgram: `oprette det foreslåede ${action.style || "måltilpassede"} træningspas`,
+        suggestProgram: `oprette det foreslåede ${action.programType || action.style || "måltilpassede"} træningspas${action.durationMinutes ? ` på cirka ${action.durationMinutes} minutter` : ""}`,
         addExercise: `tilføje ${action.exerciseName}`,
         addMuscleExercise: `tilføje en relevant øvelse for ${action.muscle}`,
         removeExercise: `fjerne ${action.exerciseName}`,
@@ -7507,14 +7548,80 @@
         optimizeWorkout: `tilpasse ${action.mode || "træningspasset"} efter din profil`,
         renameProgram: `omdøbe træningspasset til ${action.name}`,
         adaptWorkout: `tilpasse træningspasset til begrænsningen: ${action.originalInput || action.constraint}`,
-        resizeWorkout: `ændre træningspasset til ${action.exerciseCount} øvelser`
+        resizeWorkout: `ændre træningspasset til ${action.exerciseCount} øvelser`,
+        reorderExercise: `flytte ${action.exerciseName} ${action.position === "before" ? "før" : "efter"} ${action.targetExerciseName}`,
+        updateExerciseSet: `ændre sæt ${action.setNumber} i ${action.exerciseName}${action.weightKg != null ? ` til ${String(action.weightKg).replace(".", ",")} kg` : ""}${action.reps != null ? `, ${action.reps} reps` : ""}${action.pause ? ` og ${action.pause} pause` : ""}`,
+        updateExercisePause: `ændre pausen for ${action.exerciseName} til ${action.value}`
       };
       return summaries[action.action] || "anvende den foreslåede ændring";
     }
 
-    function proposeCopilotAction(command, action) {
-      pendingCopilotHistory = null;
-      pendingCopilotProposal = { command, action };
+    function setCopilotBusy(busy, message = "") {
+      const input = $("copilotInput");
+      const button = $("copilotRunButton");
+      if (input) input.disabled = Boolean(busy);
+      if (button) {
+        button.disabled = Boolean(busy);
+        button.textContent = busy ? "Arbejder..." : "Kør";
+      }
+      if (busy && message) feedback(message, false, false, "loading");
+    }
+
+    function resolveCopilotAction(action) {
+      if (action?.action !== "findExerciseAlternative") return action;
+      const slot = findExerciseSlot(action.exerciseName);
+      const currentName = slot ? $(`name-${slot}`)?.textContent : "";
+      const muscle = slot ? $(`name-${slot}`)?.dataset.muscle : "";
+      const context = trainingContext();
+      const availableEquipment = Array.isArray(context.availableEquipment) ? context.availableEquipment : [];
+      let candidates = catalog.filter(exercise => exercise.muscle === muscle && exercise.name !== currentName);
+      if (availableEquipment.length) {
+        const equipped = candidates.filter(exercise => availableEquipment.includes(equipmentCategory(exercise)) || (exercise.type === "Hjemme" && availableEquipment.includes("Kropsvægt")));
+        if (equipped.length) candidates = equipped;
+      }
+      const replacement = candidates[0];
+      return replacement
+        ? { action: "replaceExercise", exerciseName: currentName, replacementName: replacement.name, originalInput: action.originalInput }
+        : { action: "clarify", message: currentName ? "Der blev ikke fundet et relevant alternativ i kataloget." : "Vælg eller nævn en øvelse, der skal have et alternativ." };
+    }
+
+    function validateCopilotAction(action) {
+      const context = window.Work4itAISystem?.buildContext?.() || {};
+      const validation = window.AICopilotActions?.validateAction?.(action, context) || { valid: true };
+      if (!validation.valid) return validation;
+      if (["addExercise", "addCardioExercise"].includes(action.action) && !resolveExerciseDefinition(action.exerciseName)) {
+        return { valid: false, message: `Jeg kunne ikke finde øvelsen "${action.exerciseName}" i Work4its katalog.` };
+      }
+      if (["replaceExercise", "replaceExerciseByIndex"].includes(action.action) && !resolveExerciseDefinition(action.replacementName)) {
+        return { valid: false, message: `Jeg kunne ikke finde erstatningen "${action.replacementName}" i Work4its katalog.` };
+      }
+      if (["removeExercise", "replaceExercise", "updateExercise", "updateExercisePause"].includes(action.action) && !findExerciseSlot(action.exerciseName)) {
+        return { valid: false, message: `Jeg kunne ikke finde "${action.exerciseName}" i det aktive træningspas.` };
+      }
+      if (["replaceExerciseByIndex", "moveExerciseByIndex"].includes(action.action) && !slotIds()[Number(action.exerciseIndex) - 1]) {
+        return { valid: false, message: `Øvelse ${action.exerciseIndex} findes ikke i det aktive træningspas.` };
+      }
+      if (["moveExercise", "moveExerciseByIndex"].includes(action.action) && !currentProgramSession?.days?.[Number(action.day) - 1]) {
+        return { valid: false, message: `Dag ${action.day} findes ikke i det aktive program.` };
+      }
+      if (action.action === "reorderExercise" && (!findExerciseSlot(action.exerciseName) || !findExerciseSlot(action.targetExerciseName))) {
+        return { valid: false, message: "Begge øvelser skal findes i det aktive træningspas." };
+      }
+      if (action.action === "updateExerciseSet") {
+        const slot = findExerciseSlot(action.exerciseName);
+        if (!slot || action.setNumber > collectSetData(slot).length) return { valid: false, message: `${action.exerciseName} har ikke sæt ${action.setNumber}.` };
+      }
+      if (["updatePause", "updatePauseSet", "updateExercisePause"].includes(action.action)) {
+        const seconds = parsePause(action.value);
+        if (!Number.isFinite(seconds) || seconds < 0 || seconds > 3600) return { valid: false, message: "Pausen skal være mellem 0 og 60 minutter." };
+      }
+      if (["updatePause", "updatePauseSet", "optimizeWorkout"].includes(action.action) && !slotIds().length) {
+        return { valid: false, message: "Tilføj eller opret først mindst én øvelse." };
+      }
+      return { valid: true, message: "" };
+    }
+
+    function renderCopilotProposal(command, action) {
       const el = $("copilotFeedback");
       const safety = action.requiresSafetyNotice
         ? `<div class="copilot-proposal-safety">${esc(action.safetyNotice || window.Work4itAISystem?.HEALTH_SAFETY_NOTICE)}</div>`
@@ -7535,48 +7642,233 @@
             <button class="small-btn red" type="button" onclick="cancelCopilotProposal()">Annullér</button>
           </div>
         </div>`;
-      window.AICopilotActions?.log?.(command, action, { success: true, changed: false, status: "proposed" });
-      $("copilotInput").value = "";
     }
 
-    function approveCopilotProposal() {
+    function proposeCopilotAction(command, action) {
+      const validation = validateCopilotAction(action);
+      if (!validation.valid) {
+        feedback(validation.message, true, false, "error");
+        return false;
+      }
+      pendingCopilotHistory = null;
+      pendingCopilotProposal = { command, action };
+      pendingCopilotAlternatives = [];
+      renderCopilotProposal(command, action);
+      window.AICopilotActions?.log?.(command, action, { success: true, changed: false, status: "proposed" });
+      $("copilotInput").value = "";
+      return true;
+    }
+
+    function persistActiveProgramFromCanvas() {
+      const now = new Date().toISOString();
+      if (currentProgramSession) {
+        if (currentWorkoutView === "program") syncActiveDayFromCanvas();
+      } else {
+        const state = collectWorkoutState();
+        currentProgramSession = window.WorkoutProgramStore.createProgram({
+          title: state.title || state.programTitle || "AI træningsprogram",
+          goal: state.goal || currentTrainingGoal(),
+          savedAt: now,
+          days: [{ ...state, id: state.dayId || "day_1", title: state.title || "Dag 1" }]
+        });
+        currentProgramDayIndex = 0;
+      }
+      currentSavedProgramId = currentProgramSession.id || currentSavedProgramId || `program_${Date.now()}`;
+      currentProgramSession.id = currentSavedProgramId;
+      currentProgramSession.activeDayIndex = currentProgramDayIndex;
+      currentProgramSession.updatedAt = now;
+      currentProgramSession.savedAt = currentProgramSession.savedAt || now;
+      const programs = getPrograms();
+      const program = window.WorkoutProgramStore.clone(currentProgramSession);
+      const index = programs.findIndex(item => item.id === currentSavedProgramId);
+      if (index >= 0) programs[index] = program;
+      else programs.push(program);
+      if (!setPrograms(programs)) throw new Error("Programmet kunne ikke gemmes lokalt.");
+      window.TrainingWizardStore?.setLastActiveProgramId?.(currentSavedProgramId);
+      autoSave();
+      renderSaved();
+      return program;
+    }
+
+    async function persistCopilotChanges(action) {
+      if (COPILOT_PROGRAM_ACTIONS.has(action.action)) {
+        persistActiveProgramFromCanvas();
+        const cloudResult = await pendingProgramsCloudSave;
+        if (cloudResult?.saved === false) throw cloudResult.error || new Error("Firestore-synkronisering mislykkedes.");
+        return { local: true, cloud: cloudResult === true };
+      }
+      if (action.action === "updateProfile" || action.action === "updateTrainingPreference") {
+        const profile = window.TrainingWizardStore?.getProfile?.() || {};
+        if (window.FirestoreDataService?.isCloudPrimary?.()) {
+          if (action.field === "motivation") await window.FirestoreDataService.saveDailyToCloud?.(window.TrainingWizardStore?.getDailyState?.() || {});
+          else await window.FirestoreDataService.saveProfileToCloud?.(profile);
+          return { local: true, cloud: true };
+        }
+      }
+      return { local: true, cloud: false };
+    }
+
+    async function approveCopilotProposal() {
       if (!pendingCopilotProposal) return;
       const proposal = pendingCopilotProposal;
-      pendingCopilotProposal = null;
-      const result = executeCopilotAction(proposal.action);
-      window.AICopilotActions?.log?.(proposal.command, proposal.action, { ...result, status: result.success ? "approved" : "failed" });
-      feedback(result.changed ? `✓ Ændret af AI · ${result.message}` : result.message, !result.success, result.changed);
+      const validation = validateCopilotAction(proposal.action);
+      if (!validation.valid) {
+        feedback(validation.message, true, false, "error");
+        return;
+      }
+      setCopilotBusy(true, "Implementerer og validerer ændringen...");
+      try {
+        const result = executeCopilotAction(proposal.action);
+        if (!result.success) throw new Error(result.message || "Ændringen kunne ikke implementeres.");
+        pendingCopilotProposal = null;
+        pendingCopilotAlternatives = [];
+        let persistence = { local: true, cloud: false };
+        try {
+          persistence = result.changed ? await persistCopilotChanges(proposal.action) : persistence;
+        } catch (persistenceError) {
+          window.AICopilotActions?.log?.(proposal.command, proposal.action, { ...result, persistence: { local: true, cloud: false }, status: "approved_local_only", message: persistenceError?.message });
+          feedback(`✓ Ændringen er implementeret og gemt lokalt. Firestore-synkronisering afventer: ${persistenceError?.message || "ukendt fejl"}`, true, true, "error");
+          return;
+        }
+        window.AICopilotActions?.log?.(proposal.command, proposal.action, { ...result, persistence, status: "approved" });
+        const saved = persistence.cloud ? "Gemt lokalt og i Firestore." : "Gemt lokalt.";
+        feedback(result.changed ? `✓ Ændret af AI · ${result.message} ${saved}` : result.message, false, result.changed, "success");
+      } catch (error) {
+        window.AICopilotActions?.log?.(proposal.command, proposal.action, { success: false, changed: false, message: error?.message, status: "failed" });
+        feedback(error?.message || "Ændringen kunne ikke implementeres.", true, false, "error");
+      } finally {
+        setCopilotBusy(false);
+      }
     }
 
     function cancelCopilotProposal() {
       if (!pendingCopilotProposal) return;
       window.AICopilotActions?.log?.(pendingCopilotProposal.command, pendingCopilotProposal.action, { success: true, changed: false, status: "cancelled" });
       pendingCopilotProposal = null;
-      feedback("Forslaget blev annulleret. Ingen data blev ændret.");
+      pendingCopilotAlternatives = [];
+      feedback("Forslaget blev annulleret. Ingen data blev ændret.", false, false, "success");
+    }
+
+    function buildCopilotAlternatives(action) {
+      const alternatives = [];
+      const add = (label, nextAction) => alternatives.push({ label, action: nextAction });
+      if (action.action === "suggestProgram") {
+        ["push", "pull", "fullbody", "stability", "cardio", "calisthenics"]
+          .filter(type => type !== action.programType)
+          .slice(0, 3)
+          .forEach(type => add(`Opret ${type === "stability" ? "Stabilitet" : type === "fullbody" ? "FullBody" : type[0].toUpperCase() + type.slice(1)} i stedet`, { ...action, programType: type }));
+      } else if (["replaceExercise", "removeExercise", "addExercise"].includes(action.action)) {
+        const slot = findExerciseSlot(action.exerciseName);
+        const definition = resolveExerciseDefinition(action.exerciseName);
+        const muscle = slot ? $(`name-${slot}`)?.dataset.muscle : definition?.muscle;
+        const currentName = slot ? $(`name-${slot}`)?.textContent : definition?.name;
+        catalog.filter(exercise => exercise.muscle === muscle && exercise.name !== currentName && exercise.name !== action.replacementName)
+          .slice(0, 3)
+          .forEach(exercise => add(
+            action.action === "addExercise" ? `Tilføj ${exercise.name}` : `Erstat med ${exercise.name}`,
+            action.action === "addExercise"
+              ? { ...action, exerciseName: exercise.name }
+              : { action: "replaceExercise", exerciseName: currentName || action.exerciseName, replacementName: exercise.name }
+          ));
+      } else if (action.action === "resizeWorkout") {
+        [...new Set([Math.max(1, action.exerciseCount - 1), action.exerciseCount + 1, Math.max(1, action.exerciseCount - 2)])]
+          .filter(count => count !== action.exerciseCount && count <= 12)
+          .forEach(count => add(`Brug ${count} øvelser`, { ...action, exerciseCount: count }));
+      } else if (action.action === "adaptWorkout") {
+        const candidates = action.constraint === "home_training"
+          ? [{ label: "Kun kropsvægt", constraint: "no_equipment" }, { label: "Kun håndvægte", constraint: "dumbbells_only" }, { label: "Lav-impact hjemmeprogram", constraint: "low_impact" }]
+          : [{ label: "Lav-impact tilpasning", constraint: "low_impact" }, { label: "Kort 30-minutters træning", constraint: "time_limit", durationMinutes: 30 }, { label: "Opret et separat FullBody-pas", program: true }];
+        candidates.forEach(candidate => add(candidate.label, candidate.program
+          ? { action: "suggestProgram", programType: "fullbody", level: "beginner", originalInput: action.originalInput }
+          : { ...action, constraint: candidate.constraint, durationMinutes: candidate.durationMinutes || action.durationMinutes }));
+      } else if (["updatePause", "updateExercisePause"].includes(action.action)) {
+        [60, 90, 120].filter(seconds => seconds !== parsePause(action.value)).forEach(seconds => add(`Brug ${seconds} sekunders pause`, { ...action, value: `${seconds} sek` }));
+      } else if (action.action === "updateExerciseSet") {
+        if (action.weightKg != null) [Math.max(0, action.weightKg - 2.5), action.weightKg + 2.5].forEach(weightKg => add(`${String(weightKg).replace(".", ",")} kg`, { ...action, weightKg }));
+        if (action.reps != null) add(`${Math.max(1, action.reps + 2)} reps`, { ...action, reps: Math.max(1, action.reps + 2) });
+      } else if (action.action === "updateExercise") {
+        if (action.sets != null) [Math.max(1, action.sets - 1), Math.min(10, action.sets + 1)]
+          .filter(sets => sets !== action.sets)
+          .forEach(sets => add(`${sets} sæt`, { ...action, sets }));
+        if (action.reps != null) [Math.max(1, action.reps - 2), action.reps + 2]
+          .filter(reps => reps !== action.reps)
+          .forEach(reps => add(`${reps} reps`, { ...action, reps }));
+        if (action.weightKg != null) [Math.max(0, action.weightKg - 2.5), action.weightKg + 2.5]
+          .forEach(weightKg => add(`${String(weightKg).replace(".", ",")} kg`, { ...action, weightKg }));
+      } else if (action.action === "reorderExercise") {
+        add(
+          action.position === "before" ? "Placér efter måløvelsen" : "Placér før måløvelsen",
+          { ...action, position: action.position === "before" ? "after" : "before" }
+        );
+        slotIds().map(slot => $(`name-${slot}`)?.textContent).filter(name => name && name !== action.exerciseName && name !== action.targetExerciseName)
+          .slice(0, 2)
+          .forEach(targetExerciseName => add(`Placér før ${targetExerciseName}`, { ...action, targetExerciseName, position: "before" }));
+      } else if (["moveExercise", "moveExerciseByIndex"].includes(action.action)) {
+        (currentProgramSession?.days || []).map((_, index) => index + 1)
+          .filter(day => day !== Number(action.day))
+          .slice(0, 3)
+          .forEach(day => add(`Flyt til Dag ${day}`, { ...action, day }));
+      } else if (action.action === "updateTrainingPreference") {
+        const choices = {
+          experience: [["Begynder", "beginner"], ["Let øvet", "light_intermediate"], ["Øvet", "intermediate"], ["Erfaren", "experienced"]],
+          goal: [["Muskelopbygning", "muscle_gain"], ["Styrke", "strength"], ["Vægttab", "weight_loss"], ["Kondition", "cardio"], ["Generel sundhed", "general_health"]],
+          preferredTrainingStyle: [["Center", "gym"], ["Calisthenics", "calisthenics"], ["Hybrid", "hybrid"]],
+          exercisePreference: [["Mere variation", "variation"], ["Faste øvelser", "consistent"], ["Blandet", "mixed"]]
+        };
+        if (choices[action.field]) {
+          choices[action.field].filter(([, value]) => value !== action.value).slice(0, 3)
+            .forEach(([label, value]) => add(label, { ...action, value }));
+        } else if (["trainingDaysPerWeek", "preferredExerciseCount"].includes(action.field)) {
+          [Math.max(1, Number(action.value) - 1), Math.min(action.field === "trainingDaysPerWeek" ? 7 : 8, Number(action.value) + 1)]
+            .filter(value => value !== Number(action.value))
+            .forEach(value => add(`${value} ${action.field === "trainingDaysPerWeek" ? "dage om ugen" : "øvelser"}`, { ...action, value }));
+        }
+      } else if (action.action === "updateProfile" && Number.isFinite(Number(action.value))) {
+        const step = action.field === "age" ? 1 : action.field === "heightCm" ? 1 : 0.5;
+        [Math.max(0, Number(action.value) - step), Number(action.value) + step]
+          .forEach(value => add(`${String(value).replace(".", ",")} ${action.field === "heightCm" ? "cm" : action.field === "age" ? "år" : action.field === "bodyFat" ? "%" : "kg"}`, { ...action, value }));
+      } else if (action.action === "optimizeWorkout") {
+        [["Optimér hele passet", "all"], ["Optimér kun volumen", "volume"], ["Optimér kun pauser", "pauses"]]
+          .filter(([, mode]) => mode !== action.mode)
+          .forEach(([label, mode]) => add(label, { ...action, mode }));
+      }
+      return alternatives.slice(0, 3);
+    }
+
+    function selectCopilotAlternative(index) {
+      const alternative = pendingCopilotAlternatives[index];
+      if (!alternative || !pendingCopilotProposal) return;
+      const validation = validateCopilotAction(alternative.action);
+      if (!validation.valid) {
+        feedback(validation.message, true, false, "error");
+        return;
+      }
+      pendingCopilotProposal.action = alternative.action;
+      renderCopilotProposal(pendingCopilotProposal.command, alternative.action);
+      const container = $("copilotAlternatives");
+      if (container) container.textContent = `Valgt alternativ: ${alternative.label}`;
     }
 
     function showCopilotAlternatives() {
       const action = pendingCopilotProposal?.action;
       const container = $("copilotAlternatives");
       if (!action || !container) return;
-      const alternatives = action.action === "adaptWorkout"
-        ? "Alternativer: behold programmet uændret, tilpas kun dagens træning eller opret et separat skånsomt træningspas."
-        : action.action === "suggestProgram"
-          ? "Alternativer: kortere pas, færre øvelser eller et program med en anden træningsstil."
-          : action.action === "resizeWorkout"
-            ? "Alternativer: behold nuværende længde, forkort kun dagens pas eller opret et separat kort program."
-          : action.action === "replaceExercise"
-            ? "Alternativer: vælg en lettere variant, en hjemmevariant eller behold den nuværende øvelse."
-            : action.action === "updateTrainingPreference"
-              ? "Alternativer: opdatér kun profilindstillingen, skriv en mere præcis prioritering eller annullér."
-              : "Alternativer: behold den nuværende værdi eller annullér og skriv et mere præcist ønske.";
-      container.textContent = alternatives;
+      pendingCopilotAlternatives = buildCopilotAlternatives(action);
+      if (!pendingCopilotAlternatives.length) {
+        container.textContent = "Der findes ikke et sikkert, relevant alternativ til denne præcise ændring. Du kan annullere og skrive et andet ønske.";
+        return;
+      }
+      container.innerHTML = pendingCopilotAlternatives.map((alternative, index) =>
+        `<button class="small-btn copilot-alternative" type="button" onclick="selectCopilotAlternative(${index})">${esc(alternative.label)}</button>`
+      ).join("");
     }
 
-    function feedback(msg, bad=false, aiChange=false) {
+    function feedback(msg, bad=false, aiChange=false, status = bad ? "error" : "success") {
       const el = $("copilotFeedback");
       el.style.display = "block";
       el.style.color = bad ? "var(--red)" : "var(--green)";
+      el.dataset.status = status;
+      el.setAttribute("aria-busy", status === "loading" ? "true" : "false");
       el.classList.toggle("ai-change", aiChange && !bad);
       el.classList.remove("proposal-open");
       el.textContent = msg;
@@ -7981,49 +8273,70 @@
       const goal = action.goal || context.goal || "general_health";
       const level = action.level || context.experience || "intermediate";
       const style = action.style || context.preferredTrainingStyle || "hybrid";
-      const count = level === "beginner" ? 4 : level === "experienced" ? 7 : Math.max(4, Math.min(6, Number(context.preferredExerciseCount) || 5));
-      if (goal === "cardio") {
-        generateCardioProgram(Math.min(5, count), "conditioning");
+      const programType = action.programType || (goal === "cardio" ? "cardio" : style === "calisthenics" ? "calisthenics" : "fullbody");
+      const baseCount = level === "beginner" ? 4 : level === "experienced" ? 7 : Math.max(4, Math.min(6, Number(context.preferredExerciseCount) || 5));
+      const count = action.durationMinutes ? Math.max(1, Math.min(8, Math.floor(action.durationMinutes / 6))) : baseCount;
+      if (programType === "cardio" || goal === "cardio") {
+        generateCardioProgram(Math.min(5, count), goal === "weight_loss" ? "weight_loss" : "conditioning", action.durationMinutes);
         return { success: true, changed: true, message: `Et cardio-program med ${Math.min(5, count)} øvelser er oprettet.` };
       }
-      if (style === "calisthenics") {
+      if (programType === "calisthenics" || style === "calisthenics") {
         const template = goal === "strength" ? "strength" : goal === "muscle_gain" ? "muscle_gain" : level === "experienced" ? "street_workout" : "beginner";
         generateCalisthenicsProgram(template, count);
         return { success: true, changed: true, message: `Et ${level === "beginner" ? "begynder" : "måltilpasset"} calisthenics-program er oprettet.` };
       }
       const focus = context.focusAreas || [];
-      const muscles = focus.length
+      const typeMuscles = {
+        push: movementMuscles("Push"),
+        pull: movementMuscles("Pull"),
+        stability: movementMuscles("Stabilitet"),
+        fullbody: muscleGroupKeys.filter(muscle => muscle !== "Cardio")
+      };
+      const muscles = typeMuscles[programType] || (focus.length
         ? muscleGroupKeys.filter(muscle => muscle !== "Cardio" && focus.some(area => muscle.includes(area) || (area === "Ben" && /lår|baller/.test(muscle)) || (area === "Ryg" && /ryg/.test(muscle))))
-        : muscleGroupKeys.filter(muscle => muscle !== "Cardio");
+        : muscleGroupKeys.filter(muscle => muscle !== "Cardio"));
       const used = new Set();
-      $("exercises").innerHTML = "";
-      currentSavedProgramId = "";
-      currentProgramSession = null;
-      currentProgramDayIndex = 0;
-      activeExerciseCountPreference = count;
+      const availableEquipment = Array.isArray(context.availableEquipment) ? context.availableEquipment : [];
+      const selectedExercises = [];
       for (let index = 0; index < count; index++) {
         const muscle = muscles[index % Math.max(1, muscles.length)] || "Bryst";
         let pool = catalog.filter(exercise => exercise.muscle === muscle && !used.has(exercise.name));
         if (style === "home") pool = pool.filter(exercise => exercise.type === "Hjemme");
         if (style === "gym") pool = pool.filter(exercise => exercise.type === "Center");
+        if (availableEquipment.length) {
+          const equipmentPool = pool.filter(exercise => availableEquipment.includes(equipmentCategory(exercise)) || (exercise.type === "Hjemme" && availableEquipment.includes("Kropsvægt")));
+          if (equipmentPool.length) pool = equipmentPool;
+        }
         const ranked = window.TrainingGoalEngine?.rankExercises?.(pool, goal, index) || pool;
-        const exercise = ranked[0] || catalog.find(item => item.muscle === muscle && !used.has(item.name));
+        const exercise = ranked[0];
         if (!exercise) continue;
         used.add(exercise.name);
         const plan = window.TrainingGoalEngine?.prescription?.(exercise.name, exercise.muscle, goal, level, index)
           || goalPrescription(exercise.name, exercise.muscle, index);
+        selectedExercises.push({ exercise, plan });
+      }
+      if (!selectedExercises.length) {
+        return { success: false, changed: false, message: "Der blev ikke fundet øvelser, som matcher programtype, udstyr og træningssted." };
+      }
+      $("exercises").innerHTML = "";
+      currentSavedProgramId = "";
+      currentProgramSession = null;
+      currentProgramDayIndex = 0;
+      activeExerciseCountPreference = selectedExercises.length;
+      selectedExercises.forEach(({ exercise, plan }) => {
         const sets = Array.from({ length: defaultNewExerciseSetCount() }, () => ({
           prev: "", completed: false, weight: "", reps: "", targetReps: plan.targetReps || "8-12",
           pause: formatPause(plan.pauseSeconds || 60), pauseManual: false
         }));
         addExercise(exercise.name, exercise.muscle, sets, { ...plan, trainingStyle: exercise.trainingStyle || (style === "home" ? "calisthenics" : "gym") });
-      }
+      });
       const goalLabel = window.TrainingGoalEngine?.profile?.(goal)?.label || "Måltilpasset";
-      $("workoutTitle").textContent = `${goalLabel}: AI-forslag`;
+      const typeLabel = { push: "Push", pull: "Pull", fullbody: "FullBody", stability: "Stabilitet" }[programType] || "AI-forslag";
+      $("workoutTitle").textContent = `${goalLabel}: ${typeLabel}`;
       $("workoutTitle").dataset.customTitle = "true";
       renderDayNavigation();
       autoSave();
-      return { success: slotIds().length > 0, changed: slotIds().length > 0, message: `Et ${style === "home" ? "hjemmeprogram" : "træningspas"} med ${slotIds().length} øvelser er oprettet.` };
+      return { success: slotIds().length > 0, changed: slotIds().length > 0, message: `Et ${style === "home" ? "hjemmeprogram" : typeLabel + "-program"} med ${slotIds().length} øvelser er oprettet.` };
     }
 
     function adaptCurrentWorkout(action) {
@@ -8342,6 +8655,21 @@
         return { success: moved > 0, changed: moved > 0, message: moved ? `${name} er flyttet til Dag ${action.day}.` : "Øvelsen eller dagen blev ikke fundet." };
       }
 
+      if (action.action === "reorderExercise") {
+        const sourceSlot = findExerciseSlot(action.exerciseName);
+        const targetSlot = findExerciseSlot(action.targetExerciseName);
+        const source = sourceSlot ? $(`block-${sourceSlot}`) : null;
+        const target = targetSlot ? $(`block-${targetSlot}`) : null;
+        const container = $("exercises");
+        if (!source || !target || !container || source === target) return { success: false, changed: false, message: "Øvelserne kunne ikke omarrangeres." };
+        if (action.position === "before") container.insertBefore(source, target);
+        else container.insertBefore(source, target.nextSibling);
+        updateWorkoutProgress();
+        updateEstimatedTime();
+        autoSave();
+        return { success: true, changed: true, message: `${action.exerciseName} er flyttet ${action.position === "before" ? "før" : "efter"} ${action.targetExerciseName}.` };
+      }
+
       if (action.action === "addMuscleExercise") {
         const result = addGoalExerciseForMuscle(action.muscle);
         return { success: result === "added", changed: result === "added", message: result === "added" ? `${action.muscle} er tilføjet.` : result === "limit" ? "Det valgte antal øvelser er allerede nået." : "Ingen passende øvelse blev fundet." };
@@ -8360,7 +8688,8 @@
         const seconds = parsePause(action.value);
         let changed = 0;
         slotIds().forEach(slot => {
-          if (!action.setNumber || $(`pause-${slot}-${Number(action.setNumber)}`)) {
+          if (action.setNumber) changed += setSingleSetPauseSeconds(slot, Number(action.setNumber), seconds, { manual: true, save: false }) ? 1 : 0;
+          else {
             setExercisePauseSeconds(slot, seconds, { manual: true, save: false });
             changed++;
           }
@@ -8368,6 +8697,16 @@
         updateEstimatedTime();
         autoSave();
         return { success: changed > 0, changed: changed > 0, message: `${changed} øvelse${changed === 1 ? "" : "r"} har fået opdateret pause.` };
+      }
+
+      if (action.action === "updateExercisePause") {
+        const slot = findExerciseSlot(action.exerciseName);
+        const seconds = parsePause(action.value);
+        if (!slot) return { success: false, changed: false, message: `Jeg kunne ikke finde "${action.exerciseName}".` };
+        if (!Number.isFinite(seconds) || seconds < 0 || seconds > 3600) return { success: false, changed: false, message: "Pausen skal være mellem 0 og 60 minutter." };
+        setExercisePauseSeconds(slot, seconds, { manual: true, save: false });
+        autoSave();
+        return { success: true, changed: true, message: `${$(`name-${slot}`)?.textContent || action.exerciseName} har nu ${formatPause(seconds)} pause.` };
       }
 
       if (action.action === "updateWorkoutTime") {
@@ -8448,6 +8787,27 @@
         return { success: true, changed: true, message: `${name} er opdateret: ${details}.` };
       }
 
+      if (action.action === "updateExerciseSet") {
+        const slot = findExerciseSlot(action.exerciseName);
+        const setNumber = Number(action.setNumber);
+        const weightInput = slot ? $(`sets-${slot}`)?.querySelectorAll(".weight")?.[setNumber - 1] : null;
+        const repsInput = slot ? $(`sets-${slot}`)?.querySelectorAll(".reps")?.[setNumber - 1] : null;
+        if (!slot || !weightInput || !repsInput) return { success: false, changed: false, message: `${action.exerciseName} har ikke sæt ${setNumber}.` };
+        if (action.weightKg != null && (!Number.isFinite(action.weightKg) || action.weightKg < 0 || action.weightKg > 1000)) return { success: false, changed: false, message: "Vægten skal være mellem 0 og 1000 kg." };
+        if (action.reps != null && (!Number.isInteger(action.reps) || action.reps < 1 || action.reps > 100)) return { success: false, changed: false, message: "Reps skal være mellem 1 og 100." };
+        if (action.weightKg != null) weightInput.value = String(action.weightKg).replace(".", ",");
+        if (action.reps != null) repsInput.value = String(action.reps);
+        if (action.pause) setSingleSetPauseSeconds(slot, setNumber, parsePause(action.pause), { manual: true, save: false });
+        updateAnalytics(slot);
+        autoSave();
+        const details = [
+          action.weightKg != null ? `${String(action.weightKg).replace(".", ",")} kg` : "",
+          action.reps != null ? `${action.reps} reps` : "",
+          action.pause ? `${formatPause(parsePause(action.pause))} pause` : ""
+        ].filter(Boolean).join(", ");
+        return { success: true, changed: true, message: `Sæt ${setNumber} i ${$(`name-${slot}`)?.textContent || action.exerciseName} er opdateret: ${details}.` };
+      }
+
       if (action.action === "updatePause") {
         const seconds = parsePause(action.value);
         if (!Number.isFinite(seconds) || seconds < 0 || seconds > 3600) return { success: false, message: "Pausen skal være mellem 0 og 60 minutter." };
@@ -8494,45 +8854,44 @@
     async function runCopilot() {
       const cmd = $("copilotInput").value.trim();
       if (!cmd) return;
-      const consume = await window.Work4itAIRequestCounter?.consumeRequest?.();
-      updateAiRequestCounterDisplay(consume);
-      if (consume && !consume.allowed) {
-        const resetText = consume.membershipType === "free"
-          ? "Gratisversionens 3 AI Requests er brugt."
-          : consume.aiResetDate
-            ? `Grænsen nulstilles ${formatAiResetDate(consume.aiResetDate)}.`
-            : "Grænsen nulstilles næste måned.";
-        feedback(`${resetText} Opgradér for flere AI Requests.`, true);
-        window.Membership?.openView?.();
-        return;
-      }
+      setCopilotBusy(true, "Forstår og validerer din forespørgsel...");
       const aiContext = window.Work4itAISystem?.buildContext?.() || null;
-      pendingCopilotHistory = {
-        command: cmd,
-        action: { action: "legacyCopilotCommand" }
-      };
-      const structuredAction = window.AICopilotActions?.parse?.(cmd, aiContext);
+      let structuredAction = window.AICopilotActions?.parse?.(cmd, aiContext) || parseLegacyMutatingCommand(cmd);
+      structuredAction = resolveCopilotAction(structuredAction);
       if (structuredAction) {
+        const validation = validateCopilotAction(structuredAction);
+        if (!validation.valid) {
+          setCopilotBusy(false);
+          feedback(validation.message, true, false, "error");
+          return;
+        }
+        if (window.AICopilotActions?.requiresRequest?.(structuredAction)) {
+          const consume = await window.Work4itAIRequestCounter?.consumeRequest?.();
+          updateAiRequestCounterDisplay(consume);
+          if (consume && !consume.allowed) {
+            setCopilotBusy(false);
+            const resetText = consume.membershipType === "free"
+              ? "Gratisversionens 3 AI Requests er brugt."
+              : consume.aiResetDate
+                ? `Grænsen nulstilles ${formatAiResetDate(consume.aiResetDate)}.`
+                : "Grænsen nulstilles næste måned.";
+            feedback(`${resetText} Opgradér for flere AI Requests.`, true, false, "error");
+            window.Membership?.openView?.();
+            return;
+          }
+        }
+        setCopilotBusy(false);
         if (COPILOT_MUTATING_ACTIONS.has(structuredAction.action)) {
           proposeCopilotAction(cmd, structuredAction);
           return;
         }
         const result = executeCopilotAction(structuredAction);
         window.AICopilotActions?.log?.(cmd, structuredAction, result);
-        pendingCopilotHistory = null;
-        feedback(
-          result.changed ? `✓ Ændret af AI · ${result.message}` : result.message,
-          !result.success,
-          result.changed
-        );
+        feedback(result.changed ? `✓ Ændret af AI · ${result.message}` : result.message, !result.success, result.changed, result.success ? "success" : "error");
         $("copilotInput").value = "";
         return;
       }
-      const legacyProposal = parseLegacyMutatingCommand(cmd);
-      if (legacyProposal) {
-        proposeCopilotAction(cmd, legacyProposal);
-        return;
-      }
+      setCopilotBusy(false);
       const normalized = cmd.toLowerCase();
       const goalRecommendation = window.TrainingGoalEngine?.recommendationForGoals?.(currentTrainingGoals())
         || window.TrainingGoalEngine?.recommendation?.(currentTrainingGoal())
@@ -8555,7 +8914,16 @@
         $("copilotInput").value = "";
         return;
       }
-      feedback(window.Work4itAISystem?.practicalAdvice?.(cmd, aiContext) || `${t("unknownCommand")} ${goalRecommendation}`);
+      setCopilotBusy(true, "Udarbejder et svar...");
+      const consume = await window.Work4itAIRequestCounter?.consumeRequest?.();
+      updateAiRequestCounterDisplay(consume);
+      setCopilotBusy(false);
+      if (consume && !consume.allowed) {
+        feedback("Du har ikke flere AI Requests tilbage i denne periode.", true, false, "error");
+        window.Membership?.openView?.();
+        return;
+      }
+      feedback(window.Work4itAISystem?.practicalAdvice?.(cmd, aiContext) || `${t("unknownCommand")} ${goalRecommendation}`, false, false, "success");
       $("copilotInput").value = "";
       return;
 
@@ -9198,8 +9566,8 @@
   <script src="screenshot-import.js?v=20260710-reps-input1"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-system.js?v=20260710-admin1"></script>
-  <script src="ai-copilot-actions.js?v=20260628-ai20"></script>
+  <script src="ai-system.js?v=20260713-ai-coach1"></script>
+  <script src="ai-copilot-actions.js?v=20260713-ai-coach1"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
   <script src="auth-gate.js?v=20260712-google-auth-domain1"></script>
@@ -9218,7 +9586,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260713-stripe-google-login1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260713-ai-coach1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
