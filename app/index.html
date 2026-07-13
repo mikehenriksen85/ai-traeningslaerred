@@ -7826,6 +7826,7 @@
       } else if (action.action === "updateProfile" && Number.isFinite(Number(action.value))) {
         const step = action.field === "age" ? 1 : action.field === "heightCm" ? 1 : 0.5;
         [Math.max(0, Number(action.value) - step), Number(action.value) + step]
+          .filter(value => profileFieldValidation(action.field, value).valid)
           .forEach(value => add(`${String(value).replace(".", ",")} ${action.field === "heightCm" ? "cm" : action.field === "age" ? "år" : action.field === "bodyFat" ? "%" : "kg"}`, { ...action, value }));
       } else if (action.action === "optimizeWorkout") {
         [["Optimér hele passet", "all"], ["Optimér kun volumen", "volume"], ["Optimér kun pauser", "pauses"]]
