@@ -413,7 +413,7 @@
     stripeCheckoutState.retryAllowed = true;
     updatePaidButtonsState();
     showConfirmation("Indlæser sikker betaling...");
-    stripeCheckoutState.pendingImport = import(`./stripe-checkout.js?v=20260706-premium-6m1&retry=${Date.now()}`)
+    stripeCheckoutState.pendingImport = import(`./stripe-checkout.js?v=20260713-stripe-google-login1&retry=${Date.now()}`)
       .then(() => {
         if (!window.Work4itStripeCheckout?.createCheckout) {
           throw new Error("Stripe Checkout blev indlæst, men blev ikke klar.");

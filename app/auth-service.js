@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js?v=20260712-program-cloud1";
+import { auth, db } from "./firebase-config.js?v=20260713-stripe-google-login1";
 import {
   EmailAuthProvider,
   GoogleAuthProvider,

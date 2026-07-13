@@ -3,7 +3,7 @@ import {
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-import { auth, db, functions } from "./firebase-config.js?v=20260628-auth-ready1";
+import { auth, db, functions } from "./firebase-config.js?v=20260713-stripe-google-login1";
 
 const PAID_PLANS = new Set(["premium_3", "premium_6", "premium_12"]);
 
@@ -19,6 +19,12 @@ function friendlyError(error) {
   if (code.includes("unauthenticated")) return "Log ind for at købe Premium.";
   if (code.includes("invalid-argument")) return "Den valgte plan kunne ikke startes.";
   if (code.includes("permission-denied")) return "Betaling kunne ikke startes for denne konto.";
+  if (code.includes("failed-precondition")) {
+    return error?.message || "Stripe er ikke konfigureret til den valgte plan endnu.";
+  }
+  if (code.includes("unavailable") || code.includes("deadline-exceeded")) {
+    return "Betalingstjenesten svarer ikke lige nu. Prøv igen om et øjeblik.";
+  }
   return "Stripe Checkout kunne ikke startes. Prøv igen om lidt.";
 }
 

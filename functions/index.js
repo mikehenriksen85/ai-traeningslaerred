@@ -255,7 +255,19 @@ async function getOrCreateCustomer(stripe, uid, email, name) {
   const membershipRef = admin.firestore().doc(`users/${uid}/membership/main`);
   const membershipSnapshot = await membershipRef.get();
   const existingCustomerId = membershipSnapshot.exists ? membershipSnapshot.data()?.stripeCustomerId : null;
-  if (existingCustomerId) return existingCustomerId;
+  if (existingCustomerId) {
+    try {
+      const existingCustomer = await stripe.customers.retrieve(existingCustomerId);
+      if (existingCustomer && !existingCustomer.deleted) return existingCustomerId;
+    } catch (error) {
+      // Test data resets and Stripe mode changes can invalidate a saved ID.
+      if (error?.code !== "resource_missing") throw error;
+      console.warn("[Work4it Stripe] Replacing stale customer", {
+        uid,
+        customerId: existingCustomerId
+      });
+    }
+  }
 
   const customer = await stripe.customers.create({
     email: email || undefined,

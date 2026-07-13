@@ -5,7 +5,7 @@ import {
   serverTimestamp,
   setDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js?v=20260628-auth-ready1";
+import { auth, db } from "./firebase-config.js?v=20260713-stripe-google-login1";
 
 (function aiRequestCounterModule() {
   "use strict";

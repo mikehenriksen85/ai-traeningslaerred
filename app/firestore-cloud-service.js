@@ -1,4 +1,4 @@
-import { db } from "./firebase-config.js?v=20260712-program-cloud1";
+import { db } from "./firebase-config.js?v=20260713-stripe-google-login1";
 import {
   collection,
   deleteDoc,

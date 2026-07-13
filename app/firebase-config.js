@@ -1,4 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import {
+  getApp,
+  getApps,
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { getFunctions } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
@@ -23,7 +27,9 @@ const firebaseConfig = {
   measurementId: "G-HEK84CT9TQ"
 };
 
-const app = initializeApp(firebaseConfig);
+// Cache-busted ES module URLs are distinct modules in the browser. Reuse the
+// default Firebase app while an older service worker hands over to this build.
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const functions = getFunctions(app, "europe-west1");
