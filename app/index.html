@@ -1988,6 +1988,39 @@
       background: rgba(34,197,94,.08);
     }
     .membership-confirmation.show { display: block; }
+    .admin-membership-test {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+      padding: 16px;
+      border: 1px solid rgba(168,85,247,.55);
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(88,28,135,.18), rgba(15,23,42,.45));
+    }
+    .admin-membership-test[hidden] { display: none !important; }
+    .admin-membership-test-title { color: #d8b4fe; font-weight: 800; font-size: 1.05rem; }
+    .admin-membership-test-copy { color: var(--text-secondary); line-height: 1.5; }
+    .admin-membership-test-plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .admin-membership-test-button {
+      min-height: 44px;
+      padding: 10px;
+      border: 1px solid rgba(168,85,247,.55);
+      border-radius: 7px;
+      color: #f3e8ff;
+      background: rgba(88,28,135,.32);
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .admin-membership-test-button:hover:not(:disabled) { background: rgba(126,34,206,.48); }
+    .admin-membership-test-button:disabled { cursor: wait; opacity: .65; }
+    .admin-membership-test-status {
+      min-height: 22px;
+      color: var(--text-secondary);
+      font-size: var(--font-size-small);
+    }
+    .admin-membership-test-status[data-status="loading"] { color: #fbbf24; }
+    .admin-membership-test-status[data-status="success"] { color: var(--text-success); }
+    .admin-membership-test-status[data-status="error"] { color: var(--red); }
 
     @media (max-width: 900px) {
       .membership-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2101,6 +2134,7 @@
       .measure-entry { grid-template-columns: 1fr; }
       .membership-view { padding: 12px; }
       .membership-status, .membership-plans, .membership-popup-plans { grid-template-columns: 1fr; }
+      .admin-membership-test-plans { grid-template-columns: 1fr; }
       .membership-view { inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0; }
       .membership-plan { padding: 14px; }
       .membership-plan-name { padding-right: 0; }
@@ -3066,6 +3100,20 @@
           </ul>
         </article>
       </div>
+
+      <section class="admin-membership-test" id="adminMembershipTestPanel" hidden aria-hidden="true" aria-labelledby="adminMembershipTestTitle">
+        <div class="admin-membership-test-title" id="adminMembershipTestTitle">Udvikler-/admin-testtilstand</div>
+        <div class="admin-membership-test-copy">
+          Test medlemskabsflowet uden at ændre din permanente administratoradgang. Betalte planer bruger den normale Stripe Checkout og verificeres først efter webhook og Firestore-opdatering.
+        </div>
+        <div class="admin-membership-test-plans">
+          <button class="admin-membership-test-button" type="button" data-admin-test-plan="free" onclick="selectAdminSubscriptionTestPlan('free')">Test Gratis</button>
+          <button class="admin-membership-test-button" type="button" data-admin-test-plan="premium_3" onclick="selectAdminSubscriptionTestPlan('premium_3')">Test Premium 3 måneder</button>
+          <button class="admin-membership-test-button" type="button" data-admin-test-plan="premium_6" onclick="selectAdminSubscriptionTestPlan('premium_6')">Test Premium 6 måneder</button>
+          <button class="admin-membership-test-button" type="button" data-admin-test-plan="premium_12" onclick="selectAdminSubscriptionTestPlan('premium_12')">Test Premium 12 måneder</button>
+        </div>
+        <div class="admin-membership-test-status" id="adminMembershipTestStatus" role="status" aria-live="polite"></div>
+      </section>
 
       <div class="membership-pricing-phase" id="membershipPricingPhase" data-tier="early_adopter">Early Adopter-priser · gælder de første 500 registrerede brugere</div>
       <div class="membership-plans">
@@ -9578,9 +9626,9 @@
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
-  <script src="membership.js?v=20260711-permanent-admin1"></script>
+  <script src="membership.js?v=20260713-admin-subscription-test1"></script>
   <script type="module" src="firebase-config.js?v=20260713-stripe-google-login1"></script>
-  <script type="module" src="stripe-checkout.js?v=20260713-stripe-google-login1"></script>
+  <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
   <script type="module" src="auth-service.js?v=20260713-stripe-google-login1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260713-stripe-google-login1"></script>
   <script type="module" src="ai-request-counter.js?v=20260713-stripe-google-login1"></script>

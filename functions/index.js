@@ -5,6 +5,7 @@ const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https")
 const { defineSecret } = require("firebase-functions/params");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const Stripe = require("stripe");
+const { normalizeAdminTestMode, subscriptionTestPolicy } = require("./subscription-test-policy");
 
 admin.initializeApp();
 setGlobalOptions({ region: "europe-west1", maxInstances: 10 });
@@ -76,6 +77,18 @@ function adminMembershipPayload() {
     lastRequestTimestamp: null,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   };
+}
+
+async function restorePermanentAdminAccess(uid, membershipRef = admin.firestore().doc(`users/${uid}/membership/main`)) {
+  await Promise.all([
+    admin.firestore().doc(`users/${uid}`).set({
+      role: "admin",
+      membership: "lifetime",
+      aiRequests: -1,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }),
+    membershipRef.set(adminMembershipPayload(), { merge: true })
+  ]);
 }
 
 function authTimestamp(value) {
@@ -294,7 +307,16 @@ exports.createStripeCheckoutSession = onCall({
     admin.firestore().doc(`users/${uid}`).get(),
     admin.auth().getUser(uid).catch(() => null)
   ]);
-  if (isPermanentAdminEmail(authUser?.email) || (userSnapshot.exists && userSnapshot.data()?.role === "admin" && isPermanentAdminEmail(userSnapshot.data()?.email))) {
+  const permanentAdmin = isPermanentAdminEmail(authUser?.email) ||
+    (userSnapshot.exists && userSnapshot.data()?.role === "admin" && isPermanentAdminEmail(userSnapshot.data()?.email));
+  const adminTest = subscriptionTestPolicy({
+    adminTestMode: request.data?.adminTestMode,
+    isPermanentAdmin: permanentAdmin
+  });
+  if (!adminTest.allowed) {
+    throw new HttpsError("permission-denied", "Admin-testtilstand er kun tilgængelig for Work4it-administratoren.");
+  }
+  if (adminTest.blockNormalAdminCheckout) {
     throw new HttpsError("failed-precondition", "Administrator har allerede fuld adgang og kan ikke sendes til Stripe Checkout.");
   }
 
@@ -325,8 +347,8 @@ exports.createStripeCheckoutSession = onCall({
     customer: customerId,
     client_reference_id: uid,
     locale: request.data?.locale === "en" ? "en" : "da",
-    success_url: `${origin}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/?payment=cancelled`,
+    success_url: `${origin}/?payment=success&session_id={CHECKOUT_SESSION_ID}${adminTest.requested ? `&admin_test=1&plan=${encodeURIComponent(plan)}` : ""}`,
+    cancel_url: `${origin}/?payment=cancelled${adminTest.requested ? "&admin_test=1" : ""}`,
     allow_promotion_codes: true,
     line_items: [{
       price: config.priceId,
@@ -339,7 +361,8 @@ exports.createStripeCheckoutSession = onCall({
       priceDkk: String(priceDkk),
       membershipDurationMonths: config.months == null ? "" : String(config.months),
       pricingTier: tier.activeTier,
-      registeredUserCount: tier.registeredUserCount == null ? "" : String(tier.registeredUserCount)
+      registeredUserCount: tier.registeredUserCount == null ? "" : String(tier.registeredUserCount),
+      adminTestMode: adminTest.requested ? "true" : "false"
     }
   });
 
@@ -351,6 +374,7 @@ exports.createStripeCheckoutSession = onCall({
     membershipDurationMonths: config.months,
     pricingTier: tier.activeTier,
     status: "created",
+    adminTestMode: adminTest.requested,
     stripeCustomerId: customerId,
     checkoutUrl: session.url,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -358,6 +382,41 @@ exports.createStripeCheckoutSession = onCall({
   }, { merge: true });
 
   return { url: session.url, sessionId: session.id };
+});
+
+exports.runAdminSubscriptionTest = onCall({
+  region: "europe-west1"
+}, async request => {
+  if (!isAdminRequest(request)) {
+    throw new HttpsError("permission-denied", "Admin-testtilstand er kun tilgængelig for Work4it-administratoren.");
+  }
+  const plan = String(request.data?.plan || "");
+  if (plan !== "free") {
+    throw new HttpsError("invalid-argument", "Betalte admin-tests skal gennemføres via Stripe Checkout.");
+  }
+
+  const uid = request.auth.uid;
+  const sessionId = `admin_test_free_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  const membershipRef = admin.firestore().doc(`users/${uid}/membership/main`);
+  const checkoutRef = admin.firestore().doc(`users/${uid}/checkoutSessions/${sessionId}`);
+  await restorePermanentAdminAccess(uid, membershipRef);
+  await checkoutRef.set({
+    sessionId,
+    plan: "free",
+    status: "free_admin_test_verified",
+    adminTestMode: true,
+    stripeRequired: false,
+    permanentAdminRestored: true,
+    verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  return {
+    sessionId,
+    status: "free_admin_test_verified",
+    permanentAdminRestored: true
+  };
 });
 
 exports.verifyAndBackfillUserDocuments = onCall({
@@ -416,20 +475,21 @@ async function activateMembershipFromSession(session) {
   const membershipRef = admin.firestore().doc(`users/${uid}/membership/main`);
   const checkoutRef = admin.firestore().doc(`users/${uid}/checkoutSessions/${session.id}`);
   const authUser = await admin.auth().getUser(uid).catch(() => null);
+  const adminTestMode = normalizeAdminTestMode(session.metadata?.adminTestMode);
   if (isPermanentAdminEmail(authUser?.email)) {
-    await Promise.all([
-      admin.firestore().doc(`users/${uid}`).set({
-        role: "admin",
-        membership: "lifetime",
-        aiRequests: -1,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true }),
-      membershipRef.set(adminMembershipPayload(), { merge: true }),
-      checkoutRef.set({
-        status: "ignored_admin",
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true })
-    ]);
+    await restorePermanentAdminAccess(uid, membershipRef);
+    await checkoutRef.set({
+      status: adminTestMode ? "paid_admin_test" : "ignored_admin",
+      adminTestMode,
+      testedPlan: adminTestMode ? plan : null,
+      permanentAdminRestored: true,
+      paidAt: admin.firestore.FieldValue.serverTimestamp(),
+      stripeSessionId: session.id,
+      stripePriceId: priceId,
+      stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null,
+      stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : session.subscription?.id || null,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
     return;
   }
 
@@ -505,7 +565,8 @@ exports.stripeWebhook = onRequest({
       const uid = session.metadata?.uid || session.client_reference_id;
       if (uid && session.id) {
         await admin.firestore().doc(`users/${uid}/checkoutSessions/${session.id}`).set({
-          status: "expired",
+          status: normalizeAdminTestMode(session.metadata?.adminTestMode) ? "expired_admin_test" : "expired",
+          adminTestMode: normalizeAdminTestMode(session.metadata?.adminTestMode),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
       }

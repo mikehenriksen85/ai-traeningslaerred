@@ -28,7 +28,7 @@ function friendlyError(error) {
   return "Stripe Checkout kunne ikke startes. Prøv igen om lidt.";
 }
 
-async function createCheckout(plan) {
+async function createCheckout(plan, options = {}) {
   if (!PAID_PLANS.has(plan)) {
     throw new Error("Ugyldig Stripe-plan.");
   }
@@ -39,7 +39,12 @@ async function createCheckout(plan) {
   }
 
   const user = currentUser();
-  if (window.Work4itAdminConfig?.isPermanentAdminUser?.(user)) {
+  const isPermanentAdmin = window.Work4itAdminConfig?.isPermanentAdminUser?.(user) === true;
+  const adminTestMode = options.adminTestMode === true;
+  if (adminTestMode && !isPermanentAdmin) {
+    throw new Error("Admin-testtilstand er kun tilgængelig for administratoren.");
+  }
+  if (isPermanentAdmin && !adminTestMode) {
     window.Membership?.showConfirmation?.("Administrator har allerede fuld adgang. Stripe Checkout er deaktiveret.");
     return { admin: true, skipped: true };
   }
@@ -53,7 +58,8 @@ async function createCheckout(plan) {
     plan,
     priceId: stripePlan.priceId,
     locale: "da",
-    origin: window.location.origin
+    origin: window.location.origin,
+    adminTestMode
   });
 
   const url = result?.data?.url;
@@ -62,13 +68,29 @@ async function createCheckout(plan) {
   return result.data;
 }
 
+async function runFreeAdminTest() {
+  const user = currentUser();
+  if (!window.Work4itAdminConfig?.isPermanentAdminUser?.(user)) {
+    throw new Error("Admin-testtilstand er kun tilgængelig for administratoren.");
+  }
+  const runTest = httpsCallable(functions, "runAdminSubscriptionTest");
+  const result = await runTest({ plan: "free" });
+  return result?.data || {};
+}
+
 function delay(ms) {
   return new Promise(resolve => window.setTimeout(resolve, ms));
 }
 
-async function waitForConfirmedMembership(sessionId = "", maxAttempts = 8) {
+function reportAdminTest(message, status = "info") {
+  window.Membership?.showAdminTestStatus?.(message, status);
+  window.Membership?.showConfirmation?.(message);
+}
+
+async function waitForConfirmedMembership(sessionId = "", maxAttempts = 8, options = {}) {
   const user = currentUser();
   let checkoutStatus = "";
+  const adminTestMode = options.adminTestMode === true;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
@@ -83,6 +105,20 @@ async function waitForConfirmedMembership(sessionId = "", maxAttempts = 8) {
       await window.FirestoreDataService.refreshFromCloud();
       const membership = window.Membership?.getMembership?.();
       window.Membership?.render?.(membership);
+      if (adminTestMode && checkoutStatus === "paid_admin_test") {
+        reportAdminTest("Admin-test gennemført: Stripe Checkout, webhook og Firestore er bekræftet. Permanent administratoradgang er aktiv ✓", "success");
+        window.Work4itAIRequestCounter?.refresh?.();
+        return true;
+      }
+      if (adminTestMode && checkoutStatus === "expired_admin_test") {
+        reportAdminTest("Admin-testens Stripe-session udløb. Permanent administratoradgang er fortsat aktiv.", "error");
+        return false;
+      }
+      if (adminTestMode) {
+        reportAdminTest(`Afventer webhook og Firestore-opdatering... Forsøg ${attempt}/${maxAttempts}.`, "loading");
+        await delay(Math.min(1500 * attempt, 6000));
+        continue;
+      }
       if (membership?.role === "admin" || membership?.membershipStatus === "active" || membership?.isPremium === true) {
         window.Membership?.showConfirmation?.("Betaling bekræftet. Premium er aktivt ✓");
         window.Work4itAIRequestCounter?.refresh?.();
@@ -110,6 +146,7 @@ function showReturnMessage() {
   const params = new URLSearchParams(window.location.search);
   const payment = params.get("payment");
   const sessionId = params.get("session_id");
+  const adminTestMode = params.get("admin_test") === "1";
   if (!payment) return;
 
   const cleanUrl = `${window.location.origin}${window.location.pathname}`;
@@ -119,16 +156,19 @@ function showReturnMessage() {
     window.Membership?.openView?.();
     if (payment === "success") {
       console.log("[Work4it Stripe] Returned from Checkout", { sessionId });
-      window.Membership?.showConfirmation?.("Betaling modtaget. Henter Stripe-bekræftelse...");
-      waitForConfirmedMembership(sessionId, 24);
+      if (adminTestMode) reportAdminTest("Admin-testbetaling modtaget. Verificerer webhook og Firestore...", "loading");
+      else window.Membership?.showConfirmation?.("Betaling modtaget. Henter Stripe-bekræftelse...");
+      waitForConfirmedMembership(sessionId, 24, { adminTestMode });
     } else if (payment === "cancelled") {
-      window.Membership?.showConfirmation?.("Betalingen blev afbrudt. Ingen ændringer er foretaget.");
+      if (adminTestMode) reportAdminTest("Admin-testbetalingen blev afbrudt. Permanent administratoradgang er fortsat aktiv.", "error");
+      else window.Membership?.showConfirmation?.("Betalingen blev afbrudt. Ingen ændringer er foretaget.");
     }
   }, 250);
 }
 
 window.Work4itStripeCheckout = {
   createCheckout,
+  runFreeAdminTest,
   friendlyError
 };
 window.dispatchEvent(new CustomEvent("work4it:stripe-checkout-ready", {

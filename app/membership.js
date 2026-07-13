@@ -47,6 +47,7 @@
   let suppressMembershipClickUntil = 0;
   let membershipActivationBound = false;
   let lastMembershipActivation = { plan: "", at: 0 };
+  let activeAdminTestPlan = "";
   const stripeCheckoutState = {
     ready: Boolean(window.Work4itStripeCheckout?.createCheckout),
     retryAllowed: false,
@@ -315,6 +316,7 @@
     if (!statusName || !statusCopy || !statusDate) return;
 
     renderPricing();
+    renderAdminTestPanel();
     const remaining = daysRemaining(data);
     statusName.textContent = PLAN_LABELS[data.membershipType];
 
@@ -344,6 +346,76 @@
     updateActivePlanUi(data);
     updatePaidButtonsState(data);
     bindMembershipActivation();
+  }
+
+  function renderAdminTestPanel() {
+    const panel = document.getElementById("adminMembershipTestPanel");
+    if (!panel) return;
+    const isAdmin = window.Work4itAdminConfig?.isCurrentUserAdmin?.() === true;
+    panel.hidden = !isAdmin;
+    panel.setAttribute("aria-hidden", String(!isAdmin));
+    if (!isAdmin) {
+      panel.querySelectorAll("[data-admin-test-plan]").forEach(button => {
+        button.disabled = true;
+      });
+      return;
+    }
+    panel.querySelectorAll("[data-admin-test-plan]").forEach(button => {
+      const busy = activeAdminTestPlan === button.dataset.adminTestPlan;
+      if (!button.dataset.defaultText) button.dataset.defaultText = button.textContent;
+      button.disabled = Boolean(activeAdminTestPlan);
+      button.setAttribute("aria-busy", String(busy));
+      button.textContent = busy ? "Starter test..." : button.dataset.defaultText;
+    });
+  }
+
+  function showAdminTestStatus(message, status = "info") {
+    const element = document.getElementById("adminMembershipTestStatus");
+    if (!element) return;
+    element.textContent = message;
+    element.dataset.status = status;
+    element.setAttribute("aria-busy", status === "loading" ? "true" : "false");
+  }
+
+  async function selectAdminSubscriptionTestPlan(plan) {
+    if (window.Work4itAdminConfig?.isCurrentUserAdmin?.() !== true) {
+      console.warn("[Work4it Membership] Rejected non-admin subscription test attempt.");
+      return false;
+    }
+    if (!["free", "premium_3", "premium_6", "premium_12"].includes(plan)) {
+      showAdminTestStatus("Ugyldig testplan.", "error");
+      return false;
+    }
+    if (activeAdminTestPlan) return false;
+
+    activeAdminTestPlan = plan;
+    renderAdminTestPanel();
+    showAdminTestStatus(plan === "free"
+      ? "Verificerer Gratis-flow og permanent administratoradgang..."
+      : "Opretter en normal Stripe Checkout-session i admin-testtilstand...", "loading");
+    try {
+      await ensureStripeCheckoutReady();
+      if (plan === "free") {
+        const result = await window.Work4itStripeCheckout.runFreeAdminTest();
+        if (result?.status !== "free_admin_test_verified" || result?.permanentAdminRestored !== true) {
+          throw new Error("Gratis-testen blev ikke bekræftet af serveren.");
+        }
+        render(getMembership());
+        showAdminTestStatus("Gratis-flow verificeret i Firestore. Permanent administratoradgang er aktiv ✓", "success");
+        return true;
+      }
+      showAdminTestStatus("Åbner Stripe Checkout. Efter betaling verificeres webhook, Firestore og automatisk tilbagevenden til admin.", "loading");
+      await window.Work4itStripeCheckout.createCheckout(plan, { adminTestMode: true });
+      return true;
+    } catch (error) {
+      const message = window.Work4itStripeCheckout?.friendlyError?.(error) || error?.message || "Admin-testen kunne ikke startes.";
+      showAdminTestStatus(message, "error");
+      console.error("[Work4it Membership] Admin subscription test failed", error);
+      return false;
+    } finally {
+      activeAdminTestPlan = "";
+      renderAdminTestPanel();
+    }
   }
 
   function applyAccessState(data = getMembership()) {
@@ -413,7 +485,7 @@
     stripeCheckoutState.retryAllowed = true;
     updatePaidButtonsState();
     showConfirmation("Indlæser sikker betaling...");
-    stripeCheckoutState.pendingImport = import(`./stripe-checkout.js?v=20260713-stripe-google-login1&retry=${Date.now()}`)
+    stripeCheckoutState.pendingImport = import(`./stripe-checkout.js?v=20260713-admin-subscription-test1&retry=${Date.now()}`)
       .then(() => {
         if (!window.Work4itStripeCheckout?.createCheckout) {
           throw new Error("Stripe Checkout blev indlæst, men blev ikke klar.");
@@ -758,11 +830,13 @@
     openView,
     closeView,
     showPopup,
-    showConfirmation
+    showConfirmation,
+    showAdminTestStatus
   };
   window.openMembershipView = openView;
   window.closeMembershipView = closeView;
   window.selectMembershipPlan = selectPlan;
+  window.selectAdminSubscriptionTestPlan = selectAdminSubscriptionTestPlan;
   window.openPremiumFeature = requireFeature;
 
   window.addEventListener("training-app:ready", initialize, { once: true });

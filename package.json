@@ -5,7 +5,8 @@
   "description": "Work4it - dansk browserbaseret træningsplanlægger og tracker",
   "scripts": {
     "start": "node serve.cjs",
-    "test:ai-coach": "node tests/ai-coach.test.cjs"
+    "test:ai-coach": "node tests/ai-coach.test.cjs",
+    "test:subscriptions": "node tests/admin-subscription-test.test.cjs"
   },
   "license": "MIT"
 }
