@@ -96,6 +96,17 @@ assert.doesNotMatch(exerciseTemplate, /<div>\$\{t\("ok"\)\}<\/div>/);
 assert.match(html, /data-set-number="\$\{i\}"/);
 assert.match(html, /cb\.setAttribute\("aria-label", actionLabel\)/);
 assert.match(html, /\.set-complete-control \{ position: relative; display: grid; place-items: center; width: 52px; height: 52px;/);
+assert.match(html, /class="weight set-value-input" type="text" inputmode="decimal"/);
+assert.match(html, /class="reps set-value-input" type="text" inputmode="numeric"/);
+assert.match(html, /aria-label="Sæt \$\{i\}: vægt i kg"/);
+assert.match(html, /aria-label="Sæt \$\{i\}: gentagelser"/);
+assert.match(html, /font-size: 20px !important/);
+assert.match(html, /min-height: 56px/);
+assert.match(html, /grid-template-areas:\s+"set previous previous pause"\s+"set weight reps complete"/);
+assert.match(html, /function formatPreviousSetDisplay\(/);
+assert.match(html, /Sidst: \$\{weight\} kg × \$\{reps\}/);
+assert.match(html, /function updatePauseInlineDisplay\(/);
+assert.doesNotMatch(html, /if \(inline\) inline\.textContent/);
 
 const activeSessionPredicateBody = html.match(/function isActiveWorkoutSession\(session\) \{([\s\S]*?)\n    \}/)?.[1];
 assert.ok(activeSessionPredicateBody, "active session predicate must exist");
@@ -105,5 +116,12 @@ assert.equal(isActiveWorkoutSession({ sessionStatus: "not_started" }), false, "n
 assert.equal(isActiveWorkoutSession({ sessionStatus: "in_progress" }), true, "in_progress is active");
 assert.equal(isActiveWorkoutSession({ sessionStatus: "paused" }), true, "paused remains active");
 assert.equal(isActiveWorkoutSession({ sessionStatus: "completed" }), false, "completed is not active");
+
+const previousSetFormatterBody = html.match(/function formatPreviousSetDisplay\(value\) \{([\s\S]*?)\n    \}/)?.[1];
+assert.ok(previousSetFormatterBody, "previous set formatter must exist");
+const formatPreviousSetDisplay = new Function("value", previousSetFormatterBody);
+assert.equal(formatPreviousSetDisplay("45kg · 10r · 01:30"), "Sidst: 45 kg × 10");
+assert.equal(formatPreviousSetDisplay("Sidst: 47,5 kg × 8"), "Sidst: 47,5 kg × 8");
+assert.equal(formatPreviousSetDisplay("-"), "Sidst: –");
 
 console.log("Simplified dashboard hierarchy and preserved-handler contracts OK");

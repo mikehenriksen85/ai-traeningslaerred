@@ -910,13 +910,31 @@
     .item:hover { background: rgba(255,255,255,.06); }
     .badge { background: #313d49; color: var(--text-secondary); border-radius: 4px; padding: 2px 6px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
 
-    .table-head, .set-row { display: grid; grid-template-columns: 28px 58px 50px 62px minmax(126px, 1fr) 58px; gap: 5px; align-items: center; text-align: center; }
-    .table-head > *, .set-row > * { min-width: 0; }
-    .table-head { color: var(--text-secondary); border-bottom: 1px solid var(--border); padding-bottom: 7px; margin-top: 12px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .table-head { display: none; }
+    .set-row { display: grid; grid-template-columns: 32px minmax(96px, 1.3fr) minmax(86px, 1fr) minmax(86px, 1fr) 62px 58px; gap: 7px; align-items: end; }
+    .set-row > * { min-width: 0; }
     .set-block { border-bottom: 1px solid rgba(49,61,73,.45); padding: 7px 0; }
     .set-block.completed { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.42); border-radius: 6px; box-shadow: inset 3px 0 0 var(--green); }
     .set-block.active-pause-set { border-color: rgba(34,197,94,.7); background: rgba(34,197,94,.14); box-shadow: inset 4px 0 0 var(--green); }
-    .set-row input { width: 92%; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 5px 3px; text-align: center; font-size: var(--font-size-small); }
+    .set-number { display: grid; place-items: center; align-self: stretch; color: var(--text-primary); text-align: center; }
+    .set-number-label, .set-value-label { color: var(--text-secondary); font-size: var(--font-size-compact); font-weight: var(--font-weight-semibold); line-height: 1; text-transform: lowercase; }
+    .set-number strong { font-size: var(--font-size-h3); line-height: 1; }
+    .set-value-field { display: grid; gap: 5px; min-width: 0; }
+    .set-value-input {
+      width: 100%;
+      min-width: 0;
+      min-height: 52px;
+      padding: 8px 6px;
+      border: 1px solid color-mix(in srgb, var(--border), var(--text-primary) 14%);
+      border-radius: var(--radius-sm);
+      background: var(--input);
+      color: var(--text-primary);
+      font-size: 20px !important;
+      font-weight: var(--font-weight-bold);
+      line-height: 1;
+      text-align: center;
+    }
+    .set-value-input:focus-visible { border-color: var(--blue); outline: 3px solid rgba(59,130,246,.34); outline-offset: 2px; }
     .set-complete-control { position: relative; display: grid; place-items: center; width: 52px; height: 52px; margin-inline: auto; cursor: pointer; }
     .set-complete-control input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
     .set-complete-icon {
@@ -951,7 +969,7 @@
       .set-complete-icon { transition: none; }
       .set-complete-control input:checked + .set-complete-icon { animation: none; }
     }
-    .previous { color: var(--text-secondary); font-size: var(--font-size-small); word-break: break-word; }
+    .previous { align-self: center; color: var(--text-secondary); font-size: var(--font-size-small); line-height: 1.35; text-align: left; overflow-wrap: anywhere; }
     .pause-control {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 32px 32px;
@@ -961,12 +979,16 @@
       min-width: 0;
     }
     .pause-inline-status {
+      align-self: center;
       color: var(--text-secondary);
-      font-size: var(--font-size-small);
-      font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-compact);
+      font-weight: var(--font-weight-regular);
       line-height: var(--line-height-control);
+      text-align: center;
       word-break: keep-all;
     }
+    .pause-inline-label { display: block; opacity: .72; }
+    .pause-inline-value { display: block; }
     .pause-timer-shell {
       position: relative;
       width: 100%;
@@ -2165,20 +2187,21 @@
       .exercise-head { grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; }
       .desktop-table-label { display: none; }
       .mobile-table-label { display: inline; }
-      .table-head, .set-row {
-        grid-template-columns: 26px 42px minmax(54px, .82fr) minmax(76px, 1.18fr) 60px;
-        grid-template-areas: "set previous weight reps complete";
-        gap: 4px;
+      .set-row {
+        grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr) 60px;
+        grid-template-areas:
+          "set previous previous pause"
+          "set weight reps complete";
+        gap: 7px 6px;
+        align-items: end;
       }
-      .table-head > :nth-child(1), .set-row > :nth-child(1) { grid-area: set; }
-      .table-head > :nth-child(2), .set-row > :nth-child(2) { grid-area: previous; }
-      .table-head > :nth-child(3), .set-row > :nth-child(3) { grid-area: weight; }
-      .table-head > :nth-child(4), .set-row > :nth-child(4) { grid-area: reps; }
-      .table-head > :nth-child(5), .set-row > :nth-child(5) { display: none; }
-      .table-head > :nth-child(6), .set-row > :nth-child(6) { grid-area: complete; }
-      .table-head { font-size: var(--font-size-compact); align-items: end; }
-      .set-row input { width: 100%; min-width: 0; }
-      .set-row .reps { padding-inline: 4px; font-size: 16px !important; }
+      .set-number { grid-area: set; }
+      .previous { grid-area: previous; }
+      .set-weight-field { grid-area: weight; }
+      .set-reps-field { grid-area: reps; }
+      .pause-inline-status { grid-area: pause; }
+      .set-complete-control { grid-area: complete; }
+      .set-value-input { min-height: 56px; padding-inline: 5px; }
       .set-complete-control input { width: 1px; min-width: 0; }
       .pause-control { grid-template-columns: minmax(0, 1fr) 32px 32px; gap: 2px; }
       .pause-control input { width: 100%; }
@@ -4190,6 +4213,15 @@
       markPauseManual(input);
     }
 
+    function updatePauseInlineDisplay(inline, value) {
+      if (!inline) return;
+      const formatted = String(value || "00:00");
+      const target = inline.querySelector(".pause-inline-value");
+      if (target) target.textContent = formatted;
+      else inline.textContent = formatted;
+      inline.setAttribute("aria-label", `Pause ${formatted}`);
+    }
+
     function exerciseBlockForSlot(slot) {
       return $(`block-${slot}`);
     }
@@ -4223,7 +4255,7 @@
         input.dataset.pauseManual = manual ? "true" : "false";
       });
       block.querySelectorAll(".pause-inline-status").forEach(inline => {
-        inline.textContent = formatted;
+        updatePauseInlineDisplay(inline, formatted);
       });
       Object.keys(pauseTimers).forEach(key => {
         if (!key.startsWith(`${slot}-`)) return;
@@ -4246,7 +4278,7 @@
       input.value = formatted;
       input.dataset.pauseManual = options.manual === false ? "false" : "true";
       const inline = $(`pause-inline-${slot}-${setNumber}`);
-      if (inline) inline.textContent = formatted;
+      updatePauseInlineDisplay(inline, formatted);
       const timer = pauseTimers[pauseKey(slot, setNumber)];
       if (timer) {
         timer.total = normalized;
@@ -4359,12 +4391,26 @@
 
     function formatExerciseHistoryLabel(entry) {
       if (!entry) return "-";
-      const parts = [];
-      if (entry.weight !== "" && entry.weight != null) parts.push(`${entry.weight}kg`);
-      if (entry.reps !== "" && entry.reps != null) parts.push(`${entry.reps}r`);
-      const pauseSeconds = Math.max(0, Number(entry.pauseSeconds) || parsePause(entry.pause || ""));
-      if (pauseSeconds) parts.push(formatPause(pauseSeconds));
-      return parts.length ? parts.join(" · ") : "-";
+      const weight = entry.weight !== "" && entry.weight != null ? String(entry.weight) : "";
+      const reps = entry.reps !== "" && entry.reps != null ? String(entry.reps) : "";
+      if (weight && reps) return `Sidst: ${weight} kg × ${reps}`;
+      if (weight) return `Sidst: ${weight} kg`;
+      if (reps) return `Sidst: ${reps} reps`;
+      return "-";
+    }
+
+    function formatPreviousSetDisplay(value) {
+      const text = String(value || "").trim();
+      if (!text || text === "-") return "Sidst: –";
+      const content = text.replace(/^Sidst:\s*/i, "");
+      const weight = content.match(/([0-9]+(?:[.,][0-9]+)?)\s*kg/i)?.[1] || "";
+      const reps = content.match(/([0-9]+(?:-[0-9]+)?)\s*(?:r|reps)\b/i)?.[1]
+        || content.match(/[×x]\s*([0-9]+(?:-[0-9]+)?)/i)?.[1]
+        || "";
+      if (weight && reps) return `Sidst: ${weight} kg × ${reps}`;
+      if (weight) return `Sidst: ${weight} kg`;
+      if (reps) return `Sidst: ${reps} reps`;
+      return `Sidst: ${content}`;
     }
 
     function applyExerciseHistoryToSet(set, historyEntry, options = {}) {
@@ -5764,6 +5810,7 @@
       container.innerHTML = "";
       for (let i = 1; i <= count; i++) {
         const data = saved?.[i-1] || {};
+        const previousLabel = formatPreviousSetDisplay(historyPreviousLabel !== "-" ? historyPreviousLabel : data.prev);
         const pauseValue = data.pauseManual ? formatPause(parsePause(data.pause)) : exercisePauseValue;
         const targetReps = data.targetReps || plan.targetReps || "";
         const pauseManual = data.pauseManual === true || (data.pauseManual == null && exercisePauseManualValue);
@@ -5772,11 +5819,11 @@
         block.dataset.pauseKey = pauseKey(slot, i);
         block.innerHTML = `
           <div class="set-row">
-            <div>${i}</div>
-            <div class="previous" title="${esc(historyPreviousLabel !== "-" ? historyPreviousLabel : data.prev || "-")}">${esc(historyPreviousLabel !== "-" ? historyPreviousLabel : data.prev || "-")}</div>
-            <div><input class="weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="kg" value="${esc(data.weight || "")}" oninput="sanitizeKgInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
-            <div><input class="reps" type="text" inputmode="numeric" pattern="[0-9]*(-[0-9]*)?" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="sanitizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();" onblur="normalizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
-            <div class="pause-inline-status" id="pause-inline-${slot}-${i}">${esc(pauseValue)}</div>
+            <div class="set-number" aria-label="Sæt ${i}"><span class="set-number-label">Sæt</span><strong>${i}</strong></div>
+            <div class="previous" title="${esc(previousLabel)}">${esc(previousLabel)}</div>
+            <label class="set-value-field set-weight-field"><span class="set-value-label">kg</span><input class="weight set-value-input" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="0" aria-label="Sæt ${i}: vægt i kg" value="${esc(data.weight || "")}" oninput="sanitizeKgInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></label>
+            <label class="set-value-field set-reps-field"><span class="set-value-label">reps</span><input class="reps set-value-input" type="text" inputmode="numeric" pattern="[0-9]*(-[0-9]*)?" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="${esc(targetReps || "0")}" aria-label="Sæt ${i}: gentagelser" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="sanitizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();" onblur="normalizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></label>
+            <div class="pause-inline-status" id="pause-inline-${slot}-${i}" aria-label="Pause ${esc(pauseValue)}"><span class="pause-inline-label">Pause</span><span class="pause-inline-value">${esc(pauseValue)}</span></div>
             <label class="set-complete-control" title="${data.completed ? `Markér sæt ${i} som ikke færdigt` : `Markér sæt ${i} som færdigt`}">
               <input type="checkbox" ${data.completed ? "checked" : ""} data-set-number="${i}" onchange="toggleCompleted(this,'${slot}')" aria-label="${data.completed ? `Markér sæt ${i} som ikke færdigt` : `Markér sæt ${i} som færdigt`}">
               <span class="set-complete-icon" aria-hidden="true">✓</span>
@@ -6073,7 +6120,7 @@
       const ratio = remaining / total;
       const parsed = parsePauseComponentKey(key);
       const inline = parsed ? $(`pause-inline-${parsed.slot}-${parsed.set}`) : null;
-      if (inline) inline.textContent = formatPause(remaining);
+      updatePauseInlineDisplay(inline, formatPause(remaining));
       control.classList.add("started");
       control.classList.toggle("paused", !timer.running && remaining > 0 && !options.reset);
       control.classList.toggle("complete", options.complete === true || remaining === 0);
@@ -6180,7 +6227,7 @@
       stopPause(key);
       input.value = total ? formatPause(total) : "";
       const inline = $(`pause-inline-${slot}-${set}`);
-      if (inline) inline.textContent = input.value || "00:00";
+      updatePauseInlineDisplay(inline, input.value || "00:00");
       if (pauseTimers[key]) {
         pauseTimers[key].total = total;
         pauseTimers[key].remaining = total;
