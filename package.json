@@ -11,5 +11,8 @@
     "test:dashboard": "node tests/dashboard-ui.test.cjs",
     "test:animations": "node tests/exercise-animations.test.cjs"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.184.0"
+  }
 }

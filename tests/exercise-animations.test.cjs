@@ -9,6 +9,7 @@ const indexSource = fs.readFileSync(path.join(root, "app", "index.html"), "utf8"
 const cloudSource = fs.readFileSync(path.join(root, "app", "exercise-animation-cloud-service.js"), "utf8");
 const aiSource = fs.readFileSync(path.join(root, "app", "ai-system.js"), "utf8");
 const functionsSource = fs.readFileSync(path.join(root, "functions", "index.js"), "utf8");
+const renderer3dSource = fs.readFileSync(path.join(root, "app", "exercise-animation-3d-renderer.js"), "utf8");
 const workerSource = fs.readFileSync(path.join(root, "app", "service-worker.js"), "utf8");
 const firestoreRules = fs.readFileSync(path.join(root, "firestore.rules"), "utf8");
 const storageRules = fs.readFileSync(path.join(root, "storage.rules"), "utf8");
@@ -40,6 +41,7 @@ assert.equal(animations.validateSpecification({ ...spec, duration: 8 }).valid, f
 assert.equal(animations.validateSpecification({ ...spec, sourceAssets: ["copied.glb"] }).valid, false, "Eksterne source assets afvises");
 assert.equal(typeof animations.generateSpecification, "function", "Kontrolleret generator er eksponeret");
 assert.equal(typeof animations.renderSpecificationToVideo, "function", "Specifikationen kan renderes automatisk til video");
+assert.equal(spec.rendererVersion, "work4it-three-rig-v1");
 
 const pending = animations.normalizeMetadata({ exerciseId: id, generationStatus: "pending_review" });
 assert.equal(pending.generationStatus, "pending_review");
@@ -48,6 +50,14 @@ assert.equal(animations.validateMetadata({ ...pending, generationStatus: "approv
 assert.ok(indexSource.includes("Work4itExerciseAnimations?.openViewer"), "Demo bruger intern viewer");
 assert.ok(modelSource.includes("canvas.captureStream(24)"), "Canvas-animation optages som video");
 assert.ok(modelSource.includes("new MediaRecorder"), "Browserens medieencoder bruges");
+assert.ok(modelSource.includes("engine.create(canvas, specification)"), "Videoen renderes med 3D-motoren");
+assert.ok(modelSource.includes("videoTrack.requestFrame()"), "WebGL-frames sendes deterministisk til videoencoder");
+assert.ok(modelSource.includes("Browseren kunne ikke afslutte 3D-videoen"), "En fastlåst videoencoder giver en tydelig fejl");
+assert.ok(renderer3dSource.includes('return "push_up"'), "Push-Up har en særskilt biomekanisk profil");
+assert.ok(renderer3dSource.includes("THREE.WebGLRenderer"), "Professionel WebGL-renderer bruges");
+assert.ok(renderer3dSource.includes("PCFSoftShadowMap"), "3D-scenen bruger bløde skygger");
+assert.ok(renderer3dSource.includes("applyPushUpPose"), "Push-Up har øvelsesspecifik poseberegning");
+assert.ok(renderer3dSource.includes("length / 3"), "3D-led skaleres efter deres reelle længde");
 assert.ok(modelSource.includes("uploadVersionMedia(exercise.exerciseId, saved.version"), "Genereret video uploades automatisk");
 assert.ok(!/google\.com\/search\?tbm=vid/.test(indexSource), "Eksternt Demo-link er fjernet");
 assert.ok(indexSource.includes("exercise-animation-cloud-service.js"), "Cloud-laget indl\u00e6ses");

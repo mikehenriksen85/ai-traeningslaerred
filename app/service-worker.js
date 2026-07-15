@@ -1,10 +1,13 @@
-const CACHE_NAME = "work4it-shell-v112-backend-admin-read1";
+const CACHE_NAME = "work4it-shell-v113-professional-three1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./admin-config.js?v=20260712-home-center1",
-  "./exercise-animation-model.js?v=20260716-auto-render1",
+  "./exercise-animation-model.js?v=20260716-professional-three1",
+  "./exercise-animation-3d-renderer.js?v=20260716-professional-three1",
+  "./vendor/three/three.module.min.js",
+  "./vendor/three/LICENSE",
   "./manifest.webmanifest",
   "./work4it-app-icon-192.png",
   "./work4it-app-icon-512.png",

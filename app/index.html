@@ -10375,7 +10375,8 @@
     window.ENABLE_FIXED_LOGIN_ROUTING = true;
   </script>
   <script src="admin-config.js?v=20260711-permanent-admin1"></script>
-  <script src="exercise-animation-model.js?v=20260716-auto-render1"></script>
+  <script src="exercise-animation-model.js?v=20260716-professional-three1"></script>
+  <script type="module" src="exercise-animation-3d-renderer.js?v=20260716-professional-three1"></script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
@@ -10403,7 +10404,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260716-backend-admin-read1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260716-professional-three1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

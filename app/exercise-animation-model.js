@@ -69,7 +69,8 @@
       loop: true,
       cameraAngle: DEFAULT_CAMERA,
       availableModes: [...MODES],
-      visualStyle: "work4it_original_neutral_3d_v1",
+      visualStyle: "work4it_professional_three_rig_v1",
+      rendererVersion: "work4it-three-rig-v1",
       sourceAssets: [],
       rights: "original_procedural",
       keyframes: [
@@ -247,17 +248,49 @@
     });
   }
 
+  async function threeRenderer() {
+    if (window.Work4itThreeRenderer) return window.Work4itThreeRenderer;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Work4its 3D-renderer kunne ikke indlæses")), 8000);
+      window.addEventListener("work4it-three-renderer:ready", () => {
+        clearTimeout(timer);
+        resolve(window.Work4itThreeRenderer);
+      }, { once: true });
+    });
+  }
+
   async function renderSpecificationToVideo(specification, onProgress = () => {}) {
     const mimeType = recordingMimeType();
     if (!mimeType || !HTMLCanvasElement.prototype.captureStream) {
       throw new Error("Denne browser kan ikke rendere video automatisk. Brug Chrome, Edge eller den installerede Work4it PWA.");
     }
+    const engine = await threeRenderer();
+    if (!engine?.supports?.(specification)) {
+      throw new Error(`Der findes endnu ingen biomekanisk godkendt 3D-profil til ${specification.exerciseName}.`);
+    }
     const canvas = document.createElement("canvas");
     canvas.style.cssText = "position:fixed;left:-10000px;top:0;width:640px;height:400px;pointer-events:none";
     canvas.setAttribute("aria-hidden", "true");
     document.body.appendChild(canvas);
-    const stopRenderer = startProceduralRenderer(canvas, specification);
-    const stream = canvas.captureStream(24);
+    const scene = engine.create(canvas, specification);
+    let stream = canvas.captureStream(0);
+    let videoTrack = stream.getVideoTracks()[0];
+    const manualFrameCapture = typeof videoTrack?.requestFrame === "function";
+    if (!manualFrameCapture) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = canvas.captureStream(24);
+      videoTrack = stream.getVideoTracks()[0];
+    }
+    let animationFrame = 0;
+    let rendering = true;
+    const renderingStartedAt = performance.now();
+    const draw = now => {
+      if (!rendering) return;
+      scene.render(((now - renderingStartedAt) / (specification.duration * 1000)) % 1);
+      if (manualFrameCapture) videoTrack.requestFrame();
+      animationFrame = requestAnimationFrame(draw);
+    };
+    animationFrame = requestAnimationFrame(draw);
     const chunks = [];
     let recorder;
     try {
@@ -281,7 +314,10 @@
       });
       const thumbnailFile = await canvasThumbnail(canvas);
       recorder.stop();
-      await stopped;
+      await Promise.race([
+        stopped,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Browseren kunne ikke afslutte 3D-videoen. Prøv igen i Chrome, Edge eller Work4it PWA.")), 8000))
+      ]);
       const baseType = recorder.mimeType.split(";")[0] || mimeType.split(";")[0];
       const extension = baseType === "video/mp4" ? "mp4" : "webm";
       const blob = new Blob(chunks, { type: baseType });
@@ -293,7 +329,9 @@
     } finally {
       if (recorder?.state === "recording") recorder.stop();
       stream.getTracks().forEach(track => track.stop());
-      stopRenderer();
+      rendering = false;
+      cancelAnimationFrame(animationFrame);
+      scene.dispose();
       canvas.remove();
     }
   }
