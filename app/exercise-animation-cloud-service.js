@@ -1,4 +1,4 @@
-import { db, auth, storage } from "./firebase-config.js?v=20260715-exercise-animations1";
+import { db, auth, storage, functions } from "./firebase-config.js?v=20260715-exercise-animations1";
 import {
   collection,
   doc,
@@ -6,11 +6,9 @@ import {
   getDocs,
   limit,
   orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  updateDoc
+  query
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
 import {
   getDownloadURL,
   ref,
@@ -25,6 +23,9 @@ const MEDIA_TYPES = new Set(["video/webm", "video/mp4", "image/gif"]);
 const THUMBNAIL_TYPES = new Set(["image/webp", "image/png", "image/jpeg"]);
 const memoryCache = new Map();
 const LOCAL_METADATA_PREFIX = "work4it:exercise-animation:";
+const createDraftCallable = httpsCallable(functions, "createExerciseAnimationDraft");
+const recordUploadCallable = httpsCallable(functions, "recordExerciseAnimationUpload");
+const approveVersionCallable = httpsCallable(functions, "approveExerciseAnimationVersion");
 
 function model() {
   const api = window.Work4itExerciseAnimations;
@@ -125,37 +126,13 @@ async function getLatestVersion(exerciseId) {
 }
 
 async function saveDraft(specification) {
-  const user = requireAdmin();
+  requireAdmin();
   const validation = model().validateSpecification(specification);
   if (!validation.valid) throw new Error(validation.errors.join("; "));
-  const previous = await getLatestVersion(specification.exerciseId);
-  const version = Math.max(1, Number(previous?.version || 0) + 1);
-  const draft = serializableMetadata({
-    exerciseId: specification.exerciseId,
-    animationUrl: "",
-    thumbnailUrl: "",
-    duration: specification.duration,
-    version,
-    generationStatus: "pending_review",
-    cameraAngle: specification.cameraAngle,
-    availableModes: specification.availableModes,
-    specification
-  });
-  await setDoc(versionRef(specification.exerciseId, version), {
-    ...draft,
-    createdAt: serverTimestamp(),
-    createdBy: user.uid,
-    approvedAt: null,
-    approvedBy: null
-  });
-  await setDoc(rootRef(specification.exerciseId), {
-    exerciseId: specification.exerciseId,
-    latestVersion: version,
-    generationStatus: "pending_review",
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  const response = await createDraftCallable({ specification });
+  const draft = serializableMetadata(response.data);
   memoryCache.delete(specification.exerciseId);
-  return { ...draft, version };
+  return draft;
 }
 
 function extensionFor(file) {
@@ -176,7 +153,7 @@ function uploadFile(storageRef, file, metadata) {
 }
 
 async function uploadVersionMedia(exerciseId, version, mediaFile, thumbnailFile = null) {
-  const user = requireAdmin();
+  requireAdmin();
   assertFile(mediaFile, MEDIA_TYPES, MAX_MEDIA_BYTES, "Animationen");
   if (thumbnailFile) assertFile(thumbnailFile, THUMBNAIL_TYPES, MAX_THUMBNAIL_BYTES, "Thumbnail");
   const snapshot = await getDoc(versionRef(exerciseId, version));
@@ -191,34 +168,15 @@ async function uploadVersionMedia(exerciseId, version, mediaFile, thumbnailFile 
   const thumbnailUrl = thumbnailFile
     ? await uploadFile(ref(storage, `${folder}/thumbnail.${extensionFor(thumbnailFile)}`), thumbnailFile, { contentType: thumbnailFile.type, customMetadata: { exerciseId, version: String(version), origin: "work4it-original" } })
     : "";
-  await updateDoc(versionRef(exerciseId, version), {
-    animationUrl,
-    thumbnailUrl,
-    uploadedAt: serverTimestamp(),
-    uploadedBy: user.uid
-  });
+  await recordUploadCallable({ exerciseId, version, animationUrl, thumbnailUrl });
   memoryCache.delete(exerciseId);
   return { animationUrl, thumbnailUrl };
 }
 
 async function approveVersion(exerciseId, version) {
-  const user = requireAdmin();
-  const snapshot = await getDoc(versionRef(exerciseId, version));
-  if (!snapshot.exists()) throw new Error("Animationsversionen findes ikke");
-  const pending = { ...snapshot.data(), generationStatus: "approved" };
-  const approved = serializableMetadata(pending);
-  if (!approved.animationUrl) throw new Error("Upload animationen f\u00f8r godkendelse");
-  await setDoc(versionRef(exerciseId, version), {
-    ...approved,
-    approvedAt: serverTimestamp(),
-    approvedBy: user.uid
-  }, { merge: true });
-  await setDoc(rootRef(exerciseId), {
-    ...approved,
-    activeVersion: version,
-    latestVersion: Math.max(version, Number(pending.latestVersion || version)),
-    updatedAt: serverTimestamp()
-  });
+  requireAdmin();
+  const response = await approveVersionCallable({ exerciseId, version });
+  const approved = serializableMetadata(response.data);
   memoryCache.set(exerciseId, approved);
   writeLocalMetadata(exerciseId, approved);
   return approved;

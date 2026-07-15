@@ -61,6 +61,47 @@ function isAdminRequest(request) {
   return Boolean(request.auth?.uid && isPermanentAdminEmail(email));
 }
 
+async function requirePermanentAdminRequest(request) {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Du skal være logget ind.");
+  }
+  const tokenEmail = String(request.auth.token?.email || "").trim().toLowerCase();
+  if (isPermanentAdminEmail(tokenEmail)) return request.auth.uid;
+  const userRecord = await admin.auth().getUser(request.auth.uid).catch(() => null);
+  if (!isPermanentAdminEmail(userRecord?.email)) {
+    throw new HttpsError("permission-denied", "Kun Work4it-admin kan administrere animationer.");
+  }
+  return request.auth.uid;
+}
+
+const ANIMATION_MODES = Object.freeze(["standard", "muscle", "slowMotion", "alternateAngle"]);
+
+function validateAnimationSpecification(value) {
+  const specification = value && typeof value === "object" ? value : {};
+  const exerciseId = String(specification.exerciseId || "");
+  if (specification.schemaVersion !== 1 || !/^ex_[a-z0-9-]+_[a-z0-9]{7}$/.test(exerciseId)) {
+    throw new HttpsError("invalid-argument", "Animationsspecifikationen har et ugyldigt format.");
+  }
+  if (!String(specification.exerciseName || "").trim() || !String(specification.movement || "").trim()) {
+    throw new HttpsError("invalid-argument", "Øvelsesnavn eller bevægelse mangler.");
+  }
+  if (Number(specification.duration) < 3 || Number(specification.duration) > 5 || specification.loop !== true) {
+    throw new HttpsError("invalid-argument", "Animationen skal være et loop på 3-5 sekunder.");
+  }
+  if (specification.cameraAngle !== "front_three_quarter" ||
+      !ANIMATION_MODES.every(mode => Array.isArray(specification.availableModes) && specification.availableModes.includes(mode))) {
+    throw new HttpsError("invalid-argument", "Kamera eller availableModes er ugyldig.");
+  }
+  if (specification.rights !== "original_procedural" || !Array.isArray(specification.sourceAssets) || specification.sourceAssets.length) {
+    throw new HttpsError("invalid-argument", "Kun originale Work4it-animationer uden eksterne assets accepteres.");
+  }
+  return specification;
+}
+
+function animationVersionId(version) {
+  return `v${String(Math.max(1, Number.parseInt(version, 10))).padStart(4, "0")}`;
+}
+
 function adminMembershipPayload() {
   return {
     role: "admin",
@@ -417,6 +458,112 @@ exports.runAdminSubscriptionTest = onCall({
     status: "free_admin_test_verified",
     permanentAdminRestored: true
   };
+});
+
+exports.createExerciseAnimationDraft = onCall({
+  region: "europe-west1"
+}, async request => {
+  const uid = await requirePermanentAdminRequest(request);
+  const specification = validateAnimationSpecification(request.data?.specification);
+  const rootRef = admin.firestore().doc(`exerciseAnimations/${specification.exerciseId}`);
+  const latest = await rootRef.collection("versions").orderBy("version", "desc").limit(1).get();
+  const version = Math.max(1, Number(latest.docs[0]?.data()?.version || 0) + 1);
+  const draft = {
+    exerciseId: specification.exerciseId,
+    animationUrl: "",
+    thumbnailUrl: "",
+    duration: Number(specification.duration),
+    version,
+    generationStatus: "pending_review",
+    cameraAngle: specification.cameraAngle,
+    availableModes: ANIMATION_MODES,
+    specification,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdBy: uid,
+    approvedAt: null,
+    approvedBy: null
+  };
+  const batch = admin.firestore().batch();
+  batch.set(rootRef.collection("versions").doc(animationVersionId(version)), draft);
+  batch.set(rootRef, {
+    exerciseId: specification.exerciseId,
+    latestVersion: version,
+    generationStatus: "pending_review",
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+  await batch.commit();
+  return { ...draft, createdAt: null };
+});
+
+exports.recordExerciseAnimationUpload = onCall({
+  region: "europe-west1"
+}, async request => {
+  const uid = await requirePermanentAdminRequest(request);
+  const exerciseId = String(request.data?.exerciseId || "");
+  const version = Number.parseInt(request.data?.version, 10);
+  const animationUrl = String(request.data?.animationUrl || "");
+  const thumbnailUrl = String(request.data?.thumbnailUrl || "");
+  if (!/^ex_[a-z0-9-]+_[a-z0-9]{7}$/.test(exerciseId) || !Number.isInteger(version) || version < 1) {
+    throw new HttpsError("invalid-argument", "Ugyldig animationsversion.");
+  }
+  const allowedStorageUrl = url => !url || /^https:\/\/firebasestorage\.googleapis\.com\//.test(url);
+  if (!animationUrl || !allowedStorageUrl(animationUrl) || !allowedStorageUrl(thumbnailUrl)) {
+    throw new HttpsError("invalid-argument", "Upload-URL kommer ikke fra Work4it Storage.");
+  }
+  const ref = admin.firestore().doc(`exerciseAnimations/${exerciseId}/versions/${animationVersionId(version)}`);
+  const snapshot = await ref.get();
+  if (!snapshot.exists || snapshot.data()?.generationStatus === "approved") {
+    throw new HttpsError("failed-precondition", "Animationsversionen kan ikke opdateres.");
+  }
+  await ref.set({
+    animationUrl,
+    thumbnailUrl,
+    uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+    uploadedBy: uid
+  }, { merge: true });
+  return { animationUrl, thumbnailUrl };
+});
+
+exports.approveExerciseAnimationVersion = onCall({
+  region: "europe-west1"
+}, async request => {
+  const uid = await requirePermanentAdminRequest(request);
+  const exerciseId = String(request.data?.exerciseId || "");
+  const version = Number.parseInt(request.data?.version, 10);
+  if (!/^ex_[a-z0-9-]+_[a-z0-9]{7}$/.test(exerciseId) || !Number.isInteger(version) || version < 1) {
+    throw new HttpsError("invalid-argument", "Ugyldig animationsversion.");
+  }
+  const versionRef = admin.firestore().doc(`exerciseAnimations/${exerciseId}/versions/${animationVersionId(version)}`);
+  const snapshot = await versionRef.get();
+  if (!snapshot.exists || !snapshot.data()?.animationUrl) {
+    throw new HttpsError("failed-precondition", "Upload animationen før godkendelse.");
+  }
+  const current = snapshot.data();
+  const approved = {
+    exerciseId,
+    animationUrl: current.animationUrl,
+    thumbnailUrl: current.thumbnailUrl || "",
+    duration: Number(current.duration),
+    version,
+    generationStatus: "approved",
+    cameraAngle: current.cameraAngle,
+    availableModes: current.availableModes,
+    specification: current.specification,
+    approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+    approvedBy: uid
+  };
+  validateAnimationSpecification(current.specification);
+  const rootRef = admin.firestore().doc(`exerciseAnimations/${exerciseId}`);
+  const batch = admin.firestore().batch();
+  batch.set(versionRef, approved, { merge: true });
+  batch.set(rootRef, {
+    ...approved,
+    activeVersion: version,
+    latestVersion: version,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+  await batch.commit();
+  return { ...approved, approvedAt: null };
 });
 
 exports.verifyAndBackfillUserDocuments = onCall({
