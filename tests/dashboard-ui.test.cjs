@@ -15,6 +15,7 @@ for (const id of [
   "homeCurrentProgramName",
   "homeStartHelp",
   "elapsedTimeMetric",
+  "programSecondaryActions",
   "homeSavedPrograms",
   "homeSavedEmpty",
   "workoutEditorDetails",
@@ -107,6 +108,17 @@ assert.match(html, /function formatPreviousSetDisplay\(/);
 assert.match(html, /Sidst: \$\{weight\} kg × \$\{reps\}/);
 assert.match(html, /function updatePauseInlineDisplay\(/);
 assert.doesNotMatch(html, /if \(inline\) inline\.textContent/);
+assert.match(html, /class="program-secondary-actions" id="programSecondaryActions"/);
+assert.match(html, /<summary>Flere programhandlinger<\/summary>/);
+assert.equal((html.match(/onclick="shareCurrentProgram\(\)"/g) || []).length, 1);
+assert.equal((html.match(/onclick="deleteCurrentProgram\(\)"/g) || []).length, 1);
+assert.match(html, /class="exercise-details-toggle" type="button" aria-expanded="false"/);
+assert.match(html, /function toggleExerciseDetails\(/);
+assert.match(html, /function closeExerciseDetails\(/);
+assert.match(html, /\.exercise:not\(\.show-advanced\) \.set-analytics \{ display: none; \}/);
+assert.match(html, /closeExerciseDetails\(\);\s+closeExerciseActionMenu\(false\)/);
+assert.match(html, /function updateAutosaveStatusTone\(/);
+assert.match(html, /new MutationObserver\(updateAutosaveStatusTone\)/);
 
 const activeSessionPredicateBody = html.match(/function isActiveWorkoutSession\(session\) \{([\s\S]*?)\n    \}/)?.[1];
 assert.ok(activeSessionPredicateBody, "active session predicate must exist");

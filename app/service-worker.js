@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v105-readable-set-rows1";
+const CACHE_NAME = "work4it-shell-v106-progressive-disclosure1";
 const APP_SHELL = [
   "./",
   "./index.html",
