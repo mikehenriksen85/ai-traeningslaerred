@@ -184,6 +184,19 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // F\u00e6lles animationsbibliotek. Alle loggede brugere kan afspille den
+    // aktive version; kun den permanente administrator kan oprette,
+    // versionere og godkende indhold.
+    match /exerciseAnimations/{exerciseId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isPermanentAdminEmail();
+
+      match /versions/{versionId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSignedIn() && isPermanentAdminEmail();
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

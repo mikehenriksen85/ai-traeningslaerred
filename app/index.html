@@ -2834,6 +2834,51 @@
       .home-saved-item .home-secondary-button { width: 100%; }
     }
 
+    .exercise-animation-viewer { display: grid; gap: 12px; }
+    .exercise-animation-stage {
+      overflow: hidden;
+      min-height: 280px;
+      aspect-ratio: 16 / 10;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #07111f;
+    }
+    .exercise-animation-media,
+    .exercise-animation-canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .exercise-animation-loading,
+    .exercise-animation-placeholder {
+      min-height: 280px;
+      display: grid;
+      place-content: center;
+      gap: 8px;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .exercise-animation-placeholder p { margin: 0; max-width: 38ch; }
+    .exercise-animation-placeholder-icon { color: var(--green); font-size: 42px; }
+    .exercise-animation-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+    .exercise-animation-meta span {
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: var(--font-size-small);
+    }
+    .exercise-animation-note { margin: 0; color: var(--muted); font-size: var(--font-size-small); }
+    .exercise-animation-admin { border-top: 1px solid var(--border); padding-top: 10px; }
+    .exercise-animation-admin summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+    .exercise-animation-admin-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+    .exercise-animation-admin-actions label { display: grid; gap: 5px; color: var(--muted); font-size: var(--font-size-small); }
+    .exercise-animation-admin-actions input[type="file"] { max-width: 240px; }
+
+    @media (max-width: 520px) {
+      .exercise-animation-stage,
+      .exercise-animation-loading,
+      .exercise-animation-placeholder { min-height: 220px; }
+      .exercise-animation-admin-actions > * { width: 100%; max-width: none !important; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -5523,6 +5568,7 @@
       block.dataset.role = plan.role || window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory";
       block.dataset.exerciseType = isCardio ? "cardio" : "strength";
       block.dataset.trainingStyle = plan.trainingStyle || catalog.find(exercise => exercise.name === name && exercise.muscle === muscle)?.trainingStyle || "gym";
+      block.dataset.exerciseId = window.Work4itExerciseAnimations?.exerciseId?.(name, muscle) || "";
       const historyEntry = latestExerciseHistory(name, muscle);
       const historyPause = historyEntry ? Math.max(0, Number(historyEntry.pauseSeconds) || parsePause(historyEntry.pause || "")) : 0;
       const savedExercisePause = parsePause(metadata?.pause || "") || parsePause(savedSets?.find(set => set?.pause)?.pause || "");
@@ -5634,8 +5680,10 @@
     function openExerciseDemo(slot) {
       const exerciseName = $(`name-${slot}`)?.textContent?.trim();
       if (!exerciseName) return;
-      const url = `https://www.google.com/search?tbm=vid&q=${encodeURIComponent(exerciseName + " exercise form")}`;
-      window.open(url, "_blank", "noopener");
+      const muscle = $(`name-${slot}`)?.dataset?.muscle || "";
+      const block = $(`block-${slot}`);
+      const id = block?.dataset?.exerciseId || window.Work4itExerciseAnimations?.exerciseId?.(exerciseName, muscle);
+      window.Work4itExerciseAnimations?.openViewer?.({ name: exerciseName, muscle, exerciseId: id });
     }
     let replacementState = { slot: "", mode: "", candidate: null };
 
@@ -5883,6 +5931,7 @@
         exerciseBlock.dataset.role = plan.role;
         exerciseBlock.dataset.exerciseType = isCardio ? "cardio" : "strength";
         exerciseBlock.dataset.trainingStyle = definition?.trainingStyle || "gym";
+        exerciseBlock.dataset.exerciseId = window.Work4itExerciseAnimations?.exerciseId?.(name, muscle) || "";
       }
       $(`name-${slot}`).textContent = name;
       $(`name-${slot}`).dataset.muscle = muscle;
@@ -10326,13 +10375,14 @@
     window.ENABLE_FIXED_LOGIN_ROUTING = true;
   </script>
   <script src="admin-config.js?v=20260711-permanent-admin1"></script>
+  <script src="exercise-animation-model.js?v=20260715-exercise-animations1"></script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
   <script src="screenshot-import.js?v=20260710-reps-input1"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
   <script src="calorie-estimator.js"></script>
-  <script src="ai-system.js?v=20260713-ai-coach1"></script>
+  <script src="ai-system.js?v=20260715-exercise-animations1"></script>
   <script src="ai-copilot-actions.js?v=20260713-ai-coach1"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
@@ -10344,7 +10394,8 @@
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
   <script src="membership.js?v=20260713-admin-subscription-test1"></script>
-  <script type="module" src="firebase-config.js?v=20260713-stripe-google-login1"></script>
+  <script type="module" src="firebase-config.js?v=20260715-exercise-animations1"></script>
+  <script type="module" src="exercise-animation-cloud-service.js?v=20260715-exercise-animations1"></script>
   <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
   <script type="module" src="auth-service.js?v=20260713-stripe-google-login1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260715-cloud-primary-fix2"></script>
@@ -10352,7 +10403,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260715-exercise-menu1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260715-exercise-animations1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

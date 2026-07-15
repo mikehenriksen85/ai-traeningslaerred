@@ -85,8 +85,25 @@
         "Gem eller overskriv intet før brugerens aktive godkendelse.",
         "Ignorér uvedkommende persondata i billedet."
       ]
+    },
+    animationSpecification: {
+      purpose: "Opret en original, struktureret bevægelsesspecifikation til Work4its interne 3D-animationer.",
+      instructions: [
+        "Returnér kun schemaVersion 1 JSON til den angivne exerciseId.",
+        "Brug 3-5 sekunders sømløst loop og Work4its faste front_three_quarter-kamera.",
+        "Beskriv startposition, bevægelsesbane og slutposition ud fra øvelsesnavn, udstyr og bevægelse.",
+        "Brug en neutral original figur og ingen eksterne source assets.",
+        "Kopiér aldrig design, modeller, videoer eller animationer fra firmaer, apps eller hjemmesider.",
+        "Output skal valideres og godkendes manuelt før aktivering."
+      ]
     }
   });
+
+  async function createExerciseAnimationSpecification(context) {
+    const pipeline = window.Work4itExerciseAnimations;
+    if (!pipeline?.generateSpecification) throw new Error("Animationspipeline er ikke klar");
+    return pipeline.generateSpecification(context);
+  }
 
   function safeJson(key, fallback) {
     try {
@@ -356,6 +373,7 @@
     detectLanguage,
     guardInput,
     practicalAdvice,
+    createExerciseAnimationSpecification,
     requestUsage,
     HEALTH_SAFETY_NOTICE
   };

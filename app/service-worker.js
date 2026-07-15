@@ -1,8 +1,10 @@
-const CACHE_NAME = "work4it-shell-v107-pause-mobile-row1";
+const CACHE_NAME = "work4it-shell-v108-exercise-animations1";
+const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./admin-config.js?v=20260712-home-center1",
+  "./exercise-animation-model.js?v=20260715-exercise-animations1",
   "./manifest.webmanifest",
   "./work4it-app-icon-192.png",
   "./work4it-app-icon-512.png",
@@ -20,7 +22,7 @@ const APP_SHELL = [
   "./stripe-config.js?v=20260712-home-center1",
   "./membership.js?v=20260713-admin-subscription-test1",
   "./stripe-checkout.js?v=20260713-admin-subscription-test1",
-  "./ai-system.js?v=20260713-ai-coach1",
+  "./ai-system.js?v=20260715-exercise-animations1",
   "./ai-copilot-actions.js?v=20260713-ai-coach1",
   "./ai-request-counter.js?v=20260713-stripe-google-login1",
   "./help-content-config.js?v=20260628-help1",
@@ -29,7 +31,8 @@ const APP_SHELL = [
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260706-resume-state1",
   "./profile-wizard.js?v=20260620-calisthenics1",
-  "./firebase-config.js?v=20260713-stripe-google-login1",
+  "./firebase-config.js?v=20260715-exercise-animations1",
+  "./exercise-animation-cloud-service.js?v=20260715-exercise-animations1",
   "./auth-service.js?v=20260713-stripe-google-login1",
   "./firestore-cloud-service.js?v=20260715-cloud-primary-fix2"
 ];
@@ -46,7 +49,7 @@ self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.filter(key => ![CACHE_NAME, ANIMATION_CACHE_NAME].includes(key)).map(key => caches.delete(key))
       ))
       .then(() => self.clients.claim())
   );
@@ -57,6 +60,22 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
+  const isCloudAnimation = ["firebasestorage.googleapis.com", "storage.googleapis.com"]
+    .includes(url.hostname) && decodeURIComponent(url.pathname).includes("exercise-animations/");
+
+  if (isCloudAnimation) {
+    event.respondWith(
+      caches.open(ANIMATION_CACHE_NAME).then(async cache => {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        const response = await fetch(request);
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      })
+    );
+    return;
+  }
+
   if (url.origin !== self.location.origin) return;
 
   if (url.pathname.startsWith("/__/auth/")) return;

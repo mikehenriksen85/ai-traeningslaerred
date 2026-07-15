@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPermanentAdmin() {
+      return isSignedIn()
+        && request.auth.token.email == 'mikehenriksen85@gmail.com';
+    }
+
+    function isAnimationMedia() {
+      return request.resource.size < 12 * 1024 * 1024
+        && request.resource.contentType.matches('video/(webm|mp4)|image/gif');
+    }
+
+    function isAnimationThumbnail() {
+      return request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/(webp|png|jpeg)');
+    }
+
+    match /exercise-animations/{exerciseId}/{version}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isPermanentAdmin()
+        && ((fileName.matches('animation\\.(webm|mp4|gif)') && isAnimationMedia())
+          || (fileName.matches('thumbnail\\.(webp|png|jpg)') && isAnimationThumbnail()));
+      allow delete: if isPermanentAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

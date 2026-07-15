@@ -6,6 +6,7 @@ import {
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { getFunctions } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-storage.js";
 
 const AUTH_DOMAIN_FALLBACK = "workout-b55ed.firebaseapp.com";
 const SAME_ORIGIN_AUTH_DOMAINS = new Set([
@@ -33,11 +34,12 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const functions = getFunctions(app, "europe-west1");
+const storage = getStorage(app);
 
 console.log("[Work4it Firebase] firebaseConfig", firebaseConfig);
 console.log("[Work4it Firebase] resolved authDomain", resolvedAuthDomain, "for host", currentHostname);
 console.log("[Work4it Firebase] auth.currentUser at init", auth.currentUser);
 
-export { app, db, auth, functions };
+export { app, db, auth, functions, storage };
 
 
