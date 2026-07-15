@@ -2477,6 +2477,128 @@
       color: color-mix(in srgb, var(--text-secondary), var(--text-primary) 8%);
     }
 
+    .home-dashboard {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .home-welcome {
+      display: grid;
+      gap: 4px;
+    }
+    .home-welcome-kicker {
+      color: var(--text-accent);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+    }
+    .home-welcome h1 {
+      margin: 0;
+      font-size: clamp(1.55rem, 4vw, 2.2rem);
+      line-height: 1.15;
+    }
+    .home-welcome p {
+      margin: 0;
+      color: var(--text-secondary);
+    }
+    .home-section {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid color-mix(in srgb, var(--border), var(--blue) 18%);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--card), var(--input) 24%);
+    }
+    .home-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .home-section-title {
+      margin: 0;
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-semibold);
+    }
+    .home-program-name {
+      font-size: clamp(1.15rem, 3vw, 1.45rem);
+      font-weight: var(--font-weight-semibold);
+      overflow-wrap: anywhere;
+    }
+    .home-program-meta,
+    .home-empty-copy {
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+    .home-start-button {
+      width: 100%;
+      min-height: 58px;
+      border: 0;
+      border-radius: var(--radius-md);
+      background: var(--green);
+      color: #04150a;
+      font: inherit;
+      font-size: 1.08rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 14px 30px rgba(34,197,94,.22);
+    }
+    .home-saved-list {
+      display: grid;
+      gap: 8px;
+    }
+    .home-saved-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--input);
+    }
+    .home-saved-name {
+      font-weight: var(--font-weight-semibold);
+      overflow-wrap: anywhere;
+    }
+    .home-saved-meta {
+      margin-top: 2px;
+      color: var(--text-secondary);
+      font-size: var(--font-size-small);
+    }
+    .home-secondary-button,
+    .workout-editor-details > summary {
+      min-height: 48px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--input);
+      color: var(--text-primary);
+      font: inherit;
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+    }
+    .home-secondary-button { padding: 10px 16px; }
+    .home-create-button {
+      width: 100%;
+      border-color: color-mix(in srgb, var(--blue), var(--border) 28%);
+      color: var(--text-accent);
+    }
+    .workout-editor-details {
+      margin-top: 12px;
+    }
+    .workout-editor-details > summary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      list-style: none;
+    }
+    .workout-editor-details > summary::-webkit-details-marker { display: none; }
+    .workout-editor-details > summary::after { content: " ↓"; margin-left: 7px; }
+    .workout-editor-details[open] > summary::after { content: " ↑"; }
+    .workout-editor-content { padding-top: 18px; }
+    body[data-workout-view="session"] .workout-editor-details > summary { display: none; }
+    body[data-workout-view="session"] .home-dashboard { display: none; }
+
     @media (min-width: 1180px) {
       .canvas {
         max-width: 860px;
@@ -2530,6 +2652,10 @@
       .program-action-btn {
         width: 100%;
       }
+      .home-dashboard { gap: 14px; }
+      .home-section { padding: 14px; }
+      .home-saved-item { grid-template-columns: 1fr; }
+      .home-saved-item .home-secondary-button { width: 100%; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -2593,19 +2719,8 @@
       <div><b id="sidebarProfileName">Min profil</b><br><span class="profile-login" id="sidebarProfileSubtitle">Profil og konto</span></div>
     </div>
 
-    <section class="sidebar-accordion open" data-accordion="profile">
-      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('profile')" aria-expanded="true">
-        <span>👤 Profil</span><span class="sidebar-accordion-chevron">⌄</span>
-      </button>
-      <div class="sidebar-accordion-panel">
-        <button class="sidebar-item" id="profileAccountNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileSetup()">Profil og konto</button>
-        <button class="sidebar-item sidebar-subitem" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">Gratis</span></button>
-        <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
-      </div>
-    </section>
-
-    <section class="sidebar-accordion" data-accordion="training">
-      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('training')" aria-expanded="false">
+    <section class="sidebar-accordion open" data-accordion="training">
+      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('training')" aria-expanded="true">
         <span>💪 Træning</span><span class="sidebar-accordion-chevron">⌄</span>
       </button>
       <div class="sidebar-accordion-panel">
@@ -2682,6 +2797,10 @@
         <span>⚙️ Mere</span><span class="sidebar-accordion-chevron">⌄</span>
       </button>
       <div class="sidebar-accordion-panel">
+        <button class="sidebar-item" id="profileAccountNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileSetup()">👤 Profil og konto</button>
+        <button class="sidebar-item sidebar-subitem" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">Gratis</span></button>
+        <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
+        <button class="sidebar-item" id="aiCoachButton" type="button" onclick="setActiveSidebarItem(this); if(document.getElementById('sidebar')?.classList.contains('open')) toggleSidebar(false); openAiCoach()" aria-controls="aiCoachPanel" aria-expanded="false">✨ AI Coach</button>
         <button class="sidebar-item" id="trashNavItem" type="button" onclick="setActiveSidebarItem(this); toggleTrashDropdown()">🗑 Papirkurv</button>
         <div class="saved-dropdown" id="trashDropdown">
           <div class="nested-box">
@@ -2697,27 +2816,61 @@
           target="_blank" rel="noopener noreferrer"
           title="Se Privatliv og GDPR på Work-4it.dk"
           onclick="setActiveSidebarItem(this); if(document.getElementById('sidebar')?.classList.contains('open')) toggleSidebar(false)">🔒 Privatliv / GDPR på Work-4it.dk</a>
+        <a class="sidebar-item" id="feedbackNavItem"
+          href="https://docs.google.com/forms/d/e/1FAIpQLScIi1YE2x3pzRQI7dmztC3kWgjysDFkcUfKJtZXcOzAeIV7Tg/viewform"
+          target="_blank" rel="noopener noreferrer"
+          title="Send fejl, forslag eller feedback til Work4it"
+          onclick="if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar()">📝 Feedback</a>
       </div>
     </section>
     <div class="sidebar-menu-spacer"></div>
-    <a class="sidebar-item sidebar-bottom-action" id="feedbackNavItem"
-      href="https://docs.google.com/forms/d/e/1FAIpQLScIi1YE2x3pzRQI7dmztC3kWgjysDFkcUfKJtZXcOzAeIV7Tg/viewform"
-      target="_blank" rel="noopener noreferrer"
-      title="Send fejl, forslag eller feedback til Work4it"
-      onclick="if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar()">📝 Feedback</a>
     <button class="sidebar-item sidebar-bottom-action" id="sidebarLogoutBtn" type="button" onclick="logoutProfileAccount()">↪ Log ud</button>
   </nav>
   <script src="workit-menu-manager.js?v=20260712-menu-manager1"></script>
 
   <main class="canvas" id="programCanvas">
     <section class="card">
+      <section class="home-dashboard program-only" id="homeDashboard" aria-labelledby="homeWelcomeTitle">
+        <header class="home-welcome">
+          <span class="home-welcome-kicker">Dit Work4it-dashboard</span>
+          <h1 id="homeWelcomeTitle">Hej – klar til dagens træning?</h1>
+          <p>Fortsæt, hvor du slap, eller vælg et gemt træningspas.</p>
+        </header>
+
+        <section class="home-section" aria-labelledby="homeCurrentProgramHeading">
+          <div class="home-section-head">
+            <h2 class="home-section-title" id="homeCurrentProgramHeading">Dagens træning</h2>
+          </div>
+          <div class="home-program-name" id="homeCurrentProgramName">Intet træningspas valgt</div>
+          <div class="home-program-meta" id="homeCurrentProgramMeta">Vælg eller opret et træningspas for at komme i gang.</div>
+          <button class="home-start-button" id="timerBtn" type="button" onclick="startDashboardWorkout()">▶ Start træning</button>
+        </section>
+
+        <section class="home-section" aria-labelledby="homeSavedHeading">
+          <div class="home-section-head">
+            <h2 class="home-section-title" id="homeSavedHeading">Gemte træningspas</h2>
+          </div>
+          <div class="home-saved-list" id="homeSavedPrograms"></div>
+          <div class="home-empty-copy" id="homeSavedEmpty" hidden>Du har ingen gemte træningspas endnu. Opret dit første pas, og start enkelt.</div>
+        </section>
+
+        <section class="home-section" aria-labelledby="homeCreateHeading">
+          <div class="home-section-head">
+            <h2 class="home-section-title" id="homeCreateHeading">Nyt træningspas</h2>
+          </div>
+          <button class="home-secondary-button home-create-button" type="button" onclick="openCreateOrImportWorkout()">＋ Opret eller importér træningspas</button>
+        </section>
+      </section>
+
+      <details class="workout-editor-details" id="workoutEditorDetails">
+        <summary>Se og redigér træningspas</summary>
+        <div class="workout-editor-content">
       <div class="work4it-landing-hero program-only brand-fade-in"><img class="brand-hero-logo" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
       <div id="workoutTitle" role="button" tabindex="0" aria-label="Redigér programnavn" title="Tryk for at ændre programnavnet" onclick="beginProgramTitleEdit()" onkeydown="handleProgramTitleKey(event)">Mit nye træningspas</div>
       <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
       <div class="workout-sticky-top" id="workoutStickyTop" aria-label="Træningsstatus og hurtige handlinger">
         <div class="top-controls">
           <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem</button>
-          <button class="top-btn start-btn program-only" id="timerBtn" onclick="toggleWorkoutTimer()">▶ Start Træning</button>
           <button class="top-btn stop-btn session-only" id="stopBtn" onclick="finishWorkout()">⏹ Afslut</button>
         </div>
         <section class="session-banner session-only" id="trainingSessionView" aria-label="Aktiv træningssession">
@@ -2766,10 +2919,11 @@
         <button class="program-action-btn share" onclick="shareCurrentProgram()">🔗 Del træningspas</button>
         <button class="program-action-btn delete" onclick="deleteCurrentProgram()">🗑 Slet træningspas</button>
       </div>
+        </div>
+      </details>
     </section>
   </main>
 
-  <button class="ai-coach-fab" id="aiCoachButton" type="button" onclick="openAiCoach()" aria-controls="aiCoachPanel" aria-expanded="false">✨ AI Coach</button>
   <section class="ai-coach-panel" id="aiCoachPanel" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="aiCoachTitle">
     <div class="ai-coach-sheet">
       <div class="ai-coach-head">
@@ -4625,6 +4779,31 @@
       openModal();
     }
 
+    function openCreateOrImportWorkout() {
+      $("modalTitle").textContent = "Opret eller importér træningspas";
+      $("modalContent").innerHTML = `
+        <p class="helper-text">Vælg den enkleste vej til dit næste træningspas.</p>
+        <div class="row">
+          <button class="small-btn" type="button" onclick="closeModal();openBlankWorkoutDialog()">＋ Opret træningspas</button>
+          <button class="small-btn" type="button" onclick="closeModal();openScreenshotImportInfo()">📷 Importér screenshot</button>
+          <button class="small-btn" type="button" onclick="closeModal();openProgramGeneratorFromDashboard()">✨ Generér træningsplan</button>
+        </div>`;
+      openModal();
+    }
+
+    function openProgramGeneratorFromDashboard() {
+      toggleSidebar(true);
+      const trainingSection = document.querySelector('[data-accordion="training"]');
+      if (!trainingSection?.classList.contains("open")) toggleSidebarAccordion("training");
+      if ($("programGeneratorAccess")?.hidden) toggleGeneratorMenu();
+    }
+
+    function openWorkoutEditor() {
+      const details = $("workoutEditorDetails");
+      if (details) details.open = true;
+      window.requestAnimationFrame(() => details?.scrollIntoView?.({ behavior: "smooth", block: "start" }));
+    }
+
     function availablePickerMuscles() {
       return Array.isArray(exercisePickerMuscleScope) && exercisePickerMuscleScope.length
         ? [...exercisePickerMuscleScope]
@@ -6047,6 +6226,8 @@
 
     function showTrainingSession() {
       if (!hasActiveWorkoutSession()) return false;
+      const editor = $("workoutEditorDetails");
+      if (editor) editor.open = true;
       currentWorkoutView = "session";
       document.body.dataset.workoutView = "session";
       activeSessionId = activeWorkoutSession.sessionId;
@@ -6521,6 +6702,88 @@
       const list = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
       $("savedSelect").innerHTML = list.length ? `<option value="">${t("selectProgram")}</option>` + list.map(p => `<option value="${p.id}">${esc(p.title)} - ${new Date(p.savedAt).toLocaleDateString("da-DK")}</option>`).join("") : `<option value="">${t("noSavedPrograms")}</option>`;
       $("savedEmpty").style.display = list.length ? "none" : "block";
+      renderHomeDashboard(list);
+    }
+
+    function dashboardDisplayName() {
+      const profile = window.TrainingWizardStore?.getProfile?.() || {};
+      const user = window.FirebaseAuthService?.getCurrentUser?.() || {};
+      const value = profile.name || user.displayName || String(user.email || "").split("@")[0] || "";
+      return String(value).trim().split(/\s+/)[0] || "";
+    }
+
+    function programExerciseCount(program) {
+      return (program?.days || []).reduce((total, day) => total + (day?.exercises?.length || 0), 0);
+    }
+
+    function renderHomeDashboard(programs = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt))) {
+      const list = Array.isArray(programs) ? programs : [];
+      const welcome = $("homeWelcomeTitle");
+      const firstName = dashboardDisplayName();
+      if (welcome) welcome.textContent = firstName ? `Hej ${firstName} – klar til dagens træning?` : "Hej – klar til dagens træning?";
+
+      const activeProgram = currentProgramSession ||
+        list.find(program => program.id === currentSavedProgramId) ||
+        (slotIds().length ? null : list[0]) || null;
+      const currentName = $("homeCurrentProgramName");
+      const currentMeta = $("homeCurrentProgramMeta");
+      const startButton = $("timerBtn");
+      if (activeProgram) {
+        const days = activeProgram.days?.length || 1;
+        const exercises = programExerciseCount(activeProgram);
+        if (currentName) currentName.textContent = activeProgram.title || t("workoutFallback");
+        if (currentMeta) currentMeta.textContent = `${days} ${days === 1 ? "træningsdag" : "træningsdage"} · ${exercises} ${exercises === 1 ? "øvelse" : "øvelser"}`;
+        if (startButton) {
+          startButton.disabled = exercises === 0;
+          startButton.dataset.programId = activeProgram.id || "";
+          startButton.textContent = "▶ Start træning";
+        }
+      } else {
+        const draftExercises = slotIds().length;
+        if (currentName) currentName.textContent = draftExercises ? ($("workoutTitle")?.textContent || "Nyt træningspas") : "Intet træningspas valgt";
+        if (currentMeta) currentMeta.textContent = draftExercises
+          ? `${draftExercises} ${draftExercises === 1 ? "øvelse" : "øvelser"} i dit aktuelle udkast`
+          : "Opret eller importér et træningspas for at komme i gang.";
+        if (startButton) {
+          startButton.disabled = false;
+          startButton.dataset.programId = "";
+          startButton.textContent = draftExercises ? "▶ Start træning" : "Opret dit første træningspas";
+        }
+      }
+
+      const savedList = $("homeSavedPrograms");
+      const empty = $("homeSavedEmpty");
+      if (savedList) {
+        savedList.innerHTML = list.slice(0, 4).map(program => {
+          const date = new Date(program.savedAt || program.updatedAt || Date.now());
+          const dateText = Number.isFinite(date.getTime()) ? date.toLocaleDateString("da-DK") : "Gemt program";
+          const encodedId = encodeURIComponent(program.id || "");
+          return `<article class="home-saved-item">
+            <div><div class="home-saved-name">${esc(program.title || t("workoutFallback"))}</div><div class="home-saved-meta">${programExerciseCount(program)} øvelser · ${dateText}</div></div>
+            <button class="home-secondary-button" type="button" onclick="openDashboardSavedProgram('${encodedId}')">Åbn</button>
+          </article>`;
+        }).join("");
+      }
+      if (empty) empty.hidden = list.length > 0;
+    }
+
+    function openDashboardSavedProgram(encodedId) {
+      const id = decodeURIComponent(encodedId || "");
+      loadSavedProgram(id, false);
+      openWorkoutEditor();
+      renderHomeDashboard();
+    }
+
+    function startDashboardWorkout() {
+      const button = $("timerBtn");
+      const programId = button?.dataset.programId || "";
+      if (!slotIds().length && programId) loadSavedProgram(programId, false);
+      if (!slotIds().length) {
+        openCreateOrImportWorkout();
+        return;
+      }
+      openWorkoutEditor();
+      toggleWorkoutTimer();
     }
     function toggleSavedDropdown() {
       const dropdown = $("savedDropdown");
@@ -6730,6 +6993,7 @@
       autoSave();
       $("autosaveStatus").textContent = t("readyWorkout");
       updateWorkoutButtonVisibility();
+      renderHomeDashboard();
       $("savedDropdown").style.display = "none";
       if (closeSidebar && $("sidebar").classList.contains("open")) toggleSidebar();
       saveLastActiveView("program");
@@ -6868,6 +7132,8 @@
       } else {
         setExercisePickerContext("Alle");
       }
+      openWorkoutEditor();
+      renderHomeDashboard();
       if ($("sidebar").classList.contains("open")) toggleSidebar();
       window.requestAnimationFrame(() => {
         const muscles = availablePickerMuscles();
@@ -9525,7 +9791,10 @@
     window.addEventListener("daily-wizard:generate", openDailyProgramGenerator);
     window.addEventListener("daily-motivation:changed", updateDailyMotivationDisplay);
     window.addEventListener("screenshot-import:approved", createProgramFromScreenshot);
-    window.addEventListener("training-profile:updated", updateEstimatedCalories);
+    window.addEventListener("training-profile:updated", () => {
+      updateEstimatedCalories();
+      renderHomeDashboard();
+    });
     window.addEventListener("ai-requests:changed", event => updateAiRequestCounterDisplay(event.detail));
     window.addEventListener("firestore:data-hydrated", () => {
       loadCustom();
@@ -9649,7 +9918,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260715-cloud-primary-fix2").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260715-simple-dashboard1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
