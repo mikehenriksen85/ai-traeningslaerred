@@ -496,6 +496,41 @@ exports.createExerciseAnimationDraft = onCall({
   return { ...draft, createdAt: null };
 });
 
+exports.getExerciseAnimationAdminState = onCall({
+  region: "europe-west1"
+}, async request => {
+  await requirePermanentAdminRequest(request);
+  const exerciseId = String(request.data?.exerciseId || "");
+  if (!/^ex_[a-z0-9-]+_[a-z0-9]{7}$/.test(exerciseId)) {
+    throw new HttpsError("invalid-argument", "Ugyldigt exerciseId.");
+  }
+  const rootRef = admin.firestore().doc(`exerciseAnimations/${exerciseId}`);
+  const [rootSnapshot, latestSnapshot] = await Promise.all([
+    rootRef.get(),
+    rootRef.collection("versions").orderBy("version", "desc").limit(1).get()
+  ]);
+  const clean = value => {
+    if (!value) return null;
+    return {
+      exerciseId: value.exerciseId || exerciseId,
+      animationUrl: value.animationUrl || "",
+      thumbnailUrl: value.thumbnailUrl || "",
+      duration: Number(value.duration || 4),
+      version: Number(value.version || value.latestVersion || 1),
+      latestVersion: Number(value.latestVersion || value.version || 1),
+      activeVersion: Number(value.activeVersion || 0),
+      generationStatus: value.generationStatus || "missing",
+      cameraAngle: value.cameraAngle || "front_three_quarter",
+      availableModes: Array.isArray(value.availableModes) ? value.availableModes : ANIMATION_MODES,
+      specification: value.specification || null
+    };
+  };
+  return {
+    active: rootSnapshot.exists ? clean(rootSnapshot.data()) : null,
+    latest: latestSnapshot.empty ? null : clean(latestSnapshot.docs[0].data())
+  };
+});
+
 exports.recordExerciseAnimationUpload = onCall({
   region: "europe-west1"
 }, async request => {

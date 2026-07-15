@@ -1,12 +1,7 @@
 import { db, auth, functions } from "./firebase-config.js?v=20260715-exercise-animations1";
 import {
-  collection,
   doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query
+  getDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
 
@@ -19,6 +14,7 @@ const THUMBNAIL_TYPES = new Set(["image/webp", "image/png", "image/jpeg"]);
 const memoryCache = new Map();
 const LOCAL_METADATA_PREFIX = "work4it:exercise-animation:";
 const createDraftCallable = httpsCallable(functions, "createExerciseAnimationDraft");
+const getAdminStateCallable = httpsCallable(functions, "getExerciseAnimationAdminState");
 const recordUploadCallable = httpsCallable(functions, "recordExerciseAnimationUpload");
 const approveVersionCallable = httpsCallable(functions, "approveExerciseAnimationVersion");
 
@@ -106,10 +102,9 @@ async function getAnimation(exerciseId, { force = false } = {}) {
 }
 
 async function getLatestVersion(exerciseId) {
-  requireUser();
-  const versions = collection(db, ROOT_COLLECTION, exerciseId, "versions");
-  const snapshot = await getDocs(query(versions, orderBy("version", "desc"), limit(1)));
-  return snapshot.empty ? null : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+  requireAdmin();
+  const response = await getAdminStateCallable({ exerciseId });
+  return response.data?.latest || null;
 }
 
 async function saveDraft(specification) {

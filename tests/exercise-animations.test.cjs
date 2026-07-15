@@ -58,6 +58,8 @@ assert.ok(cloudSource.includes("approveVersion"), "Manuel godkendelse er impleme
 assert.ok(cloudSource.includes('httpsCallable(functions, "createExerciseAnimationDraft")'), "Kladder skrives via verificeret backend");
 assert.ok(functionsSource.includes("requirePermanentAdminRequest"), "Backend dobbelttjekker administratorens Auth-konto");
 assert.ok(functionsSource.includes("exports.createExerciseAnimationDraft"));
+assert.ok(functionsSource.includes("exports.getExerciseAnimationAdminState"));
+assert.ok(cloudSource.includes('httpsCallable(functions, "getExerciseAnimationAdminState")'), "Admin-preview læses via backend");
 assert.ok(functionsSource.includes("exports.recordExerciseAnimationUpload"));
 assert.ok(functionsSource.includes("admin.storage().bucket()"), "Backend uploader medier uden klientens Storage-regler");
 assert.ok(cloudSource.includes("fileAsBase64"), "Genererede filer sendes til den verificerede backend");

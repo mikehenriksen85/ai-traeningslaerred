@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v111-backend-media-upload1";
+const CACHE_NAME = "work4it-shell-v112-backend-admin-read1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -32,7 +32,7 @@ const APP_SHELL = [
   "./profile-account.js?v=20260706-resume-state1",
   "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260715-exercise-animations1",
-  "./exercise-animation-cloud-service.js?v=20260716-backend-media-upload1",
+  "./exercise-animation-cloud-service.js?v=20260716-backend-admin-read1",
   "./auth-service.js?v=20260713-stripe-google-login1",
   "./firestore-cloud-service.js?v=20260715-cloud-primary-fix2"
 ];
