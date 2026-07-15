@@ -1,6 +1,7 @@
 "use strict";
 
 const admin = require("firebase-admin");
+const { randomUUID } = require("crypto");
 const { HttpsError, onCall, onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const { setGlobalOptions } = require("firebase-functions/v2");
@@ -501,20 +502,53 @@ exports.recordExerciseAnimationUpload = onCall({
   const uid = await requirePermanentAdminRequest(request);
   const exerciseId = String(request.data?.exerciseId || "");
   const version = Number.parseInt(request.data?.version, 10);
-  const animationUrl = String(request.data?.animationUrl || "");
-  const thumbnailUrl = String(request.data?.thumbnailUrl || "");
   if (!/^ex_[a-z0-9-]+_[a-z0-9]{7}$/.test(exerciseId) || !Number.isInteger(version) || version < 1) {
     throw new HttpsError("invalid-argument", "Ugyldig animationsversion.");
-  }
-  const allowedStorageUrl = url => !url || /^https:\/\/firebasestorage\.googleapis\.com\//.test(url);
-  if (!animationUrl || !allowedStorageUrl(animationUrl) || !allowedStorageUrl(thumbnailUrl)) {
-    throw new HttpsError("invalid-argument", "Upload-URL kommer ikke fra Work4it Storage.");
   }
   const ref = admin.firestore().doc(`exerciseAnimations/${exerciseId}/versions/${animationVersionId(version)}`);
   const snapshot = await ref.get();
   if (!snapshot.exists || snapshot.data()?.generationStatus === "approved") {
     throw new HttpsError("failed-precondition", "Animationsversionen kan ikke opdateres.");
   }
+  const allowedMediaTypes = new Set(["video/webm", "video/mp4", "image/gif"]);
+  const allowedThumbnailTypes = new Set(["image/webp", "image/png", "image/jpeg"]);
+  const decodeFile = (input, allowedTypes, maxBytes, label) => {
+    const contentType = String(input?.contentType || "").split(";")[0];
+    if (!allowedTypes.has(contentType) || typeof input?.base64 !== "string") {
+      throw new HttpsError("invalid-argument", `${label} har et ugyldigt format.`);
+    }
+    const buffer = Buffer.from(input.base64, "base64");
+    if (!buffer.length || buffer.length > maxBytes) {
+      throw new HttpsError("invalid-argument", `${label} er tom eller for stor.`);
+    }
+    return { buffer, contentType };
+  };
+  const media = decodeFile(request.data?.media, allowedMediaTypes, 12 * 1024 * 1024, "Animationen");
+  const thumbnail = request.data?.thumbnail?.base64
+    ? decodeFile(request.data.thumbnail, allowedThumbnailTypes, 2 * 1024 * 1024, "Thumbnail")
+    : null;
+  const extensionFor = contentType => ({
+    "video/webm": "webm", "video/mp4": "mp4", "image/gif": "gif",
+    "image/webp": "webp", "image/png": "png", "image/jpeg": "jpg"
+  })[contentType];
+  const bucket = admin.storage().bucket();
+  const saveFile = async (filePath, fileData) => {
+    const downloadToken = randomUUID();
+    await bucket.file(filePath).save(fileData.buffer, {
+      resumable: false,
+      metadata: {
+        contentType: fileData.contentType,
+        cacheControl: "public,max-age=31536000,immutable",
+        metadata: { firebaseStorageDownloadTokens: downloadToken, exerciseId, version: String(version), origin: "work4it-original" }
+      }
+    });
+    return `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucket.name)}/o/${encodeURIComponent(filePath)}?alt=media&token=${downloadToken}`;
+  };
+  const folder = `exercise-animations/${exerciseId}/${animationVersionId(version)}`;
+  const animationUrl = await saveFile(`${folder}/animation.${extensionFor(media.contentType)}`, media);
+  const thumbnailUrl = thumbnail
+    ? await saveFile(`${folder}/thumbnail.${extensionFor(thumbnail.contentType)}`, thumbnail)
+    : "";
   await ref.set({
     animationUrl,
     thumbnailUrl,

@@ -59,6 +59,8 @@ assert.ok(cloudSource.includes('httpsCallable(functions, "createExerciseAnimatio
 assert.ok(functionsSource.includes("requirePermanentAdminRequest"), "Backend dobbelttjekker administratorens Auth-konto");
 assert.ok(functionsSource.includes("exports.createExerciseAnimationDraft"));
 assert.ok(functionsSource.includes("exports.recordExerciseAnimationUpload"));
+assert.ok(functionsSource.includes("admin.storage().bucket()"), "Backend uploader medier uden klientens Storage-regler");
+assert.ok(cloudSource.includes("fileAsBase64"), "Genererede filer sendes til den verificerede backend");
 assert.ok(functionsSource.includes("exports.approveExerciseAnimationVersion"));
 assert.ok(aiSource.includes("createExerciseAnimationSpecification"), "AI-systemet kan oprette en animationsspecifikation");
 assert.ok(workerSource.includes("ANIMATION_CACHE_NAME"), "PWA runtime-cache er implementeret");

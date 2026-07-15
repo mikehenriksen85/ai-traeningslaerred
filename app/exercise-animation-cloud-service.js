@@ -1,4 +1,4 @@
-import { db, auth, storage, functions } from "./firebase-config.js?v=20260715-exercise-animations1";
+import { db, auth, functions } from "./firebase-config.js?v=20260715-exercise-animations1";
 import {
   collection,
   doc,
@@ -9,11 +9,6 @@ import {
   query
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
-import {
-  getDownloadURL,
-  ref,
-  uploadBytesResumable
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-storage.js";
 
 const ROOT_COLLECTION = "exerciseAnimations";
 const STORAGE_ROOT = "exercise-animations";
@@ -48,16 +43,8 @@ function requireAdmin() {
   return user;
 }
 
-function versionId(version) {
-  return `v${String(Math.max(1, Number.parseInt(version, 10))).padStart(4, "0")}`;
-}
-
 function rootRef(exerciseId) {
   return doc(db, ROOT_COLLECTION, exerciseId);
-}
-
-function versionRef(exerciseId, version) {
-  return doc(db, ROOT_COLLECTION, exerciseId, "versions", versionId(version));
 }
 
 function readLocalMetadata(exerciseId) {
@@ -135,20 +122,17 @@ async function saveDraft(specification) {
   return draft;
 }
 
-function extensionFor(file) {
-  const byType = { "video/webm": "webm", "video/mp4": "mp4", "image/gif": "gif", "image/webp": "webp", "image/png": "png", "image/jpeg": "jpg" };
-  return byType[file.type] || "bin";
-}
-
 function assertFile(file, allowedTypes, maxBytes, label) {
   if (!file || !allowedTypes.has(file.type)) throw new Error(`${label} har et ugyldigt filformat`);
   if (file.size > maxBytes) throw new Error(`${label} er for stor`);
 }
 
-function uploadFile(storageRef, file, metadata) {
+function fileAsBase64(file) {
   return new Promise((resolve, reject) => {
-    const task = uploadBytesResumable(storageRef, file, metadata);
-    task.on("state_changed", null, reject, async () => resolve(await getDownloadURL(task.snapshot.ref)));
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "").split(",")[1] || ""), { once: true });
+    reader.addEventListener("error", () => reject(reader.error || new Error("Filen kunne ikke læses")), { once: true });
+    reader.readAsDataURL(file);
   });
 }
 
@@ -156,19 +140,14 @@ async function uploadVersionMedia(exerciseId, version, mediaFile, thumbnailFile 
   requireAdmin();
   assertFile(mediaFile, MEDIA_TYPES, MAX_MEDIA_BYTES, "Animationen");
   if (thumbnailFile) assertFile(thumbnailFile, THUMBNAIL_TYPES, MAX_THUMBNAIL_BYTES, "Thumbnail");
-  const snapshot = await getDoc(versionRef(exerciseId, version));
-  if (!snapshot.exists()) throw new Error("Animationsversionen findes ikke");
-  if (snapshot.data().generationStatus === "approved") throw new Error("En godkendt version kan ikke overskrives");
-  const folder = `${STORAGE_ROOT}/${exerciseId}/${versionId(version)}`;
-  const animationUrl = await uploadFile(
-    ref(storage, `${folder}/animation.${extensionFor(mediaFile)}`),
-    mediaFile,
-    { contentType: mediaFile.type, customMetadata: { exerciseId, version: String(version), origin: "work4it-original" } }
-  );
-  const thumbnailUrl = thumbnailFile
-    ? await uploadFile(ref(storage, `${folder}/thumbnail.${extensionFor(thumbnailFile)}`), thumbnailFile, { contentType: thumbnailFile.type, customMetadata: { exerciseId, version: String(version), origin: "work4it-original" } })
-    : "";
-  await recordUploadCallable({ exerciseId, version, animationUrl, thumbnailUrl });
+  const response = await recordUploadCallable({
+    exerciseId,
+    version,
+    media: { contentType: mediaFile.type, base64: await fileAsBase64(mediaFile) },
+    thumbnail: thumbnailFile ? { contentType: thumbnailFile.type, base64: await fileAsBase64(thumbnailFile) } : null
+  });
+  const { animationUrl, thumbnailUrl = "" } = response.data || {};
+  if (!animationUrl) throw new Error("Backend-uploaden returnerede ingen animations-URL");
   memoryCache.delete(exerciseId);
   return { animationUrl, thumbnailUrl };
 }
