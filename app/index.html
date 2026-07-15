@@ -533,6 +533,13 @@
     .session-dialog-actions { display: grid; gap: 8px; margin-top: 16px; }
     .session-dialog-actions button { min-height: 44px; }
     .stats { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(0,0,0,.18); padding: 9px 12px; border-radius: 6px; color: var(--text-secondary); font-size: var(--font-size-body); }
+    .live-training-only[hidden] { display: none !important; }
+    .live-training-only:not([hidden]) { animation: live-training-info-in .2s ease-out; }
+    body:not([data-live-training="true"]) .active-pause-component { display: none !important; }
+    @keyframes live-training-info-in {
+      from { opacity: 0; transform: translateY(-3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .daily-motivation-summary {
       display: flex;
       align-items: center;
@@ -561,6 +568,9 @@
     @media (max-width: 520px) {
       .daily-motivation-summary { align-items: stretch; flex-direction: column; }
       .daily-motivation-change { min-height: 44px; width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .live-training-only:not([hidden]) { animation: none; }
     }
     #globalTimer { color: var(--text-success); }
     #autosaveStatus { color: var(--text-accent); font-size: var(--font-size-small); margin-left: auto; }
@@ -2967,8 +2977,8 @@
         </section>
         <div class="stats">
           <span class="sticky-metric" id="estimatedTime">Estimeret tid: 0 min</span>
-          <span class="sticky-metric"><span class="sticky-metric-label" id="timeUsedLabel">Tid brugt</span><span class="sticky-metric-value" id="globalTimer">00:00:00</span></span>
-          <section class="calorie-panel" id="caloriePanel" aria-live="polite">
+          <span class="sticky-metric live-training-only" id="elapsedTimeMetric" hidden><span class="sticky-metric-label" id="timeUsedLabel">Tid brugt</span><span class="sticky-metric-value" id="globalTimer">00:00:00</span></span>
+          <section class="calorie-panel live-training-only" id="caloriePanel" aria-live="polite" hidden>
             <div class="calorie-title">🔥 Kalorier</div>
             <div class="calorie-value missing" id="calorieEstimateValue">Mangler data</div>
           </section>
@@ -2979,7 +2989,7 @@
         <span class="daily-motivation-value" id="dailyMotivationValue"></span>
         <button class="daily-motivation-change" type="button" onclick="changeDailyMotivation()">Skift dagens motivation</button>
       </div>
-      <button class="dashboard-btn program-only" onclick="openDashboard()">📊 Åbn træningsdashboard</button>
+      <button class="dashboard-btn live-training-only" type="button" onclick="openDashboard()" hidden>📊 Åbn træningsdashboard</button>
       <div id="exercises" aria-label="Øvelsesliste"></div>
       <div class="add-zone">
         <div class="movement-picker">
@@ -6271,8 +6281,12 @@
       return value == null ? value : JSON.parse(JSON.stringify(value));
     }
 
+    function isActiveWorkoutSession(session) {
+      return Boolean(session && ["in_progress", "paused"].includes(session.sessionStatus));
+    }
+
     function hasActiveWorkoutSession() {
-      return Boolean(activeWorkoutSession && ["in_progress", "paused"].includes(activeWorkoutSession.sessionStatus));
+      return isActiveWorkoutSession(activeWorkoutSession);
     }
 
     function sessionStatusLabel(status = sessionStatus) {
@@ -6308,6 +6322,7 @@
 
     function updateWorkoutButtonVisibility() {
       sessionStatus = normalizeSessionStatus(sessionStatus);
+      updateLiveTrainingVisibility();
       const startButton = $("timerBtn");
       const pauseButton = $("pauseWorkoutBtn");
       const resumeButton = $("resumeWorkoutBtn");
@@ -6326,6 +6341,15 @@
         stopWorkoutTimerInterval();
         $("autosaveStatus").textContent = t("finishedSaved");
       }
+    }
+
+    function updateLiveTrainingVisibility() {
+      const isActive = hasActiveWorkoutSession();
+      document.body.dataset.liveTraining = String(isActive);
+      document.querySelectorAll(".live-training-only").forEach(element => {
+        element.hidden = !isActive;
+      });
+      return isActive;
     }
 
     function setSessionStatus(status, options = {}) {

@@ -14,6 +14,7 @@ for (const id of [
   "homeWelcomeTitle",
   "homeCurrentProgramName",
   "homeStartHelp",
+  "elapsedTimeMetric",
   "homeSavedPrograms",
   "homeSavedEmpty",
   "workoutEditorDetails",
@@ -47,6 +48,16 @@ for (const handler of [
 assert.match(html, /function renderHomeDashboard\(/);
 assert.match(html, /function startDashboardWorkout\(/);
 assert.match(html, /function updateStartTrainingAvailability\(/);
+assert.match(html, /function updateLiveTrainingVisibility\(/);
+assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
+assert.match(html, /document\.body\.dataset\.liveTraining = String\(isActive\)/);
+assert.match(html, /document\.querySelectorAll\("\.live-training-only"\)/);
+assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
+assert.match(html, /class="sticky-metric live-training-only" id="elapsedTimeMetric" hidden/);
+assert.match(html, /class="calorie-panel live-training-only" id="caloriePanel" aria-live="polite" hidden/);
+assert.match(html, /class="dashboard-btn live-training-only" type="button" onclick="openDashboard\(\)" hidden/);
+assert.doesNotMatch(html, /class="dashboard-btn program-only"/);
+assert.match(html, /body:not\(\[data-live-training="true"\]\) \.active-pause-component/);
 assert.match(html, /function isValidWorkoutExerciseName\(/);
 assert.match(html, /aria-describedby="homeStartHelp"/);
 assert.match(html, /home-start-button:disabled/);
@@ -85,5 +96,14 @@ assert.doesNotMatch(exerciseTemplate, /<div>\$\{t\("ok"\)\}<\/div>/);
 assert.match(html, /data-set-number="\$\{i\}"/);
 assert.match(html, /cb\.setAttribute\("aria-label", actionLabel\)/);
 assert.match(html, /\.set-complete-control \{ position: relative; display: grid; place-items: center; width: 52px; height: 52px;/);
+
+const activeSessionPredicateBody = html.match(/function isActiveWorkoutSession\(session\) \{([\s\S]*?)\n    \}/)?.[1];
+assert.ok(activeSessionPredicateBody, "active session predicate must exist");
+const isActiveWorkoutSession = new Function("session", activeSessionPredicateBody);
+assert.equal(isActiveWorkoutSession(null), false, "a new workout is not active");
+assert.equal(isActiveWorkoutSession({ sessionStatus: "not_started" }), false, "not_started is not active");
+assert.equal(isActiveWorkoutSession({ sessionStatus: "in_progress" }), true, "in_progress is active");
+assert.equal(isActiveWorkoutSession({ sessionStatus: "paused" }), true, "paused remains active");
+assert.equal(isActiveWorkoutSession({ sessionStatus: "completed" }), false, "completed is not active");
 
 console.log("Simplified dashboard hierarchy and preserved-handler contracts OK");
