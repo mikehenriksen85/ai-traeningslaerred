@@ -56,5 +56,7 @@ assert.ok(workerSource.includes("firebasestorage.googleapis.com"));
 assert.ok(firestoreRules.includes("match /exerciseAnimations/{exerciseId}"));
 assert.ok(storageRules.includes("match /exercise-animations/{exerciseId}/{version}/{fileName}"));
 assert.ok(storageRules.includes("isPermanentAdmin()"));
+assert.ok(firestoreRules.includes("request.auth.token.email.lower()"), "Admin-email sammenlignes case-insensitivt i Firestore");
+assert.ok(storageRules.includes("request.auth.token.email.lower()"), "Admin-email sammenlignes case-insensitivt i Storage");
 
 console.log("Exercise animation phase 1 tests passed");

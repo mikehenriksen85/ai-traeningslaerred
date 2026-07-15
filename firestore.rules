@@ -11,7 +11,9 @@ service cloud.firestore {
     }
 
     function isPermanentAdminEmail() {
-      return request.auth.token.email == "mikehenriksen85@gmail.com";
+      return isSignedIn()
+        && request.auth.token.email is string
+        && request.auth.token.email.lower() == "mikehenriksen85@gmail.com";
     }
 
     function clientUserRootWriteIsAllowed(userId) {

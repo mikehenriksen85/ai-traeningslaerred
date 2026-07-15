@@ -8,7 +8,8 @@ service firebase.storage {
 
     function isPermanentAdmin() {
       return isSignedIn()
-        && request.auth.token.email == 'mikehenriksen85@gmail.com';
+        && request.auth.token.email is string
+        && request.auth.token.email.lower() == 'mikehenriksen85@gmail.com';
     }
 
     function isAnimationMedia() {
