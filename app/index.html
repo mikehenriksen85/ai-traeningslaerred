@@ -1323,6 +1323,32 @@
     .modal-panel { width: min(780px, 100%); max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
     .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
     .modal-title { color: var(--text-success); font-size: var(--font-size-h2); font-weight: var(--font-weight-bold); }
+    .completion-screen { display: grid; gap: 16px; }
+    .completion-lead { margin: 0; color: var(--text-secondary); line-height: var(--line-height-body); }
+    .completion-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .completion-stat { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--input); }
+    .completion-stat-label { display: block; color: var(--text-secondary); font-size: var(--font-size-small); }
+    .completion-stat-value { display: block; margin-top: 4px; color: var(--text-primary); font-size: var(--font-size-h3); font-weight: var(--font-weight-bold); overflow-wrap: anywhere; }
+    .completion-records { display: flex; flex-wrap: wrap; gap: 8px; }
+    .completion-record { padding: 7px 10px; border: 1px solid var(--text-success); border-radius: 999px; color: var(--text-success); background: color-mix(in srgb, var(--text-success) 10%, transparent); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
+    .completion-insights { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .completion-insight { padding: 10px 12px; border-left: 3px solid var(--blue); border-radius: 4px; color: var(--text-primary); background: var(--input); line-height: var(--line-height-body); }
+    .completion-actions { display: grid; gap: 10px; }
+    .completion-primary { width: 100%; min-height: 52px; border: 1px solid var(--text-success); border-radius: 8px; background: var(--text-success); color: #04130d; font: inherit; font-weight: var(--font-weight-bold); cursor: pointer; }
+    .completion-secondary-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+    .completion-secondary { min-height: 44px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: transparent; color: var(--text-secondary); font: inherit; cursor: pointer; }
+    .completion-details { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .completion-details[hidden] { display: none; }
+    .completion-detail-list { display: grid; gap: 8px; }
+    .completion-detail-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .completion-detail-name { min-width: 0; overflow-wrap: anywhere; font-weight: var(--font-weight-semibold); }
+    .completion-detail-value { color: var(--text-secondary); white-space: nowrap; }
+    .completion-recommendations { display: grid; gap: 7px; margin: 0; padding-left: 20px; color: var(--text-secondary); }
+    @media (max-width: 600px) {
+      .completion-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .completion-detail-row { grid-template-columns: minmax(0, 1fr) auto; }
+      .completion-detail-row .completion-detail-value:last-child { grid-column: 1 / -1; }
+    }
     .screenshot-import, .screenshot-review { display: grid; gap: 14px; }
     .screenshot-drop { border: 2px dashed #475569; border-radius: 8px; padding: 28px 18px; text-align: center; background: #17202b; transition: border-color .2s ease, background .2s ease; }
     .screenshot-drop.dragging { border-color: var(--blue); background: rgba(59,130,246,.1); }
@@ -3702,6 +3728,7 @@
     let sessionCompletedAt = null;
     let currentWorkoutView = "program";
     let activeWorkoutSession = null;
+    let finishWorkoutInProgress = false;
     let pendingProgram = "";
     let selectedAutomaticExerciseCount = 5;
     let selectedWorkoutIntensity = "medium";
@@ -7728,43 +7755,162 @@
       });
     }
 
+    function fallbackCompletedWorkoutAnalysis(entry) {
+      const exercises = Array.isArray(entry?.exercises) ? entry.exercises : [];
+      const completedSets = exercises.reduce((sum, exercise) => sum + (exercise.exerciseType === "cardio" ? 0 : Number(exercise.totalSets) || 0), 0);
+      return {
+        version: 1,
+        summary: {
+          durationSeconds: Math.max(0, Number(entry?.durationSeconds) || 0),
+          completedExercises: exercises.length,
+          completedSets,
+          totalVolumeKg: Math.max(0, Number(entry?.totalVolume) || 0),
+          personalRecords: []
+        },
+        insights: [{ type: "baseline", priority: 1, message: "Denne træning er nu gemt som dit udgangspunkt." }],
+        recommendations: [],
+        details: exercises.map(exercise => ({
+          name: exercise.name,
+          exerciseType: exercise.exerciseType || "strength",
+          completedSets: Number(exercise.totalSets) || 0,
+          totalVolumeKg: Number(exercise.totalVolume) || 0,
+          bestOneRm: Number(exercise.bestOneRm) || 0,
+          comparison: "baseline"
+        }))
+      };
+    }
+
+    function completionRecordText(record) {
+      return record.type === "volume" ? `${record.exercise}: ${vol(record.value)}` : `${record.exercise}: ${kg(record.value)}`;
+    }
+
+    function completionComparisonLabel(comparison) {
+      return { progress: "Fremgang", stable: "Stabil", lower: "Lidt lavere", baseline: "Udgangspunkt" }[comparison] || "Udgangspunkt";
+    }
+
+    function toggleCompletionDetails(button) {
+      const details = $("completionDetails");
+      if (!details) return;
+      const willOpen = details.hidden;
+      details.hidden = !willOpen;
+      button.setAttribute("aria-expanded", String(willOpen));
+      button.textContent = willOpen ? "Skjul detaljer" : "Se detaljer";
+      if (willOpen) details.focus?.();
+    }
+
+    function finishCompletionSummary() {
+      closeModal();
+    }
+
+    function openCompletionHistory() {
+      closeModal();
+      openDashboard();
+    }
+
+    function showCompletedWorkoutSummary(entry, analysis) {
+      const fallback = fallbackCompletedWorkoutAnalysis(entry);
+      const summary = analysis?.summary || fallback.summary;
+      const records = Array.isArray(summary.personalRecords) ? summary.personalRecords : [];
+      const insights = Array.isArray(analysis?.insights) ? analysis.insights.slice(0, 4) : fallback.insights;
+      const details = Array.isArray(analysis?.details) ? analysis.details : fallback.details;
+      const recommendations = Array.isArray(analysis?.recommendations) ? analysis.recommendations : [];
+      $("modalTitle").textContent = "Træning gennemført";
+      $("modalContent").classList.add("brand-surface");
+      $("modalContent").innerHTML = `
+        <section class="completion-screen" aria-labelledby="modalTitle">
+          <p class="completion-lead"><strong>${esc(entry.title || entry.programTitle || "Træning")}</strong> er afsluttet og gemt.</p>
+          <div class="completion-stats" aria-label="Træningens vigtigste resultater">
+            <div class="completion-stat"><span class="completion-stat-label">Tid</span><span class="completion-stat-value">${formatTime(summary.durationSeconds || 0)}</span></div>
+            <div class="completion-stat"><span class="completion-stat-label">Øvelser</span><span class="completion-stat-value">${summary.completedExercises || 0}</span></div>
+            <div class="completion-stat"><span class="completion-stat-label">Arbejdssæt</span><span class="completion-stat-value">${summary.completedSets || 0}</span></div>
+            <div class="completion-stat"><span class="completion-stat-label">Volumen</span><span class="completion-stat-value">${vol(summary.totalVolumeKg || 0)}</span></div>
+          </div>
+          ${records.length ? `<div><div class="section">Personlige rekorder</div><div class="completion-records">${records.slice(0, 4).map(record => `<span class="completion-record">★ ${esc(completionRecordText(record))}</span>`).join("")}</div></div>` : ""}
+          <ul class="completion-insights" aria-label="Analyse">${insights.map(insight => `<li class="completion-insight">${esc(insight.message)}</li>`).join("")}</ul>
+          <div class="completion-actions">
+            <button class="completion-primary" id="completionDoneButton" type="button" onclick="finishCompletionSummary()">Færdig</button>
+            <div class="completion-secondary-actions">
+              <button class="completion-secondary" type="button" aria-expanded="false" aria-controls="completionDetails" onclick="toggleCompletionDetails(this)">Se detaljer</button>
+              <button class="completion-secondary" type="button" onclick="openCompletionHistory()">Se historik</button>
+            </div>
+          </div>
+          <div class="completion-details" id="completionDetails" tabindex="-1" hidden>
+            <div class="section">Resultat pr. øvelse</div>
+            <div class="completion-detail-list">${details.length ? details.map(detail => `
+              <div class="completion-detail-row">
+                <span class="completion-detail-name">${esc(detail.name || "Øvelse")}</span>
+                <span class="completion-detail-value">${detail.exerciseType === "cardio" ? "Cardio" : `${detail.completedSets || 0} sæt · ${vol(detail.totalVolumeKg || 0)}`}</span>
+                <span class="completion-detail-value">${esc(completionComparisonLabel(detail.comparison))}</span>
+              </div>`).join("") : `<p class="helper-text">Ingen færdige øvelser med gyldige data.</p>`}</div>
+            ${recommendations.length ? `<div class="section">Forslag til næste træning</div><ul class="completion-recommendations">${recommendations.map(item => `<li>${esc(item.message)}</li>`).join("")}</ul>` : ""}
+            ${entry.estimatedCalories ? `<p class="helper-text">Estimeret kalorieforbrug: ${Math.round(entry.estimatedCalories)} kcal</p>` : ""}
+          </div>
+        </section>`;
+      openModal();
+      window.requestAnimationFrame(() => $("completionDoneButton")?.focus());
+    }
+
     function finishWorkout(options = {}) {
-      if (!["in_progress", "paused"].includes(sessionStatus)) return;
-      if (!options.skipConfirm && !confirm(t("finishConfirm"))) return;
-      if (autosaveDebounce) {
-        clearTimeout(autosaveDebounce);
-        autosaveDebounce = null;
+      if (finishWorkoutInProgress || !["in_progress", "paused"].includes(sessionStatus)) return;
+      finishWorkoutInProgress = true;
+      if (!options.skipConfirm && !confirm(t("finishConfirm"))) {
+        finishWorkoutInProgress = false;
+        return;
       }
-      captureActiveSessionFromCanvas();
-      stopWorkoutTimerInterval();
-      setSessionStatus("completed", { completedAt: new Date().toISOString() });
-      const entry = collectAnalyticsEntry();
-      const entries = history();
-      if (entry.totalVolume || entry.estimatedCalories || entry.exercises.length) entries.push(entry);
-      writeLocalJson("training_analytics_history", entries);
-      updateExerciseHistoryFromCompletedWorkout();
-      const finishedSession = cloneWorkoutData(activeWorkoutSession);
-      const sessionChanged = workoutStructureSnapshot(finishedSession) !== finishedSession?.templateSnapshot;
-      if (sessionChanged && confirm("Vil du også gemme disse ændringer i selve programmet?")) {
-        applySessionChangesToProgram(finishedSession);
+      try {
+        if (autosaveDebounce) {
+          clearTimeout(autosaveDebounce);
+          autosaveDebounce = null;
+        }
+        captureActiveSessionFromCanvas();
+        stopWorkoutTimerInterval();
+        setSessionStatus("completed", { completedAt: new Date().toISOString() });
+        const entry = collectAnalyticsEntry({ completedOnly: true });
+        const entries = history();
+        const duplicateIndex = entry.sessionId ? entries.findIndex(item => item.sessionId === entry.sessionId) : -1;
+        let savedEntry = duplicateIndex >= 0 ? entries[duplicateIndex] : entry;
+        let analysis = savedEntry.completionAnalysis;
+        if (!analysis) {
+          try {
+            analysis = window.Work4itCompletedWorkoutAnalysis?.analyzeCompletedWorkout?.(entry, entries);
+          } catch (analysisError) {
+            console.warn("[Work4it] Afslutningsanalysen brugte sikker fallback.", analysisError);
+          }
+          analysis ||= fallbackCompletedWorkoutAnalysis(entry);
+          entry.completionAnalysis = analysis;
+          savedEntry = entry;
+          if (duplicateIndex >= 0) entries[duplicateIndex] = entry;
+          else entries.push(entry);
+          if (!writeLocalJson("training_analytics_history", entries)) throw new Error("Træningshistorikken kunne ikke gemmes lokalt");
+        }
+        updateExerciseHistoryFromCompletedWorkout();
+        const finishedSession = cloneWorkoutData(activeWorkoutSession);
+        const sessionChanged = workoutStructureSnapshot(finishedSession) !== finishedSession?.templateSnapshot;
+        if (sessionChanged && confirm("Vil du også gemme disse ændringer i selve programmet?")) applySessionChangesToProgram(finishedSession);
+        clearActiveWorkoutAfterFinish();
+        workoutCompleteSound();
+        showProgramView({ captureSession: false });
+        updateWorkoutButtonVisibility();
+        $("autosaveStatus").textContent = "Sidste træning afsluttet og gemt";
+        window.FirestoreDataService?.syncAllLocalData?.().catch(error => {
+          console.warn("[Work4it] Træningshistorik kunne ikke synkroniseres straks efter afslutning.", error);
+        });
+        showCompletedWorkoutSummary(savedEntry, analysis);
+      } catch (error) {
+        console.error("[Work4it] Træningen kunne ikke afsluttes sikkert.", error);
+        if (activeWorkoutSession) {
+          setSessionStatus("paused", { startTimer: false });
+          autoSave();
+        }
+        alert(`Træningen kunne ikke afsluttes: ${error?.message || "Ukendt fejl"}`);
+      } finally {
+        finishWorkoutInProgress = false;
       }
-      clearActiveWorkoutAfterFinish();
-      workoutCompleteSound();
-      showProgramView({ captureSession: false });
-      updateWorkoutButtonVisibility();
-      $("autosaveStatus").textContent = "Sidste træning afsluttet og gemt";
-      window.FirestoreDataService?.syncAllLocalData?.().catch(error => {
-        console.warn("[Work4it] Træningshistorik kunne ikke synkroniseres straks efter afslutning.", error);
-      });
-      alert(`${t("workoutFinished")}\n${t("volumeHeader")}: ${vol(entry.totalVolume)}\n${t("bestOneRm")}: ${entry.bestOneRm ? kg(entry.bestOneRm) : "-"}\nEstimeret kalorieforbrug: ${entry.estimatedCalories} kcal`);
     }
 
     function latestUsableSetForHistory(sets) {
       const completedWithData = sets.filter(set => set.completed && (set.weight || set.reps));
-      const anyWithData = sets.filter(set => set.weight || set.reps);
-      const completedOnly = sets.filter(set => set.completed);
-      const source = completedWithData.length ? completedWithData : anyWithData.length ? anyWithData : completedOnly;
-      return source.length ? source[source.length - 1] : null;
+      return completedWithData.length ? completedWithData[completedWithData.length - 1] : null;
     }
 
     function updateExerciseHistoryFromCompletedWorkout() {
@@ -7804,21 +7950,39 @@
       window.dispatchEvent(new CustomEvent("exercise-history:changed", { detail: nextHistory }));
     }
 
-    function collectAnalyticsEntry() {
+    function collectAnalyticsEntry(options = {}) {
+      const completedOnly = options.completedOnly === true;
       const exercises = [...document.querySelectorAll(".exercise")].map(block => {
         const slot = block.id.replace("block-", "");
         const name = $(`name-${slot}`).textContent;
+        const muscle = $(`name-${slot}`).dataset.muscle || "";
         if (block.dataset.exerciseType === "cardio") {
           const cardio = collectCardioData(slot) || {};
+          if (completedOnly && !cardio.completed) return null;
           const hasData = ["durationMinutes", "distanceKm", "calories", "averageHeartRate", "maxHeartRate", "speedKmh"]
             .some(field => numberValue(cardio[field]) > 0) || cardio.notes;
-          return hasData ? { name, muscle: "Cardio", exerciseType: "cardio", cardio, sets: [], totalSets: 0, totalVolume: 0, bestOneRm: 0, bestLift: 0 } : null;
+          return hasData ? { name, muscle: "Cardio", exerciseType: "cardio", cardio, sets: [], plannedSets: 0, totalSets: 0, totalVolume: 0, bestOneRm: 0, bestLift: 0 } : null;
         }
-        const sets = collectSetData(slot).map((s,i) => {
-          const w = numberValue(s.weight), r = numberValue(s.reps);
-          return w && r ? { set:i+1, weight:w, reps:r, oneRm:oneRm(w,r), volume:volume(w,r) } : null;
+        const collectedSets = collectSetData(slot);
+        const sets = collectedSets.filter(set => !completedOnly || set.completed).map((s,i) => {
+          const w = numberValue(s.weight);
+          const repsText = String(s.reps || "").trim();
+          const r = /^\d{1,3}$/.test(repsText) ? Number(repsText) : 0;
+          return r ? { set:i+1, weight:w, reps:r, targetReps:s.targetReps || "", completed:s.completed === true, oneRm:oneRm(w,r), volume:volume(w,r) } : null;
         }).filter(Boolean);
-        return sets.length ? { name, exerciseType: "strength", sets, totalSets:sets.length, totalVolume:sets.reduce((a,s)=>a+s.volume,0), bestOneRm:Math.max(...sets.map(s=>s.oneRm)), bestLift:Math.max(...sets.map(s=>s.weight)) } : null;
+        return sets.length ? {
+          name,
+          muscle,
+          role: block.dataset.role || "accessory",
+          trainingStyle: block.dataset.trainingStyle || "gym",
+          exerciseType: "strength",
+          sets,
+          plannedSets: collectedSets.length,
+          totalSets: sets.length,
+          totalVolume: sets.reduce((a,s)=>a+s.volume,0),
+          bestOneRm: Math.max(0, ...sets.map(s=>s.oneRm)),
+          bestLift: Math.max(0, ...sets.map(s=>s.weight))
+        } : null;
       }).filter(Boolean);
       const calorieEstimate = currentCalorieEstimate();
       const cardioExercises = exercises.filter(exercise => exercise.exerciseType === "cardio");
@@ -10377,6 +10541,7 @@
   <script src="admin-config.js?v=20260711-permanent-admin1"></script>
   <script src="exercise-animation-model.js?v=20260716-professional-three1"></script>
   <script type="module" src="exercise-animation-3d-renderer.js?v=20260716-professional-three1"></script>
+  <script src="completed-workout-analysis.js?v=20260716-completion-analysis1"></script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
   <script src="workout-program-store.js"></script>
@@ -10404,7 +10569,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260716-professional-three1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260716-completion-analysis1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

@@ -9,7 +9,8 @@
     "test:subscriptions": "node tests/admin-subscription-test.test.cjs",
     "test:cloud-storage": "node tests/cloud-storage.test.cjs",
     "test:dashboard": "node tests/dashboard-ui.test.cjs",
-    "test:animations": "node tests/exercise-animations.test.cjs"
+    "test:animations": "node tests/exercise-animations.test.cjs",
+    "test:completion-analysis": "node tests/completed-workout-analysis.test.cjs"
   },
   "license": "MIT",
   "dependencies": {
