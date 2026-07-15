@@ -56,6 +56,8 @@ const PATHS = {
 const storageScope = window.WorkitStorageScope;
 let activeUid = "";
 let cloudEnabled = false;
+let cloudState = "signed_out";
+let cloudLastError = null;
 let syncTimer = null;
 let syncInProgress = false;
 let syncQueued = false;
@@ -66,6 +68,41 @@ let lastCloudRefreshAt = 0;
 let cloudHydrationInProgress = false;
 let localSyncReady = false;
 const initializationByUid = new Map();
+
+const NETWORK_ERROR_CODES = new Set([
+  "unavailable",
+  "firestore/unavailable",
+  "deadline-exceeded",
+  "firestore/deadline-exceeded",
+  "network-request-failed",
+  "auth/network-request-failed"
+]);
+
+function errorCode(error) {
+  return String(error?.code || "unknown").toLowerCase();
+}
+
+function isConnectivityError(error) {
+  const code = errorCode(error);
+  const message = String(error?.message || "").toLowerCase();
+  return NETWORK_ERROR_CODES.has(code) ||
+    code.endsWith("/unavailable") ||
+    message.includes("failed to get document because the client is offline") ||
+    message.includes("network error");
+}
+
+function setCloudState(state, error = null) {
+  cloudState = state;
+  cloudLastError = error || null;
+  window.dispatchEvent(new CustomEvent("firestore:sync-status", {
+    detail: {
+      state,
+      uid: activeUid || null,
+      code: error ? errorCode(error) : null,
+      message: error?.message || ""
+    }
+  }));
+}
 
 function parseLocal(key, fallback = null) {
   try {
@@ -234,6 +271,20 @@ function assertCloudUser(operation = "Firestore") {
     throw new Error(`${operation}: Firebase Auth UID er ikke klar eller matcher ikke aktiv cloud-session.`);
   }
   return uid;
+}
+
+async function requireCloudUser(operation = "Firestore") {
+  const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+  const uid = String(user?.uid || "");
+  if (!uid) {
+    const error = new Error(`${operation}: Brugeren er ikke logget ind med et gyldigt Firebase UID.`);
+    error.code = "auth/user-not-authenticated";
+    throw error;
+  }
+  if (activeUid !== uid || !cloudEnabled) {
+    await initializeUser(user);
+  }
+  return assertCloudUser(operation);
 }
 
 async function getDocument(pathSegments, operation = "getDoc") {
@@ -439,13 +490,20 @@ async function readProgramCollection(uid, collectionName = COLLECTIONS.workouts)
 }
 
 async function saveProgramsToCloud(programs, uid = activeUid) {
-  if (!uid || !cloudEnabled) return false;
-  assertCloudUser("Gem træningsprogrammer");
+  uid = await requireCloudUser("Gem træningsprogrammer");
   const values = Array.isArray(programs) ? programs : [];
-  for (const [index, program] of values.entries()) {
-    await writeProgramToCollection(uid, program, index, COLLECTIONS.workouts);
+  const path = ["users", uid, COLLECTIONS.workouts];
+  try {
+    for (const [index, program] of values.entries()) {
+      await writeProgramToCollection(uid, program, index, COLLECTIONS.workouts);
+    }
+  } catch (error) {
+    reportFirestoreError("saveProgramsToCloud", path, error, uid);
+    setCloudState(isConnectivityError(error) ? "offline" : "error", error);
+    throw error;
   }
   localFingerprint = currentLocalFingerprint();
+  if (cloudState !== "initializing") setCloudState("ready");
   window.dispatchEvent(new CustomEvent("firestore:programs-saved", {
     detail: { uid, count: values.length, path: `users/${uid}/${COLLECTIONS.workouts}` }
   }));
@@ -650,9 +708,9 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     else if (!preserveLocalWhenCloudEmpty) writeLocal(KEYS.daily, null);
     const rootUserData = userRoot.exists() ? cleanDocument(userRoot.data()) : null;
     const rootIsPermanentAdmin = window.Work4itAdminConfig?.isPermanentAdminUser?.(rootUserData);
-    if (membership.data || rootIsPermanentAdmin) {
+    if (membership || rootIsPermanentAdmin) {
       writeLocal(KEYS.membership, {
-        ...(membership.data || {}),
+        ...(membership || {}),
         ...(rootIsPermanentAdmin ? window.Work4itAdminConfig.adminMembershipOverlay?.() : {}),
         ...(rootIsPermanentAdmin ? {
           email: rootUserData?.email || "",
@@ -712,7 +770,7 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     }
 
     localFingerprint = currentLocalFingerprint();
-    const cloudHasData = hasCloudProfile || daily.exists() || Boolean(membership.data) || Boolean(settings.data || appState.data) ||
+    const cloudHasData = hasCloudProfile || daily.exists() || Boolean(membership) || Boolean(settings.data || appState.data) ||
       activeWorkout.exists() || workoutDraft.exists() || exerciseHistory.exists() || [programs, sessions, measurements, aiHistory, imports, customExercises, trash]
         .some(values => values.length > 0);
     window.dispatchEvent(new CustomEvent("firestore:data-hydrated", {
@@ -787,6 +845,7 @@ async function initializeUserData(user) {
   activeUid = user.uid;
   storageScope?.setActiveUid(activeUid);
   cloudEnabled = true;
+  setCloudState("initializing");
   localSyncReady = false;
   cloudHydrationInProgress = true;
   const metadata = await getSyncMetadata(activeUid).catch(() => ({}));
@@ -847,6 +906,7 @@ async function initializeUserData(user) {
   });
   localFingerprint = currentLocalFingerprint();
   localSyncReady = true;
+  setCloudState("ready");
   window.dispatchEvent(new CustomEvent("firestore:user-ready", {
     detail: { uid: activeUid, fallback: false }
   }));
@@ -874,6 +934,7 @@ function clearRuntimeForLogout() {
   cloudHydrationInProgress = false;
   localFingerprint = "";
   storageScope?.setActiveUid("");
+  setCloudState("signed_out");
   window.dispatchEvent(new CustomEvent("firestore:user-cache-cleared"));
 }
 
@@ -925,7 +986,16 @@ window.addEventListener("work4it:theme-changed", event => {
   });
 });
 window.addEventListener("focus", () => refreshFromCloud("focus").catch(() => {}));
-window.addEventListener("online", () => refreshFromCloud("online").catch(() => {}));
+window.addEventListener("online", () => {
+  const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+  if (!user) return;
+  const reconnect = cloudEnabled
+    ? refreshFromCloud("online")
+    : initializeUser(user);
+  reconnect.catch(error => {
+    reportFirestoreError("onlineReconnect", ["users", user.uid], error, user.uid);
+  });
+});
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") refreshFromCloud("visibility").catch(() => {});
 });
@@ -1118,11 +1188,21 @@ window.FirestoreDataService = {
     return true;
   },
   isCloudPrimary: () => cloudEnabled,
+  isCloudReady: () => cloudEnabled && cloudState === "ready" && Boolean(activeUid),
+  isConnectivityError,
+  getCloudStatus: () => ({
+    state: cloudState,
+    uid: activeUid,
+    code: cloudLastError ? errorCode(cloudLastError) : null,
+    message: cloudLastError?.message || ""
+  }),
   getActiveUid: () => activeUid
 };
 
 function beginAuthenticatedUser(user) {
   initializeUser(user).catch(error => {
+    cloudEnabled = false;
+    setCloudState(isConnectivityError(error) ? "offline" : "error", error);
     console.error("Kunne ikke initialisere brugerens cloud-data.", error);
     window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
     window.dispatchEvent(new CustomEvent("firestore:user-ready", {

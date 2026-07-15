@@ -6467,9 +6467,12 @@
     function setPrograms(p) {
       const programs = Array.isArray(p) ? p : [];
       const saved = writeLocalJson("saved_workout_programs", programs);
-      if (saved && window.FirestoreDataService?.isCloudPrimary?.()) {
-        pendingProgramsCloudSave = window.FirestoreDataService.saveProgramsToCloud?.(programs).then(() => {
-          if ($("autosaveStatus")) $("autosaveStatus").textContent = "Træningspas gemt i Firebase";
+      const cloudService = window.FirestoreDataService;
+      const authenticatedUser = window.FirebaseAuthService?.getCurrentUser?.() || null;
+      if (saved && authenticatedUser?.uid && cloudService?.saveProgramsToCloud) {
+        if ($("autosaveStatus")) $("autosaveStatus").textContent = "Gemmer i Cloud...";
+        pendingProgramsCloudSave = cloudService.saveProgramsToCloud(programs).then(() => {
+          if ($("autosaveStatus")) $("autosaveStatus").textContent = "✔ Gemt i Cloud";
           return true;
         }).catch(error => {
           console.error("Work4it Firestore-fejl", {
@@ -6478,11 +6481,19 @@
             code: error?.code || "unknown",
             message: error?.message || String(error || "Ukendt fejl")
           });
-          if ($("autosaveStatus")) $("autosaveStatus").textContent = "Træningspas gemt lokalt - Cloud ikke tilgængelig";
+          const offline = cloudService.isConnectivityError?.(error) === true;
+          if ($("autosaveStatus")) {
+            $("autosaveStatus").textContent = offline
+              ? "Træningspas gemt lokalt - Cloud ikke tilgængelig"
+              : `Gemt lokalt - Cloud-fejl (${error?.code || "ukendt"})`;
+          }
           return { saved: false, error };
         });
       } else {
         pendingProgramsCloudSave = Promise.resolve(false);
+        if (saved && !authenticatedUser?.uid && $("autosaveStatus")) {
+          $("autosaveStatus").textContent = "Gemt lokalt - log ind for Cloud-synkronisering";
+        }
       }
       return saved;
     }
@@ -9530,10 +9541,13 @@
       $("autosaveStatus").textContent = "Data synkroniseret fra Firebase";
     });
     window.addEventListener("firestore:sync-completed", () => {
-      $("autosaveStatus").textContent = "Gemt lokalt og i Firebase";
+      $("autosaveStatus").textContent = "✔ Synkroniseret med Cloud";
     });
-    window.addEventListener("firestore:fallback-active", () => {
-      $("autosaveStatus").textContent = "Offline: bruger lokale data";
+    window.addEventListener("firestore:fallback-active", event => {
+      const error = event.detail?.error;
+      $("autosaveStatus").textContent = window.FirestoreDataService?.isConnectivityError?.(error)
+        ? "Træningspas gemt lokalt - Cloud ikke tilgængelig"
+        : `Cloud-fejl (${error?.code || "ukendt"}) - lokale data er bevaret`;
     });
     window.addEventListener("firestore:user-cache-cleared", () => {
       resetWorkoutCanvas("Log ind for at se dine træningsdata");
@@ -9630,12 +9644,12 @@
   <script type="module" src="firebase-config.js?v=20260713-stripe-google-login1"></script>
   <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
   <script type="module" src="auth-service.js?v=20260713-stripe-google-login1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260713-stripe-google-login1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260715-cloud-primary-fix1"></script>
   <script type="module" src="ai-request-counter.js?v=20260713-stripe-google-login1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260713-ai-coach1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260715-cloud-primary-fix1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
