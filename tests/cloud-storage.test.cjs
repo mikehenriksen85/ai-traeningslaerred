@@ -23,6 +23,8 @@ assert.match(htmlSource, /✔ Gemt i Cloud/);
 assert.match(htmlSource, /isConnectivityError\?\.\(error\)/);
 assert.match(cloudSource, /reportFirestoreError\("saveProgramsToCloud"/);
 assert.match(cloudSource, /COLLECTIONS\.workouts/);
+const syncAllBody = cloudSource.match(/async function syncAllLocalData[\s\S]*?\n}\n\nasync function hydratePrograms/)?.[0] || "";
+assert.doesNotMatch(syncAllBody, /PATHS\.membership/);
 assert.match(rulesSource, /match \/workouts\/\{workoutId\}/);
 assert.match(rulesSource, /allow read, create, update, delete: if isOwner\(userId\)/);
 assert.ok(inlineScripts.length > 0);

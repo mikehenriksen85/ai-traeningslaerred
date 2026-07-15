@@ -589,7 +589,6 @@ async function syncAllLocalData(uid = activeUid) {
     assertCloudUser("Firestore-synkronisering");
     const profile = parseLocal(KEYS.profile, {});
     const daily = parseLocal(KEYS.daily, {});
-    const membership = parseLocal(KEYS.membership, {});
     const appState = {
       lastActiveProgramId: parseLocal(KEYS.lastProgram, ""),
       theme: parseLocal(KEYS.theme, "work4it"),
@@ -598,7 +597,6 @@ async function syncAllLocalData(uid = activeUid) {
     await Promise.all([
       upsertDocument(doc(db, ...PATHS.profile(uid)), profile),
       upsertDocument(doc(db, ...PATHS.daily(uid)), daily),
-      upsertDocument(doc(db, ...PATHS.membership(uid)), membership),
       upsertDocument(doc(db, ...PATHS.settings(uid)), appState),
       upsertDocument(doc(db, ...PATHS.appState(uid, "main")), appState),
       syncPrograms(uid),
