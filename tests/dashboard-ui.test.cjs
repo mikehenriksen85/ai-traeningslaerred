@@ -49,4 +49,30 @@ assert.match(html, /function openCreateOrImportWorkout\(/);
 assert.match(html, /homeSavedEmpty[^>]*hidden/);
 assert.match(html, /data-accordion="more"/);
 
+assert.equal((html.match(/id=["']exerciseActionMenu["']/g) || []).length, 1);
+assert.match(html, /class="exercise-more-button"/);
+assert.match(html, /aria-haspopup="menu" aria-expanded="false" aria-controls="exerciseActionMenu"/);
+assert.match(html, /role="menu" aria-label="Øvelseshandlinger"/);
+for (const [action, label] of [
+  ["demo", "Se demo"],
+  ["replace", "Erstat øvelse"],
+  ["simulate", "Simuler"],
+  ["delete", "Slet øvelse"]
+]) {
+  assert.match(html, new RegExp(`data-exercise-action="${action}"[^>]*>${label}<`));
+}
+assert.match(html, /exercise-action-menu-item danger/);
+assert.match(html, /function toggleExerciseActionMenu\(/);
+assert.match(html, /function closeExerciseActionMenu\(/);
+assert.match(html, /function handleExerciseActionMenuKey\(/);
+assert.match(html, /WorkitMenuManager\?\.openPanel/);
+assert.match(html, /onpointerdown="event\.stopPropagation\(\)" ondragstart="event\.preventDefault\(\)"/);
+assert.match(html, /if \(action === "demo"\) openExerciseDemo\(slot\)/);
+assert.match(html, /else if \(action === "replace"\) openReplacementDialog\(slot\)/);
+assert.match(html, /else if \(action === "simulate"\) openDashboard\(slot\)/);
+assert.match(html, /else if \(action === "delete"\) removeExercise\(slot\)/);
+
+const exerciseTemplate = html.match(/block\.innerHTML = `[\s\S]*?`;/)?.[0] || "";
+assert.doesNotMatch(exerciseTemplate, />Demo<|>Simuler<|danger-slot/);
+
 console.log("Simplified dashboard hierarchy and preserved-handler contracts OK");

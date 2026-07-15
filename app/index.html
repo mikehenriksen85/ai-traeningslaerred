@@ -729,7 +729,7 @@
     .exercise { background: rgba(0,0,0,.12); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 18px; transition: border-color .16s ease, box-shadow .16s ease, opacity .16s ease, transform .16s ease; }
     .exercise-transition { display: none; color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); margin-bottom: 9px; }
     .exercise-transition.show { display: block; }
-    .exercise-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 2.4fr); gap: 12px; align-items: start; margin-bottom: 10px; }
+    .exercise-head { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 12px; align-items: start; margin-bottom: 10px; }
     .exercise-title-row { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
     .exercise-drag-handle {
       flex: 0 0 auto;
@@ -766,8 +766,80 @@
       box-shadow: 0 0 18px rgba(34,197,94,.38);
     }
     body.exercise-dragging { cursor: grabbing; }
-    .exercise-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; justify-content: stretch; align-items: stretch; }
-    .exercise-actions .danger-slot { grid-column: auto; }
+    .exercise-actions { display: flex; justify-content: flex-end; align-items: flex-start; }
+    .exercise-more-button {
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      min-height: 44px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--input);
+      color: var(--text-primary);
+      font: inherit;
+      font-size: 1.45rem;
+      font-weight: var(--font-weight-bold);
+      line-height: 1;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .exercise-more-button:hover,
+    .exercise-more-button[aria-expanded="true"] {
+      border-color: var(--blue);
+      background: rgba(59,130,246,.12);
+      color: var(--text-accent);
+    }
+    .exercise-more-button:focus-visible {
+      outline: 3px solid rgba(59,130,246,.4);
+      outline-offset: 2px;
+    }
+    .exercise-action-menu {
+      position: fixed;
+      z-index: 1450;
+      width: min(224px, calc(100vw - 16px));
+      display: grid;
+      gap: 3px;
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--panel);
+      box-shadow: 0 18px 42px rgba(0,0,0,.48);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .exercise-action-menu[hidden] { display: none; }
+    .exercise-action-menu-item {
+      width: 100%;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 9px 11px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-primary);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .exercise-action-menu-item:hover,
+    .exercise-action-menu-item:focus-visible {
+      outline: none;
+      background: rgba(59,130,246,.12);
+      color: var(--text-accent);
+    }
+    .exercise-action-menu-item.danger {
+      color: var(--text-danger);
+    }
+    .exercise-action-menu-item.danger:hover,
+    .exercise-action-menu-item.danger:focus-visible {
+      background: rgba(239,68,68,.12);
+      color: var(--text-danger);
+    }
     .small-btn { min-width: 0; max-width: 100%; background: var(--input); border: 1px solid var(--border); color: var(--text-accent); border-radius: 5px; padding: 6px 6px; min-height: 32px; cursor: pointer; white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; text-align: center; }
     .small-btn.orange { color: var(--orange); border-color: var(--orange); }
     .small-btn.red { color: var(--text-danger); border-color: var(--text-danger); }
@@ -2079,11 +2151,7 @@
       .top-controls { grid-template-columns: 1fr; }
       .session-banner-head { align-items: flex-start; flex-direction: column; }
       .session-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .exercise-head { grid-template-columns: 1fr; }
-      .exercise-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-      .exercise-actions .small-btn { min-width: 0; min-height: 44px; padding: 6px 2px; font-size: var(--font-size-compact); text-overflow: clip; }
-      .exercise-actions .desktop-action-label { display: none; }
-      .exercise-actions .mobile-action-label { display: inline; }
+      .exercise-head { grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; }
       .desktop-table-label { display: none; }
       .mobile-table-label { display: inline; }
       .table-head, .set-row {
@@ -2455,11 +2523,7 @@
     }
 
     .exercise-actions {
-      align-items: stretch;
-    }
-
-    .exercise-actions .small-btn {
-      min-height: 42px;
+      align-items: flex-start;
     }
 
     .set-row {
@@ -2923,6 +2987,13 @@
       </details>
     </section>
   </main>
+
+  <div class="exercise-action-menu" id="exerciseActionMenu" role="menu" aria-label="Øvelseshandlinger" onkeydown="handleExerciseActionMenuKey(event)" hidden>
+    <button class="exercise-action-menu-item" type="button" role="menuitem" data-exercise-action="demo" onclick="runExerciseCardAction('demo')">Se demo</button>
+    <button class="exercise-action-menu-item" type="button" role="menuitem" data-exercise-action="replace" onclick="runExerciseCardAction('replace')">Erstat øvelse</button>
+    <button class="exercise-action-menu-item" type="button" role="menuitem" data-exercise-action="simulate" onclick="runExerciseCardAction('simulate')">Simuler</button>
+    <button class="exercise-action-menu-item danger" type="button" role="menuitem" data-exercise-action="delete" onclick="runExerciseCardAction('delete')">Slet øvelse</button>
+  </div>
 
   <section class="ai-coach-panel" id="aiCoachPanel" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="aiCoachTitle">
     <div class="ai-coach-sheet">
@@ -5131,6 +5202,127 @@
       window.removeEventListener("pointercancel", cancelExerciseDrag);
     }
 
+    let activeExerciseActionSlot = "";
+    let activeExerciseActionTrigger = null;
+
+    function exerciseActionMenuItems() {
+      const menu = $("exerciseActionMenu");
+      return menu ? [...menu.querySelectorAll('[role="menuitem"]')] : [];
+    }
+
+    function finalizeExerciseActionMenu(restoreFocus = false) {
+      const menu = $("exerciseActionMenu");
+      const trigger = activeExerciseActionTrigger;
+      if (menu) {
+        menu.hidden = true;
+        menu.removeAttribute("aria-labelledby");
+      }
+      trigger?.setAttribute?.("aria-expanded", "false");
+      activeExerciseActionSlot = "";
+      activeExerciseActionTrigger = null;
+      if (restoreFocus && trigger?.isConnected) trigger.focus();
+    }
+
+    function closeExerciseActionMenu(restoreFocus = false) {
+      if (!activeExerciseActionSlot) return false;
+      const panelId = `exercise-actions-${activeExerciseActionSlot}`;
+      if (window.WorkitMenuManager?.isPanelOpen?.(panelId)) {
+        window.WorkitMenuManager.closePanel(panelId, restoreFocus ? "escape" : "action");
+      } else {
+        finalizeExerciseActionMenu(restoreFocus);
+      }
+      return true;
+    }
+
+    function positionExerciseActionMenu() {
+      const menu = $("exerciseActionMenu");
+      const trigger = activeExerciseActionTrigger;
+      if (!menu || menu.hidden || !trigger?.isConnected) return;
+      const margin = 8;
+      const gap = 6;
+      const viewportWidth = document.documentElement.clientWidth;
+      const viewportHeight = document.documentElement.clientHeight;
+      const triggerRect = trigger.getBoundingClientRect();
+      const menuWidth = Math.min(224, viewportWidth - margin * 2);
+      menu.style.width = `${menuWidth}px`;
+      menu.style.maxHeight = `${Math.max(120, viewportHeight - margin * 2)}px`;
+      const menuHeight = menu.offsetHeight;
+      const spaceBelow = viewportHeight - triggerRect.bottom - gap - margin;
+      const openAbove = spaceBelow < menuHeight && triggerRect.top > spaceBelow;
+      const desiredTop = openAbove ? triggerRect.top - menuHeight - gap : triggerRect.bottom + gap;
+      const top = Math.min(Math.max(margin, desiredTop), Math.max(margin, viewportHeight - menuHeight - margin));
+      const left = Math.min(
+        Math.max(margin, triggerRect.right - menuWidth),
+        Math.max(margin, viewportWidth - menuWidth - margin)
+      );
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+    }
+
+    function toggleExerciseActionMenu(slot, trigger, event = null, focusMenu = true) {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      const menu = $("exerciseActionMenu");
+      if (!menu || !trigger || !$(`block-${slot}`)) return;
+      if (activeExerciseActionSlot === slot && !menu.hidden) {
+        closeExerciseActionMenu(true);
+        return;
+      }
+      closeExerciseActionMenu(false);
+      activeExerciseActionSlot = slot;
+      activeExerciseActionTrigger = trigger;
+      if (!trigger.id) trigger.id = `exercise-menu-trigger-${slot}`;
+      trigger.setAttribute("aria-expanded", "true");
+      menu.setAttribute("aria-labelledby", trigger.id);
+      menu.hidden = false;
+      window.WorkitMenuManager?.openPanel?.(`exercise-actions-${slot}`, {
+        roots: [menu, trigger],
+        history: false,
+        close: reason => finalizeExerciseActionMenu(reason === "escape")
+      });
+      window.requestAnimationFrame(() => {
+        positionExerciseActionMenu();
+        if (focusMenu) exerciseActionMenuItems()[0]?.focus?.();
+      });
+    }
+
+    function handleExerciseMenuTriggerKey(event, slot, trigger) {
+      if (!["Enter", " ", "ArrowDown"].includes(event.key)) return;
+      toggleExerciseActionMenu(slot, trigger, event, true);
+    }
+
+    function handleExerciseActionMenuKey(event) {
+      const items = exerciseActionMenuItems();
+      if (!items.length) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closeExerciseActionMenu(true);
+        return;
+      }
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const currentIndex = items.indexOf(document.activeElement);
+      const nextIndex = event.key === "Home" ? 0
+        : event.key === "End" ? items.length - 1
+          : event.key === "ArrowUp" ? (currentIndex <= 0 ? items.length - 1 : currentIndex - 1)
+            : (currentIndex + 1) % items.length;
+      items[nextIndex]?.focus?.();
+    }
+
+    function runExerciseCardAction(action) {
+      const slot = activeExerciseActionSlot;
+      if (!slot) return;
+      closeExerciseActionMenu(action !== "delete");
+      if (action === "demo") openExerciseDemo(slot);
+      else if (action === "replace") openReplacementDialog(slot);
+      else if (action === "simulate") openDashboard(slot);
+      else if (action === "delete") removeExercise(slot);
+    }
+
+    window.addEventListener("resize", positionExerciseActionMenu);
+    window.addEventListener("scroll", positionExerciseActionMenu, true);
+
     function addExercise(name = null, muscle = "Ryg", savedSets = null, metadata = null) {
       if (!name) name = `${t("chooseExercisePrefix")} ${t("exerciseHeader").toLowerCase()}...`;
       if (muscleGroupKeys.includes(name)) {
@@ -5164,10 +5356,13 @@
             <div class="exercise-name" id="name-${slot}" data-muscle="${esc(muscle)}">${esc(name)}</div>
           </div>
           <div class="exercise-actions">
-            <button class="small-btn" onclick="openExerciseDemo('${slot}')">Demo</button>
-            <button class="small-btn orange" onclick="openReplacementDialog('${slot}')" title="Erstat øvelse" aria-label="Erstat øvelse">🔄 Erstat</button>
-            <button class="small-btn" onclick="openDashboard('${slot}')" title="${t("simulateBtn")}" aria-label="${t("simulateBtn")}">Simuler</button>
-            <button class="small-btn red danger-slot" onclick="removeExercise('${slot}')">${t("deleteBtn")}</button>
+            <button class="exercise-more-button" id="exercise-menu-trigger-${slot}" type="button"
+              aria-label="Flere handlinger for ${esc(name)}"
+              aria-haspopup="menu" aria-expanded="false" aria-controls="exerciseActionMenu"
+              data-exercise-menu-slot="${slot}" draggable="false"
+              onpointerdown="event.stopPropagation()" ondragstart="event.preventDefault()"
+              onclick="toggleExerciseActionMenu('${slot}', this, event)"
+              onkeydown="handleExerciseMenuTriggerKey(event, '${slot}', this)">⋮</button>
           </div>
         </div>
         <div class="table-head">
@@ -9918,7 +10113,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260715-simple-dashboard1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260715-exercise-menu1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
