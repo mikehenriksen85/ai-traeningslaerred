@@ -488,6 +488,7 @@
     .top-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
     .top-btn { min-height: 40px; border: 0; border-radius: 6px; color: var(--text-primary); padding: 9px 10px; font-weight: var(--font-weight-semibold); cursor: pointer; white-space: normal; overflow-wrap: anywhere; }
     .save-btn { background: var(--green); }
+    .top-controls > .save-btn { background: var(--input); border: 1px solid var(--border); color: var(--text-accent); }
     .start-btn { background: var(--blue); }
     .start-btn.active { background: var(--orange); }
     .stop-btn { background: var(--red); display: none; }
@@ -620,7 +621,7 @@
     .set-progress-ring.complete { background: conic-gradient(var(--green) 100%, rgba(255,255,255,.1) 0); }
     .set-progress-percent { position: relative; z-index: 1; color: var(--text-primary); font-size: 9px; font-weight: var(--font-weight-bold); }
     .set-progress-label { color: var(--text-secondary); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; }
-    .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--blue); color: var(--text-primary); border: 0; border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+    .dashboard-btn { width: 100%; margin: 16px 0 20px; background: var(--input); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 5px; padding: 10px; font-weight: var(--font-weight-semibold); cursor: pointer; }
     .canvas > .card > .workout-sticky-top {
       position: sticky;
       z-index: 70;
@@ -899,25 +900,25 @@
     .item:hover { background: rgba(255,255,255,.06); }
     .badge { background: #313d49; color: var(--text-secondary); border-radius: 4px; padding: 2px 6px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
 
-    .table-head, .set-row { display: grid; grid-template-columns: 28px 58px 50px 62px minmax(126px, 1fr) 48px; gap: 5px; align-items: center; text-align: center; }
+    .table-head, .set-row { display: grid; grid-template-columns: 28px 58px 50px 62px minmax(126px, 1fr) 58px; gap: 5px; align-items: center; text-align: center; }
     .table-head > *, .set-row > * { min-width: 0; }
     .table-head { color: var(--text-secondary); border-bottom: 1px solid var(--border); padding-bottom: 7px; margin-top: 12px; font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
     .set-block { border-bottom: 1px solid rgba(49,61,73,.45); padding: 7px 0; }
     .set-block.completed { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.42); border-radius: 6px; box-shadow: inset 3px 0 0 var(--green); }
     .set-block.active-pause-set { border-color: rgba(34,197,94,.7); background: rgba(34,197,94,.14); box-shadow: inset 4px 0 0 var(--green); }
     .set-row input { width: 92%; background: var(--input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 5px 3px; text-align: center; font-size: var(--font-size-small); }
-    .set-complete-control { position: relative; display: grid; place-items: center; width: 44px; height: 44px; margin-inline: auto; cursor: pointer; }
+    .set-complete-control { position: relative; display: grid; place-items: center; width: 52px; height: 52px; margin-inline: auto; cursor: pointer; }
     .set-complete-control input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
     .set-complete-icon {
       display: grid;
       place-items: center;
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       border: 2px solid #64748b;
       border-radius: 7px;
       background: var(--input);
       color: #94a3b8;
-      font-size: 24px;
+      font-size: 28px;
       font-weight: var(--font-weight-bold);
       line-height: 1;
       transition: color .18s ease, border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
@@ -2155,7 +2156,7 @@
       .desktop-table-label { display: none; }
       .mobile-table-label { display: inline; }
       .table-head, .set-row {
-        grid-template-columns: 26px 42px minmax(54px, .82fr) minmax(76px, 1.18fr) 48px;
+        grid-template-columns: 26px 42px minmax(54px, .82fr) minmax(76px, 1.18fr) 60px;
         grid-template-areas: "set previous weight reps complete";
         gap: 4px;
       }
@@ -2178,8 +2179,8 @@
       .active-pause-controls { align-items: stretch; }
       .active-pause-controls .pause-control { flex: 1 1 auto; }
       .active-pause-controls .set-progress-pill { align-self: center; }
-      .set-complete-control { width: 44px; height: 44px; }
-      .set-complete-icon { width: 40px; height: 40px; font-size: 24px; }
+      .set-complete-control { width: 56px; height: 56px; }
+      .set-complete-icon { width: 52px; height: 52px; font-size: 30px; }
       .square, .close { min-width: 40px; min-height: 40px; }
       .dash-grid { grid-template-columns: 1fr; }
       .calorie-view { padding: 12px; }
@@ -2595,16 +2596,31 @@
     }
     .home-start-button {
       width: 100%;
-      min-height: 58px;
+      min-height: 66px;
       border: 0;
       border-radius: var(--radius-md);
-      background: var(--green);
+      background: linear-gradient(135deg, var(--green), color-mix(in srgb, var(--green), white 16%));
       color: #04150a;
       font: inherit;
-      font-size: 1.08rem;
+      font-size: 1.16rem;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 14px 30px rgba(34,197,94,.22);
+      box-shadow: 0 16px 34px rgba(34,197,94,.3);
+    }
+    .home-start-button:hover:not(:disabled) { filter: brightness(1.06); }
+    .home-start-button:focus-visible { outline: 3px solid rgba(34,197,94,.42); outline-offset: 3px; }
+    .home-start-button:disabled {
+      background: var(--input);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+    .home-start-help {
+      margin: -4px 0 0;
+      color: var(--text-secondary);
+      font-size: var(--font-size-small);
+      line-height: 1.4;
     }
     .home-saved-list {
       display: grid;
@@ -2907,7 +2923,8 @@
           </div>
           <div class="home-program-name" id="homeCurrentProgramName">Intet træningspas valgt</div>
           <div class="home-program-meta" id="homeCurrentProgramMeta">Vælg eller opret et træningspas for at komme i gang.</div>
-          <button class="home-start-button" id="timerBtn" type="button" onclick="startDashboardWorkout()">▶ Start træning</button>
+          <button class="home-start-button" id="timerBtn" type="button" aria-describedby="homeStartHelp" onclick="startDashboardWorkout()">▶ Start træning</button>
+          <p class="home-start-help" id="homeStartHelp" role="status">Tilføj mindst én gyldig øvelse for at starte træningen.</p>
         </section>
 
         <section class="home-section" aria-labelledby="homeSavedHeading">
@@ -5371,7 +5388,7 @@
           <div><span class="desktop-table-label">${t("weight")}</span><span class="mobile-table-label">Kg</span></div>
           <div>${t("reps")}</div>
           <div>${t("pauseLabel")}</div>
-          <div>${t("ok")}</div>
+          <div></div>
         </div>
         <div id="sets-${slot}"></div>
         <div class="set-controls"><span>${t("adjustSets")}</span><button class="square" onclick="changeSets('${slot}',-1)">-</button><b id="count-${slot}">${defaultNewExerciseSetCount()}</b><button class="square" onclick="changeSets('${slot}',1)">+</button></div>
@@ -5750,8 +5767,8 @@
             <div><input class="weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="kg" value="${esc(data.weight || "")}" oninput="sanitizeKgInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div><input class="reps" type="text" inputmode="numeric" pattern="[0-9]*(-[0-9]*)?" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="${esc(targetReps || "reps")}" data-target-reps="${esc(targetReps)}" value="${esc(data.reps || "")}" oninput="sanitizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();" onblur="normalizeRepsInput(this); updateAnalytics('${slot}'); scheduleAutoSave();"></div>
             <div class="pause-inline-status" id="pause-inline-${slot}-${i}">${esc(pauseValue)}</div>
-            <label class="set-complete-control" title="Markér sæt ${i} som færdigt">
-              <input type="checkbox" ${data.completed ? "checked" : ""} onchange="toggleCompleted(this,'${slot}')" aria-label="Sæt ${i} færdigt">
+            <label class="set-complete-control" title="${data.completed ? `Markér sæt ${i} som ikke færdigt` : `Markér sæt ${i} som færdigt`}">
+              <input type="checkbox" ${data.completed ? "checked" : ""} data-set-number="${i}" onchange="toggleCompleted(this,'${slot}')" aria-label="${data.completed ? `Markér sæt ${i} som ikke færdigt` : `Markér sæt ${i} som færdigt`}">
               <span class="set-complete-icon" aria-hidden="true">✓</span>
             </label>
           </div>
@@ -5794,6 +5811,7 @@
     }
 
     function updateWorkoutProgress() {
+      updateStartTrainingAvailability();
       const checkboxes = [...document.querySelectorAll('.set-block input[type="checkbox"], .cardio-completed')];
       const totalSets = checkboxes.length;
       const completedSets = checkboxes.filter(checkbox => checkbox.checked).length;
@@ -6004,6 +6022,12 @@
       const block = cb.closest(".set-block");
       const wasCompleted = block?.classList.contains("completed") || false;
       block?.classList.toggle("completed", cb.checked);
+      const setNumber = cb.dataset.setNumber || "";
+      const actionLabel = cb.checked
+        ? `Markér sæt ${setNumber} som ikke færdigt`
+        : `Markér sæt ${setNumber} som færdigt`;
+      cb.setAttribute("aria-label", actionLabel);
+      if (cb.closest(".set-complete-control")) cb.closest(".set-complete-control").title = actionLabel;
       updateAnalytics(slot);
       if (cb.checked && !wasCompleted) {
         maybeStartAutoPause(cb, slot, wasCompleted);
@@ -6293,6 +6317,7 @@
       startButton.style.display = currentWorkoutView === "program" ? "block" : "none";
       startButton.textContent = hasActiveWorkoutSession() ? "▶ Genoptag træning" : t("start");
       startButton.classList.remove("active");
+      updateStartTrainingAvailability();
       pauseButton.style.display = currentWorkoutView === "session" && sessionStatus === "in_progress" ? "block" : "none";
       resumeButton.style.display = currentWorkoutView === "session" && sessionStatus === "paused" ? "block" : "none";
       finishButton.style.display = currentWorkoutView === "session" && ["in_progress", "paused"].includes(sessionStatus) ? "block" : "none";
@@ -6911,6 +6936,33 @@
       return (program?.days || []).reduce((total, day) => total + (day?.exercises?.length || 0), 0);
     }
 
+    function isValidWorkoutExerciseName(name) {
+      const value = String(name || "").trim();
+      if (!value || muscleGroupKeys.includes(value)) return false;
+      return !value.toLowerCase().startsWith(t("chooseExercisePrefix").toLowerCase());
+    }
+
+    function validCanvasExerciseCount() {
+      return slotIds().filter(slot => isValidWorkoutExerciseName($(`name-${slot}`)?.textContent)).length;
+    }
+
+    function validProgramExerciseCount(program) {
+      return (program?.days || []).reduce((total, day) => total + (day?.exercises || [])
+        .filter(exercise => isValidWorkoutExerciseName(exercise?.name)).length, 0);
+    }
+
+    function updateStartTrainingAvailability(program = null) {
+      const startButton = $("timerBtn");
+      if (!startButton) return false;
+      const selectedProgram = program || getPrograms().find(item => item.id === startButton.dataset.programId);
+      const hasValidExercise = hasActiveWorkoutSession() || validCanvasExerciseCount() > 0 || validProgramExerciseCount(selectedProgram) > 0;
+      startButton.disabled = !hasValidExercise;
+      startButton.setAttribute("aria-disabled", String(!hasValidExercise));
+      const help = $("homeStartHelp");
+      if (help) help.hidden = hasValidExercise;
+      return hasValidExercise;
+    }
+
     function renderHomeDashboard(programs = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt))) {
       const list = Array.isArray(programs) ? programs : [];
       const welcome = $("homeWelcomeTitle");
@@ -6929,9 +6981,9 @@
         if (currentName) currentName.textContent = activeProgram.title || t("workoutFallback");
         if (currentMeta) currentMeta.textContent = `${days} ${days === 1 ? "træningsdag" : "træningsdage"} · ${exercises} ${exercises === 1 ? "øvelse" : "øvelser"}`;
         if (startButton) {
-          startButton.disabled = exercises === 0;
           startButton.dataset.programId = activeProgram.id || "";
           startButton.textContent = "▶ Start træning";
+          updateStartTrainingAvailability(activeProgram);
         }
       } else {
         const draftExercises = slotIds().length;
@@ -6940,9 +6992,9 @@
           ? `${draftExercises} ${draftExercises === 1 ? "øvelse" : "øvelser"} i dit aktuelle udkast`
           : "Opret eller importér et træningspas for at komme i gang.";
         if (startButton) {
-          startButton.disabled = false;
           startButton.dataset.programId = "";
-          startButton.textContent = draftExercises ? "▶ Start træning" : "Opret dit første træningspas";
+          startButton.textContent = "▶ Start træning";
+          updateStartTrainingAvailability();
         }
       }
 
@@ -6973,10 +7025,7 @@
       const button = $("timerBtn");
       const programId = button?.dataset.programId || "";
       if (!slotIds().length && programId) loadSavedProgram(programId, false);
-      if (!slotIds().length) {
-        openCreateOrImportWorkout();
-        return;
-      }
+      if (!hasActiveWorkoutSession() && validCanvasExerciseCount() === 0) return updateStartTrainingAvailability();
       openWorkoutEditor();
       toggleWorkoutTimer();
     }

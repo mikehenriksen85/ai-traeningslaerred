@@ -13,6 +13,7 @@ for (const id of [
   "homeDashboard",
   "homeWelcomeTitle",
   "homeCurrentProgramName",
+  "homeStartHelp",
   "homeSavedPrograms",
   "homeSavedEmpty",
   "workoutEditorDetails",
@@ -45,6 +46,12 @@ for (const handler of [
 
 assert.match(html, /function renderHomeDashboard\(/);
 assert.match(html, /function startDashboardWorkout\(/);
+assert.match(html, /function updateStartTrainingAvailability\(/);
+assert.match(html, /function isValidWorkoutExerciseName\(/);
+assert.match(html, /aria-describedby="homeStartHelp"/);
+assert.match(html, /home-start-button:disabled/);
+assert.match(html, /function updateWorkoutProgress\(\) \{\s+updateStartTrainingAvailability\(\)/);
+assert.match(html, /if \(!hasActiveWorkoutSession\(\) && validCanvasExerciseCount\(\) === 0\) return updateStartTrainingAvailability\(\)/);
 assert.match(html, /function openCreateOrImportWorkout\(/);
 assert.match(html, /homeSavedEmpty[^>]*hidden/);
 assert.match(html, /data-accordion="more"/);
@@ -74,5 +81,9 @@ assert.match(html, /else if \(action === "delete"\) removeExercise\(slot\)/);
 
 const exerciseTemplate = html.match(/block\.innerHTML = `[\s\S]*?`;/)?.[0] || "";
 assert.doesNotMatch(exerciseTemplate, />Demo<|>Simuler<|danger-slot/);
+assert.doesNotMatch(exerciseTemplate, /<div>\$\{t\("ok"\)\}<\/div>/);
+assert.match(html, /data-set-number="\$\{i\}"/);
+assert.match(html, /cb\.setAttribute\("aria-label", actionLabel\)/);
+assert.match(html, /\.set-complete-control \{ position: relative; display: grid; place-items: center; width: 52px; height: 52px;/);
 
 console.log("Simplified dashboard hierarchy and preserved-handler contracts OK");
