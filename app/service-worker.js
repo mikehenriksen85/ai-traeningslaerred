@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v99-cloud-primary-fix1";
+const CACHE_NAME = "work4it-shell-v100-cloud-primary-fix2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -31,7 +31,7 @@ const APP_SHELL = [
   "./profile-wizard.js?v=20260620-calisthenics1",
   "./firebase-config.js?v=20260713-stripe-google-login1",
   "./auth-service.js?v=20260713-stripe-google-login1",
-  "./firestore-cloud-service.js?v=20260715-cloud-primary-fix1"
+  "./firestore-cloud-service.js?v=20260715-cloud-primary-fix2"
 ];
 
 self.addEventListener("install", event => {
