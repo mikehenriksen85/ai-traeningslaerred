@@ -1,10 +1,10 @@
-const CACHE_NAME = "work4it-shell-v109-animation-admin-functions1";
+const CACHE_NAME = "work4it-shell-v110-auto-render1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./admin-config.js?v=20260712-home-center1",
-  "./exercise-animation-model.js?v=20260715-exercise-animations1",
+  "./exercise-animation-model.js?v=20260716-auto-render1",
   "./manifest.webmanifest",
   "./work4it-app-icon-192.png",
   "./work4it-app-icon-512.png",

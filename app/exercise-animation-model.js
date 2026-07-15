@@ -229,6 +229,75 @@
     return () => { stopped = true; cancelAnimationFrame(frame); };
   }
 
+  function recordingMimeType() {
+    if (!window.MediaRecorder) return "";
+    return [
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm",
+      "video/mp4"
+    ].find(type => MediaRecorder.isTypeSupported?.(type)) || "";
+  }
+
+  function canvasThumbnail(canvas) {
+    return new Promise(resolve => {
+      canvas.toBlob(blob => {
+        resolve(blob ? new File([blob], "thumbnail.webp", { type: "image/webp" }) : null);
+      }, "image/webp", 0.82);
+    });
+  }
+
+  async function renderSpecificationToVideo(specification, onProgress = () => {}) {
+    const mimeType = recordingMimeType();
+    if (!mimeType || !HTMLCanvasElement.prototype.captureStream) {
+      throw new Error("Denne browser kan ikke rendere video automatisk. Brug Chrome, Edge eller den installerede Work4it PWA.");
+    }
+    const canvas = document.createElement("canvas");
+    canvas.style.cssText = "position:fixed;left:-10000px;top:0;width:640px;height:400px;pointer-events:none";
+    canvas.setAttribute("aria-hidden", "true");
+    document.body.appendChild(canvas);
+    const stopRenderer = startProceduralRenderer(canvas, specification);
+    const stream = canvas.captureStream(24);
+    const chunks = [];
+    let recorder;
+    try {
+      recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1600000 });
+      recorder.addEventListener("dataavailable", event => { if (event.data?.size) chunks.push(event.data); });
+      const stopped = new Promise((resolve, reject) => {
+        recorder.addEventListener("stop", resolve, { once: true });
+        recorder.addEventListener("error", event => reject(event.error || new Error("Video-rendering fejlede")), { once: true });
+      });
+      recorder.start(500);
+      const durationMs = Math.round(Number(specification.duration || DEFAULT_DURATION) * 1000);
+      const startedAt = Date.now();
+      await new Promise(resolve => {
+        const update = () => {
+          const elapsed = Date.now() - startedAt;
+          onProgress(Math.min(100, Math.round(elapsed / durationMs * 100)));
+          if (elapsed >= durationMs) resolve();
+          else setTimeout(update, 250);
+        };
+        update();
+      });
+      const thumbnailFile = await canvasThumbnail(canvas);
+      recorder.stop();
+      await stopped;
+      const baseType = recorder.mimeType.split(";")[0] || mimeType.split(";")[0];
+      const extension = baseType === "video/mp4" ? "mp4" : "webm";
+      const blob = new Blob(chunks, { type: baseType });
+      if (!blob.size) throw new Error("Browseren returnerede en tom animationsfil");
+      return {
+        mediaFile: new File([blob], `animation.${extension}`, { type: baseType }),
+        thumbnailFile
+      };
+    } finally {
+      if (recorder?.state === "recording") recorder.stop();
+      stream.getTracks().forEach(track => track.stop());
+      stopRenderer();
+      canvas.remove();
+    }
+  }
+
   function renderMissing(container, name, supported) {
     container.innerHTML = `<div class="exercise-animation-placeholder" role="status"><div class="exercise-animation-placeholder-icon" aria-hidden="true">◇</div><strong>Animation er ikke klar endnu</strong><p>${supported ? "En original animation af denne \u00f8velse afventer godkendelse." : "Bev\u00e6gelsen mangler endnu en valideret animationsspecifikation."}</p></div>`;
   }
@@ -252,7 +321,21 @@
       const cloud = window.Work4itExerciseAnimationCloud;
       if (!cloud?.saveDraft) throw new Error("Cloud-tjenesten er ikke klar");
       const saved = await cloud.saveDraft(spec);
-      if (status) status.textContent = `Kladde v${saved.version} gemt. Upload medie og godkend manuelt.`;
+      if (status) status.textContent = `Kladde v${saved.version} er valideret. Renderer original animation…`;
+      let rendered;
+      try {
+        rendered = await renderSpecificationToVideo(spec, progress => {
+          if (status) status.textContent = `Renderer original animation… ${progress}%`;
+        });
+        if (status) status.textContent = "Uploader den genererede animation til Work4it Storage…";
+        await cloud.uploadVersionMedia(exercise.exerciseId, saved.version, rendered.mediaFile, rendered.thumbnailFile);
+      } catch (renderError) {
+        console.error("[Work4it animation] Automatisk rendering fejlede", renderError);
+        await openViewer(exercise);
+        const fallbackStatus = document.getElementById("exerciseAnimationAdminStatus");
+        if (fallbackStatus) fallbackStatus.textContent = `${renderError.message} Manuel upload kan bruges som reserve.`;
+        return;
+      }
       await openViewer(exercise);
     } catch (error) {
       console.error("[Work4it animation] Specifikation kunne ikke oprettes", error);
@@ -303,23 +386,28 @@
     try { record = await window.Work4itExerciseAnimationCloud?.getAnimation?.(exercise.exerciseId); }
     catch (error) { console.warn("[Work4it animation] Metadata kunne ikke hentes", error); }
     const metadata = record ? normalizeMetadata(record, exercise) : normalizeMetadata({ exerciseId: exercise.exerciseId });
+    const isAdmin = window.Work4itAdminConfig?.isCurrentUserAdmin?.() === true;
+    const draft = isAdmin
+      ? await window.Work4itExerciseAnimationCloud?.getLatestVersion?.(exercise.exerciseId).catch(() => null)
+      : null;
+    const previewMetadata = isAdmin && draft?.animationUrl
+      ? normalizeMetadata(draft, exercise)
+      : metadata;
     const viewer = document.querySelector(".exercise-animation-viewer");
     if (!viewer) return;
     viewer.setAttribute("aria-busy", "false");
-    viewer.innerHTML = `<div class="exercise-animation-stage"></div><div class="exercise-animation-meta"><span>${escapeHtml(metadata.cameraAngle.replaceAll("_", " "))}</span><span>${metadata.duration} sek. loop</span><span>v${metadata.version}</span></div><p class="exercise-animation-note">Original Work4it-animation. Standardvisning i fase 1.</p>`;
+    viewer.innerHTML = `<div class="exercise-animation-stage"></div><div class="exercise-animation-meta"><span>${escapeHtml(previewMetadata.cameraAngle.replaceAll("_", " "))}</span><span>${previewMetadata.duration} sek. loop</span><span>v${previewMetadata.version}</span>${draft?.animationUrl && metadata.generationStatus !== "approved" ? "<span>Afventer din godkendelse</span>" : ""}</div><p class="exercise-animation-note">Original Work4it-animation. Standardvisning i fase 1.</p>`;
     const stage = viewer.querySelector(".exercise-animation-stage");
-    const spec = metadata.specification;
-    if (metadata.generationStatus === "approved" && metadata.animationUrl) renderMedia(stage, metadata, exercise.name);
-    else if (metadata.generationStatus === "approved" && spec && validateSpecification(spec).valid) {
+    const spec = previewMetadata.specification;
+    if ((previewMetadata.generationStatus === "approved" || isAdmin) && previewMetadata.animationUrl) renderMedia(stage, previewMetadata, exercise.name);
+    else if (previewMetadata.generationStatus === "approved" && spec && validateSpecification(spec).valid) {
       stage.innerHTML = `<canvas class="exercise-animation-canvas" role="img" aria-label="Original 3D-animation af ${escapeHtml(exercise.name)}"></canvas>`;
       startProceduralRenderer(stage.querySelector("canvas"), spec);
     } else renderMissing(stage, exercise.name, movementFor(exercise.name) !== "unsupported");
 
-    const isAdmin = window.Work4itAdminConfig?.isCurrentUserAdmin?.() === true;
     if (isAdmin) {
-      const draft = await window.Work4itExerciseAnimationCloud?.getLatestVersion?.(exercise.exerciseId).catch(() => null);
       const draftVersion = Number(draft?.version || metadata.version || 1);
-      viewer.insertAdjacentHTML("beforeend", `<details class="exercise-animation-admin"><summary>Administrator · animationspipeline</summary><p>Generering opretter kun en valideret kladde. Intet bliver aktivt f\u00f8r manuel godkendelse.</p><div class="exercise-animation-admin-actions"><button class="btn secondary" type="button" id="exerciseAnimationGenerate">Opret ny specifikation</button>${draft ? `<label>Animation (WebM/MP4/GIF)<input id="exerciseAnimationMediaFile" type="file" accept="video/webm,video/mp4,image/gif"></label><label>Thumbnail (valgfri)<input id="exerciseAnimationThumbnailFile" type="file" accept="image/webp,image/png,image/jpeg"></label><button class="btn secondary" type="button" id="exerciseAnimationUpload">Upload v${draftVersion}</button><button class="btn primary" type="button" id="exerciseAnimationApprove" ${draft.animationUrl ? "" : "disabled"}>Godkend v${draftVersion}</button>` : ""}</div><div id="exerciseAnimationAdminStatus" class="helper-text" role="status"></div></details>`);
+      viewer.insertAdjacentHTML("beforeend", `<details class="exercise-animation-admin" open><summary>Administrator · animationspipeline</summary><p>Work4it genererer og uploader automatisk en original animation. Den bliver f\u00f8rst aktiv, n\u00e5r du har set og godkendt den.</p><div class="exercise-animation-admin-actions"><button class="btn secondary" type="button" id="exerciseAnimationGenerate">Gener\u00e9r original animation</button>${draft ? `<label>Manuel reservefil (WebM/MP4/GIF)<input id="exerciseAnimationMediaFile" type="file" accept="video/webm,video/mp4,image/gif"></label><label>Thumbnail (valgfri)<input id="exerciseAnimationThumbnailFile" type="file" accept="image/webp,image/png,image/jpeg"></label><button class="btn secondary" type="button" id="exerciseAnimationUpload">Upload reservefil v${draftVersion}</button><button class="btn primary" type="button" id="exerciseAnimationApprove" ${draft.animationUrl ? "" : "disabled"}>Godkend den viste animation</button>` : ""}</div><div id="exerciseAnimationAdminStatus" class="helper-text" role="status"></div></details>`);
       document.getElementById("exerciseAnimationGenerate")?.addEventListener("click", () => adminGenerate(exercise));
       document.getElementById("exerciseAnimationUpload")?.addEventListener("click", () => adminUpload(exercise, draftVersion));
       document.getElementById("exerciseAnimationApprove")?.addEventListener("click", () => adminApprove(exercise, draftVersion));
@@ -329,6 +417,7 @@
   window.Work4itExerciseAnimations = Object.freeze({
     MODES, STATUSES, DEFAULT_CAMERA, exerciseId, movementFor, equipmentFor,
     originalSpecification, generatorPrompt, generateSpecification, validateSpecification,
-    normalizeMetadata, validateMetadata, openViewer, startProceduralRenderer
+    normalizeMetadata, validateMetadata, openViewer, startProceduralRenderer,
+    renderSpecificationToVideo, recordingMimeType
   });
 })();

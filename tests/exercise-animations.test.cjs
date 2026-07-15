@@ -39,12 +39,16 @@ assert.equal(animations.validateSpecification(spec).valid, true, "Generatorens o
 assert.equal(animations.validateSpecification({ ...spec, duration: 8 }).valid, false, "For lang animation afvises");
 assert.equal(animations.validateSpecification({ ...spec, sourceAssets: ["copied.glb"] }).valid, false, "Eksterne source assets afvises");
 assert.equal(typeof animations.generateSpecification, "function", "Kontrolleret generator er eksponeret");
+assert.equal(typeof animations.renderSpecificationToVideo, "function", "Specifikationen kan renderes automatisk til video");
 
 const pending = animations.normalizeMetadata({ exerciseId: id, generationStatus: "pending_review" });
 assert.equal(pending.generationStatus, "pending_review");
 assert.equal(animations.validateMetadata({ ...pending, generationStatus: "approved" }).valid, false, "Godkendelse kr\u00e6ver medie");
 
 assert.ok(indexSource.includes("Work4itExerciseAnimations?.openViewer"), "Demo bruger intern viewer");
+assert.ok(modelSource.includes("canvas.captureStream(24)"), "Canvas-animation optages som video");
+assert.ok(modelSource.includes("new MediaRecorder"), "Browserens medieencoder bruges");
+assert.ok(modelSource.includes("uploadVersionMedia(exercise.exerciseId, saved.version"), "Genereret video uploades automatisk");
 assert.ok(!/google\.com\/search\?tbm=vid/.test(indexSource), "Eksternt Demo-link er fjernet");
 assert.ok(indexSource.includes("exercise-animation-cloud-service.js"), "Cloud-laget indl\u00e6ses");
 assert.ok(cloudSource.includes('ROOT_COLLECTION = "exerciseAnimations"'));
