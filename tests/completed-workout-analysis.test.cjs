@@ -17,8 +17,8 @@ function exercise(name, sets, plannedSets = sets.length) {
   return { name, exerciseType: "strength", plannedSets, sets };
 }
 
-function set(weight, reps, targetReps = "8-12") {
-  return { weight, reps, targetReps, completed: true };
+function set(weight, reps, targetReps = "8-12", completed = true) {
+  return { weight, reps, targetReps, completed };
 }
 
 function workout(sessionId, date, exercises) {
@@ -60,6 +60,40 @@ assert.equal(bodyweight.summary.completedSets, 2, "Kropsvægtssæt med reps beva
 assert.ok(bodyweight.recommendations.some(item => /sværere variant/.test(item.message)));
 assert.ok(bodyweight.recommendations.every(item => !/kg/.test(item.message)));
 
+const partial = analyze(workout("partial", "2026-07-09T11:00:00Z", [exercise("Row", [set(70, 10), set(70, 10, "8-12", false)], 2)]), []);
+assert.equal(partial.summary.completedSets, 1, "Only explicitly completed work sets are analyzed");
+assert.equal(partial.summary.totalVolumeKg, 700, "An unfinished set must not affect volume");
+
+const unchanged = analyze(workout("unchanged", "2026-07-09T12:00:00Z", [exercise("Bench Press", [set(60, 8), set(60, 8)])]), [previous]);
+assert.equal(unchanged.summary.personalRecords.length, 0, "An unchanged result is not a PR");
+assert.ok(unchanged.insights.some(insight => insight.type === "stable"), "An unchanged result is described as stable");
+
+const belowRange = analyze(workout("below-range", "2026-07-09T13:00:00Z", [exercise("Squat", [set(80, 6, "8-12"), set(80, 7, "8-12")])]), []);
+assert.ok(belowRange.recommendations.some(item => /Behold niveauet/.test(item.message)), "Missed target reps produce a cautious recommendation");
+
+const cardio = analyze(workout("cardio", "2026-07-09T14:00:00Z", [{
+  name: "Cykling",
+  exerciseType: "cardio",
+  cardio: { completed: true, durationMinutes: 20 },
+  sets: []
+}]), []);
+assert.equal(cardio.summary.completedExercises, 1, "Completed cardio is counted without inventing work sets");
+assert.equal(cardio.summary.completedSets, 0);
+assert.equal(cardio.summary.totalVolumeKg, 0);
+
+const unfinishedHistory = workout("unfinished-history", "2026-07-02T10:00:00Z", [exercise("Deadlift", [set(200, 5)])]);
+unfinishedHistory.workoutStatus = "in_progress";
+const againstUnfinished = analyze(workout("finished-deadlift", "2026-07-09T15:00:00Z", [exercise("Deadlift", [set(100, 5)])]), [unfinishedHistory]);
+assert.equal(againstUnfinished.summary.personalRecords.length, 0, "An unfinished historical workout is never a PR baseline");
+assert.ok(againstUnfinished.insights.some(insight => insight.type === "baseline"));
+
+const consistencyHistory = [
+  workout("week-1", "2026-07-05T10:00:00Z", [exercise("Row", [set(50, 8)])]),
+  workout("week-2", "2026-07-07T10:00:00Z", [exercise("Squat", [set(80, 8)])])
+];
+const consistentWeek = analyze(workout("week-current", "2026-07-10T10:00:00Z", [exercise("Push-Up", [set(0, 10)])]), consistencyHistory);
+assert.ok(consistentWeek.insights.some(insight => insight.type === "consistency" && /3/.test(insight.message)), "Reliable dates can produce a seven-day consistency insight");
+
 const duplicateHistory = analyze(workout("same-session", "2026-07-10T10:00:00Z", [exercise("Squat", [set(100, 5)])]), [
   workout("same-session", "2026-07-10T10:00:00Z", [exercise("Squat", [set(50, 5)])])
 ]);
@@ -75,6 +109,9 @@ assert.match(html, /id="completionDoneButton"/);
 assert.match(html, /aria-controls="completionDetails"/);
 assert.match(html, /\.completion-details\[hidden\] \{ display: none; \}/);
 assert.match(html, /completedWithData\[completedWithData\.length - 1\]/);
-assert.match(worker, /completed-workout-analysis\.js\?v=20260716-completion-analysis1/);
+assert.match(html, /window\.requestAnimationFrame\(\(\) => \$\("completionDoneButton"\)\?\.focus\(\)\)/, "Primary completion action receives focus");
+assert.match(html, /FirestoreDataService\?\.syncAllLocalData\?\.\(\)\.catch/, "Offline completion keeps the existing non-blocking cloud sync flow");
+assert.match(html, /if \(finishWorkoutInProgress \|\| !\["in_progress", "paused"\]\.includes\(sessionStatus\)\) return/, "Double completion is blocked for active and paused sessions");
+assert.match(worker, /completed-workout-analysis\.js\?v=20260716-completion-analysis2/);
 
 console.log("Completed workout analysis tests passed");

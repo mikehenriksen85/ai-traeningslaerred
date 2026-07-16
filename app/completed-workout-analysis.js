@@ -23,7 +23,9 @@
   }
 
   function completedSets(exercise) {
-    return (Array.isArray(exercise?.sets) ? exercise.sets : []).filter(set => repetitions(set?.reps) > 0);
+    return (Array.isArray(exercise?.sets) ? exercise.sets : []).filter(set =>
+      set?.completed !== false && repetitions(set?.reps) > 0
+    );
   }
 
   function metrics(exercise) {
@@ -54,6 +56,8 @@
       if (!workout || typeof workout !== "object") return false;
       if (currentWorkout?.sessionId && workout.sessionId === currentWorkout.sessionId) return false;
       if (currentWorkout?.id && workout.id === currentWorkout.id) return false;
+      const status = workout.workoutStatus || workout.sessionStatus || "completed";
+      if (status !== "completed") return false;
       return true;
     });
   }
@@ -61,7 +65,7 @@
   function historyForExercise(name, history) {
     const key = normalizedName(name);
     return history.flatMap(workout => (Array.isArray(workout.exercises) ? workout.exercises : [])
-      .filter(exercise => normalizedName(exercise?.name) === key)
+      .filter(exercise => exercise?.exerciseType !== "cardio" && normalizedName(exercise?.name) === key)
       .map(exercise => ({ workout, exercise, metrics: metrics(exercise) })))
       .filter(item => item.metrics.completedSets > 0)
       .sort((a, b) => (validDate(a.workout.completedAt || a.workout.date)?.getTime() || 0) - (validDate(b.workout.completedAt || b.workout.date)?.getTime() || 0));

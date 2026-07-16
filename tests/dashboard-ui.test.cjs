@@ -4,6 +4,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
 const html = fs.readFileSync("app/index.html", "utf8");
+const profileWizard = fs.readFileSync("app/profile-wizard.js", "utf8");
+const trainingGoalEngine = fs.readFileSync("app/training-goal-engine.js", "utf8");
 const inlineScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
   .map(match => match[1])
   .filter(Boolean);
@@ -54,6 +56,18 @@ assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
 assert.match(html, /document\.body\.dataset\.liveTraining = String\(isActive\)/);
 assert.match(html, /document\.querySelectorAll\("\.live-training-only"\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
+assert.match(html, /function presentGeneratedWorkout\(\) \{[\s\S]*toggleSidebar\(false\)[\s\S]*renderHomeDashboard\(\)[\s\S]*openWorkoutEditor\(\)/, "Genererede programmer vises automatisk efter mobilmenuen lukkes");
+assert.equal((html.match(/presentGeneratedWorkout\(\);/g) || []).length, 3, "Styrke, calisthenics og cardio bruger samme visningsflow");
+assert.match(html, /service-worker\.js\?v=20260716-completion-analysis2/, "De samlede UI-rettelser udløser en ny PWA app-shell");
+assert.match(html, /function latestCardioDurationMinutes\(exerciseName\)/, "Cardio can reuse the latest registered duration for the same exercise");
+assert.match(html, /const requestedDuration = Number\(totalMinutes\) > 0 \? Math\.max\(count \* 5, Number\(totalMinutes\)\) : 0;/, "The plan default duration does not prefill cardio fields");
+assert.match(html, /durationMinutes: requestedMinutes \|\| previousMinutes \|\| ""/, "New cardio fields stay empty without an explicit duration or history");
+assert.doesNotMatch(html.match(/function generateCardioProgram[\s\S]*?function openBlankWorkoutDialog/)?.[0] || "", /Number\(totalMinutes\) \|\| plan\.totalMinutes/, "The cardio generator must not use the plan default as the field value");
+assert.match(html, /durationMinutes: numberValue\(exercise\.cardio\?\.durationMinutes \|\| exercise\.durationMinutes\) \|\| latestCardioDurationMinutes\(exercise\.name\) \|\| ""/, "Onboarding cardio also stays empty without explicit time or history");
+assert.doesNotMatch(html, /Number\(action\.durationMinutes\) \|\| 30/, "AI cardio creation must not invent a 30-minute duration");
+assert.doesNotMatch(profileWizard, /durationMinutes: prescription\.durationMinutes \|\| 30/, "The profile wizard must not prefill cardio with 30 minutes");
+assert.match(profileWizard, /durationMinutes: prescription\.durationMinutes \|\| ""/, "The profile wizard leaves new cardio duration empty");
+assert.match(trainingGoalEngine, /exerciseType: "cardio", durationMinutes: ""/, "Cardio prescriptions start without an invented duration");
 assert.match(html, /class="sticky-metric live-training-only" id="elapsedTimeMetric" hidden/);
 assert.match(html, /class="calorie-panel live-training-only" id="caloriePanel" aria-live="polite" hidden/);
 assert.match(html, /class="dashboard-btn live-training-only" type="button" onclick="openDashboard\(\)" hidden/);

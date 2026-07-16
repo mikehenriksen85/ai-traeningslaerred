@@ -246,7 +246,7 @@
       pauseSeconds,
       role: goal === "cardio" ? "cardio" : role,
       goal,
-      ...(goal === "cardio" ? { exerciseType: "cardio", durationMinutes: 30 } : {})
+      ...(goal === "cardio" ? { exerciseType: "cardio", durationMinutes: "" } : {})
     };
   }
 

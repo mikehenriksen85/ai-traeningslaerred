@@ -4878,6 +4878,13 @@
       generateProgram(selectedAutomaticExerciseCount);
     }
 
+    function presentGeneratedWorkout() {
+      if ($("sidebar")?.classList.contains("open")) toggleSidebar(false);
+      renderHomeDashboard();
+      openWorkoutEditor();
+      $("autosaveStatus").textContent = "Træningspasset er oprettet og klar til redigering";
+    }
+
     function generateProgram(count = selectedAutomaticExerciseCount) {
       count = normalizeAutomaticExerciseCount(count);
       if (pendingProgram === "cardio") count = Math.min(5, count);
@@ -4935,7 +4942,7 @@
       $("countPicker").style.display = "none";
       pendingProgram = "";
       autoSave();
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      presentGeneratedWorkout();
     }
 
     const cardioGoalPlans = {
@@ -5029,13 +5036,28 @@
       $("calisthenicsTemplatePicker").style.display = "none";
       pendingProgram = "";
       autoSave();
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      presentGeneratedWorkout();
+    }
+
+    function latestCardioDurationMinutes(exerciseName) {
+      const normalizedName = normalizeExerciseHistoryText(exerciseName);
+      if (!normalizedName) return "";
+      const workouts = history().slice().sort((a, b) => new Date(b.completedAt || b.date || 0) - new Date(a.completedAt || a.date || 0));
+      for (const workout of workouts) {
+        const previousExercise = (workout.exercises || []).find(exercise =>
+          exercise?.exerciseType === "cardio"
+          && normalizeExerciseHistoryText(exercise.name) === normalizedName
+          && numberValue(exercise.cardio?.durationMinutes) > 0
+        );
+        if (previousExercise) return numberValue(previousExercise.cardio.durationMinutes);
+      }
+      return "";
     }
 
     function generateCardioProgram(count = 1, goal = "general_health", totalMinutes = null) {
       count = Math.max(1, Math.min(5, Number(count) || 1));
       const plan = cardioGoalPlans[goal] || cardioGoalPlans.general_health;
-      const duration = Math.max(count * 5, Number(totalMinutes) || plan.totalMinutes);
+      const requestedDuration = Number(totalMinutes) > 0 ? Math.max(count * 5, Number(totalMinutes)) : 0;
       const pool = catalog.filter(exercise => exercise.muscle === "Cardio");
       setExercisePickerContext("Cardio", ["Cardio"]);
       const shuffled = [...pool].sort(() => Math.random() - .5).slice(0, count);
@@ -5046,13 +5068,14 @@
       currentProgramDayIndex = 0;
       activeExerciseCountPreference = count;
       selectedWorkoutIntensity = plan.intensity;
-      const baseMinutes = Math.floor(duration / count);
-      let remainder = duration - (baseMinutes * count);
+      const baseMinutes = requestedDuration ? Math.floor(requestedDuration / count) : 0;
+      let remainder = requestedDuration ? requestedDuration - (baseMinutes * count) : 0;
       shuffled.forEach(exercise => {
-        const minutes = baseMinutes + (remainder-- > 0 ? 1 : 0);
+        const requestedMinutes = requestedDuration ? baseMinutes + (remainder-- > 0 ? 1 : 0) : "";
+        const previousMinutes = latestCardioDurationMinutes(exercise.name);
         addExercise(exercise.name, "Cardio", [], {
           exerciseType: "cardio",
-          cardio: { durationMinutes: minutes, distanceKm: "", calories: "", averageHeartRate: "", maxHeartRate: "", speedKmh: "", notes: "", completed: false }
+          cardio: { durationMinutes: requestedMinutes || previousMinutes || "", distanceKm: "", calories: "", averageHeartRate: "", maxHeartRate: "", speedKmh: "", notes: "", completed: false }
         });
       });
       renderDayNavigation();
@@ -5061,7 +5084,7 @@
       $("cardioGoalPicker").style.display = "none";
       pendingProgram = "";
       autoSave();
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      presentGeneratedWorkout();
     }
 
     function openBlankWorkoutDialog() {
@@ -9599,10 +9622,11 @@
       }
 
       if (action.action === "generateCardioProgram") {
-        const minutes = Math.max(5, Math.min(240, Number(action.durationMinutes) || 30));
-        const count = Math.max(1, Math.min(5, Math.round(minutes / 10)));
-        generateCardioProgram(count, "general_health", minutes);
-        return { success: true, changed: true, message: `Et cardio-program på ${minutes} minutter er oprettet med ${count} øvelse${count === 1 ? "" : "r"}.` };
+        const requestedMinutes = Number(action.durationMinutes) > 0 ? Math.max(5, Math.min(240, Number(action.durationMinutes))) : 0;
+        const count = requestedMinutes ? Math.max(1, Math.min(5, Math.round(requestedMinutes / 10))) : 3;
+        generateCardioProgram(count, "general_health", requestedMinutes || null);
+        const durationText = requestedMinutes ? ` på ${requestedMinutes} minutter` : "";
+        return { success: true, changed: true, message: `Et cardio-program${durationText} er oprettet med ${count} øvelse${count === 1 ? "" : "r"}.` };
       }
 
       if (action.action === "suggestProgram") return createCopilotProgram(action);
@@ -10019,7 +10043,7 @@
               role: "cardio",
               exerciseType: "cardio",
               cardio: {
-                durationMinutes: Number(exercise.cardio?.durationMinutes || exercise.durationMinutes) || 30,
+                durationMinutes: numberValue(exercise.cardio?.durationMinutes || exercise.durationMinutes) || latestCardioDurationMinutes(exercise.name) || "",
                 distanceKm: exercise.cardio?.distanceKm || "",
                 calories: exercise.cardio?.calories || "",
                 averageHeartRate: exercise.cardio?.averageHeartRate || "",
@@ -10541,9 +10565,9 @@
   <script src="admin-config.js?v=20260711-permanent-admin1"></script>
   <script src="exercise-animation-model.js?v=20260716-professional-three1"></script>
   <script type="module" src="exercise-animation-3d-renderer.js?v=20260716-professional-three1"></script>
-  <script src="completed-workout-analysis.js?v=20260716-completion-analysis1"></script>
+  <script src="completed-workout-analysis.js?v=20260716-completion-analysis2"></script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
-  <script src="training-goal-engine.js?v=20260620-calisthenics1"></script>
+  <script src="training-goal-engine.js?v=20260716-cardio-empty-time1"></script>
   <script src="workout-program-store.js"></script>
   <script src="screenshot-import.js?v=20260710-reps-input1"></script>
   <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
@@ -10555,7 +10579,7 @@
   <script src="auth-gate.js?v=20260712-google-auth-domain1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="profile-account.js?v=20260706-resume-state1"></script>
-  <script src="profile-wizard.js?v=20260620-calisthenics1"></script>
+  <script src="profile-wizard.js?v=20260716-cardio-empty-time1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
@@ -10569,7 +10593,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260716-completion-analysis1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260716-completion-analysis2").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

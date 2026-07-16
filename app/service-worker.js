@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v114-completion-analysis1";
+const CACHE_NAME = "work4it-shell-v117-completion-analysis2";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -6,7 +6,7 @@ const APP_SHELL = [
   "./admin-config.js?v=20260712-home-center1",
   "./exercise-animation-model.js?v=20260716-professional-three1",
   "./exercise-animation-3d-renderer.js?v=20260716-professional-three1",
-  "./completed-workout-analysis.js?v=20260716-completion-analysis1",
+  "./completed-workout-analysis.js?v=20260716-completion-analysis2",
   "./vendor/three/three.module.min.js",
   "./vendor/three/LICENSE",
   "./manifest.webmanifest",
@@ -17,7 +17,7 @@ const APP_SHELL = [
   "./workit-menu-manager.js?v=20260712-menu-manager1",
   "./storage-scope.js?v=20260621-cloud-primary1",
   "./calorie-estimator.js?v=20260615-cardio1",
-  "./training-goal-engine.js?v=20260620-calisthenics1",
+  "./training-goal-engine.js?v=20260716-cardio-empty-time1",
   "./workout-program-store.js?v=20260615-days1",
   "./screenshot-import.js?v=20260710-reps-input1",
   "./wizard-store.js?v=20260621-cloud-primary1",
@@ -34,7 +34,7 @@ const APP_SHELL = [
   "./auth-gate.js?v=20260712-google-auth-domain1",
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260706-resume-state1",
-  "./profile-wizard.js?v=20260620-calisthenics1",
+  "./profile-wizard.js?v=20260716-cardio-empty-time1",
   "./firebase-config.js?v=20260715-exercise-animations1",
   "./exercise-animation-cloud-service.js?v=20260716-backend-admin-read1",
   "./auth-service.js?v=20260713-stripe-google-login1",

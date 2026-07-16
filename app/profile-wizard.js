@@ -256,7 +256,7 @@
           ...(candidate.muscle === "Cardio" ? {
             exerciseType: "cardio",
             cardio: {
-              durationMinutes: prescription.durationMinutes || 30,
+              durationMinutes: prescription.durationMinutes || "",
               distanceKm: "",
               calories: "",
               averageHeartRate: "",
