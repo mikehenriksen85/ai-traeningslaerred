@@ -2671,6 +2671,51 @@
       gap: 18px;
       margin-bottom: 18px;
     }
+    .home-dashboard-content {
+      display: grid;
+      gap: 16px;
+    }
+    .home-dashboard-content[hidden] { display: none; }
+    .home-dashboard-loading {
+      display: grid;
+      gap: 10px;
+      min-height: 190px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--card);
+    }
+    .home-dashboard-loading[hidden] { display: none; }
+    .home-dashboard-loading span {
+      display: block;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--input), var(--border) 28%);
+    }
+    .home-dashboard-loading span:first-child { width: 48%; }
+    .home-dashboard-loading span:nth-child(2) { height: 62px; }
+    .home-sync-notice {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--orange);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      background: var(--input);
+    }
+    .home-sync-notice[hidden] { display: none; }
+    .home-sync-notice button {
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      color: var(--text-primary);
+      font: inherit;
+      cursor: pointer;
+    }
     .home-welcome {
       display: grid;
       gap: 4px;
@@ -2707,6 +2752,25 @@
       margin: 0;
       font-size: var(--font-size-h3);
       font-weight: var(--font-weight-semibold);
+    }
+    .home-active-section {
+      border-color: color-mix(in srgb, var(--green), var(--border) 45%);
+    }
+    .home-status-badge {
+      padding: 5px 9px;
+      border: 1px solid var(--green);
+      border-radius: 999px;
+      color: var(--text-primary);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+    }
+    .home-status-badge.paused { border-color: var(--orange); }
+    .home-metric-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      color: var(--text-secondary);
+      font-size: var(--font-size-body);
     }
     .home-program-name {
       font-size: clamp(1.15rem, 3vw, 1.45rem);
@@ -2781,6 +2845,53 @@
       cursor: pointer;
     }
     .home-secondary-button { padding: 10px 16px; }
+    .home-text-button,
+    .home-more-link {
+      min-height: 44px;
+      border: 0;
+      background: transparent;
+      color: var(--text-accent);
+      font: inherit;
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .home-text-button { justify-self: start; padding: 8px 0; }
+    .home-more-link { justify-self: center; color: var(--text-secondary); padding: 8px 12px; }
+    .home-empty-state p { margin: 6px 0 0; color: var(--text-secondary); }
+    .home-empty-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .home-ai-button { border-color: var(--blue); color: var(--text-accent); }
+    .home-quick-section { display: grid; gap: 10px; }
+    .home-quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .home-quick-grid button {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 5px;
+      min-height: 72px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--input);
+      color: var(--text-primary);
+      font: inherit;
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+    }
+    .home-quick-grid button span:first-child { font-size: 1.25rem; }
+    .home-recommendation {
+      padding: 14px 16px;
+      border-left: 3px solid var(--blue);
+      border-radius: var(--radius-sm);
+      background: var(--input);
+    }
+    .home-recommendation h2 { margin: 0 0 5px; font-size: var(--font-size-body); }
+    .home-recommendation p { margin: 0; color: var(--text-secondary); line-height: 1.45; }
+    .home-quick-grid button:focus-visible,
+    .home-secondary-button:focus-visible,
+    .home-text-button:focus-visible,
+    .home-more-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue), transparent 45%); outline-offset: 2px; }
     .home-create-button {
       width: 100%;
       border-color: color-mix(in srgb, var(--blue), var(--border) 28%);
@@ -2858,8 +2969,18 @@
       }
       .home-dashboard { gap: 14px; }
       .home-section { padding: 14px; }
+      .home-dashboard-content { gap: 14px; }
+      .home-empty-actions { grid-template-columns: 1fr; }
+      .home-quick-grid { grid-template-columns: 1fr; }
+      .home-quick-grid button { grid-template-columns: auto 1fr; justify-items: start; min-height: 52px; }
+      .home-sync-notice { align-items: stretch; flex-direction: column; }
+      .home-sync-notice button { width: 100%; }
       .home-saved-item { grid-template-columns: 1fr; }
       .home-saved-item .home-secondary-button { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .home-dashboard *, .home-dashboard *::before, .home-dashboard *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
     }
 
     .exercise-animation-viewer { display: grid; gap: 12px; }
@@ -3082,34 +3203,75 @@
       <section class="home-dashboard program-only" id="homeDashboard" aria-labelledby="homeWelcomeTitle">
         <header class="home-welcome">
           <span class="home-welcome-kicker">Dit Work4it-dashboard</span>
-          <h1 id="homeWelcomeTitle">Hej – klar til dagens træning?</h1>
-          <p>Fortsæt, hvor du slap, eller vælg et gemt træningspas.</p>
+          <h1 id="homeWelcomeTitle">Velkommen tilbage</h1>
+          <p id="homeWelcomeSubtitle">Her er det vigtigste for din træning i dag.</p>
         </header>
 
-        <section class="home-section" aria-labelledby="homeCurrentProgramHeading">
+        <section class="home-dashboard-loading" id="homeDashboardLoading" aria-label="Indlæser dashboard">
+          <span></span><span></span><span></span>
+        </section>
+
+        <div class="home-dashboard-content" id="homeDashboardContent" hidden>
+        <div class="home-sync-notice" id="homeSyncNotice" role="status" aria-live="polite" hidden>
+          <span id="homeSyncNoticeText"></span>
+          <button type="button" id="homeSyncRetryButton" onclick="retryDashboardSync()">Prøv igen</button>
+        </div>
+        <section class="home-section home-active-section" id="homeActiveSection" aria-labelledby="homeActiveHeading" hidden>
           <div class="home-section-head">
-            <h2 class="home-section-title" id="homeCurrentProgramHeading">Dagens træning</h2>
+            <h2 class="home-section-title" id="homeActiveHeading">Aktiv træning</h2>
+            <span class="home-status-badge" id="homeActiveStatus">Aktiv</span>
           </div>
-          <div class="home-program-name" id="homeCurrentProgramName">Intet træningspas valgt</div>
-          <div class="home-program-meta" id="homeCurrentProgramMeta">Vælg eller opret et træningspas for at komme i gang.</div>
+          <div class="home-program-name" id="homeActiveName"></div>
+          <div class="home-metric-row" id="homeActiveMetrics"></div>
+          <button class="home-start-button" id="homeResumeWorkoutButton" type="button" onclick="continueDashboardWorkout()" aria-label="Fortsæt den aktive træning">▶ Fortsæt træning</button>
+        </section>
+
+        <section class="home-section home-workout-section" id="homeWorkoutSection" aria-labelledby="homeCurrentProgramHeading" hidden>
+          <div class="home-section-head">
+            <h2 class="home-section-title" id="homeCurrentProgramHeading">Næste træning</h2>
+          </div>
+          <div class="home-program-name" id="homeCurrentProgramName"></div>
+          <div class="home-program-meta" id="homeCurrentProgramMeta"></div>
           <button class="home-start-button" id="timerBtn" type="button" aria-describedby="homeStartHelp" onclick="startDashboardWorkout()">▶ Start træning</button>
-          <p class="home-start-help" id="homeStartHelp" role="status">Tilføj mindst én gyldig øvelse for at starte træningen.</p>
+          <button class="home-text-button" id="homeViewProgramButton" type="button" onclick="viewDashboardFeaturedProgram()">Se træningspasset</button>
+          <p class="home-start-help" id="homeStartHelp" role="status" hidden>Tilføj mindst én gyldig øvelse for at starte træningen.</p>
         </section>
 
-        <section class="home-section" aria-labelledby="homeSavedHeading">
-          <div class="home-section-head">
-            <h2 class="home-section-title" id="homeSavedHeading">Gemte træningspas</h2>
+        <section class="home-section home-empty-state" id="homeEmptyState" aria-labelledby="homeEmptyHeading" hidden>
+          <div>
+            <h2 class="home-section-title" id="homeEmptyHeading">Kom i gang med din første træning</h2>
+            <p>Få hjælp til en plan, eller byg et enkelt træningspas selv.</p>
           </div>
-          <div class="home-saved-list" id="homeSavedPrograms"></div>
-          <div class="home-empty-copy" id="homeSavedEmpty" hidden>Du har ingen gemte træningspas endnu. Opret dit første pas, og start enkelt.</div>
+          <div class="home-empty-actions">
+            <button class="home-secondary-button home-ai-button" type="button" onclick="openProgramGeneratorFromDashboard()">✨ Lad AI oprette et program</button>
+            <button class="home-secondary-button" type="button" onclick="openBlankWorkoutDialog()">＋ Opret selv</button>
+          </div>
+          <button class="home-text-button" type="button" onclick="openScreenshotImportInfo()">📷 Importér fra screenshot</button>
         </section>
 
-        <section class="home-section" aria-labelledby="homeCreateHeading">
-          <div class="home-section-head">
-            <h2 class="home-section-title" id="homeCreateHeading">Nyt træningspas</h2>
+        <section class="home-quick-section" id="homeQuickSection" aria-labelledby="homeQuickHeading" hidden>
+          <h2 class="home-section-title" id="homeQuickHeading">Hurtige handlinger</h2>
+          <div class="home-quick-grid">
+            <button type="button" onclick="openBlankWorkoutDialog()"><span aria-hidden="true">＋</span><span>Nyt træningspas</span></button>
+            <button type="button" onclick="openScreenshotImportInfo()"><span aria-hidden="true">📷</span><span>Importér træning</span></button>
+            <button type="button" onclick="openSavedProgramsFromDashboard()"><span aria-hidden="true">📂</span><span>Mine programmer</span></button>
           </div>
-          <button class="home-secondary-button home-create-button" type="button" onclick="openCreateOrImportWorkout()">＋ Opret eller importér træningspas</button>
         </section>
+
+        <section class="home-section home-latest-section" id="homeLatestSection" aria-labelledby="homeLatestHeading" hidden>
+          <div class="home-section-head"><h2 class="home-section-title" id="homeLatestHeading">Seneste træning</h2></div>
+          <div class="home-program-name" id="homeLatestName"></div>
+          <div class="home-program-meta" id="homeLatestMeta"></div>
+          <button class="home-secondary-button" type="button" onclick="openLatestWorkoutFromDashboard()">Se træning</button>
+        </section>
+
+        <aside class="home-recommendation" id="homeRecommendation" aria-labelledby="homeRecommendationHeading" hidden>
+          <h2 id="homeRecommendationHeading">Work4it anbefaler</h2>
+          <p id="homeRecommendationText"></p>
+        </aside>
+
+        <button class="home-more-link" type="button" onclick="toggleSidebar(true)" aria-label="Åbn hovedmenu med flere funktioner">Flere funktioner findes i menuen</button>
+        </div>
       </section>
 
       <details class="workout-editor-details" id="workoutEditorDetails">
@@ -3741,6 +3903,7 @@
     let currentProgramDayIndex = 0;
     let currentLanguage = "da";
     let autosaveDebounce = null;
+    let dashboardCloudPending = false;
     const pauseTimers = {};
     let activePauseComponentKey = "";
     let pauseAudioContext = null;
@@ -6753,7 +6916,10 @@
         }
         if ($("globalTimer")) $("globalTimer").textContent = formatTime(totalSeconds);
         if (totalSeconds <= 10 || totalSeconds % 5 === 0) updateEstimatedCalories();
-        if (totalSeconds % 5 === 0) autoSave();
+        if (totalSeconds % 5 === 0) {
+          autoSave();
+          if (currentWorkoutView === "program") renderHomeDashboard();
+        }
       }, 1000);
     }
 
@@ -6815,6 +6981,7 @@
       updateWorkoutButtonVisibility();
       updateEstimatedCalories();
       refreshAllProgressionSuggestions();
+      renderHomeDashboard();
     }
 
     function resetSessionCompletionMarks() {
@@ -6945,6 +7112,7 @@
       updateWorkoutButtonVisibility();
       saveLastActiveView("program");
       autoSave();
+      renderHomeDashboard();
     }
 
     function beginWorkoutSession() {
@@ -7400,7 +7568,8 @@
     function dashboardDisplayName() {
       const profile = window.TrainingWizardStore?.getProfile?.() || {};
       const user = window.FirebaseAuthService?.getCurrentUser?.() || {};
-      const value = profile.name || user.displayName || String(user.email || "").split("@")[0] || "";
+      const value = profile.name || user.displayName || "";
+      if (String(value).includes("@")) return "";
       return String(value).trim().split(/\s+/)[0] || "";
     }
 
@@ -7435,55 +7604,128 @@
       return hasValidExercise;
     }
 
+    function dashboardDateLabel(value) {
+      const date = new Date(value || 0);
+      if (!Number.isFinite(date.getTime())) return "";
+      const today = new Date();
+      const dayKey = item => `${item.getFullYear()}-${item.getMonth()}-${item.getDate()}`;
+      const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+      if (dayKey(date) === dayKey(today)) return "I dag";
+      if (dayKey(date) === dayKey(yesterday)) return "I går";
+      return date.toLocaleDateString("da-DK", { day: "numeric", month: "short" });
+    }
+
+    function dashboardDurationLabel(seconds) {
+      const minutes = Math.max(0, Math.round(Number(seconds) / 60));
+      return minutes > 0 ? `${minutes} min.` : "";
+    }
+
+    function dashboardProgramsForView(programs) {
+      const list = Array.isArray(programs) ? [...programs] : [];
+      if (currentProgramSession && !list.some(program => program.id && program.id === currentProgramSession.id)) list.unshift(currentProgramSession);
+      return list;
+    }
+
+    function buildCurrentDashboardViewModel(programs) {
+      return window.Work4itDashboard?.buildDashboardViewModel?.({
+        profile: window.TrainingWizardStore?.getProfile?.() || {},
+        user: window.FirebaseAuthService?.getCurrentUser?.() || {},
+        programs: dashboardProgramsForView(programs),
+        activeWorkout: activeWorkoutSession,
+        history: history(),
+        lastActiveProgramId: window.TrainingWizardStore?.getLastActiveProgramId?.() || "",
+        currentProgramId: currentSavedProgramId || "",
+        now: new Date()
+      }) || null;
+    }
+
+    function setHomeDashboardLoading(loading) {
+      dashboardCloudPending = loading === true;
+      const skeleton = $("homeDashboardLoading");
+      const content = $("homeDashboardContent");
+      if (skeleton) skeleton.hidden = !dashboardCloudPending;
+      if (content) content.hidden = dashboardCloudPending;
+    }
+
+    function setDashboardSyncNotice(message = "", retrying = false) {
+      const notice = $("homeSyncNotice");
+      const text = $("homeSyncNoticeText");
+      const button = $("homeSyncRetryButton");
+      if (!notice || !text || !button) return;
+      notice.hidden = !message;
+      text.textContent = message;
+      button.disabled = retrying;
+      button.textContent = retrying ? "Prøver igen…" : "Prøv igen";
+    }
+
+    async function retryDashboardSync() {
+      const service = window.FirestoreDataService;
+      if (!service?.syncAllLocalData) return setDashboardSyncNotice("Cloud kan ikke kontaktes lige nu.");
+      setDashboardSyncNotice("Gemmer…", true);
+      try {
+        await service.syncAllLocalData();
+        setDashboardSyncNotice();
+      } catch (error) {
+        const offline = service.isConnectivityError?.(error) === true;
+        setDashboardSyncNotice(offline ? "Offline – ændringer synkroniseres senere" : "Kunne ikke synkronisere");
+      }
+    }
+
     function renderHomeDashboard(programs = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt))) {
-      const list = Array.isArray(programs) ? programs : [];
-      const welcome = $("homeWelcomeTitle");
-      const firstName = dashboardDisplayName();
-      if (welcome) welcome.textContent = firstName ? `Hej ${firstName} – klar til dagens træning?` : "Hej – klar til dagens træning?";
+      if (dashboardCloudPending) return setHomeDashboardLoading(true);
+      const view = buildCurrentDashboardViewModel(programs);
+      if (!view) return;
+      setHomeDashboardLoading(false);
+      $("homeWelcomeTitle").textContent = view.greeting;
+      $("homeWelcomeSubtitle").textContent = view.activeWorkout
+        ? "Din træning venter på dig."
+        : view.emptyState ? "Lad os gøre din første træning enkel." : "Her er dit næste skridt.";
 
-      const activeProgram = currentProgramSession ||
-        list.find(program => program.id === currentSavedProgramId) ||
-        (slotIds().length ? null : list[0]) || null;
-      const currentName = $("homeCurrentProgramName");
-      const currentMeta = $("homeCurrentProgramMeta");
+      const activeSection = $("homeActiveSection");
+      activeSection.hidden = !view.activeWorkout;
+      if (view.activeWorkout) {
+        $("homeActiveName").textContent = view.activeWorkout.title;
+        const metrics = [];
+        if (view.activeWorkout.totalSets > 0) metrics.push(`${view.activeWorkout.completedSets} af ${view.activeWorkout.totalSets} sæt gennemført`);
+        metrics.push(dashboardDurationLabel(view.activeWorkout.elapsedSeconds) || "Netop startet");
+        $("homeActiveMetrics").innerHTML = metrics.map(metric => `<span>${esc(metric)}</span>`).join("");
+        $("homeActiveStatus").textContent = view.activeWorkout.status;
+        $("homeActiveStatus").classList.toggle("paused", view.activeWorkout.statusCode === "paused");
+      }
+
+      const workoutSection = $("homeWorkoutSection");
+      workoutSection.hidden = !view.featuredWorkout;
       const startButton = $("timerBtn");
-      if (activeProgram) {
-        const days = activeProgram.days?.length || 1;
-        const exercises = programExerciseCount(activeProgram);
-        if (currentName) currentName.textContent = activeProgram.title || t("workoutFallback");
-        if (currentMeta) currentMeta.textContent = `${days} ${days === 1 ? "træningsdag" : "træningsdage"} · ${exercises} ${exercises === 1 ? "øvelse" : "øvelser"}`;
-        if (startButton) {
-          startButton.dataset.programId = activeProgram.id || "";
-          startButton.textContent = "▶ Start træning";
-          updateStartTrainingAvailability(activeProgram);
-        }
+      if (view.featuredWorkout) {
+        $("homeCurrentProgramHeading").textContent = view.featuredWorkout.heading;
+        $("homeCurrentProgramName").textContent = view.featuredWorkout.title;
+        const meta = [`${view.featuredWorkout.exerciseCount} ${view.featuredWorkout.exerciseCount === 1 ? "øvelse" : "øvelser"}`];
+        if (view.featuredWorkout.estimatedMinutes) meta.push(`cirka ${view.featuredWorkout.estimatedMinutes} min.`);
+        if (view.featuredWorkout.dayCount > 1) meta.push(`${view.featuredWorkout.dayCount} træningsdage`);
+        $("homeCurrentProgramMeta").textContent = meta.join(" · ");
+        startButton.dataset.programId = view.featuredWorkout.id;
+        startButton.textContent = "▶ Start træning";
+        updateStartTrainingAvailability(dashboardProgramsForView(programs).find(program => program.id === view.featuredWorkout.id));
       } else {
-        const draftExercises = slotIds().length;
-        if (currentName) currentName.textContent = draftExercises ? ($("workoutTitle")?.textContent || "Nyt træningspas") : "Intet træningspas valgt";
-        if (currentMeta) currentMeta.textContent = draftExercises
-          ? `${draftExercises} ${draftExercises === 1 ? "øvelse" : "øvelser"} i dit aktuelle udkast`
-          : "Opret eller importér et træningspas for at komme i gang.";
-        if (startButton) {
-          startButton.dataset.programId = "";
-          startButton.textContent = "▶ Start træning";
-          updateStartTrainingAvailability();
-        }
+        startButton.dataset.programId = "";
       }
 
-      const savedList = $("homeSavedPrograms");
-      const empty = $("homeSavedEmpty");
-      if (savedList) {
-        savedList.innerHTML = list.slice(0, 4).map(program => {
-          const date = new Date(program.savedAt || program.updatedAt || Date.now());
-          const dateText = Number.isFinite(date.getTime()) ? date.toLocaleDateString("da-DK") : "Gemt program";
-          const encodedId = encodeURIComponent(program.id || "");
-          return `<article class="home-saved-item">
-            <div><div class="home-saved-name">${esc(program.title || t("workoutFallback"))}</div><div class="home-saved-meta">${programExerciseCount(program)} øvelser · ${dateText}</div></div>
-            <button class="home-secondary-button" type="button" onclick="openDashboardSavedProgram('${encodedId}')">Åbn</button>
-          </article>`;
-        }).join("");
+      $("homeEmptyState").hidden = !view.emptyState;
+      $("homeQuickSection").hidden = view.emptyState || Boolean(view.activeWorkout);
+
+      const latestSection = $("homeLatestSection");
+      latestSection.hidden = !view.latestWorkout;
+      if (view.latestWorkout) {
+        $("homeLatestName").textContent = view.latestWorkout.title;
+        const latestMeta = [dashboardDateLabel(view.latestWorkout.date), dashboardDurationLabel(view.latestWorkout.durationSeconds)];
+        if (view.latestWorkout.completedSets > 0) latestMeta.push(`${view.latestWorkout.completedSets} sæt`);
+        if (view.latestWorkout.totalVolumeKg > 0) latestMeta.push(`${vol(view.latestWorkout.totalVolumeKg)} volumen`);
+        if (view.latestWorkout.personalRecords > 0) latestMeta.push(`${view.latestWorkout.personalRecords} ny ${view.latestWorkout.personalRecords === 1 ? "PR" : "PR'er"}`);
+        $("homeLatestMeta").textContent = latestMeta.filter(Boolean).join(" · ");
       }
-      if (empty) empty.hidden = list.length > 0;
+
+      $("homeRecommendation").hidden = !view.recommendation;
+      if (view.recommendation) $("homeRecommendationText").textContent = view.recommendation.message;
     }
 
     function openDashboardSavedProgram(encodedId) {
@@ -7493,10 +7735,32 @@
       renderHomeDashboard();
     }
 
+    function continueDashboardWorkout() {
+      if (!hasActiveWorkoutSession()) return renderHomeDashboard();
+      showTrainingSession();
+    }
+
+    function viewDashboardFeaturedProgram() {
+      const id = $("timerBtn")?.dataset.programId || "";
+      if (id) loadSavedProgram(id, false);
+      openWorkoutEditor();
+    }
+
+    function openSavedProgramsFromDashboard() {
+      toggleSidebar(true);
+      const trainingSection = document.querySelector('[data-accordion="training"]');
+      if (!trainingSection?.classList.contains("open")) toggleSidebarAccordion("training");
+      if (!window.WorkitMenuManager?.isPanelOpen?.("saved-dropdown")) toggleSavedDropdown();
+    }
+
+    function openLatestWorkoutFromDashboard() {
+      openDashboard();
+    }
+
     function startDashboardWorkout() {
       const button = $("timerBtn");
       const programId = button?.dataset.programId || "";
-      if (!slotIds().length && programId) loadSavedProgram(programId, false);
+      if (programId && (currentSavedProgramId !== programId || !slotIds().length)) loadSavedProgram(programId, false);
       if (!hasActiveWorkoutSession() && validCanvasExerciseCount() === 0) return updateStartTrainingAvailability();
       openWorkoutEditor();
       toggleWorkoutTimer();
@@ -10660,11 +10924,17 @@
     });
     window.addEventListener("ai-requests:changed", event => updateAiRequestCounterDisplay(event.detail));
     window.addEventListener("exercise-history:changed", refreshAllProgressionSuggestions);
+    window.addEventListener("firebase-auth:changed", event => {
+      if (event.detail?.user?.uid) setHomeDashboardLoading(true);
+      else dashboardCloudPending = false;
+    });
     window.addEventListener("firestore:data-hydrated", () => {
+      dashboardCloudPending = false;
+      setDashboardSyncNotice();
       loadCustom();
-      renderSaved();
       renderTrash();
       loadAutosave();
+      renderSaved();
       updateDailyMotivationDisplay();
       updateEstimatedCalories();
       window.Work4itAIRequestCounter?.refresh?.();
@@ -10674,16 +10944,32 @@
       refreshAllProgressionSuggestions();
       $("autosaveStatus").textContent = "Data synkroniseret fra Firebase";
     });
+    window.addEventListener("firestore:user-ready", () => {
+      if (!dashboardCloudPending) return;
+      dashboardCloudPending = false;
+      loadAutosave();
+      renderSaved();
+    });
     window.addEventListener("firestore:sync-completed", () => {
+      setDashboardSyncNotice();
       $("autosaveStatus").textContent = "✔ Synkroniseret med Cloud";
     });
     window.addEventListener("firestore:fallback-active", event => {
       const error = event.detail?.error;
+      if (dashboardCloudPending) {
+        dashboardCloudPending = false;
+        loadAutosave();
+        renderSaved();
+      }
+      setDashboardSyncNotice(window.FirestoreDataService?.isConnectivityError?.(error)
+        ? "Offline – ændringer synkroniseres senere"
+        : "Kunne ikke synkronisere");
       $("autosaveStatus").textContent = window.FirestoreDataService?.isConnectivityError?.(error)
         ? "Træningspas gemt lokalt - Cloud ikke tilgængelig"
         : `Cloud-fejl (${error?.code || "ukendt"}) - lokale data er bevaret`;
     });
     window.addEventListener("firestore:user-cache-cleared", () => {
+      setDashboardSyncNotice();
       resetWorkoutCanvas("Log ind for at se dine træningsdata");
       renderSaved();
       renderTrash();
@@ -10732,7 +11018,6 @@
       currentLanguage = "da";
       renderCountButtons();
       loadCustom();
-      renderSaved();
       renderTrash();
       const restoredAutosave = loadAutosave();
       if (!restoredAutosave) {
@@ -10741,6 +11026,7 @@
         $("workoutTitle").textContent = t("defaultTitle");
         $("exercises").innerHTML = "";
       }
+      renderSaved();
       applyLanguage(currentLanguage);
       updateAutoPauseSettingUi();
       updateWorkoutProgress();
@@ -10762,6 +11048,7 @@
   <script src="exercise-animation/mannequin.js?v=20260716-mannequin-prototype1"></script>
   <script src="exercise-animation-model.js?v=20260716-professional-three1"></script>
   <script type="module" src="exercise-animation-3d-renderer.js?v=20260716-professional-three1"></script>
+  <script src="dashboard-view-model.js?v=20260718-dashboard1"></script>
   <script src="progression-service.js?v=20260718-progression1"></script>
   <script src="completed-workout-analysis.js?v=20260716-completion-analysis2"></script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
@@ -10791,7 +11078,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260718-progression1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260718-dashboard1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

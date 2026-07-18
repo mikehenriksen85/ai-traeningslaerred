@@ -13,13 +13,22 @@ inlineScripts.forEach(source => new Function(source));
 
 for (const id of [
   "homeDashboard",
+  "homeDashboardLoading",
+  "homeDashboardContent",
+  "homeSyncNotice",
+  "homeSyncRetryButton",
   "homeWelcomeTitle",
+  "homeActiveSection",
+  "homeResumeWorkoutButton",
+  "homeWorkoutSection",
   "homeCurrentProgramName",
   "homeStartHelp",
+  "homeEmptyState",
+  "homeQuickSection",
+  "homeLatestSection",
+  "homeRecommendation",
   "elapsedTimeMetric",
   "programSecondaryActions",
-  "homeSavedPrograms",
-  "homeSavedEmpty",
   "workoutEditorDetails",
   "timerBtn",
   "savedSelect",
@@ -50,6 +59,9 @@ for (const handler of [
 
 assert.match(html, /function renderHomeDashboard\(/);
 assert.match(html, /function startDashboardWorkout\(/);
+assert.match(html, /function continueDashboardWorkout\(/);
+assert.match(html, /function buildCurrentDashboardViewModel\(/);
+assert.match(html, /async function retryDashboardSync\(/);
 assert.match(html, /function updateStartTrainingAvailability\(/);
 assert.match(html, /function updateLiveTrainingVisibility\(/);
 assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
@@ -58,7 +70,8 @@ assert.match(html, /document\.querySelectorAll\("\.live-training-only"\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
 assert.match(html, /function presentGeneratedWorkout\(\) \{[\s\S]*toggleSidebar\(false\)[\s\S]*renderHomeDashboard\(\)[\s\S]*openWorkoutEditor\(\)/, "Genererede programmer vises automatisk efter mobilmenuen lukkes");
 assert.equal((html.match(/presentGeneratedWorkout\(\);/g) || []).length, 3, "Styrke, calisthenics og cardio bruger samme visningsflow");
-assert.match(html, /service-worker\.js\?v=20260718-progression1/, "Progression udløser en ny PWA app-shell");
+assert.match(html, /service-worker\.js\?v=20260718-dashboard1/, "Dashboardet udløser en ny PWA app-shell");
+assert.match(html, /dashboard-view-model\.js\?v=20260718-dashboard1/);
 assert.match(html, /class="progression-suggestion/);
 assert.match(html, /function applyProgressionSuggestion\(/);
 assert.match(html, /window\.Work4itProgression\.formatSuggestion/);
@@ -85,7 +98,31 @@ assert.match(html, /home-start-button:disabled/);
 assert.match(html, /function updateWorkoutProgress\(\) \{\s+updateStartTrainingAvailability\(\)/);
 assert.match(html, /if \(!hasActiveWorkoutSession\(\) && validCanvasExerciseCount\(\) === 0\) return updateStartTrainingAvailability\(\)/);
 assert.match(html, /function openCreateOrImportWorkout\(/);
-assert.match(html, /homeSavedEmpty[^>]*hidden/);
+assert.match(html, /id="homeActiveSection"[^>]*hidden/);
+assert.match(html, /id="homeWorkoutSection"[^>]*hidden/);
+assert.match(html, /id="homeEmptyState"[^>]*hidden/);
+assert.match(html, /id="homeLatestSection"[^>]*hidden/);
+assert.match(html, /id="homeRecommendation"[^>]*hidden/);
+assert.match(html, /activeSection\.hidden = !view\.activeWorkout/);
+assert.match(html, /workoutSection\.hidden = !view\.featuredWorkout/);
+assert.match(html, /function continueDashboardWorkout\(\) \{[\s\S]*?showTrainingSession\(\)/, "Fortsæt træning genbruger den aktive session");
+assert.match(html, /loadAutosave\(\);\s+renderSaved\(\)/, "Dashboard rendres efter autosave\/cloud-sessionen er gendannet");
+assert.match(html, /firestore:fallback-active[\s\S]*?dashboardCloudPending = false;[\s\S]*?renderSaved\(\)/, "Offline fallback frigiver dashboardet med den brugeropdelte cache");
+assert.match(html, /Offline – ændringer synkroniseres senere/);
+assert.match(html, /Kunne ikke synkronisere/);
+assert.match(html, /id="homeSyncRetryButton" onclick="retryDashboardSync\(\)"/);
+assert.doesNotMatch(html.match(/function dashboardDisplayName[\s\S]*?function programExerciseCount/)?.[0] || "", /user\.email/, "E-mail bruges aldrig som dashboardnavn");
+const quickSection = html.match(/<section class="home-quick-section"[\s\S]*?<\/section>/)?.[0] || "";
+assert.equal((quickSection.match(/<button/g) || []).length, 3, "Dashboardet viser højst tre hurtige handlinger");
+assert.match(quickSection, /openBlankWorkoutDialog\(\)/);
+assert.match(quickSection, /openScreenshotImportInfo\(\)/);
+assert.match(quickSection, /openSavedProgramsFromDashboard\(\)/);
+assert.match(html, /id="homeResumeWorkoutButton"[^>]*onclick="continueDashboardWorkout\(\)"/, "Aktiv træning fortsættes med ét tryk");
+assert.match(html, /id="timerBtn"[^>]*onclick="startDashboardWorkout\(\)"/, "Valgt program startes med ét tryk");
+assert.match(html, /programId && \(currentSavedProgramId !== programId \|\| !slotIds\(\)\.length\)\) loadSavedProgram\(programId, false\)/, "Start indlæser altid det program, dashboardet viser");
+assert.match(html, /onclick="openProgramGeneratorFromDashboard\(\)"[^>]*>[^<]*Lad AI oprette et program/, "Ny bruger kan begynde AI-oprettelse med ét tryk");
+assert.match(html, /onclick="openScreenshotImportInfo\(\)"[^>]*>[^<]*📷 Importér fra screenshot/, "Ny bruger kan begynde import med ét tryk");
+assert.match(html, /onclick="openLatestWorkoutFromDashboard\(\)"[^>]*>Se træning/, "Seneste træning åbnes med ét tryk");
 assert.match(html, /data-accordion="more"/);
 
 const sidebarMarkup = html.match(/<nav class="sidebar"[\s\S]*?<\/nav>/)?.[0] || "";

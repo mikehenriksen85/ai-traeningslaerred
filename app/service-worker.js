@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v119-progression1";
+const CACHE_NAME = "work4it-shell-v120-dashboard1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -10,6 +10,7 @@ const APP_SHELL = [
   "./exercise-animation/mannequin.js?v=20260716-mannequin-prototype1",
   "./exercise-animation-model.js?v=20260716-professional-three1",
   "./exercise-animation-3d-renderer.js?v=20260716-professional-three1",
+  "./dashboard-view-model.js?v=20260718-dashboard1",
   "./progression.css?v=20260718-progression1",
   "./progression-service.js?v=20260718-progression1",
   "./completed-workout-analysis.js?v=20260716-completion-analysis2",
