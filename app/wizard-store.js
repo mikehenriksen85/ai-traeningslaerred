@@ -101,11 +101,17 @@
 
   async function saveProfileAndSync(profile) {
     const saved = saveProfile(profile, { cloud: false });
-    if (!window.FirebaseAuthService?.getCurrentUser?.()) return saved;
+    const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+    if (!user?.uid) {
+      const error = new Error("Profilen er gemt lokalt, men Cloud kræver et gyldigt login.");
+      error.code = "auth/user-not-authenticated";
+      throw error;
+    }
     if (!window.FirestoreDataService?.saveProfileToCloud) {
       throw new Error("Cloud-tjenesten er ikke klar.");
     }
-    await window.FirestoreDataService.saveProfileToCloud(saved);
+    const cloudSaved = await window.FirestoreDataService.saveProfileToCloud(saved);
+    if (cloudSaved !== true) throw new Error("Cloud-gemningen blev ikke bekræftet.");
     return saved;
   }
 

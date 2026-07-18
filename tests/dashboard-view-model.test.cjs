@@ -37,14 +37,18 @@ const scheduled = program("today", "FullBody");
 scheduled.scheduledDate = "2026-07-18";
 assert.equal(build({ now: new Date("2026-07-18T12:00:00"), programs: [program(), scheduled] }).featuredWorkout.heading, "Dagens træning");
 
-const active = build({ programs: [program()], activeWorkout: { sessionId: "s1", sessionStatus: "in_progress", title: "Bryst", timerSeconds: 1680, exercises: [{ sets: [{ completed: true }, { completed: false }] }] } });
+const active = build({ programs: [program()], activeWorkout: { sessionId: "s1", sessionStatus: "in_progress", title: "Bryst", timerSeconds: 1680, exercises: [{ name: "Bench Press", sets: [{ completed: true }, { completed: false }] }] } });
 assert.equal(active.activeWorkout.status, "Aktiv");
 assert.equal(active.activeWorkout.completedSets, 1);
 assert.equal(active.activeWorkout.totalSets, 2);
 assert.equal(active.primaryAction.type, "resume-workout");
 assert.equal(active.featuredWorkout, null);
 
-const paused = build({ activeWorkout: { sessionId: "s2", sessionStatus: "paused", title: "Ben", exercises: [] } });
+const paused = build({ activeWorkout: { sessionId: "s2", sessionStatus: "paused", title: "Ben", exercises: [{ name: "Back Squat", sets: [] }] } });
+const staleActive = build({ programs: [program()], activeWorkout: { sessionId: "stale", sessionStatus: "in_progress", exercises: [] } });
+assert.equal(staleActive.activeWorkout, null, "status alone cannot make an empty autosave active");
+assert.equal(staleActive.primaryAction.type, "start-workout", "a valid saved program remains startable");
+assert.equal(build({ activeWorkout: { sessionStatus: "paused", exercises: [{ name: "Vælg øvelse" }] } }).activeWorkout, null, "placeholder exercises cannot be resumed");
 assert.equal(paused.activeWorkout.status, "Pauset");
 assert.match(paused.recommendation.message, /pauset træning/);
 
@@ -66,5 +70,6 @@ assert.equal(build({ history: [bodyweight] }).latestWorkout.totalVolumeKg, 0);
 assert.equal(build({ programs: [program()], history: [workout({ programId: "p1" })] }).featuredWorkout.source, "last-used");
 assert.equal(build({ programs: [program()], currentProgramId: "p1" }).featuredWorkout.source, "last-selected");
 assert.equal(build({ programs: [{ id: "invalid", days: [{ exercises: [] }] }] }).featuredWorkout, null);
+assert.equal(build({ programs: [{ id: "placeholder", days: [{ exercises: [{ name: "Vælg øvelse" }] }] }] }).featuredWorkout, null);
 assert.doesNotMatch(source, /fetch\(|firebase|localStorage|Membership|AIRequest/, "View-model is pure and membership-neutral");
 console.log("Dashboard view-model scenarios passed: 24+");

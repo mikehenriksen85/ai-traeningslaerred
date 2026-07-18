@@ -18,15 +18,23 @@
     const prefix = hour < 11 ? "Godmorgen" : hour < 18 ? "God eftermiddag" : "Godaften";
     return `${prefix}, ${name}`;
   }
+  function validExercise(exercise) {
+    const name = String(exercise?.name || "").trim();
+    return Boolean(name && !/^(vælg|vaelg|choose)\b/i.test(name));
+  }
   function sessionIsActive(session) {
-    return Boolean(session && ["in_progress", "paused"].includes(session.sessionStatus));
+    return Boolean(
+      session &&
+      ["in_progress", "paused"].includes(session.sessionStatus) &&
+      asArray(session.exercises).some(validExercise)
+    );
   }
   function dayForProgram(program) {
     const days = asArray(program?.days);
     const index = Math.min(Math.max(0, Number(program?.activeDayIndex) || 0), Math.max(0, days.length - 1));
     return days[index] || null;
   }
-  function exerciseCount(program) { return asArray(dayForProgram(program)?.exercises).filter(exercise => String(exercise?.name || "").trim()).length; }
+  function exerciseCount(program) { return asArray(dayForProgram(program)?.exercises).filter(validExercise).length; }
   function programHasExercise(program) { return exerciseCount(program) > 0; }
   function todayKey(now) {
     const year = now.getFullYear();

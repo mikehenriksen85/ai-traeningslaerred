@@ -492,15 +492,27 @@
       const profile = collectProfileAccountData();
       if (!profileIsValid(profile, feedback)) return;
       try {
+        if (feedback) {
+          feedback.textContent = "Gemmer profil lokalt og i Cloud...";
+          feedback.style.color = "";
+        }
         await window.TrainingWizardStore?.saveProfileAndSync?.(profile);
         updateSidebarProfileIdentity();
         if (feedback) {
-          feedback.textContent = "Profil gemt automatisk i Cloud ☁️";
+          feedback.textContent = "✔ Profil gemt automatisk lokalt og i Cloud";
           feedback.style.color = "";
         }
-      } catch {
+      } catch (error) {
+        console.error("[Work4it profil] Automatisk Cloud-gemning mislykkedes.", {
+          code: error?.code || "unknown",
+          message: error?.message || String(error),
+          uid: window.FirebaseAuthService?.getCurrentUser?.()?.uid || null,
+          path: `users/${window.FirebaseAuthService?.getCurrentUser?.()?.uid || "unknown"}/profile/main`
+        });
         if (feedback) {
-          feedback.textContent = "Profil gemt lokalt – Cloud ikke tilgængelig";
+          feedback.textContent = window.FirestoreDataService?.isConnectivityError?.(error)
+            ? "Profil gemt lokalt – Cloud er offline og synkroniseres, når forbindelsen er tilbage"
+            : `Profil gemt lokalt – Cloud-fejl: ${error?.code || error?.message || "ukendt fejl"}`;
           feedback.style.color = "#fbbf24";
         }
       }
@@ -514,20 +526,32 @@
     if (!profileIsValid(profile, feedback)) return;
     window.clearTimeout(profileAutosaveTimer);
     try {
+      if (feedback) {
+        feedback.textContent = "Gemmer profil lokalt og i Cloud...";
+        feedback.style.color = "";
+      }
       const savedProfile = window.TrainingWizardStore?.saveProfileAndSync
         ? await window.TrainingWizardStore.saveProfileAndSync(profile)
         : window.TrainingWizardStore?.saveProfile?.(profile);
       saveMeasurementSnapshot(savedProfile || profile);
       updateSidebarProfileIdentity();
       if (feedback) {
-        feedback.textContent = "Profil gemt i Cloud ☁️";
+        feedback.textContent = "✔ Profil gemt lokalt og i Cloud";
         feedback.style.color = "";
       }
     } catch (error) {
       saveMeasurementSnapshot(profile);
       updateSidebarProfileIdentity();
+      console.error("[Work4it profil] Cloud-gemning mislykkedes.", {
+        code: error?.code || "unknown",
+        message: error?.message || String(error),
+        uid: window.FirebaseAuthService?.getCurrentUser?.()?.uid || null,
+        path: `users/${window.FirebaseAuthService?.getCurrentUser?.()?.uid || "unknown"}/profile/main`
+      });
       if (feedback) {
-        feedback.textContent = "Profil gemt lokalt – Cloud ikke tilgængelig";
+        feedback.textContent = window.FirestoreDataService?.isConnectivityError?.(error)
+          ? "Profil gemt lokalt – Cloud er offline og synkroniseres, når forbindelsen er tilbage"
+          : `Profil gemt lokalt – Cloud-fejl: ${error?.code || error?.message || "ukendt fejl"}`;
         feedback.style.color = "#fbbf24";
       }
     }

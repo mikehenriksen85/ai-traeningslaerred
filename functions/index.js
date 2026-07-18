@@ -7,6 +7,7 @@ const { defineSecret } = require("firebase-functions/params");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const Stripe = require("stripe");
 const { normalizeAdminTestMode, subscriptionTestPolicy } = require("./subscription-test-policy");
+const { canonicalCheckoutLineItem } = require("./stripe-pricing-policy");
 
 admin.initializeApp();
 setGlobalOptions({ region: "europe-west1", maxInstances: 10 });
@@ -295,11 +296,6 @@ async function pricingTier() {
   };
 }
 
-function priceAmountDkk(price, fallbackPriceDkk) {
-  const amount = Number(price?.unit_amount);
-  return Number.isFinite(amount) && amount > 0 ? amount / 100 : fallbackPriceDkk;
-}
-
 function checkoutModeForPrice(price) {
   return price?.recurring ? "subscription" : "payment";
 }
@@ -379,7 +375,8 @@ exports.createStripeCheckoutSession = onCall({
   if (!stripePrice?.active) {
     throw new HttpsError("failed-precondition", "Den valgte Stripe-pris er ikke aktiv.");
   }
-  const priceDkk = priceAmountDkk(stripePrice, config.fallbackPriceDkk);
+  const checkoutPrice = canonicalCheckoutLineItem(stripePrice, config);
+  const priceDkk = checkoutPrice.canonicalUnitAmount / 100;
   const email = request.auth?.token?.email || undefined;
   const name = request.auth?.token?.name || undefined;
   const customerId = await getOrCreateCustomer(stripe, uid, email, name);
@@ -392,15 +389,13 @@ exports.createStripeCheckoutSession = onCall({
     success_url: `${origin}/?payment=success&session_id={CHECKOUT_SESSION_ID}${adminTest.requested ? `&admin_test=1&plan=${encodeURIComponent(plan)}` : ""}`,
     cancel_url: `${origin}/?payment=cancelled${adminTest.requested ? "&admin_test=1" : ""}`,
     allow_promotion_codes: true,
-    line_items: [{
-      price: config.priceId,
-      quantity: 1
-    }],
+    line_items: [checkoutPrice.lineItem],
     metadata: {
       uid,
       plan,
       priceId: config.priceId,
       priceDkk: String(priceDkk),
+      priceSource: checkoutPrice.priceSource,
       membershipDurationMonths: config.months == null ? "" : String(config.months),
       pricingTier: tier.activeTier,
       registeredUserCount: tier.registeredUserCount == null ? "" : String(tier.registeredUserCount),
@@ -413,6 +408,7 @@ exports.createStripeCheckoutSession = onCall({
     plan,
     priceId: config.priceId,
     priceDkk,
+    priceSource: checkoutPrice.priceSource,
     membershipDurationMonths: config.months,
     pricingTier: tier.activeTier,
     status: "created",

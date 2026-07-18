@@ -260,6 +260,88 @@
       border-radius: 8px;
       padding: 2px;
     }
+    .workout-heatmap-section {
+      display: grid;
+      gap: 12px;
+      margin: 0 0 18px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--card), transparent 8%);
+    }
+    .workout-heatmap-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .workout-heatmap-title { margin: 0; color: var(--text-primary); font-size: 17px; }
+    .workout-heatmap-copy { margin: 3px 0 0; color: var(--text-secondary); font-size: var(--font-size-small); }
+    .workout-heatmap-period {
+      min-height: 40px;
+      width: auto;
+      flex: 0 0 auto;
+      padding: 7px 30px 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--input);
+      color: var(--text-primary);
+    }
+    .workout-heatmap-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .workout-heatmap-stat { min-width: 0; padding: 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgba(15,23,42,.22); }
+    .workout-heatmap-stat strong { display: block; color: var(--text-primary); font-size: 18px; }
+    .workout-heatmap-stat span { display: block; margin-top: 2px; color: var(--text-secondary); font-size: 11px; line-height: 1.25; }
+    .workout-heatmap-scroll { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 8px; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+    .workout-heatmap-calendar { display: grid; grid-template-columns: 34px max-content; gap: 7px; min-width: max-content; }
+    .workout-heatmap-weekdays { display: grid; grid-template-rows: 18px repeat(7, 13px); gap: 3px; color: var(--text-secondary); font-size: 10px; }
+    .workout-heatmap-weekdays span { align-self: center; }
+    .workout-heatmap-main { display: grid; gap: 3px; }
+    .workout-heatmap-months { display: grid; height: 18px; gap: 3px; color: var(--text-secondary); font-size: 10px; white-space: nowrap; }
+    .workout-heatmap-grid { display: grid; grid-template-rows: repeat(7, 13px); grid-auto-flow: column; gap: 3px; }
+    .workout-heatmap-day {
+      width: 13px;
+      height: 13px;
+      min-width: 13px;
+      min-height: 13px;
+      margin: 0;
+      padding: 0;
+      border: 1px solid color-mix(in srgb, var(--border), transparent 15%);
+      border-radius: 3px;
+      background: color-mix(in srgb, var(--input), transparent 20%);
+    }
+    button.workout-heatmap-day { cursor: pointer; }
+    .workout-heatmap-day[data-level="1"] { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--blue), var(--card) 72%) 0 3px, color-mix(in srgb, var(--blue), var(--card) 84%) 3px 5px); }
+    .workout-heatmap-day[data-level="2"] { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--blue), var(--card) 52%) 0 3px, color-mix(in srgb, var(--blue), var(--card) 68%) 3px 5px); }
+    .workout-heatmap-day[data-level="3"] { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--orange), var(--card) 48%) 0 3px, color-mix(in srgb, var(--orange), var(--card) 62%) 3px 5px); }
+    .workout-heatmap-day[data-level="4"] { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--orange), var(--card) 24%) 0 3px, color-mix(in srgb, var(--orange), var(--card) 42%) 3px 5px); }
+    .workout-heatmap-day:focus-visible { outline: 3px solid var(--text-primary); outline-offset: 3px; z-index: 2; }
+    .workout-heatmap-legend { display: flex; align-items: center; justify-content: flex-end; gap: 5px; color: var(--text-secondary); font-size: 10px; }
+    .workout-heatmap-popover {
+      position: relative;
+      z-index: 2;
+      width: min(100%, 360px);
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--panel);
+      color: var(--text-primary);
+      box-shadow: 0 18px 48px rgba(0,0,0,.42);
+    }
+    .workout-heatmap-popover[hidden] { display: none; }
+    .workout-heatmap-popover strong, .workout-heatmap-popover span { display: block; }
+    .workout-heatmap-popover span { margin-top: 3px; color: var(--text-secondary); font-size: var(--font-size-small); }
+    .workout-heatmap-popover .small-btn { width: 100%; margin-top: 10px; }
+    .workout-heatmap-empty { display: grid; justify-items: start; gap: 10px; padding: 12px 0 2px; color: var(--text-secondary); }
+    .workout-history-detail { display: grid; gap: 12px; }
+    .workout-history-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .workout-history-exercises { display: grid; gap: 7px; }
+    .workout-history-exercise { display: flex; justify-content: space-between; gap: 10px; padding: 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    @media (max-width: 620px) {
+      .workout-heatmap-head { align-items: stretch; flex-direction: column; }
+      .workout-heatmap-period { width: 100%; }
+      .workout-heatmap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workout-heatmap-section { padding: 12px 10px; }
+    }
     @media (min-width: 760px) {
       .brand-header-logo { display: block; }
       .brand-header-mobile { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -723,6 +805,18 @@
       text-align: right;
       overflow-wrap: anywhere;
     }
+    .workout-empty-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 6px;
+    }
+    .workout-empty-actions[hidden], .workout-sticky-top .top-controls[hidden], .workout-sticky-top .stats[hidden] { display: none !important; }
+    .workout-empty-actions strong, .workout-empty-actions span { display: block; }
+    .workout-empty-actions strong { color: var(--text-primary); font-size: var(--font-size-body); }
+    .workout-empty-actions span { margin-top: 3px; color: var(--text-secondary); font-size: var(--font-size-small); line-height: 1.35; }
+    .workout-empty-actions .small-btn { min-height: 44px; width: auto; white-space: nowrap; }
     body.workit-transient-menu-open:not(.sidebar-open) .workout-sticky-top {
       visibility: hidden;
       opacity: 0;
@@ -2255,6 +2349,8 @@
         grid-column: 1 / -1;
         text-align: left;
       }
+      .workout-empty-actions { grid-template-columns: 1fr; }
+      .workout-empty-actions .small-btn { width: 100%; }
       .workout-sticky-top .calorie-value {
         font-size: var(--font-size-compact);
       }
@@ -3281,8 +3377,12 @@
       <div id="workoutTitle" role="button" tabindex="0" aria-label="Redigér programnavn" title="Tryk for at ændre programnavnet" onclick="beginProgramTitleEdit()" onkeydown="handleProgramTitleKey(event)">Mit nye træningspas</div>
       <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
       <div class="workout-sticky-top" id="workoutStickyTop" aria-label="Træningsstatus og hurtige handlinger">
-        <div class="top-controls">
-          <button class="top-btn save-btn" onclick="saveCanvasState()">💾 Gem</button>
+        <div class="workout-empty-actions" id="workoutEditorEmptyActions">
+          <div><strong>Tilføj din første øvelse</strong><span>Vælg en øvelse for at bygge og gemme træningspasset.</span></div>
+          <button class="small-btn" type="button" onclick="openFirstExercisePicker(event)">＋ Tilføj øvelse</button>
+        </div>
+        <div class="top-controls" id="workoutPrimaryActions" hidden>
+          <button class="top-btn save-btn" id="saveWorkoutButton" type="button" onclick="saveCanvasState()">💾 Gem</button>
           <button class="top-btn stop-btn session-only" id="stopBtn" onclick="finishWorkout()">⏹ Afslut</button>
         </div>
         <section class="session-banner session-only" id="trainingSessionView" aria-label="Aktiv træningssession">
@@ -3296,7 +3396,7 @@
             <button class="session-control-btn close-session" onclick="closeTrainingWindow()">✕ Luk</button>
           </div>
         </section>
-        <div class="stats">
+        <div class="stats" id="workoutStatusSummary" hidden>
           <span class="sticky-metric" id="estimatedTime">Estimeret tid: 0 min</span>
           <span class="sticky-metric live-training-only" id="elapsedTimeMetric" hidden><span class="sticky-metric-label" id="timeUsedLabel">Tid brugt</span><span class="sticky-metric-value" id="globalTimer">00:00:00</span></span>
           <section class="calorie-panel live-training-only" id="caloriePanel" aria-live="polite" hidden>
@@ -3904,6 +4004,8 @@
     let currentLanguage = "da";
     let autosaveDebounce = null;
     let dashboardCloudPending = false;
+    let workoutHeatmapPeriodDays = 365;
+    let currentWorkoutHeatmapData = null;
     const pauseTimers = {};
     let activePauseComponentKey = "";
     let pauseAudioContext = null;
@@ -5440,6 +5542,15 @@
       openExercisePickerMenu();
     }
 
+    function openFirstExercisePicker(event = null) {
+      event?.stopPropagation?.();
+      document.querySelector(".add-zone")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      const muscles = availablePickerMuscles();
+      exercisePickerMuscle = muscles.length === 1 ? muscles[0] : "";
+      renderMuscleMenu();
+      openExercisePickerMenu();
+    }
+
     function selectMuscle(encodedMuscle, event = null) {
       event?.stopPropagation?.();
       const muscle = decodeURIComponent(encodedMuscle);
@@ -6422,6 +6533,7 @@
 
     function updateWorkoutProgress() {
       updateStartTrainingAvailability();
+      updateWorkoutEditorActionState();
       const checkboxes = [...document.querySelectorAll('.set-block input[type="checkbox"], .cardio-completed')];
       const totalSets = checkboxes.length;
       const completedSets = checkboxes.filter(checkbox => checkbox.checked).length;
@@ -6439,6 +6551,23 @@
         stopOtherPauseTimers(activePauseComponentKey);
       }
       renderActivePauseComponent({ percent, completedSets, totalSets });
+    }
+
+    function updateWorkoutEditorActionState() {
+      const hasValidExercise = validCanvasExerciseCount() > 0;
+      const emptyActions = $("workoutEditorEmptyActions");
+      const primaryActions = $("workoutPrimaryActions");
+      const statusSummary = $("workoutStatusSummary");
+      const saveButton = $("saveWorkoutButton");
+      if (emptyActions) emptyActions.hidden = hasValidExercise;
+      if (primaryActions) primaryActions.hidden = !hasValidExercise;
+      if (statusSummary) statusSummary.hidden = !hasValidExercise;
+      if (saveButton) {
+        saveButton.hidden = !hasValidExercise;
+        saveButton.disabled = !hasValidExercise;
+        saveButton.setAttribute("aria-disabled", String(!hasValidExercise));
+      }
+      return hasValidExercise;
     }
 
     function parsePauseComponentKey(key) {
@@ -6882,7 +7011,15 @@
     }
 
     function isActiveWorkoutSession(session) {
-      return Boolean(session && ["in_progress", "paused"].includes(session.sessionStatus));
+      return Boolean(
+        session &&
+        ["in_progress", "paused"].includes(session.sessionStatus) &&
+        Array.isArray(session.exercises) &&
+        session.exercises.some(exercise => {
+          const name = String(exercise?.name || "").trim();
+          return name && !/^(vælg|vaelg|choose)\b/i.test(name);
+        })
+      );
     }
 
     function hasActiveWorkoutSession() {
@@ -7323,7 +7460,7 @@
           renderWorkoutState(saved.draft);
         }
         const restoredSession = saved.session;
-        if (restoredSession && ["in_progress", "paused"].includes(normalizeSessionStatus(restoredSession.sessionStatus))) {
+        if (isActiveWorkoutSession(restoredSession)) {
           activeWorkoutSession = cloneWorkoutData(restoredSession);
           sessionStatus = normalizeSessionStatus(activeWorkoutSession.sessionStatus);
           activeSessionId = activeWorkoutSession.sessionId || "";
@@ -7339,11 +7476,18 @@
           }
           $("autosaveStatus").textContent = "Aktiv træning kan genoptages";
         } else {
+          const staleActiveSession = restoredSession && ["in_progress", "paused"].includes(normalizeSessionStatus(restoredSession.sessionStatus));
           activeWorkoutSession = null;
           sessionStatus = "not_started";
           activeSessionId = "";
           sessionStartedAt = null;
           sessionCompletedAt = null;
+          if (staleActiveSession) {
+            writeLocalJson("active_workout_autosave", { ...saved, session: null });
+            window.FirestoreDataService?.clearActiveWorkout?.().catch(error => {
+              console.warn("[Work4it autosave] Tom aktiv træning blev fjernet fra Cloud.", error);
+            });
+          }
         }
         updateWorkoutButtonVisibility();
         return Boolean(saved.program || saved.draft?.exercises?.length);
@@ -7362,7 +7506,7 @@
         currentProgramDayIndex = currentProgramSession.activeDayIndex || 0;
         renderProgramDay(currentProgramDayIndex);
         const legacyStatus = normalizeSessionStatus(restoredSession?.sessionStatus || restoredSession?.workoutStatus);
-        if (restoredSession?.exercises?.length && ["in_progress", "paused"].includes(legacyStatus)) {
+        if (isActiveWorkoutSession({ ...restoredSession, sessionStatus: legacyStatus })) {
           activeWorkoutSession = {
             ...cloneWorkoutData(restoredSession),
             sessionId: restoredSession.sessionId || `session_${Date.now()}_legacy`,
@@ -7596,7 +7740,7 @@
       const startButton = $("timerBtn");
       if (!startButton) return false;
       const selectedProgram = program || getPrograms().find(item => item.id === startButton.dataset.programId);
-      const hasValidExercise = hasActiveWorkoutSession() || validCanvasExerciseCount() > 0 || validProgramExerciseCount(selectedProgram) > 0;
+      const hasValidExercise = validCanvasExerciseCount() > 0 || validProgramExerciseCount(selectedProgram) > 0;
       startButton.disabled = !hasValidExercise;
       startButton.setAttribute("aria-disabled", String(!hasValidExercise));
       const help = $("homeStartHelp");
@@ -7683,6 +7827,9 @@
 
       const activeSection = $("homeActiveSection");
       activeSection.hidden = !view.activeWorkout;
+      const resumeButton = $("homeResumeWorkoutButton");
+      resumeButton.disabled = !view.activeWorkout;
+      resumeButton.setAttribute("aria-disabled", String(!view.activeWorkout));
       if (view.activeWorkout) {
         $("homeActiveName").textContent = view.activeWorkout.title;
         const metrics = [];
@@ -7708,6 +7855,8 @@
         updateStartTrainingAvailability(dashboardProgramsForView(programs).find(program => program.id === view.featuredWorkout.id));
       } else {
         startButton.dataset.programId = "";
+        startButton.disabled = true;
+        startButton.setAttribute("aria-disabled", "true");
       }
 
       $("homeEmptyState").hidden = !view.emptyState;
@@ -7736,8 +7885,15 @@
     }
 
     function continueDashboardWorkout() {
-      if (!hasActiveWorkoutSession()) return renderHomeDashboard();
-      showTrainingSession();
+      if (!hasActiveWorkoutSession()) {
+        const button = $("homeResumeWorkoutButton");
+        if (button) {
+          button.disabled = true;
+          button.setAttribute("aria-disabled", "true");
+        }
+        return renderHomeDashboard();
+      }
+      return showTrainingSession();
     }
 
     function viewDashboardFeaturedProgram() {
@@ -7759,6 +7915,7 @@
 
     function startDashboardWorkout() {
       const button = $("timerBtn");
+      if (!button || button.disabled) return false;
       const programId = button?.dataset.programId || "";
       if (programId && (currentSavedProgramId !== programId || !slotIds().length)) loadSavedProgram(programId, false);
       if (!hasActiveWorkoutSession() && validCanvasExerciseCount() === 0) return updateStartTrainingAvailability();
@@ -7812,6 +7969,7 @@
       });
     }
     function saveCanvasState() {
+      if (!updateWorkoutEditorActionState()) return false;
       const programs = getPrograms();
       const isNewProgram = !currentSavedProgramId;
       if (isNewProgram && programs.length >= 2 && !window.Membership?.getMembership?.().isPremium) {
@@ -8025,8 +8183,7 @@
 
     function activeWorkoutAutosave() {
       const saved = readLocalJson("active_workout_autosave", null);
-      const status = normalizeSessionStatus(saved?.session?.sessionStatus);
-      return saved?.session && ["in_progress", "paused"].includes(status) ? saved : null;
+      return isActiveWorkoutSession(saved?.session) ? saved : null;
     }
 
     function restoreSavedAppView() {
@@ -8352,6 +8509,7 @@
           if (duplicateIndex >= 0) entries[duplicateIndex] = entry;
           else entries.push(entry);
           if (!writeLocalJson("training_analytics_history", entries)) throw new Error("Træningshistorikken kunne ikke gemmes lokalt");
+          window.dispatchEvent(new CustomEvent("workout-history:changed", { detail: { sessionId: entry.sessionId || "", id: entry.id } }));
         }
         updateExerciseHistoryFromCompletedWorkout();
         const finishedSession = cloneWorkoutData(activeWorkoutSession);
@@ -8801,6 +8959,208 @@
       container.innerHTML = `${changes ? `<div class="development-change">${changes}</div>` : ""}<div class="section">Målehistorik</div>${historyRows}`;
     }
 
+    function heatmapDateObject(dateKey) {
+      const [year, month, day] = String(dateKey || "").split("-").map(Number);
+      return new Date(year, month - 1, day, 12);
+    }
+
+    function heatmapDateLabel(dateKey, options = {}) {
+      const date = heatmapDateObject(dateKey);
+      return Number.isFinite(date.getTime())
+        ? date.toLocaleDateString("da-DK", { day: "numeric", month: options.short ? "short" : "long", year: options.year === false ? undefined : "numeric" })
+        : String(dateKey || "");
+    }
+
+    function heatmapDurationLabel(seconds) {
+      const minutes = Math.round(Math.max(0, Number(seconds) || 0) / 60);
+      if (!minutes) return "";
+      const hours = Math.floor(minutes / 60);
+      const rest = minutes % 60;
+      return hours ? `${hours} t ${rest ? `${rest} min` : ""}`.trim() : `${minutes} min`;
+    }
+
+    function heatmapDayAriaLabel(day) {
+      const date = heatmapDateLabel(day.date);
+      if (!day.workoutCount) return `${date}: Ingen træning registreret.`;
+      const parts = [`${day.workoutCount} træning${day.workoutCount === 1 ? "" : "er"}`];
+      const duration = heatmapDurationLabel(day.durationSeconds);
+      if (duration) parts.push(duration);
+      if (day.completedSets) parts.push(`${day.completedSets} sæt`);
+      return `${date}: ${parts.join(", ")}. Aktivitetsniveau ${day.activityLevel} af 4.`;
+    }
+
+    function heatmapCalendarMarkup(data) {
+      const first = heatmapDateObject(data.startDate);
+      const offset = (first.getDay() + 6) % 7;
+      const weeks = Math.ceil((offset + data.days.length) / 7);
+      const monthColumns = new Map();
+      const activeDays = data.days.filter(day => day.workoutCount > 0);
+      const focusDate = activeDays[activeDays.length - 1]?.date || "";
+      const cells = data.days.map((day, index) => {
+        const position = offset + index;
+        const column = Math.floor(position / 7) + 1;
+        const row = (position % 7) + 1;
+        const date = heatmapDateObject(day.date);
+        const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+        if (!monthColumns.has(monthKey) && (date.getDate() <= 7 || index === 0)) {
+          monthColumns.set(monthKey, { column, label: date.toLocaleDateString("da-DK", { month: "short" }).replace(".", "") });
+        }
+        const common = `class="workout-heatmap-day" role="gridcell" data-level="${day.activityLevel}" data-date="${day.date}" aria-label="${esc(heatmapDayAriaLabel(day))}" style="grid-column:${column};grid-row:${row}"`;
+        return day.workoutCount
+          ? `<button ${common} type="button" tabindex="${day.date === focusDate ? "0" : "-1"}"></button>`
+          : `<span ${common}></span>`;
+      }).join("");
+      const months = [...monthColumns.values()].map(month => `<span style="grid-column:${month.column}">${esc(month.label)}</span>`).join("");
+      return `
+        <div class="workout-heatmap-scroll" tabindex="0" aria-label="Aktivitetsoversigt. Rul vandret for at se hele perioden.">
+          <div class="workout-heatmap-calendar">
+            <div class="workout-heatmap-weekdays" aria-hidden="true"><span></span><span>man.</span><span></span><span>ons.</span><span></span><span>fre.</span><span></span><span></span></div>
+            <div class="workout-heatmap-main">
+              <div class="workout-heatmap-months" aria-hidden="true" style="grid-template-columns:repeat(${weeks},13px)">${months}</div>
+              <div class="workout-heatmap-grid" role="grid" aria-label="Træningsaktivitet fra ${heatmapDateLabel(data.startDate)} til ${heatmapDateLabel(data.endDate)}" style="grid-template-columns:repeat(${weeks},13px)">${cells}</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderWorkoutHeatmapSection(hist = history()) {
+      const builder = window.Work4itWorkoutHeatmap?.buildWorkoutHeatmap;
+      if (!builder) return "";
+      currentWorkoutHeatmapData = builder(hist, {
+        days: workoutHeatmapPeriodDays,
+        userId: window.FirebaseAuthService?.getCurrentUser?.()?.uid || ""
+      });
+      const data = currentWorkoutHeatmapData;
+      const periodOptions = [[90, "3 måneder"], [183, "6 måneder"], [365, "12 måneder"]]
+        .map(([days, label]) => `<option value="${days}" ${days === workoutHeatmapPeriodDays ? "selected" : ""}>${label}</option>`).join("");
+      if (!data.activeDays) {
+        return `<section class="workout-heatmap-section" id="workoutHeatmapSection" aria-labelledby="workoutHeatmapTitle">
+          <div class="workout-heatmap-head"><div><h3 class="workout-heatmap-title" id="workoutHeatmapTitle">Din træningsaktivitet</h3><p class="workout-heatmap-copy">Kun afsluttede træninger tæller med.</p></div></div>
+          <div class="workout-heatmap-empty"><span>Dine gennemførte træninger vil blive vist her.</span><button class="small-btn" type="button" onclick="closeModal();openBlankWorkoutDialog()">Start din første træning</button></div>
+        </section>`;
+      }
+      const stat = (value, label) => `<div class="workout-heatmap-stat"><strong>${value}</strong><span>${label}</span></div>`;
+      return `<section class="workout-heatmap-section" id="workoutHeatmapSection" aria-labelledby="workoutHeatmapTitle">
+        <div class="workout-heatmap-head">
+          <div><h3 class="workout-heatmap-title" id="workoutHeatmapTitle">Din træningsaktivitet</h3><p class="workout-heatmap-copy">Aktiv uge = mindst én afsluttet træning fra mandag til søndag.</p></div>
+          <label><span class="sr-only">Vælg periode</span><select class="workout-heatmap-period" onchange="setWorkoutHeatmapPeriod(this.value)">${periodOptions}</select></label>
+        </div>
+        <p class="workout-heatmap-copy">I alt ${data.totalWorkouts} afsluttede træning${data.totalWorkouts === 1 ? "" : "er"} i perioden.</p>
+        <div class="workout-heatmap-stats" aria-label="Aktivitetsnøgletal">
+          ${stat(data.workoutsLast30Days, "Træninger seneste 30 dage")}
+          ${stat(data.activeDays, `Aktive dage i perioden`)}
+          ${stat(data.currentWeekStreak, "Aktive uger i træk")}
+          ${stat(data.longestWeekStreak, "Længste række af aktive uger")}
+        </div>
+        ${heatmapCalendarMarkup(data)}
+        <div class="workout-heatmap-legend" aria-label="Aktivitetsniveau fra ingen til meget høj"><span>Ingen</span>${[0,1,2,3,4].map(level => `<span class="workout-heatmap-day" data-level="${level}" aria-hidden="true"></span>`).join("")}<span>Høj</span></div>
+        <div class="workout-heatmap-popover" id="workoutHeatmapPopover" role="dialog" aria-label="Aktivitet på valgt dag" hidden></div>
+      </section>`;
+    }
+
+    function closeWorkoutHeatmapPopover() {
+      const popover = $("workoutHeatmapPopover");
+      if (popover) popover.hidden = true;
+    }
+
+    function positionWorkoutHeatmapPopover(popover, anchor) {
+      popover.hidden = false;
+      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      popover.scrollIntoView?.({ block: "nearest", behavior: reducedMotion ? "auto" : "smooth" });
+    }
+
+    function showWorkoutHeatmapDay(date, anchor) {
+      const day = currentWorkoutHeatmapData?.days?.find(item => item.date === date && item.workoutCount > 0);
+      const popover = $("workoutHeatmapPopover");
+      if (!day || !popover || !anchor) return;
+      const duration = heatmapDurationLabel(day.durationSeconds);
+      popover.innerHTML = `<strong>${esc(heatmapDateLabel(day.date))}</strong>
+        <span>${day.workoutCount} træning${day.workoutCount === 1 ? "" : "er"}</span>
+        ${duration ? `<span>${esc(duration)}</span>` : ""}
+        ${day.completedSets ? `<span>${day.completedSets} gennemførte sæt</span>` : ""}
+        ${day.totalVolumeKg ? `<span>${esc(vol(day.totalVolumeKg))} volumen</span>` : ""}
+        <button class="small-btn" type="button" onclick="openWorkoutHeatmapDayHistory('${day.date}')">${day.workoutCount === 1 ? "Se træning" : "Se dagens træninger"}</button>`;
+      positionWorkoutHeatmapPopover(popover, anchor);
+    }
+
+    function initializeWorkoutHeatmap() {
+      const section = $("workoutHeatmapSection");
+      const grid = section?.querySelector(".workout-heatmap-grid");
+      if (!grid) return;
+      grid.addEventListener("click", event => {
+        const button = event.target.closest("button.workout-heatmap-day[data-date]");
+        if (button) showWorkoutHeatmapDay(button.dataset.date, button);
+      });
+      grid.addEventListener("focusin", event => {
+        const button = event.target.closest("button.workout-heatmap-day[data-date]");
+        if (button) showWorkoutHeatmapDay(button.dataset.date, button);
+      });
+      grid.addEventListener("keydown", event => {
+        const buttons = [...grid.querySelectorAll("button.workout-heatmap-day")];
+        const index = buttons.indexOf(document.activeElement);
+        if (event.key === "Escape") return closeWorkoutHeatmapPopover();
+        if (index < 0 || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : Math.min(buttons.length - 1, Math.max(0, index + (event.key === "ArrowRight" ? 1 : -1)));
+        buttons.forEach(button => button.tabIndex = -1);
+        buttons[next].tabIndex = 0;
+        buttons[next].focus();
+      });
+      if (!document.body.dataset.heatmapOutsideBound) {
+        document.body.dataset.heatmapOutsideBound = "true";
+        document.addEventListener("pointerdown", event => {
+          const popover = $("workoutHeatmapPopover");
+          if (popover && !popover.hidden && !popover.contains(event.target) && !event.target.closest("button.workout-heatmap-day")) closeWorkoutHeatmapPopover();
+        });
+      }
+    }
+
+    function setWorkoutHeatmapPeriod(value) {
+      workoutHeatmapPeriodDays = [90, 183, 365].includes(Number(value)) ? Number(value) : 365;
+      const section = $("workoutHeatmapSection");
+      if (!section) return;
+      section.outerHTML = renderWorkoutHeatmapSection(history());
+      initializeWorkoutHeatmap();
+    }
+
+    function workoutHistoryEntryByKey(key) {
+      return history().find(entry => window.Work4itWorkoutHeatmap?.stableWorkoutKey?.(entry) === key) || null;
+    }
+
+    function openWorkoutHistoryEntryFromHeatmap(key) {
+      const entry = workoutHistoryEntryByKey(key);
+      if (!entry) return;
+      const sets = (entry.exercises || []).reduce((sum, exercise) => sum + (exercise.sets || []).filter(set => set.completed === true).length, 0);
+      const duration = heatmapDurationLabel(entry.durationSeconds);
+      const exerciseRows = (entry.exercises || []).map(exercise => {
+        const count = (exercise.sets || []).filter(set => set.completed === true).length;
+        const cardioMinutes = Number(exercise.cardio?.durationMinutes) || 0;
+        return `<div class="workout-history-exercise"><strong>${esc(exercise.name || "Øvelse")}</strong><span>${cardioMinutes ? `${cardioMinutes} min` : count ? `${count} sæt` : "Gennemført"}</span></div>`;
+      }).join("");
+      $("modalTitle").textContent = "Gennemført træning";
+      $("modalContent").innerHTML = `<section class="workout-history-detail">
+        <div class="workout-history-detail-head"><button class="small-btn" type="button" onclick="openDashboard()">← Aktivitet</button><span>${esc(heatmapDateLabel(window.Work4itWorkoutHeatmap.localDateKey(entry.completedAt || entry.date || entry.startedAt)))}</span></div>
+        <div><h3>${esc(entry.title || entry.dayTitle || entry.programTitle || "Træning")}</h3><p class="helper-text">${[duration, sets ? `${sets} sæt` : "", entry.totalVolume ? vol(entry.totalVolume) : ""].filter(Boolean).map(esc).join(" · ")}</p></div>
+        <div class="workout-history-exercises">${exerciseRows || `<p class="helper-text">Ingen øvelsesdetaljer er gemt for denne træning.</p>`}</div>
+      </section>`;
+    }
+
+    function openWorkoutHeatmapDayHistory(date) {
+      const day = currentWorkoutHeatmapData?.days?.find(item => item.date === date);
+      if (!day?.workouts?.length) return;
+      if (day.workouts.length === 1) return openWorkoutHistoryEntryFromHeatmap(day.workouts[0].key);
+      $("modalTitle").textContent = heatmapDateLabel(day.date);
+      $("modalContent").innerHTML = `<section class="workout-history-detail"><div class="workout-history-detail-head"><button class="small-btn" type="button" onclick="openDashboard()">← Aktivitet</button><span>${day.workouts.length} træninger</span></div>
+        <div class="workout-history-exercises">${day.workouts.map(workout => `<button class="workout-history-exercise" type="button" data-workout-key="${esc(workout.key)}" onclick="openWorkoutHistoryEntryFromHeatmap(this.dataset.workoutKey)"><strong>${esc(workout.title)}</strong><span>${esc(heatmapDurationLabel(workout.durationSeconds) || "Se træning")}</span></button>`).join("")}</div></section>`;
+    }
+
+    function refreshWorkoutHeatmapIfOpen() {
+      const section = $("workoutHeatmapSection");
+      if (!section) return;
+      section.outerHTML = renderWorkoutHeatmapSection(history());
+      initializeWorkoutHeatmap();
+    }
+
     function periodKey(date, type) { const d = new Date(date); if (type === "month") return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; const start = new Date(d.getFullYear(),0,1); return `${d.getFullYear()}-U${String(Math.ceil((((d-start)/86400000)+start.getDay()+1)/7)).padStart(2,"0")}`; }
     function aggregate(hist, type) {
       const g = {};
@@ -8811,6 +9171,7 @@
     function openDashboard(slot = null, improve = 5) {
       saveLastActiveView("dashboard");
       const hist = history(), current = collectAnalyticsEntry();
+      const heatmap = slot ? "" : renderWorkoutHeatmapSection(hist);
       const hasPremium = window.Membership?.getMembership?.().isPremium !== false;
       const allSets = hist.flatMap(e => e.exercises || []).flatMap(e => e.sets || []);
       const bestOne = Math.max(0, ...allSets.map(s => s.oneRm));
@@ -8834,6 +9195,7 @@
       $("modalTitle").textContent = slot ? `${t("simulateBtn")}: ${$(`name-${slot}`).textContent}` : t("dashboard").replace("📊 ", "");
       $("modalContent").classList.add("brand-surface", "dashboard-brand-surface");
       $("modalContent").innerHTML = `
+        ${heatmap}
         <div class="dash-grid">
           <div class="dash-card"><div class="dash-label">${t("bestOneRm")}</div><div class="dash-value">${bestOne ? kg(bestOne) : "-"}</div></div>
           <div class="dash-card"><div class="dash-label">${t("heaviestWeight")}</div><div class="dash-value">${bestLift ? kg(bestLift) : "-"}</div></div>
@@ -8858,6 +9220,7 @@
         <div class="section">${t("personalRecords")}</div>${table([t("typeHeader"),t("resultHeader")], [[t("bestOneRm"), bestOne ? kg(bestOne) : "-"], [t("heaviestWeight"), bestLift ? kg(bestLift) : "-"]])}
       `;
       openModal();
+      if (!slot) window.requestAnimationFrame(initializeWorkoutHeatmap);
     }
     function table(headers, rows) { return `<table><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr>${rows.length ? rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("") : `<tr><td colspan="${headers.length}">${t("noData")}</td></tr>`}</table>`; }
     function simulationHtml(slot, improve) {
@@ -10924,6 +11287,7 @@
     });
     window.addEventListener("ai-requests:changed", event => updateAiRequestCounterDisplay(event.detail));
     window.addEventListener("exercise-history:changed", refreshAllProgressionSuggestions);
+    window.addEventListener("workout-history:changed", refreshWorkoutHeatmapIfOpen);
     window.addEventListener("firebase-auth:changed", event => {
       if (event.detail?.user?.uid) setHomeDashboardLoading(true);
       else dashboardCloudPending = false;
@@ -10942,6 +11306,7 @@
       window.refreshProfileAccountView?.();
       window.Membership?.render?.();
       refreshAllProgressionSuggestions();
+      refreshWorkoutHeatmapIfOpen();
       $("autosaveStatus").textContent = "Data synkroniseret fra Firebase";
     });
     window.addEventListener("firestore:user-ready", () => {
@@ -10952,6 +11317,7 @@
     });
     window.addEventListener("firestore:sync-completed", () => {
       setDashboardSyncNotice();
+      refreshWorkoutHeatmapIfOpen();
       $("autosaveStatus").textContent = "✔ Synkroniseret med Cloud";
     });
     window.addEventListener("firestore:fallback-active", event => {
@@ -11048,14 +11414,15 @@
   <script src="exercise-animation/mannequin.js?v=20260716-mannequin-prototype1"></script>
   <script src="exercise-animation-model.js?v=20260716-professional-three1"></script>
   <script type="module" src="exercise-animation-3d-renderer.js?v=20260716-professional-three1"></script>
-  <script src="dashboard-view-model.js?v=20260718-dashboard1"></script>
+  <script src="dashboard-view-model.js?v=20260718-dashboard-buttons1"></script>
+  <script src="workout-heatmap.js?v=20260718-heatmap1"></script>
   <script src="progression-service.js?v=20260718-progression1"></script>
   <script src="completed-workout-analysis.js?v=20260716-completion-analysis2"></script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260716-cardio-empty-time1"></script>
   <script src="workout-program-store.js"></script>
   <script src="screenshot-import.js?v=20260710-reps-input1"></script>
-  <script src="wizard-store.js?v=20260621-cloud-primary1"></script>
+  <script src="wizard-store.js?v=20260718-profile-cloud1"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-system.js?v=20260715-exercise-animations1"></script>
   <script src="ai-copilot-actions.js?v=20260713-ai-coach1"></script>
@@ -11063,7 +11430,7 @@
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
   <script src="auth-gate.js?v=20260712-google-auth-domain1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
-  <script src="profile-account.js?v=20260706-resume-state1"></script>
+  <script src="profile-account.js?v=20260718-profile-cloud1"></script>
   <script src="profile-wizard.js?v=20260716-cardio-empty-time1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
@@ -11073,12 +11440,12 @@
   <script type="module" src="exercise-animation-cloud-service.js?v=20260716-backend-admin-read1"></script>
   <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
   <script type="module" src="auth-service.js?v=20260713-stripe-google-login1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260715-cloud-primary-fix2"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260718-dashboard-buttons1"></script>
   <script type="module" src="ai-request-counter.js?v=20260713-stripe-google-login1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260718-dashboard1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260718-empty-workout-actions1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

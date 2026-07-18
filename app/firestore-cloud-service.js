@@ -281,9 +281,13 @@ async function requireCloudUser(operation = "Firestore") {
     error.code = "auth/user-not-authenticated";
     throw error;
   }
+  const pendingInitialization = initializationByUid.get(uid);
+  if (pendingInitialization) await pendingInitialization;
   if (activeUid !== uid || !cloudEnabled) {
     await initializeUser(user);
   }
+  const resumedInitialization = initializationByUid.get(uid);
+  if (resumedInitialization) await resumedInitialization;
   return assertCloudUser(operation);
 }
 
@@ -367,25 +371,30 @@ async function upsertDocument(reference, localValue) {
 }
 
 async function saveProfileToCloud(profile) {
-  assertCloudUser("Profilgemning");
-  const path = PATHS.profile(activeUid);
+  const uid = await requireCloudUser("Profilgemning");
+  const path = PATHS.profile(uid);
   const nextProfile = {
     ...cleanDocument(profile),
     updatedAt: profile?.updatedAt || new Date().toISOString(),
     firestoreUpdatedAt: serverTimestamp()
   };
+  window.dispatchEvent(new CustomEvent("firestore:profile-saving", {
+    detail: { uid, path: firestorePath(path) }
+  }));
   try {
     await setDoc(doc(db, ...path), nextProfile, { merge: true });
     localFingerprint = currentLocalFingerprint();
+    setCloudState("ready");
     window.dispatchEvent(new CustomEvent("firestore:profile-saved", {
-      detail: { uid: activeUid, path: firestorePath(path) }
+      detail: { uid, path: firestorePath(path), profile: cleanDocument(nextProfile) }
     }));
     queueSync();
     return true;
   } catch (error) {
-    reportFirestoreError("setDoc", path, error);
+    reportFirestoreError("saveProfileToCloud", path, error, uid);
+    setCloudState(isConnectivityError(error) ? "offline" : "error", error);
     window.dispatchEvent(new CustomEvent("firestore:profile-save-failed", {
-      detail: { uid: activeUid, path: firestorePath(path), error }
+      detail: { uid, path: firestorePath(path), error }
     }));
     throw error;
   }
@@ -535,7 +544,11 @@ async function syncPrograms(uid) {
 function activeSessionFromAutosave() {
   const autosave = parseLocal(KEYS.activeWorkout, null);
   const session = autosave?.session;
-  return session && ["in_progress", "paused"].includes(session.sessionStatus) ? autosave : null;
+  const hasValidExercise = Array.isArray(session?.exercises) && session.exercises.some(exercise => {
+    const name = String(exercise?.name || "").trim();
+    return name && !/^(vælg|vaelg|choose)\b/i.test(name);
+  });
+  return session && ["in_progress", "paused"].includes(session.sessionStatus) && hasValidExercise ? autosave : null;
 }
 
 function workoutDraftFromAutosave() {
@@ -616,6 +629,7 @@ async function syncAllLocalData(uid = activeUid) {
       localStorageRole: "cache_fallback",
       status: "synced"
     });
+    localFingerprint = currentLocalFingerprint();
     window.dispatchEvent(new CustomEvent("firestore:sync-completed"));
     return true;
   } catch (error) {
@@ -827,6 +841,12 @@ async function refreshFromCloud(reason = "manual") {
   refreshInProgress = true;
   cloudHydrationInProgress = true;
   try {
+    // En lokal profilændring, som fejlede offline, skal op i Cloud før en
+    // autoritativ refresh må overskrive UID-cachen.
+    if (["offline", "error"].includes(cloudState)) {
+      const pendingProfile = parseLocal(KEYS.profile, null);
+      if (hasProfileFields(pendingProfile)) await saveProfileToCloud(pendingProfile);
+    }
     // Firestore er autoritativ ved login. Refresh/focus/online må aldrig
     // uploade en gammel lokal cache før Cloud er hentet.
     const result = await hydrateFromFirestore(activeUid, { preserveLocalWhenCloudEmpty: false });
@@ -987,9 +1007,13 @@ window.addEventListener("focus", () => refreshFromCloud("focus").catch(() => {})
 window.addEventListener("online", () => {
   const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
   if (!user) return;
-  const reconnect = cloudEnabled
-    ? refreshFromCloud("online")
-    : initializeUser(user);
+  const pendingProfile = parseLocal(KEYS.profile, null);
+  const retryPendingProfile = ["offline", "error"].includes(cloudState) && hasProfileFields(pendingProfile);
+  const reconnect = (async () => {
+    if (!cloudEnabled) await initializeUser(user);
+    if (retryPendingProfile) await saveProfileToCloud(pendingProfile);
+    return refreshFromCloud("online");
+  })();
   reconnect.catch(error => {
     reportFirestoreError("onlineReconnect", ["users", user.uid], error, user.uid);
   });
@@ -1001,7 +1025,6 @@ window.setInterval(() => {
   if (!activeUid || !localSyncReady || cloudHydrationInProgress) return;
   const next = currentLocalFingerprint();
   if (next === localFingerprint) return;
-  localFingerprint = next;
   queueSync();
 }, 2000);
 

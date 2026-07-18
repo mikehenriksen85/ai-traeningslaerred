@@ -17,12 +17,15 @@ assert.match(configSource, /initializeApp\(firebaseConfig\)/);
 assert.match(configSource, /getAuth\(app\)/);
 assert.match(configSource, /getFirestore\(app\)/);
 assert.match(cloudSource, /await requireCloudUser\("Gem træningsprogrammer"\)/);
+assert.match(cloudSource, /await requireCloudUser\("Profilgemning"\)/);
 assert.doesNotMatch(htmlSource, /saved && window\.FirestoreDataService\?\.isCloudPrimary/);
 assert.match(htmlSource, /cloudService\.saveProgramsToCloud\(programs\)/);
 assert.match(htmlSource, /✔ Gemt i Cloud/);
 assert.match(htmlSource, /isConnectivityError\?\.\(error\)/);
 assert.match(cloudSource, /reportFirestoreError\("saveProgramsToCloud"/);
 assert.match(cloudSource, /COLLECTIONS\.workouts/);
+assert.match(cloudSource, /function activeSessionFromAutosave\(\)[\s\S]*?hasValidExercise[\s\S]*?\["in_progress", "paused"\][\s\S]*?hasValidExercise/,
+  "Cloud only retains an active autosave when it contains a valid exercise");
 const syncAllBody = cloudSource.match(/async function syncAllLocalData[\s\S]*?\n}\n\nasync function hydratePrograms/)?.[0] || "";
 assert.doesNotMatch(syncAllBody, /PATHS\.membership/);
 assert.match(rulesSource, /match \/workouts\/\{workoutId\}/);
