@@ -1,0 +1,63 @@
+.work4it-mannequin-inline {
+  margin: 4px 0 14px;
+  border: 1px solid var(--border, #334155);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #080f1d;
+}
+
+.work4it-mannequin-inline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 7px 10px 7px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, .18);
+  color: var(--text-primary, #f8fafc);
+}
+
+.work4it-mannequin-inline-head strong { min-width: 0; overflow-wrap: anywhere; }
+.work4it-mannequin-close {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary, #cbd5e1);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+.work4it-mannequin-close:hover,
+.work4it-mannequin-close:focus-visible { background: rgba(148, 163, 184, .14); color: #fff; outline: 2px solid #f97316; outline-offset: -2px; }
+
+.work4it-mannequin-stage { position: relative; width: 100%; background: radial-gradient(circle at 50% 32%, #172338 0, #0b1424 48%, #070d18 100%); }
+.work4it-mannequin-svg { display: block; width: 100%; height: auto; aspect-ratio: 360 / 260; max-height: 390px; }
+.work4it-mannequin-floor { stroke: rgba(148, 163, 184, .25); stroke-width: 2; }
+.work4it-mannequin-grid { stroke: rgba(148, 163, 184, .08); stroke-width: 1; }
+.work4it-mannequin-segment { stroke: #9aa3af; stroke-width: 18; stroke-linecap: round; }
+.work4it-mannequin-segment.rear { stroke: #737d89; stroke-width: 16; }
+.work4it-mannequin-torso { fill: #858f9b; stroke: #b2bac4; stroke-width: 2; stroke-linejoin: round; }
+.work4it-mannequin-head { fill: #a6aeb8; stroke: #c2c8d0; stroke-width: 2; }
+.work4it-mannequin-joint { fill: #aeb6c0; }
+.work4it-mannequin-muscle { stroke: #f97316; fill: #f97316; opacity: .9; stroke-linecap: round; pointer-events: none; }
+.work4it-mannequin-muscle.segment { stroke-width: 9; fill: none; }
+.work4it-mannequin-muscle.chest { opacity: .82; }
+.work4it-mannequin-muscle.hip { opacity: .86; }
+.work4it-mannequin-equipment { stroke: #d6dbe2; fill: #475569; stroke-width: 5; stroke-linecap: round; }
+.work4it-mannequin-arrow { fill: none; stroke: #f97316; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 9 7; filter: drop-shadow(0 0 5px rgba(249, 115, 22, .42)); }
+.work4it-mannequin-arrow-label { fill: #fdba74; font: 600 12px system-ui, sans-serif; }
+.work4it-mannequin-caption { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 12px 12px; }
+.work4it-mannequin-chip { padding: 5px 8px; border: 1px solid rgba(249, 115, 22, .45); border-radius: 999px; color: #fed7aa; background: rgba(249, 115, 22, .10); font-size: 12px; }
+.work4it-mannequin-note { margin: 0; padding: 0 12px 12px; color: var(--text-secondary, #cbd5e1); font-size: 12px; }
+
+@media (max-width: 640px) {
+  .work4it-mannequin-inline { margin-inline: -2px; }
+  .work4it-mannequin-svg { max-height: 300px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work4it-mannequin-arrow { stroke-dasharray: none; }
+}

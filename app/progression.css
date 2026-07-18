@@ -1,0 +1,40 @@
+.progression-suggestion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--green) 12%);
+}
+.progression-suggestion-copy { min-width: 0; }
+.progression-suggestion-kicker {
+  display: block;
+  color: var(--muted);
+  font-size: var(--font-size-small);
+}
+.progression-suggestion-value { display: block; margin-top: 2px; }
+.progression-suggestion-reason {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+.progression-apply {
+  min-height: 44px;
+  padding: 8px 12px;
+  border-color: var(--green);
+  color: var(--text);
+  white-space: nowrap;
+}
+.progression-apply:disabled { opacity: .65; cursor: default; }
+@media (max-width: 520px) {
+  .progression-suggestion { grid-template-columns: 1fr; }
+  .progression-apply { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progression-suggestion, .progression-apply { transition: none !important; }
+}

@@ -13,6 +13,10 @@ const renderer3dSource = fs.readFileSync(path.join(root, "app", "exercise-animat
 const workerSource = fs.readFileSync(path.join(root, "app", "service-worker.js"), "utf8");
 const firestoreRules = fs.readFileSync(path.join(root, "firestore.rules"), "utf8");
 const storageRules = fs.readFileSync(path.join(root, "storage.rules"), "utf8");
+const mannequinSource = fs.readFileSync(path.join(root, "app", "exercise-animation", "mannequin.js"), "utf8");
+const mannequinCss = fs.readFileSync(path.join(root, "app", "exercise-animation", "mannequin.css"), "utf8");
+const mannequinAnimationsSource = fs.readFileSync(path.join(root, "app", "exercise-animation", "animations.js"), "utf8");
+const mannequinMusclesSource = fs.readFileSync(path.join(root, "app", "exercise-animation", "muscles.js"), "utf8");
 
 const sandbox = {
   window: { matchMedia: () => ({ matches: false }) },
@@ -82,5 +86,28 @@ assert.ok(storageRules.includes("match /exercise-animations/{exerciseId}/{versio
 assert.ok(storageRules.includes("isPermanentAdmin()"));
 assert.ok(firestoreRules.includes("request.auth.token.email.lower()"), "Admin-email sammenlignes case-insensitivt i Firestore");
 assert.ok(storageRules.includes("request.auth.token.email.lower()"), "Admin-email sammenlignes case-insensitivt i Storage");
+
+const prototypeSandbox = { window: {} };
+vm.createContext(prototypeSandbox);
+vm.runInContext(mannequinMusclesSource, prototypeSandbox);
+vm.runInContext(mannequinAnimationsSource, prototypeSandbox);
+const prototypeDefinitions = prototypeSandbox.window.Work4itMannequinAnimations.DEFINITIONS;
+assert.deepEqual(Object.keys(prototypeDefinitions), ["push_up", "dumbbell_curl", "back_squat"], "Prototypen omfatter kun de tre aftalte øvelser");
+assert.deepEqual(Array.from(prototypeDefinitions.push_up.muscles), ["chest", "triceps", "frontShoulder"]);
+assert.deepEqual(Array.from(prototypeDefinitions.dumbbell_curl.muscles), ["biceps", "forearm"]);
+assert.deepEqual(Array.from(prototypeDefinitions.back_squat.muscles), ["quadriceps", "gluteus", "hamstrings"]);
+Object.values(prototypeDefinitions).forEach(definition => {
+  assert.ok(definition.duration >= 3 && definition.duration <= 5, `${definition.name} har et roligt 3-5 sekunders loop`);
+  assert.equal(definition.keyframes.length, 3, `${definition.name} har separate start-, slut- og loop-keyframes`);
+});
+assert.match(mannequinSource, /createElementNS\(SVG_NS/);
+assert.match(mannequinSource, /requestAnimationFrame\(animate\)/);
+assert.doesNotMatch(mannequinSource, /THREE|fetch\(|\.gif|<canvas/i, "SVG-prototypen bruger ingen biblioteker, GIF eller Canvas");
+assert.match(mannequinCss, /#f97316/i, "Work4its orange prototypefarve bruges til muskler og pile");
+assert.match(mannequinCss, /@media \(max-width: 640px\)/);
+assert.match(mannequinCss, /@media \(prefers-reduced-motion: reduce\)/);
+assert.match(indexSource, /Work4itMannequin\?\.supports\?\.\(exerciseName\)/, "De tre prototyper åbnes direkte på øvelseskortet");
+assert.match(indexSource, /Work4itExerciseAnimations\?\.openViewer/, "Andre øvelser beholder det eksisterende demo-flow");
+assert.match(workerSource, /exercise-animation\/mannequin\.js\?v=20260716-mannequin-prototype1/, "Prototypen caches i PWA app-shell");
 
 console.log("Exercise animation phase 1 tests passed");

@@ -58,7 +58,12 @@ assert.match(html, /document\.querySelectorAll\("\.live-training-only"\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
 assert.match(html, /function presentGeneratedWorkout\(\) \{[\s\S]*toggleSidebar\(false\)[\s\S]*renderHomeDashboard\(\)[\s\S]*openWorkoutEditor\(\)/, "Genererede programmer vises automatisk efter mobilmenuen lukkes");
 assert.equal((html.match(/presentGeneratedWorkout\(\);/g) || []).length, 3, "Styrke, calisthenics og cardio bruger samme visningsflow");
-assert.match(html, /service-worker\.js\?v=20260716-completion-analysis2/, "De samlede UI-rettelser udløser en ny PWA app-shell");
+assert.match(html, /service-worker\.js\?v=20260718-progression1/, "Progression udløser en ny PWA app-shell");
+assert.match(html, /class="progression-suggestion/);
+assert.match(html, /function applyProgressionSuggestion\(/);
+assert.match(html, /window\.Work4itProgression\.formatSuggestion/);
+assert.match(html, /block\.dataset\.exerciseId/);
+assert.match(html, /block\.dataset\.loadType/);
 assert.match(html, /function latestCardioDurationMinutes\(exerciseName\)/, "Cardio can reuse the latest registered duration for the same exercise");
 assert.match(html, /const requestedDuration = Number\(totalMinutes\) > 0 \? Math\.max\(count \* 5, Number\(totalMinutes\)\) : 0;/, "The plan default duration does not prefill cardio fields");
 assert.match(html, /durationMinutes: requestedMinutes \|\| previousMinutes \|\| ""/, "New cardio fields stay empty without an explicit duration or history");
@@ -82,6 +87,23 @@ assert.match(html, /if \(!hasActiveWorkoutSession\(\) && validCanvasExerciseCoun
 assert.match(html, /function openCreateOrImportWorkout\(/);
 assert.match(html, /homeSavedEmpty[^>]*hidden/);
 assert.match(html, /data-accordion="more"/);
+
+const sidebarMarkup = html.match(/<nav class="sidebar"[\s\S]*?<\/nav>/)?.[0] || "";
+const sidebarSections = [...sidebarMarkup.matchAll(/<section class="sidebar-accordion[^>]*data-accordion="([^"]+)"[\s\S]*?<\/section>/g)];
+assert.deepEqual(sidebarSections.map(match => match[1]), ["user", "training", "more"], "Hovedmenuen har kun Bruger, Træning og Mere i korrekt rækkefølge");
+assert.doesNotMatch(sidebarMarkup, /data-accordion="statistics"/);
+const menuSection = name => sidebarSections.find(match => match[1] === name)?.[0] || "";
+for (const id of ["profileAccountNavItem", "membershipNavItem", "trainingProfileNavItem", "aiCoachButton"]) {
+  assert.match(menuSection("user"), new RegExp(`id="${id}"`), `${id} skal ligge under Bruger`);
+}
+for (const id of ["todayWorkoutNavItem", "generatorSectionTitle", "newWorkoutNavItem", "savedWorkoutsNavItem", "screenshotImportNavItem", "historyNavItem", "calorieNavItem", "progressNavItem"]) {
+  assert.match(menuSection("training"), new RegExp(`id="${id}"`), `${id} skal ligge under Træning`);
+}
+for (const id of ["trashNavItem", "exportDataNavItem", "helpNavItem", "privacyNavItem", "feedbackNavItem"]) {
+  assert.match(menuSection("more"), new RegExp(`id="${id}"`), `${id} skal ligge under Mere`);
+}
+assert.equal((sidebarMarkup.match(/class="sidebar-item(?:\s|\")/g) || []).length, 18, "Ingen menupunkter er tilføjet eller fjernet");
+assert.ok(sidebarMarkup.indexOf('id="sidebarLogoutBtn"') > sidebarMarkup.lastIndexOf("</section>"), "Log ud forbliver uden for kategorierne nederst");
 
 assert.equal((html.match(/id=["']exerciseActionMenu["']/g) || []).length, 1);
 assert.match(html, /class="exercise-more-button"/);

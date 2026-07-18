@@ -54,6 +54,8 @@
   <link rel="icon" href="work4it-app-icon-192.png" type="image/png" sizes="192x192">
   <link rel="icon" href="work4it-app-icon-512.png" type="image/png" sizes="512x512">
   <link rel="apple-touch-icon" sizes="192x192" href="work4it-app-icon-192.png">
+  <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
+  <link rel="stylesheet" href="progression.css?v=20260718-progression1">
   <title>Work4it</title>
   <style>
     :root {
@@ -2966,6 +2968,18 @@
       <div><b id="sidebarProfileName">Min profil</b><br><span class="profile-login" id="sidebarProfileSubtitle">Profil og konto</span></div>
     </div>
 
+    <section class="sidebar-accordion" data-accordion="user">
+      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('user')" aria-expanded="false">
+        <span>👤 Bruger</span><span class="sidebar-accordion-chevron">⌄</span>
+      </button>
+      <div class="sidebar-accordion-panel">
+        <button class="sidebar-item" id="profileAccountNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileSetup()">👤 Profil og konto</button>
+        <button class="sidebar-item sidebar-subitem" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">Gratis</span></button>
+        <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
+        <button class="sidebar-item" id="aiCoachButton" type="button" onclick="setActiveSidebarItem(this); if(document.getElementById('sidebar')?.classList.contains('open')) toggleSidebar(false); openAiCoach()" aria-controls="aiCoachPanel" aria-expanded="false">✨ AI Coach</button>
+      </div>
+    </section>
+
     <section class="sidebar-accordion open" data-accordion="training">
       <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('training')" aria-expanded="true">
         <span>💪 Træning</span><span class="sidebar-accordion-chevron">⌄</span>
@@ -3025,14 +3039,6 @@
           </div>
         </div>
         <button class="sidebar-item" id="screenshotImportNavItem" type="button" onclick="setActiveSidebarItem(this); openScreenshotImportInfo()">📷 Importér fra screenshot</button>
-      </div>
-    </section>
-
-    <section class="sidebar-accordion" data-accordion="statistics">
-      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('statistics')" aria-expanded="false">
-        <span>📊 Statistik</span><span class="sidebar-accordion-chevron">⌄</span>
-      </button>
-      <div class="sidebar-accordion-panel">
         <button class="sidebar-item" id="historyNavItem" type="button" onclick="setActiveSidebarItem(this); openDashboard()">📜 Historik / Dashboard</button>
         <button class="sidebar-item" id="calorieNavItem" type="button" onclick="setActiveSidebarItem(this); openCalorieView()">🔥 Kalorie-estimat</button>
         <button class="sidebar-item" id="progressNavItem" type="button" onclick="setActiveSidebarItem(this); openPremiumFeature('progress', openProgressView)">📈 Min udvikling <span class="premium-indicator">Premium</span></button>
@@ -3044,10 +3050,6 @@
         <span>⚙️ Mere</span><span class="sidebar-accordion-chevron">⌄</span>
       </button>
       <div class="sidebar-accordion-panel">
-        <button class="sidebar-item" id="profileAccountNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileSetup()">👤 Profil og konto</button>
-        <button class="sidebar-item sidebar-subitem" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">Gratis</span></button>
-        <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
-        <button class="sidebar-item" id="aiCoachButton" type="button" onclick="setActiveSidebarItem(this); if(document.getElementById('sidebar')?.classList.contains('open')) toggleSidebar(false); openAiCoach()" aria-controls="aiCoachPanel" aria-expanded="false">✨ AI Coach</button>
         <button class="sidebar-item" id="trashNavItem" type="button" onclick="setActiveSidebarItem(this); toggleTrashDropdown()">🗑 Papirkurv</button>
         <div class="saved-dropdown" id="trashDropdown">
           <div class="nested-box">
@@ -5618,7 +5620,12 @@
       block.dataset.role = plan.role || window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory";
       block.dataset.exerciseType = isCardio ? "cardio" : "strength";
       block.dataset.trainingStyle = plan.trainingStyle || catalog.find(exercise => exercise.name === name && exercise.muscle === muscle)?.trainingStyle || "gym";
-      block.dataset.exerciseId = window.Work4itExerciseAnimations?.exerciseId?.(name, muscle) || "";
+      const progressionMetadata = progressionMetadataForExercise(name, muscle, plan);
+      block.dataset.exerciseId = progressionMetadata.exerciseId;
+      block.dataset.loadType = progressionMetadata.loadType;
+      block.dataset.equipment = progressionMetadata.equipment;
+      block.dataset.weightUnit = progressionMetadata.unit;
+      block.dataset.weightStep = progressionMetadata.weightStep;
       const historyEntry = latestExerciseHistory(name, muscle);
       const historyPause = historyEntry ? Math.max(0, Number(historyEntry.pauseSeconds) || parsePause(historyEntry.pause || "")) : 0;
       const savedExercisePause = parsePause(metadata?.pause || "") || parsePause(savedSets?.find(set => set?.pause)?.pause || "");
@@ -5721,15 +5728,51 @@
 
     function removeExercise(slot) {
       clearPauseTimers(slot);
+      closeInlineExerciseDemo(slot);
       const el = $(`block-${slot}`);
       if (el) el.remove();
       updateWorkoutProgress();
       updateEstimatedTime();
       autoSave();
     }
+    function closeInlineExerciseDemo(slot, restoreFocus = false) {
+      const panel = $(`mannequin-${slot}`);
+      if (!panel) return;
+      const content = panel.querySelector(".work4it-mannequin-content");
+      window.Work4itMannequin?.unmount?.(content);
+      panel.remove();
+      if (restoreFocus) $(`exercise-menu-trigger-${slot}`)?.focus?.();
+    }
+
+    function toggleInlineExerciseDemo(slot, exerciseName) {
+      const block = $(`block-${slot}`);
+      if (!block) return false;
+      if ($(`mannequin-${slot}`)) {
+        closeInlineExerciseDemo(slot, true);
+        return true;
+      }
+      document.querySelectorAll(".work4it-mannequin-inline").forEach(panel => {
+        const otherSlot = panel.id.replace("mannequin-", "");
+        closeInlineExerciseDemo(otherSlot);
+      });
+      const panel = document.createElement("section");
+      panel.className = "work4it-mannequin-inline";
+      panel.id = `mannequin-${slot}`;
+      panel.setAttribute("aria-label", `BevÃ¦gelsesdemo for ${exerciseName}`);
+      panel.innerHTML = `<div class="work4it-mannequin-inline-head"><strong>BevÃ¦gelse Â· ${esc(exerciseName)}</strong><button class="work4it-mannequin-close" type="button" aria-label="Luk bevÃ¦gelsesdemo for ${esc(exerciseName)}" onclick="closeInlineExerciseDemo('${slot}', true)">Ã—</button></div><div class="work4it-mannequin-content"></div>`;
+      block.querySelector(".exercise-head")?.after(panel);
+      const instance = window.Work4itMannequin?.mount?.(panel.querySelector(".work4it-mannequin-content"), exerciseName);
+      if (!instance) {
+        panel.remove();
+        return false;
+      }
+      return true;
+    }
+
     function openExerciseDemo(slot) {
       const exerciseName = $(`name-${slot}`)?.textContent?.trim();
       if (!exerciseName) return;
+      if (window.Work4itMannequin?.supports?.(exerciseName) && toggleInlineExerciseDemo(slot, exerciseName)) return;
       const muscle = $(`name-${slot}`)?.dataset?.muscle || "";
       const block = $(`block-${slot}`);
       const id = block?.dataset?.exerciseId || window.Work4itExerciseAnimations?.exerciseId?.(exerciseName, muscle);
@@ -5795,6 +5838,28 @@
       if (/(machine|maskine|pec deck|leg press|hack squat|air bike|stairmaster|crosstrainer)/.test(name)) return "Maskine";
       if (/(push-up|pull-up|chin-up|dip|plank|crunch|lunge|squat|wall sit|bird dog|mountain climber|handstand|pike)/.test(name)) return "Kropsvægt";
       return "Andet";
+    }
+
+    function progressionMetadataForExercise(name, muscle, source = {}) {
+      const normalizedName = normalizedExerciseSearch(name);
+      let equipment = source.equipment || "external";
+      if (!source.equipment) {
+        if (/(dumbbell|håndvægt)/.test(normalizedName)) equipment = "dumbbell";
+        else if (/(barbell|ez-bar|stang)/.test(normalizedName)) equipment = "barbell";
+        else if (/(cable|kabel|pulldown|pushdown|face pull)/.test(normalizedName)) equipment = "cable";
+        else if (/(machine|maskine|pec deck|leg press|hack squat)/.test(normalizedName)) equipment = "machine";
+        else if (/kettlebell/.test(normalizedName)) equipment = "kettlebell";
+        else if (isBodyweightHomeExercise(name, muscle)) equipment = "bodyweight";
+      }
+      const weightedBodyweight = equipment === "bodyweight" && /(weighted|med vægt|ekstra belastning)/.test(normalizedName);
+      const loadType = source.loadType || (equipment === "bodyweight" ? (weightedBodyweight ? "weighted_bodyweight" : "bodyweight") : "external");
+      return {
+        exerciseId: source.exerciseId || window.Work4itExerciseAnimations?.exerciseId?.(name, muscle) || "",
+        equipment,
+        loadType,
+        unit: source.unit || source.weightUnit || "kg",
+        weightStep: source.weightStep == null ? "" : String(source.weightStep)
+      };
     }
 
     function filterReplacementSearch() {
@@ -5946,6 +6011,7 @@
     }
 
     function setExercise(slot, name, muscle) {
+      closeInlineExerciseDemo(slot);
       const data = collectSetData(slot);
       const exerciseBlock = $(`block-${slot}`);
       const isCardio = muscle === "Cardio";
@@ -5977,11 +6043,16 @@
         exerciseBlock.dataset.pauseInitialized = "true";
       }
       if (exerciseBlock) {
+        const progressionMetadata = progressionMetadataForExercise(name, muscle, definition || plan);
         exerciseBlock.dataset.goal = plan.goal;
         exerciseBlock.dataset.role = plan.role;
         exerciseBlock.dataset.exerciseType = isCardio ? "cardio" : "strength";
         exerciseBlock.dataset.trainingStyle = definition?.trainingStyle || "gym";
-        exerciseBlock.dataset.exerciseId = window.Work4itExerciseAnimations?.exerciseId?.(name, muscle) || "";
+        exerciseBlock.dataset.exerciseId = progressionMetadata.exerciseId;
+        exerciseBlock.dataset.loadType = progressionMetadata.loadType;
+        exerciseBlock.dataset.equipment = progressionMetadata.equipment;
+        exerciseBlock.dataset.weightUnit = progressionMetadata.unit;
+        exerciseBlock.dataset.weightStep = progressionMetadata.weightStep;
       }
       $(`name-${slot}`).textContent = name;
       $(`name-${slot}`).dataset.muscle = muscle;
@@ -6012,6 +6083,106 @@
       if (replaceBox) replaceBox.style.display = "none";
       updateEstimatedTime();
       autoSave();
+    }
+
+    function progressionExerciseForSlot(slot) {
+      const block = $(`block-${slot}`);
+      const nameElement = $(`name-${slot}`);
+      if (!block || !nameElement || block.dataset.exerciseType === "cardio") return null;
+      return {
+        exerciseId: block.dataset.exerciseId || "",
+        name: nameElement.textContent?.trim() || "",
+        muscle: nameElement.dataset.muscle || "",
+        exerciseType: block.dataset.exerciseType || "strength",
+        loadType: block.dataset.loadType || "external",
+        equipment: block.dataset.equipment || "external",
+        unit: block.dataset.weightUnit || "kg"
+      };
+    }
+
+    function progressionSuggestionForSlot(slot) {
+      const exercise = progressionExerciseForSlot(slot);
+      const service = window.Work4itProgression;
+      if (!exercise || !service?.calculateProgressionSuggestion) return null;
+      const rows = [...($(`sets-${slot}`)?.querySelectorAll(".set-block") || [])];
+      const firstIncomplete = rows.find(row => !row.querySelector('input[type="checkbox"]')?.checked) || rows[0];
+      const targetReps = firstIncomplete?.querySelector(".reps")?.dataset.targetReps || "";
+      const weightStepValue = $(`block-${slot}`)?.dataset.weightStep;
+      return service.calculateProgressionSuggestion({
+        exercise,
+        currentPlan: {
+          weight: firstIncomplete?.querySelector(".weight")?.value || "",
+          targetReps,
+          plannedSets: rows.length,
+          unit: exercise.unit,
+          weightStep: weightStepValue ? Number(String(weightStepValue).replace(",", ".")) : undefined
+        },
+        history: history()
+      });
+    }
+
+    function progressionSuggestionIsApplied(slot, suggestion) {
+      const rows = [...($(`sets-${slot}`)?.querySelectorAll(".set-block") || [])]
+        .filter(row => !row.querySelector('input[type="checkbox"]')?.checked);
+      if (!rows.length || !suggestion) return false;
+      return rows.every(row => {
+        const weight = Number(String(row.querySelector(".weight")?.value || "").replace(",", "."));
+        const weightMatches = suggestion.suggestedWeight == null || Math.abs(weight - suggestion.suggestedWeight) < .001;
+        const repsMatches = !suggestion.suggestedReps || row.querySelector(".reps")?.dataset.targetReps === suggestion.suggestedReps;
+        return weightMatches && repsMatches;
+      });
+    }
+
+    function renderProgressionSuggestion(slot) {
+      const block = $(`block-${slot}`);
+      if (!block) return;
+      block.querySelector(".progression-suggestion")?.remove();
+      const suggestion = progressionSuggestionForSlot(slot);
+      if (!suggestion) return;
+      const formatted = window.Work4itProgression.formatSuggestion(suggestion);
+      const panel = document.createElement("section");
+      panel.className = `progression-suggestion progression-${suggestion.status}`;
+      panel.setAttribute("aria-label", "Forslag til næste træning");
+      panel.dataset.slot = slot;
+      const applied = progressionSuggestionIsApplied(slot, suggestion);
+      const canApply = suggestion.status !== "no-data" && (suggestion.suggestedWeight != null || suggestion.suggestedReps);
+      const confidence = suggestion.confidence === "high" ? "høj sikkerhed" : suggestion.confidence === "medium" ? "middel sikkerhed" : "forsigtigt forslag";
+      panel.innerHTML = `
+        <div class="progression-suggestion-copy">
+          <span class="progression-suggestion-kicker">${hasActiveWorkoutSession() ? "Anbefalet start" : "Forslag til næste gang"} · ${esc(confidence)}</span>
+          <strong class="progression-suggestion-value">${esc(formatted || "Brug din nuværende plan")}</strong>
+        </div>
+        ${canApply ? `<button class="small-btn progression-apply" type="button" onclick="applyProgressionSuggestion('${slot}', this)" ${applied ? "disabled" : ""}>${applied ? "Anvendt" : "Brug forslag"}</button>` : ""}
+        <p class="progression-suggestion-reason">${esc(suggestion.reason)}</p>`;
+      block.querySelector(".exercise-head")?.after(panel);
+    }
+
+    function refreshAllProgressionSuggestions() {
+      slotIds().forEach(renderProgressionSuggestion);
+    }
+
+    function applyProgressionSuggestion(slot, button) {
+      const suggestion = progressionSuggestionForSlot(slot);
+      if (!suggestion || suggestion.status === "no-data") return;
+      const rows = [...($(`sets-${slot}`)?.querySelectorAll(".set-block") || [])]
+        .filter(row => !row.querySelector('input[type="checkbox"]')?.checked);
+      rows.forEach(row => {
+        const weight = row.querySelector(".weight");
+        const reps = row.querySelector(".reps");
+        if (weight && suggestion.suggestedWeight != null) weight.value = String(suggestion.suggestedWeight).replace(".", ",");
+        if (reps && suggestion.suggestedReps) {
+          reps.dataset.targetReps = suggestion.suggestedReps;
+          reps.placeholder = suggestion.suggestedReps;
+        }
+      });
+      updateAnalytics(slot);
+      autoSave();
+      if (button) {
+        button.textContent = "Anvendt";
+        button.disabled = true;
+      }
+      const status = $("autosaveStatus");
+      if (status) status.textContent = "Progressionsforslag anvendt og gemt";
     }
 
     function renderSets(slot, count, saved = null) {
@@ -6083,6 +6254,7 @@
       updateAnalytics(slot);
       updateWorkoutProgress();
       updateEstimatedTime();
+      renderProgressionSuggestion(slot);
     }
 
     function updateWorkoutProgress() {
@@ -6642,6 +6814,7 @@
       }
       updateWorkoutButtonVisibility();
       updateEstimatedCalories();
+      refreshAllProgressionSuggestions();
     }
 
     function resetSessionCompletionMarks() {
@@ -6655,14 +6828,19 @@
 
     function workoutStructureSnapshot(state) {
       return JSON.stringify((state?.exercises || []).map(exercise => ({
+        exerciseId: exercise.exerciseId || "",
         name: exercise.name,
         muscle: exercise.muscle,
-          role: exercise.role,
-          exerciseType: exercise.exerciseType || "strength",
-          trainingStyle: exercise.trainingStyle || "gym",
-          pause: exercise.pause || exercise.sets?.[0]?.pause || "",
-          pauseManual: exercise.pauseManual === true || exercise.sets?.some(set => set.pauseManual === true),
-          cardio: exercise.cardio ? {
+        role: exercise.role,
+        exerciseType: exercise.exerciseType || "strength",
+        trainingStyle: exercise.trainingStyle || "gym",
+        loadType: exercise.loadType || "external",
+        equipment: exercise.equipment || "external",
+        unit: exercise.unit || "kg",
+        weightStep: exercise.weightStep || "",
+        pause: exercise.pause || exercise.sets?.[0]?.pause || "",
+        pauseManual: exercise.pauseManual === true || exercise.sets?.some(set => set.pauseManual === true),
+        cardio: exercise.cardio ? {
           durationMinutes: exercise.cardio.durationMinutes || "",
           distanceKm: exercise.cardio.distanceKm || "",
           calories: exercise.cardio.calories || "",
@@ -6893,12 +7071,17 @@
           const slot = block.id.replace("block-", "");
           const nameEl = $(`name-${slot}`);
           return {
+            exerciseId: block.dataset.exerciseId || "",
             name: nameEl.textContent,
             muscle: nameEl.dataset.muscle || "Ryg",
             goal: block.dataset.goal || currentTrainingGoal(),
             role: block.dataset.role || "accessory",
             exerciseType: block.dataset.exerciseType || "strength",
             trainingStyle: block.dataset.trainingStyle || "gym",
+            loadType: block.dataset.loadType || "external",
+            equipment: block.dataset.equipment || "external",
+            unit: block.dataset.weightUnit || "kg",
+            weightStep: block.dataset.weightStep || "",
             pause: formatPause(exercisePauseSeconds(slot)),
             pauseManual: exercisePauseManual(slot),
             sets: collectSetData(slot),
@@ -7953,9 +8136,13 @@
         const key = exerciseHistoryKey(name, muscle);
         const entry = {
           key,
+          exerciseId: block.dataset.exerciseId || "",
           name,
           muscle,
           normalizedName: normalizeExerciseHistoryText(name),
+          loadType: block.dataset.loadType || "external",
+          equipment: block.dataset.equipment || "external",
+          unit: block.dataset.weightUnit || "kg",
           weight: sourceSet.weight || "",
           reps: sourceSet.reps || "",
           pause: formatPause(pauseSeconds),
@@ -7994,11 +8181,16 @@
           return r ? { set:i+1, weight:w, reps:r, targetReps:s.targetReps || "", completed:s.completed === true, oneRm:oneRm(w,r), volume:volume(w,r) } : null;
         }).filter(Boolean);
         return sets.length ? {
+          exerciseId: block.dataset.exerciseId || "",
           name,
           muscle,
           role: block.dataset.role || "accessory",
           trainingStyle: block.dataset.trainingStyle || "gym",
           exerciseType: "strength",
+          loadType: block.dataset.loadType || "external",
+          equipment: block.dataset.equipment || "external",
+          unit: block.dataset.weightUnit || "kg",
+          weightStep: block.dataset.weightStep || "",
           sets,
           plannedSets: collectedSets.length,
           totalSets: sets.length,
@@ -10467,6 +10659,7 @@
       renderHomeDashboard();
     });
     window.addEventListener("ai-requests:changed", event => updateAiRequestCounterDisplay(event.detail));
+    window.addEventListener("exercise-history:changed", refreshAllProgressionSuggestions);
     window.addEventListener("firestore:data-hydrated", () => {
       loadCustom();
       renderSaved();
@@ -10478,6 +10671,7 @@
       updateAiRequestCounterDisplay();
       window.refreshProfileAccountView?.();
       window.Membership?.render?.();
+      refreshAllProgressionSuggestions();
       $("autosaveStatus").textContent = "Data synkroniseret fra Firebase";
     });
     window.addEventListener("firestore:sync-completed", () => {
@@ -10563,8 +10757,12 @@
     window.ENABLE_FIXED_LOGIN_ROUTING = true;
   </script>
   <script src="admin-config.js?v=20260711-permanent-admin1"></script>
+  <script src="exercise-animation/muscles.js?v=20260716-mannequin-prototype1"></script>
+  <script src="exercise-animation/animations.js?v=20260716-mannequin-prototype1"></script>
+  <script src="exercise-animation/mannequin.js?v=20260716-mannequin-prototype1"></script>
   <script src="exercise-animation-model.js?v=20260716-professional-three1"></script>
   <script type="module" src="exercise-animation-3d-renderer.js?v=20260716-professional-three1"></script>
+  <script src="progression-service.js?v=20260718-progression1"></script>
   <script src="completed-workout-analysis.js?v=20260716-completion-analysis2"></script>
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260716-cardio-empty-time1"></script>
@@ -10593,7 +10791,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260716-completion-analysis2").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260718-progression1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

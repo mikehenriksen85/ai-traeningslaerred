@@ -115,6 +115,7 @@
     const stable = [];
     const lower = [];
     const recommendations = [];
+    const progressionSuggestions = [];
     let comparableExercises = 0;
 
     exercises.forEach(exercise => {
@@ -153,8 +154,35 @@
           stable.push(exercise.name);
         }
       }
-      const recommendation = exerciseRecommendation(exercise, currentMetrics, comparison);
-      if (recommendation) recommendations.push({ type: "progression", exercise: exercise.name, message: recommendation });
+      const targetReps = currentMetrics.sets.find(set => parseRepRange(set.targetReps))?.targetReps || "";
+      const progressionExercise = {
+        ...exercise,
+        loadType: exercise.loadType || (currentMetrics.maxWeight > 0 ? "external" : "bodyweight")
+      };
+      const progressionSuggestion = global.Work4itProgression?.calculateProgressionSuggestion?.({
+        exercise: progressionExercise,
+        currentPlan: {
+          targetReps,
+          plannedSets: exercise.plannedSets || currentMetrics.completedSets,
+          unit: exercise.unit || "kg",
+          weightStep: exercise.weightStep || undefined
+        },
+        previousPerformance: {
+          ...progressionExercise,
+          sessionId: current.sessionId || current.id || null,
+          completedAt: current.completedAt || current.date || null
+        },
+        history
+      }) || null;
+      if (progressionSuggestion && progressionSuggestion.status !== "no-data") {
+        const formatted = global.Work4itProgression?.formatSuggestion?.(progressionSuggestion) || "";
+        const message = `Forslag til ${exercise.name}: ${formatted ? `${formatted}. ` : ""}${progressionSuggestion.reason}`;
+        recommendations.push({ type: "progression", exercise: exercise.name, message, suggestion: progressionSuggestion });
+        progressionSuggestions.push({ exercise: exercise.name, ...progressionSuggestion, formatted });
+      } else {
+        const recommendation = exerciseRecommendation(exercise, currentMetrics, comparison);
+        if (recommendation) recommendations.push({ type: "progression", exercise: exercise.name, message: recommendation });
+      }
       details.push({
         name: exercise.name,
         exerciseType: "strength",
@@ -162,7 +190,8 @@
         totalVolumeKg: currentMetrics.totalVolumeKg,
         bestOneRm: currentMetrics.bestOneRm,
         maxWeight: currentMetrics.maxWeight,
-        comparison
+        comparison,
+        progressionSuggestion
       });
     });
 
@@ -172,6 +201,8 @@
       insights.push({ type: "record", priority: 1, message: exerciseCount === 1 ? `Ny dokumenteret rekord i ${personalRecords[0].exercise}.` : `Nye dokumenterede rekorder i ${exerciseCount} øvelser.` });
     }
     if (progress.length) insights.push({ type: "progress", priority: 2, message: `Fremgang registreret i ${progress.slice(0, 2).join(" og ")}.` });
+    const nextIncrease = progressionSuggestions.find(item => item.status === "increase");
+    if (nextIncrease) insights.push({ type: "progression", priority: 3, message: `Næste sikre trin i ${nextIncrease.exercise}: ${nextIncrease.formatted || nextIncrease.reason}.` });
     if (stable.length) insights.push({ type: "stable", priority: 3, message: `Stabil præstation i ${stable.slice(0, 2).join(" og ")}.` });
     if (lower.length) insights.push({ type: "recovery", priority: 4, message: `Dagens resultat i ${lower.slice(0, 2).join(" og ")} var lidt lavere end sidst. Søvn, energi og restitution kan påvirke præstationen.` });
     if (!comparableExercises) insights.push({ type: "baseline", priority: 2, message: "Denne træning er nu gemt som dit udgangspunkt." });

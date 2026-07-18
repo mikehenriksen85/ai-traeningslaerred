@@ -1,11 +1,17 @@
-const CACHE_NAME = "work4it-shell-v117-completion-analysis2";
+const CACHE_NAME = "work4it-shell-v119-progression1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./admin-config.js?v=20260712-home-center1",
+  "./exercise-animation/mannequin.css?v=20260716-mannequin-prototype1",
+  "./exercise-animation/muscles.js?v=20260716-mannequin-prototype1",
+  "./exercise-animation/animations.js?v=20260716-mannequin-prototype1",
+  "./exercise-animation/mannequin.js?v=20260716-mannequin-prototype1",
   "./exercise-animation-model.js?v=20260716-professional-three1",
   "./exercise-animation-3d-renderer.js?v=20260716-professional-three1",
+  "./progression.css?v=20260718-progression1",
+  "./progression-service.js?v=20260718-progression1",
   "./completed-workout-analysis.js?v=20260716-completion-analysis2",
   "./vendor/three/three.module.min.js",
   "./vendor/three/LICENSE",

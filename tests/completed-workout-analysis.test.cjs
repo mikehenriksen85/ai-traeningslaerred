@@ -4,11 +4,13 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
+const progressionSource = fs.readFileSync(path.join(root, "app", "progression-service.js"), "utf8");
 const source = fs.readFileSync(path.join(root, "app", "completed-workout-analysis.js"), "utf8");
 const html = fs.readFileSync(path.join(root, "app", "index.html"), "utf8");
 const worker = fs.readFileSync(path.join(root, "app", "service-worker.js"), "utf8");
 const sandbox = { window: {}, Date, Intl };
 vm.createContext(sandbox);
+vm.runInContext(progressionSource, sandbox);
 vm.runInContext(source, sandbox);
 const analyze = sandbox.window.Work4itCompletedWorkoutAnalysis.analyzeCompletedWorkout;
 assert.doesNotMatch(source, /fetch\(|httpsCallable|AIRequest|Membership/, "Analysen bruger hverken ekstern AI, requests eller medlemskabsgren");
@@ -113,5 +115,6 @@ assert.match(html, /window\.requestAnimationFrame\(\(\) => \$\("completionDoneBu
 assert.match(html, /FirestoreDataService\?\.syncAllLocalData\?\.\(\)\.catch/, "Offline completion keeps the existing non-blocking cloud sync flow");
 assert.match(html, /if \(finishWorkoutInProgress \|\| !\["in_progress", "paused"\]\.includes\(sessionStatus\)\) return/, "Double completion is blocked for active and paused sessions");
 assert.match(worker, /completed-workout-analysis\.js\?v=20260716-completion-analysis2/);
+assert.match(worker, /progression-service\.js\?v=20260718-progression1/);
 
 console.log("Completed workout analysis tests passed");
