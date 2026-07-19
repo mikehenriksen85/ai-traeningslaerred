@@ -359,6 +359,7 @@
     renderFocusAreas(Array.isArray(profile.focusAreas) ? profile.focusAreas : []);
     renderAccountStatus();
     populateThemeSettings();
+    populateLayoutSettings();
     const feedback = byId("profileSaveFeedback");
     if (feedback) feedback.textContent = "";
   }
@@ -393,6 +394,30 @@
         }
       }, 300);
     }
+  }
+
+  function populateLayoutSettings() {
+    const layout = window.Work4itModernDashboard?.getLayout?.() || "classic";
+    document.querySelectorAll('input[name="work4it-layout"]').forEach(input => {
+      input.checked = input.value === layout;
+    });
+  }
+
+  function setLayoutFeedback(message, isWarning = false) {
+    const feedback = byId("layoutSettingFeedback");
+    if (!feedback) return;
+    feedback.textContent = message || "";
+    feedback.style.color = isWarning ? "#fbbf24" : "";
+  }
+
+  function changeAppLayout(layout) {
+    if (!window.Work4itModernDashboard?.setLayout) {
+      setLayoutFeedback("Layout-systemet er ikke klar endnu.", true);
+      return;
+    }
+    const applied = window.Work4itModernDashboard.setLayout(layout, { source: "profile" });
+    populateLayoutSettings();
+    setLayoutFeedback(`${applied === "modern" ? "Modern Dashboard UI" : "Classic UI"} er aktivt og gemt på denne enhed ✓`);
   }
 
   function openProfileAccountView() {
@@ -630,6 +655,7 @@
   window.deleteProfileAccountAndData = deleteProfileAccountAndData;
   window.refreshProfileAccountView = populateProfileAccount;
   window.changeAppTheme = changeAppTheme;
+  window.changeAppLayout = changeAppLayout;
   window.saveProfileMeasurementSnapshot = saveMeasurementSnapshot;
   window.updateSidebarProfileIdentity = updateSidebarProfileIdentity;
   window.loginProfileWithEmail = loginProfileWithEmail;
@@ -642,6 +668,7 @@
   window.sendPasswordResetFromDialog = sendPasswordResetFromDialog;
 
   window.addEventListener("firebase-auth:ready", renderAccountStatus);
+  window.addEventListener("work4it:layout-changed", populateLayoutSettings);
   window.addEventListener("firebase-auth:changed", event => {
     renderAccountStatus();
     const error = event.detail?.error;

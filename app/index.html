@@ -10,8 +10,13 @@
         var theme = /^(work4it|classic)$/.test(queryTheme || "") ? queryTheme : localStorage.getItem("work4it_theme");
         if (theme) localStorage.setItem("work4it_theme", theme);
         document.documentElement.dataset.theme = theme || "work4it";
+        var queryLayout = new URLSearchParams(location.search).get("layout");
+        var layout = /^(classic|modern)$/.test(queryLayout || "") ? queryLayout : localStorage.getItem("work4it_ui_layout");
+        if (layout) localStorage.setItem("work4it_ui_layout", layout);
+        document.documentElement.dataset.uiLayout = layout || "classic";
       } catch (_) {
         document.documentElement.dataset.theme = "work4it";
+        document.documentElement.dataset.uiLayout = "classic";
       }
     }());
   </script>
@@ -56,6 +61,7 @@
   <link rel="apple-touch-icon" sizes="192x192" href="work4it-app-icon-192.png">
   <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
   <link rel="stylesheet" href="progression.css?v=20260718-progression1">
+  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260719-modern-dashboard1">
   <title>Work4it</title>
   <style>
     :root {
@@ -3296,6 +3302,18 @@
 
   <main class="canvas" id="programCanvas">
     <section class="card">
+      <section class="modern-dashboard-ui program-only" id="modernDashboardUI" aria-labelledby="modernDashboardTitle" hidden>
+        <header class="modern-dashboard-head">
+          <span class="modern-dashboard-brand"><img src="work4it-app-icon-192.png" alt="" width="40" height="40"><span><small>Modern Dashboard UI</small><strong id="modernDashboardTitle">Velkommen tilbage</strong></span></span>
+          <span class="modern-layout-badge">Eksperiment</span>
+        </header>
+        <nav class="modern-icon-rail" id="modernIconRail" role="tablist" aria-label="Funktioner"></nav>
+        <section class="modern-feature-card" id="modernFeaturePanel" role="tabpanel" aria-live="polite"></section>
+        <section class="modern-shortcuts" aria-labelledby="modernShortcutsTitle">
+          <h2 id="modernShortcutsTitle">Hurtig adgang</h2>
+          <div class="modern-card-grid" id="modernCardGrid"></div>
+        </section>
+      </section>
       <section class="home-dashboard program-only" id="homeDashboard" aria-labelledby="homeWelcomeTitle">
         <header class="home-welcome">
           <span class="home-welcome-kicker">Dit Work4it-dashboard</span>
@@ -3441,6 +3459,12 @@
     </section>
   </main>
 
+  <nav class="modern-bottom-nav" id="modernBottomNav" aria-label="Primær navigation" hidden>
+    <button class="modern-bottom-tab" type="button" data-modern-category="user" aria-pressed="false"><span class="modern-icon" aria-hidden="true">👤</span><strong>Bruger</strong></button>
+    <button class="modern-bottom-tab" type="button" data-modern-category="training" aria-pressed="true"><span class="modern-icon" aria-hidden="true">🏋️</span><strong>Træning</strong></button>
+    <button class="modern-bottom-tab" type="button" data-modern-category="more" aria-pressed="false"><span class="modern-icon" aria-hidden="true">•••</span><strong>Mere</strong></button>
+  </nav>
+
   <div class="exercise-action-menu" id="exerciseActionMenu" role="menu" aria-label="Øvelseshandlinger" onkeydown="handleExerciseActionMenuKey(event)" hidden>
     <button class="exercise-action-menu-item" type="button" role="menuitem" data-exercise-action="demo" onclick="runExerciseCardAction('demo')">Se demo</button>
     <button class="exercise-action-menu-item" type="button" role="menuitem" data-exercise-action="replace" onclick="runExerciseCardAction('replace')">Erstat øvelse</button>
@@ -3570,6 +3594,19 @@
               </label>
             </div>
             <div class="theme-save-feedback" id="themeSaveFeedback" aria-live="polite"></div>
+            <h3 class="layout-setting-title">App-layout</h3>
+            <p class="profile-section-copy">Skift mellem det oprindelige layout og det nye mobile dashboard. Træningsdata og funktioner er de samme i begge visninger.</p>
+            <div class="layout-choice-grid" role="radiogroup" aria-label="App-layout">
+              <label class="layout-choice">
+                <input type="radio" name="work4it-layout" value="classic" onchange="changeAppLayout(this.value)">
+                <span><strong>Classic UI</strong><small>Det nuværende Work4it-layout med sidemenu.</small></span>
+              </label>
+              <label class="layout-choice">
+                <input type="radio" name="work4it-layout" value="modern" onchange="changeAppLayout(this.value)">
+                <span><strong>Modern Dashboard UI</strong><small>Kort, ikonrække og fast bundnavigation.</small></span>
+              </label>
+            </div>
+            <div class="layout-setting-feedback" id="layoutSettingFeedback" aria-live="polite"></div>
             <label class="theme-option" style="margin-top:12px;">
               <input type="checkbox" id="autoPauseEnabled" onchange="setAutoPauseEnabled(this.checked)">
               <span>
@@ -11430,7 +11467,8 @@
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
   <script src="auth-gate.js?v=20260712-google-auth-domain1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
-  <script src="profile-account.js?v=20260718-profile-cloud1"></script>
+  <script src="modern-dashboard-ui.js?v=20260719-modern-dashboard1"></script>
+  <script src="profile-account.js?v=20260719-modern-dashboard1"></script>
   <script src="profile-wizard.js?v=20260716-cardio-empty-time1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
@@ -11445,7 +11483,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260718-empty-workout-actions1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260719-modern-dashboard1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

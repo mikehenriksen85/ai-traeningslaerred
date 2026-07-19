@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v124-empty-workout-actions1";
+const CACHE_NAME = "work4it-shell-v125-modern-dashboard1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -13,6 +13,8 @@ const APP_SHELL = [
   "./dashboard-view-model.js?v=20260718-dashboard-buttons1",
   "./workout-heatmap.js?v=20260718-heatmap1",
   "./progression.css?v=20260718-progression1",
+  "./modern-dashboard-ui.css?v=20260719-modern-dashboard1",
+  "./modern-dashboard-ui.js?v=20260719-modern-dashboard1",
   "./progression-service.js?v=20260718-progression1",
   "./completed-workout-analysis.js?v=20260716-completion-analysis2",
   "./vendor/three/three.module.min.js",
@@ -41,7 +43,7 @@ const APP_SHELL = [
   "./password-visibility.js?v=20260621-password-toggle1",
   "./auth-gate.js?v=20260712-google-auth-domain1",
   "./theme-service.js?v=20260627-theme1",
-  "./profile-account.js?v=20260718-profile-cloud1",
+  "./profile-account.js?v=20260719-modern-dashboard1",
   "./profile-wizard.js?v=20260716-cardio-empty-time1",
   "./firebase-config.js?v=20260715-exercise-animations1",
   "./exercise-animation-cloud-service.js?v=20260716-backend-admin-read1",
