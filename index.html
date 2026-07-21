@@ -45,15 +45,14 @@
   <meta property="og:title" content="Work4it">
   <meta property="og:site_name" content="Work4it">
   <meta property="og:description" content="Planlæg, gennemfør og følg din træning med Work4it - en professionel AI-træningsplatform.">
-  <meta property="og:image" content="work4it-hero-logo-v1.png">
+  <meta property="og:image" content="public/Pictures/Hero%20Logo%20v1.png">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Work4it">
   <meta name="twitter:description" content="Planlæg, gennemfør og følg din træning med Work4it - en professionel AI-træningsplatform.">
-  <meta name="twitter:image" content="work4it-hero-logo-v1.png">
+  <meta name="twitter:image" content="public/Pictures/Hero%20Logo%20v1.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="work4it-app-icon-192.png" type="image/png" sizes="192x192">
-  <link rel="icon" href="work4it-app-icon-512.png" type="image/png" sizes="512x512">
-  <link rel="apple-touch-icon" sizes="192x192" href="work4it-app-icon-192.png">
+  <link rel="icon" href="public/Pictures/App%20Ikon%20V1.png" type="image/png" sizes="1254x1254">
+  <link rel="apple-touch-icon" href="public/Pictures/App%20Ikon%20V1.png">
   <title>Work4it</title>
   <style>
     :root {
@@ -91,7 +90,7 @@
       --text-success: var(--green);
       --text-danger: var(--red);
       --text-warning: #fbbf24;
-      --brand-hero-logo: url("work4it-hero-logo-v1.png");
+      --brand-hero-logo: url("public/Pictures/Hero%20Logo%20v1.png");
     }
 
     :root[data-theme="work4it"] { color-scheme: dark; }
@@ -1135,9 +1134,6 @@
     }
     .auth-gate-brand { display: flex; justify-content: center; margin-bottom: 10px; }
     .auth-gate-brand .brand-logo { width: min(240px, 76vw); }
-    .auth-gate.loading .auth-gate-brand .brand-logo { display: none; }
-    .auth-gate.loading .auth-hero-logo { display: block; margin: 0 auto 12px; width: min(280px, 76vw); max-height: 170px; object-fit: contain; }
-    .auth-hero-logo { display: none; }
     .auth-gate-title { margin: 8px 0 6px; font-size: var(--font-size-h1); line-height: var(--line-height-heading); }
     .auth-gate-copy { margin: 0 0 18px; color: var(--text-secondary); }
     .auth-gate-form { display: grid; gap: 12px; }
@@ -2171,7 +2167,7 @@
   <a class="skip-link" href="#programCanvas">Spring til hovedindhold</a>
   <section class="auth-gate loading" id="authGate" aria-label="Logger ind" aria-live="polite">
     <div class="auth-gate-panel">
-      <div class="auth-gate-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="Work4it"><img class="auth-hero-logo brand-fade-in" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
+      <div class="auth-gate-brand"><img class="brand-logo brand-fade-in" src="public/Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" decoding="async"></div>
       <h1 class="auth-gate-title">Velkommen</h1>
       <p class="auth-gate-copy" id="authGateCopy">Kontrollerer eksisterende login...</p>
       <form class="auth-gate-form" onsubmit="loginFromAuthGate(event)">
@@ -2203,13 +2199,13 @@
     <button class="menu-toggle-btn" type="button" onclick="toggleSidebar()" aria-label="Åbn hovedmenu" aria-controls="sidebar" aria-expanded="false">☰</button>
     <button class="nav-btn" onclick="goBackSafe()">Tilbage</button>
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
-    <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="work4it-logo-v1.png" alt="Work4it"><span class="brand-header-mobile"><img class="brand-header-icon" src="work4it-app-icon-192.png" alt=""><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
+    <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="public/Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024"><span class="brand-header-mobile"><img class="brand-header-icon" src="public/Pictures/App%20Ikon%20V1.png" alt="" width="1254" height="1254"><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
   </header>
 
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
   <nav class="sidebar" id="sidebar" aria-label="Hovedmenu" aria-hidden="true">
     <div class="sidebar-view-header">
-      <div class="sidebar-view-title"><img src="work4it-app-icon-192.png" alt="">Menu</div>
+      <div class="sidebar-view-title"><img src="public/Pictures/App%20Ikon%20V1.png" alt="" width="1254" height="1254">Menu</div>
       <button class="sidebar-close-btn" type="button" onclick="toggleSidebar(false)" aria-label="Luk menu">×</button>
     </div>
     <div class="profile">
@@ -2381,7 +2377,7 @@
 
   <main class="canvas" id="programCanvas">
     <section class="card">
-      <div class="work4it-landing-hero program-only brand-fade-in"><img class="brand-hero-logo" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
+      <div class="work4it-landing-hero program-only brand-fade-in"><img class="brand-hero-logo" src="public/Pictures/Hero%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" loading="lazy" decoding="async"></div>
       <div id="workoutTitle" role="button" tabindex="0" aria-label="Redigér programnavn" title="Tryk for at ændre programnavnet" onclick="beginProgramTitleEdit()" onkeydown="handleProgramTitleKey(event)">Mit nye træningspas</div>
       <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
       <div class="top-controls program-only">
@@ -2469,7 +2465,7 @@
   <section class="profile-account-view" id="profileAccountView" aria-hidden="true">
     <div class="profile-account-shell">
       <div class="profile-account-head">
-        <div class="profile-account-title-group"><img class="profile-account-logo" src="work4it-logo-v1.png" alt="Work4it"><div class="profile-account-title">Profil og konto</div></div>
+        <div class="profile-account-title-group"><img class="profile-account-logo" src="public/Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" loading="lazy" decoding="async"><div class="profile-account-title">Profil og konto</div></div>
         <button class="close" onclick="closeProfileAccountView()" aria-label="Luk">×</button>
       </div>
       <p class="profile-account-intro">Administrér personlige oplysninger, træningsopsætning, konto og lokale data.</p>
@@ -2729,7 +2725,7 @@
   <section class="membership-view" id="membershipView" aria-hidden="true">
     <div class="membership-shell">
       <div class="membership-head">
-        <div class="membership-title-group"><img class="membership-hero-logo brand-fade-in" src="work4it-hero-logo-v1.png" alt="Work4it"><div class="membership-title">Medlemskab</div></div>
+        <div class="membership-title-group"><img class="membership-hero-logo brand-fade-in" src="public/Pictures/Hero%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" loading="lazy" decoding="async"><div class="membership-title">Medlemskab</div></div>
         <button class="close" onclick="closeMembershipView()" aria-label="Luk">×</button>
       </div>
 
@@ -3260,7 +3256,7 @@
       const valuePoints = (help.valuePoints || []).map(point => `<li>${esc(point)}</li>`).join("");
       $("modalTitle").textContent = help.title || "Hjælp / Om Work4it";
       $("modalContent").innerHTML = `
-        <div class="about-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="${esc(help.logoAlt || "Work4it")}"></div>
+        <div class="about-brand"><img class="brand-logo" src="public/Pictures/App%20Logo%20v1.png" alt="${esc(help.logoAlt || "Work4it")}" width="1536" height="1024" loading="lazy" decoding="async"></div>
         <p class="about-intro">
           <strong>${esc(help.introStrong || "")}</strong>
           ${esc(help.intro || "")}

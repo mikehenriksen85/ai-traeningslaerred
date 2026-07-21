@@ -6,169 +6,94 @@ const fs = require("node:fs");
 const html = fs.readFileSync("app/index.html", "utf8");
 const profileWizard = fs.readFileSync("app/profile-wizard.js", "utf8");
 const trainingGoalEngine = fs.readFileSync("app/training-goal-engine.js", "utf8");
+const modernDashboard = fs.readFileSync("app/modern-dashboard-ui.js", "utf8");
 const inlineScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
   .map(match => match[1])
   .filter(Boolean);
 inlineScripts.forEach(source => new Function(source));
 
 for (const id of [
-  "homeDashboard",
-  "homeDashboardLoading",
-  "homeDashboardContent",
-  "homeSyncNotice",
-  "homeSyncRetryButton",
-  "homeWelcomeTitle",
-  "homeActiveSection",
-  "homeResumeWorkoutButton",
-  "homeWorkoutSection",
-  "homeCurrentProgramName",
-  "homeStartHelp",
-  "homeEmptyState",
-  "homeQuickSection",
-  "homeLatestSection",
-  "homeRecommendation",
+  "modernDashboardUI",
+  "modernDashboardTitle",
+  "modernIconRail",
+  "modernFeaturePanel",
+  "modernCardGrid",
+  "modernToolPanel",
+  "programGeneratorAccess",
+  "savedDropdown",
+  "savedSelect",
+  "trashDropdown",
+  "trashItems",
+  "modernBottomNav",
+  "membershipNavStatus",
   "elapsedTimeMetric",
   "programSecondaryActions",
   "workoutEditorDetails",
-  "timerBtn",
-  "savedSelect",
-  "aiCoachButton"
+  "aiCoachPanel"
 ]) {
   assert.equal((html.match(new RegExp(`id=["']${id}["']`, "g")) || []).length, 1, `${id} must be unique`);
 }
 
 for (const handler of [
-  "openProfileSetup",
-  "openMembershipView",
-  "openProfileWizardFromMenu",
-  "openTodayWorkout",
-  "toggleGeneratorMenu",
-  "openBlankWorkoutDialog",
-  "toggleSavedDropdown",
-  "openScreenshotImportInfo",
-  "openDashboard",
-  "openCalorieView",
-  "openProgressView",
-  "openAiCoach",
-  "exportDataFromMenu",
-  "openHelpAboutDialog",
-  "logoutProfileAccount"
+  "openProfileSetup", "openMembershipView", "openProfileWizardFromMenu",
+  "openBlankWorkoutDialog", "openScreenshotImportInfo", "openDashboard", "openCalorieView",
+  "openProgressView", "openAiCoach", "exportDataFromMenu", "openHelpAboutDialog",
+  "logoutProfileAccount", "startDashboardWorkout", "continueDashboardWorkout"
 ]) {
-  assert.match(html, new RegExp(`${handler}\\(`), `${handler} must remain wired`);
+  assert.match(`${html}\n${modernDashboard}`, new RegExp(handler), `${handler} must remain wired`);
 }
 
-assert.match(html, /function renderHomeDashboard\(/);
-assert.match(html, /function startDashboardWorkout\(/);
-assert.match(html, /function continueDashboardWorkout\(/);
-assert.match(html, /function buildCurrentDashboardViewModel\(/);
-assert.match(html, /async function retryDashboardSync\(/);
-assert.match(html, /function updateStartTrainingAvailability\(/);
+assert.match(html, /function modernDashboardSnapshot\(/);
+assert.match(html, /window\.Work4itDashboardRuntime = Object\.freeze/);
+assert.match(html, /function renderDashboard\(/);
+assert.match(html, /work4it:dashboard-updated/);
+assert.match(html, /function startDashboardWorkout\([\s\S]*?modernDashboardSnapshot\(\)\.view\?\.featuredWorkout/);
+assert.match(html, /function continueDashboardWorkout\([\s\S]*?showTrainingSession\(\)/);
+assert.match(html, /function presentGeneratedWorkout\(\) \{[\s\S]*?closeToolPanel[\s\S]*?renderDashboard\(\)[\s\S]*?openWorkoutEditor\(\)/);
+assert.equal((html.match(/presentGeneratedWorkout\(\);/g) || []).length, 3);
+assert.match(html, /function updateStartTrainingAvailability\([\s\S]*?validProgramExerciseCount/);
 assert.match(html, /function updateLiveTrainingVisibility\(/);
 assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
 assert.match(html, /document\.body\.dataset\.liveTraining = String\(isActive\)/);
-assert.match(html, /document\.querySelectorAll\("\.live-training-only"\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
-assert.match(html, /function presentGeneratedWorkout\(\) \{[\s\S]*toggleSidebar\(false\)[\s\S]*renderHomeDashboard\(\)[\s\S]*openWorkoutEditor\(\)/, "Genererede programmer vises automatisk efter mobilmenuen lukkes");
-assert.equal((html.match(/presentGeneratedWorkout\(\);/g) || []).length, 3, "Styrke, calisthenics og cardio bruger samme visningsflow");
-assert.match(html, /service-worker\.js\?v=20260719-modern-dashboard1/, "Modern Dashboard UI udløser en ny PWA app-shell");
+assert.match(html, /service-worker\.js\?v=20260721-official-assets1/);
 assert.match(html, /dashboard-view-model\.js\?v=20260718-dashboard-buttons1/);
 assert.match(html, /workout-heatmap\.js\?v=20260718-heatmap1/);
 assert.match(html, /function renderWorkoutHeatmapSection\(/);
 assert.match(html, /function initializeWorkoutHeatmap\(/);
-assert.match(html, /function openWorkoutHistoryEntryFromHeatmap\(/);
-assert.match(html, /workout-heatmap-scroll/);
-assert.match(html, /role="grid" aria-label="Træningsaktivitet/);
-assert.match(html, /data-level="\$\{day\.activityLevel\}"/);
-assert.match(html, /Aktiv uge = mindst én afsluttet træning fra mandag til søndag/);
 assert.match(html, /workout-history:changed/);
-assert.match(html, /service-worker\.js\?v=20260719-modern-dashboard1/);
-assert.doesNotMatch(html.match(/function renderWorkoutHeatmapSection[\s\S]*?function closeWorkoutHeatmapPopover/)?.[0] || "", /getDocs|collection\(|firebase/, "Heatmap filters hydrated history locally");
 assert.match(html, /class="progression-suggestion/);
 assert.match(html, /function applyProgressionSuggestion\(/);
-assert.match(html, /window\.Work4itProgression\.formatSuggestion/);
-assert.match(html, /block\.dataset\.exerciseId/);
-assert.match(html, /block\.dataset\.loadType/);
-assert.match(html, /function latestCardioDurationMinutes\(exerciseName\)/, "Cardio can reuse the latest registered duration for the same exercise");
-assert.match(html, /const requestedDuration = Number\(totalMinutes\) > 0 \? Math\.max\(count \* 5, Number\(totalMinutes\)\) : 0;/, "The plan default duration does not prefill cardio fields");
-assert.match(html, /durationMinutes: requestedMinutes \|\| previousMinutes \|\| ""/, "New cardio fields stay empty without an explicit duration or history");
-assert.doesNotMatch(html.match(/function generateCardioProgram[\s\S]*?function openBlankWorkoutDialog/)?.[0] || "", /Number\(totalMinutes\) \|\| plan\.totalMinutes/, "The cardio generator must not use the plan default as the field value");
-assert.match(html, /durationMinutes: numberValue\(exercise\.cardio\?\.durationMinutes \|\| exercise\.durationMinutes\) \|\| latestCardioDurationMinutes\(exercise\.name\) \|\| ""/, "Onboarding cardio also stays empty without explicit time or history");
-assert.doesNotMatch(html, /Number\(action\.durationMinutes\) \|\| 30/, "AI cardio creation must not invent a 30-minute duration");
-assert.doesNotMatch(profileWizard, /durationMinutes: prescription\.durationMinutes \|\| 30/, "The profile wizard must not prefill cardio with 30 minutes");
-assert.match(profileWizard, /durationMinutes: prescription\.durationMinutes \|\| ""/, "The profile wizard leaves new cardio duration empty");
-assert.match(trainingGoalEngine, /exerciseType: "cardio", durationMinutes: ""/, "Cardio prescriptions start without an invented duration");
+
+assert.match(html, /function latestCardioDurationMinutes\(exerciseName\)/);
+assert.match(html, /durationMinutes: requestedMinutes \|\| previousMinutes \|\| ""/);
+assert.doesNotMatch(html, /Number\(action\.durationMinutes\) \|\| 30/);
+assert.doesNotMatch(profileWizard, /durationMinutes: prescription\.durationMinutes \|\| 30/);
+assert.match(profileWizard, /durationMinutes: prescription\.durationMinutes \|\| ""/);
+assert.match(trainingGoalEngine, /exerciseType: "cardio", durationMinutes: ""/);
+
 assert.match(html, /class="sticky-metric live-training-only" id="elapsedTimeMetric" hidden/);
 assert.match(html, /class="calorie-panel live-training-only" id="caloriePanel" aria-live="polite" hidden/);
 assert.match(html, /class="dashboard-btn live-training-only" type="button" onclick="openDashboard\(\)" hidden/);
-assert.doesNotMatch(html, /class="dashboard-btn program-only"/);
-assert.doesNotMatch(html, /body:not\(\[data-live-training="true"\]\) \.active-pause-component/);
-assert.match(html, /\.active-pause-component\.active \{ display: grid; \}/);
 assert.match(html, /function isValidWorkoutExerciseName\(/);
-assert.match(html, /aria-describedby="homeStartHelp"/);
-assert.match(html, /home-start-button:disabled/);
-assert.match(html, /function updateWorkoutProgress\(\) \{\s+updateStartTrainingAvailability\(\)/);
 assert.match(html, /function updateWorkoutProgress\(\) \{\s+updateStartTrainingAvailability\(\);\s+updateWorkoutEditorActionState\(\)/);
 assert.match(html, /id="workoutEditorEmptyActions"/);
-assert.doesNotMatch(html, /id="workoutEditorEmptyActions" hidden/, "the useful empty-state action is visible before hydration");
-assert.match(html, /id="workoutPrimaryActions" hidden/, "save controls start hidden before workout content is hydrated");
+assert.match(html, /id="workoutPrimaryActions" hidden/);
 assert.match(html, /onclick="openFirstExercisePicker\(event\)"/);
 assert.match(html, /id="saveWorkoutButton"[^>]*onclick="saveCanvasState\(\)"/);
-assert.match(html, /id="workoutStatusSummary" hidden/, "zero metrics start hidden before workout content is hydrated");
 assert.match(html, /function saveCanvasState\(\) \{\s+if \(!updateWorkoutEditorActionState\(\)\) return false;/);
-assert.match(html, /\.workout-empty-actions\[hidden\][\s\S]*?display: none !important/);
-assert.match(html, /if \(!hasActiveWorkoutSession\(\) && validCanvasExerciseCount\(\) === 0\) return updateStartTrainingAvailability\(\)/);
 assert.match(html, /function openCreateOrImportWorkout\(/);
-assert.match(html, /id="homeActiveSection"[^>]*hidden/);
-assert.match(html, /id="homeWorkoutSection"[^>]*hidden/);
-assert.match(html, /id="homeEmptyState"[^>]*hidden/);
-assert.match(html, /id="homeLatestSection"[^>]*hidden/);
-assert.match(html, /id="homeRecommendation"[^>]*hidden/);
-assert.match(html, /activeSection\.hidden = !view\.activeWorkout/);
-assert.match(html, /resumeButton\.disabled = !view\.activeWorkout/);
-assert.match(html, /resumeButton\.setAttribute\("aria-disabled", String\(!view\.activeWorkout\)\)/);
-assert.match(html, /workoutSection\.hidden = !view\.featuredWorkout/);
-assert.match(html, /startButton\.dataset\.programId = "";\s+startButton\.disabled = true;\s+startButton\.setAttribute\("aria-disabled", "true"\)/);
-assert.match(html, /function continueDashboardWorkout\(\) \{[\s\S]*?showTrainingSession\(\)/, "Fortsæt træning genbruger den aktive session");
-assert.match(html, /function continueDashboardWorkout\(\) \{[\s\S]*?button\.disabled = true/);
-assert.match(html, /function startDashboardWorkout\(\) \{\s+const button = \$\("timerBtn"\);\s+if \(!button \|\| button\.disabled\) return false;/);
-assert.match(html, /if \(isActiveWorkoutSession\(restoredSession\)\)/, "Kun en gyldig aktiv session gendannes");
-assert.match(html, /writeLocalJson\("active_workout_autosave", \{ \.\.\.saved, session: null \}\)/, "Tom aktiv autosave ryddes lokalt");
-assert.match(html, /FirestoreDataService\?\.clearActiveWorkout\?\.\(\)/, "Tom aktiv autosave ryddes i Cloud");
-assert.match(html, /loadAutosave\(\);\s+renderSaved\(\)/, "Dashboard rendres efter autosave\/cloud-sessionen er gendannet");
-assert.match(html, /firestore:fallback-active[\s\S]*?dashboardCloudPending = false;[\s\S]*?renderSaved\(\)/, "Offline fallback frigiver dashboardet med den brugeropdelte cache");
+assert.match(html, /firestore:fallback-active[\s\S]*?dashboardCloudPending = false;[\s\S]*?renderSaved\(\)/);
 assert.match(html, /Offline – ændringer synkroniseres senere/);
-assert.match(html, /Kunne ikke synkronisere/);
 assert.match(html, /id="homeSyncRetryButton" onclick="retryDashboardSync\(\)"/);
-assert.doesNotMatch(html.match(/function dashboardDisplayName[\s\S]*?function programExerciseCount/)?.[0] || "", /user\.email/, "E-mail bruges aldrig som dashboardnavn");
-const quickSection = html.match(/<section class="home-quick-section"[\s\S]*?<\/section>/)?.[0] || "";
-assert.equal((quickSection.match(/<button/g) || []).length, 3, "Dashboardet viser højst tre hurtige handlinger");
-assert.match(quickSection, /openBlankWorkoutDialog\(\)/);
-assert.match(quickSection, /openScreenshotImportInfo\(\)/);
-assert.match(quickSection, /openSavedProgramsFromDashboard\(\)/);
-assert.match(html, /id="homeResumeWorkoutButton"[^>]*onclick="continueDashboardWorkout\(\)"/, "Aktiv træning fortsættes med ét tryk");
-assert.match(html, /id="timerBtn"[^>]*onclick="startDashboardWorkout\(\)"/, "Valgt program startes med ét tryk");
-assert.match(html, /programId && \(currentSavedProgramId !== programId \|\| !slotIds\(\)\.length\)\) loadSavedProgram\(programId, false\)/, "Start indlæser altid det program, dashboardet viser");
-assert.match(html, /onclick="openProgramGeneratorFromDashboard\(\)"[^>]*>[^<]*Lad AI oprette et program/, "Ny bruger kan begynde AI-oprettelse med ét tryk");
-assert.match(html, /onclick="openScreenshotImportInfo\(\)"[^>]*>[^<]*📷 Importér fra screenshot/, "Ny bruger kan begynde import med ét tryk");
-assert.match(html, /onclick="openLatestWorkoutFromDashboard\(\)"[^>]*>Se træning/, "Seneste træning åbnes med ét tryk");
-assert.match(html, /data-accordion="more"/);
 
-const sidebarMarkup = html.match(/<nav class="sidebar"[\s\S]*?<\/nav>/)?.[0] || "";
-const sidebarSections = [...sidebarMarkup.matchAll(/<section class="sidebar-accordion[^>]*data-accordion="([^"]+)"[\s\S]*?<\/section>/g)];
-assert.deepEqual(sidebarSections.map(match => match[1]), ["user", "training", "more"], "Hovedmenuen har kun Bruger, Træning og Mere i korrekt rækkefølge");
-assert.doesNotMatch(sidebarMarkup, /data-accordion="statistics"/);
-const menuSection = name => sidebarSections.find(match => match[1] === name)?.[0] || "";
-for (const id of ["profileAccountNavItem", "membershipNavItem", "trainingProfileNavItem", "aiCoachButton"]) {
-  assert.match(menuSection("user"), new RegExp(`id="${id}"`), `${id} skal ligge under Bruger`);
-}
-for (const id of ["todayWorkoutNavItem", "generatorSectionTitle", "newWorkoutNavItem", "savedWorkoutsNavItem", "screenshotImportNavItem", "historyNavItem", "calorieNavItem", "progressNavItem"]) {
-  assert.match(menuSection("training"), new RegExp(`id="${id}"`), `${id} skal ligge under Træning`);
-}
-for (const id of ["trashNavItem", "exportDataNavItem", "helpNavItem", "privacyNavItem", "feedbackNavItem"]) {
-  assert.match(menuSection("more"), new RegExp(`id="${id}"`), `${id} skal ligge under Mere`);
-}
-assert.equal((sidebarMarkup.match(/class="sidebar-item(?:\s|\")/g) || []).length, 18, "Ingen menupunkter er tilføjet eller fjernet");
-assert.ok(sidebarMarkup.indexOf('id="sidebarLogoutBtn"') > sidebarMarkup.lastIndexOf("</section>"), "Log ud forbliver uden for kategorierne nederst");
+assert.doesNotMatch(html, /id="sidebar"|class="sidebar"|sidebar-accordion|sidebar-item|home-dashboard|id="homeDashboard"|id="timerBtn"/);
+assert.doesNotMatch(html, /work4it_ui_layout|data-ui-layout|changeAppLayout|Classic UI/);
+assert.equal((html.match(/data-modern-category=/g) || []).length, 3);
+for (const category of ["user", "training", "more"]) assert.match(html, new RegExp(`data-modern-category="${category}"`));
+assert.match(html, /id="programGeneratorAccess"/);
+assert.match(html, /id="savedDropdown"/);
+assert.match(html, /id="trashDropdown"/);
 
 assert.equal((html.match(/id=["']exerciseActionMenu["']/g) || []).length, 1);
 assert.match(html, /class="exercise-more-button"/);

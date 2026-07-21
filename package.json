@@ -4,7 +4,10 @@
   "private": true,
   "description": "Work4it - dansk browserbaseret træningsplanlægger og tracker",
   "scripts": {
+    "sync:assets": "node scripts/sync-official-assets.cjs",
+    "prestart": "npm run sync:assets",
     "start": "node serve.cjs",
+    "test:assets": "npm run sync:assets && node tests/official-assets.test.cjs",
     "test:ai-coach": "node tests/ai-coach.test.cjs",
     "test:subscriptions": "node tests/admin-subscription-test.test.cjs && node tests/pricing-consistency.test.cjs",
     "test:cloud-storage": "node tests/cloud-storage.test.cjs && node tests/profile-cloud-save.test.cjs",

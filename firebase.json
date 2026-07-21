@@ -6,6 +6,9 @@
   "hosting": {
     "target": "app",
     "public": "app",
+    "predeploy": [
+      "node scripts/sync-official-assets.cjs"
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",

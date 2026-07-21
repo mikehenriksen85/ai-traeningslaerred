@@ -10,13 +10,8 @@
         var theme = /^(work4it|classic)$/.test(queryTheme || "") ? queryTheme : localStorage.getItem("work4it_theme");
         if (theme) localStorage.setItem("work4it_theme", theme);
         document.documentElement.dataset.theme = theme || "work4it";
-        var queryLayout = new URLSearchParams(location.search).get("layout");
-        var layout = /^(classic|modern)$/.test(queryLayout || "") ? queryLayout : localStorage.getItem("work4it_ui_layout");
-        if (layout) localStorage.setItem("work4it_ui_layout", layout);
-        document.documentElement.dataset.uiLayout = layout || "classic";
       } catch (_) {
         document.documentElement.dataset.theme = "work4it";
-        document.documentElement.dataset.uiLayout = "classic";
       }
     }());
   </script>
@@ -50,18 +45,17 @@
   <meta property="og:title" content="Work4it">
   <meta property="og:site_name" content="Work4it">
   <meta property="og:description" content="Planlæg, gennemfør og følg din træning med Work4it - en professionel AI-træningsplatform.">
-  <meta property="og:image" content="work4it-hero-logo-v1.png">
+  <meta property="og:image" content="Pictures/Hero%20Logo%20v1.png">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Work4it">
   <meta name="twitter:description" content="Planlæg, gennemfør og følg din træning med Work4it - en professionel AI-træningsplatform.">
-  <meta name="twitter:image" content="work4it-hero-logo-v1.png">
+  <meta name="twitter:image" content="Pictures/Hero%20Logo%20v1.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="work4it-app-icon-192.png" type="image/png" sizes="192x192">
-  <link rel="icon" href="work4it-app-icon-512.png" type="image/png" sizes="512x512">
-  <link rel="apple-touch-icon" sizes="192x192" href="work4it-app-icon-192.png">
+  <link rel="icon" href="Pictures/App%20Ikon%20V1.png" type="image/png" sizes="1254x1254">
+  <link rel="apple-touch-icon" href="Pictures/App%20Ikon%20V1.png">
   <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
   <link rel="stylesheet" href="progression.css?v=20260718-progression1">
-  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260719-modern-dashboard1">
+  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260721-modern-permanent1">
   <title>Work4it</title>
   <style>
     :root {
@@ -99,7 +93,12 @@
       --text-success: var(--green);
       --text-danger: var(--red);
       --text-warning: #fbbf24;
-      --brand-hero-logo: url("work4it-hero-logo-v1.png");
+      --brand-hero-logo: url("Pictures/Hero%20Logo%20v1.png");
+      --brand-icon-size: 2.875rem;
+      --brand-header-height: 2.375rem;
+      --brand-inline-width: min(13.75rem, 72vw);
+      --brand-hero-width: min(26.25rem, 88vw);
+      --brand-hero-height: 13.75rem;
     }
 
     :root[data-theme="work4it"] { color-scheme: dark; }
@@ -136,20 +135,8 @@
     :root[data-theme="classic"] .exercise-block,
     :root[data-theme="classic"] .modal,
     :root[data-theme="classic"] .membership-card,
-    :root[data-theme="classic"] .daily-wizard-card,
-    :root[data-theme="classic"] .sidebar {
+    :root[data-theme="classic"] .daily-wizard-card {
       box-shadow: 0 16px 36px rgba(17, 24, 39, .08);
-    }
-
-    :root[data-theme="classic"] .sidebar-item:hover,
-    :root[data-theme="classic"] .sidebar-accordion-toggle:hover,
-    :root[data-theme="classic"] .sidebar-accordion.open > .sidebar-accordion-toggle {
-      background: rgba(55, 65, 81, .08);
-    }
-
-    :root[data-theme="classic"] .sidebar-item.active {
-      background: rgba(55, 65, 81, .14);
-      box-shadow: inset 3px 0 0 var(--blue);
     }
 
     :root[data-theme="classic"] input,
@@ -201,22 +188,21 @@
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
-    .menu-toggle-btn, .nav-btn {
+    .nav-btn {
       background: var(--input);
       border: 1px solid var(--border);
       color: var(--text-primary);
       border-radius: 6px;
       cursor: pointer;
     }
-    .menu-toggle-btn { font-size: var(--font-size-icon); padding: 5px 10px; }
     .nav-btn { padding: 7px 12px; font-size: var(--font-size-body); }
     .app-title { display: flex; align-items: center; min-width: 0; margin-left: 4px; font-weight: var(--font-weight-bold); }
-    .brand-header-logo { display: none; width: auto; max-width: 176px; height: 38px; object-fit: contain; }
+    .brand-header-logo { display: none; width: auto; max-width: var(--brand-inline-width); height: var(--brand-header-height); object-fit: contain; }
     .brand-header-mobile { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
     .brand-header-icon { width: 28px; height: 28px; object-fit: contain; flex: 0 0 auto; }
     .brand-header-text { color: var(--text-primary); font-weight: var(--font-weight-bold); line-height: 1; white-space: nowrap; }
-    .brand-logo { display: block; width: min(220px, 72vw); height: auto; object-fit: contain; }
-    .brand-hero-logo { display: block; width: min(420px, 88vw); max-height: 220px; height: auto; object-fit: contain; }
+    .brand-logo { display: block; width: var(--brand-inline-width); max-width: 100%; height: auto; object-fit: contain; }
+    .brand-hero-logo { display: block; width: var(--brand-hero-width); max-width: 100%; max-height: var(--brand-hero-height); height: auto; object-fit: contain; }
     .brand-fade-in { animation: work4itFadeIn .55s ease both; }
     @keyframes work4itFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     .canvas .work4it-landing-hero { display: none; }
@@ -353,174 +339,7 @@
       .brand-header-mobile { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     }
 
-    .sidebar {
-      position: fixed;
-      inset: 0 auto 0 -290px;
-      width: 290px;
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      z-index: 1200;
-      transition: left .25s ease, width .25s ease;
-      box-shadow: 8px 0 24px rgba(0,0,0,.42);
-      overflow-y: auto;
-      padding-top: env(safe-area-inset-top, 0px);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      -webkit-overflow-scrolling: touch;
-    }
-    .sidebar.open {
-      left: 0;
-      width: 100vw;
-      border-right: 0;
-      box-shadow: none;
-    }
-    body.sidebar-open {
-      overflow: hidden;
-    }
-    body.sidebar-open .app-header,
-    body.sidebar-open main.canvas,
-    body.sidebar-open .modal,
-    body.sidebar-open .progress-view,
-    body.sidebar-open .calorie-view,
-    body.sidebar-open .profile-account-view,
-    body.sidebar-open .membership-view,
-    body.sidebar-open .wizard-shell,
-    body.sidebar-open .auth-gate {
-      visibility: hidden;
-      pointer-events: none;
-    }
-    .sidebar-view-header {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      min-height: calc(58px + env(safe-area-inset-top, 0px));
-      padding: env(safe-area-inset-top, 0px) max(18px, env(safe-area-inset-right, 0px)) 0 max(18px, env(safe-area-inset-left, 0px));
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .sidebar-view-title {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-      color: var(--text-primary);
-      font-size: var(--font-size-h3);
-      font-weight: var(--font-weight-bold);
-    }
-    .sidebar-view-title img {
-      width: 30px;
-      height: 30px;
-      object-fit: contain;
-      flex: 0 0 auto;
-    }
-    .sidebar-close-btn {
-      min-width: 44px;
-      min-height: 44px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--input);
-      color: var(--text-primary);
-      cursor: pointer;
-      font-size: 1.15rem;
-      font-weight: var(--font-weight-bold);
-    }
-    .sidebar > .profile,
-    .sidebar > .sidebar-accordion,
-    .sidebar > .sidebar-menu-spacer,
-    .sidebar > .sidebar-bottom-action {
-      width: min(100%, 560px);
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.55);
-      z-index: 180;
-    }
-    .overlay.show { display: block; }
-    body.sidebar-open .overlay.show { display: none; }
-    .profile { padding: 26px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
-    .profile.profile-edit-enabled { cursor: default; }
-    .avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--blue); display: grid; place-items: center; background: var(--card); }
-    .section-title { padding: 16px 24px 6px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0; }
-    .sidebar-item { min-width: 0; padding: 12px 24px; color: var(--text-secondary); cursor: pointer; display: flex; gap: 12px; align-items: center; white-space: normal; overflow-wrap: anywhere; }
-    .profile > div:last-child { min-width: 0; overflow-wrap: anywhere; }
-    .sidebar-item:hover { color: var(--text-primary); background: rgba(58,147,255,.1); }
-    .sidebar-accordion { border-bottom: 1px solid var(--border); }
-    .sidebar-accordion:first-of-type { border-top: 1px solid var(--border); }
-    .sidebar-accordion-toggle {
-      width: 100%;
-      min-height: 50px;
-      padding: 12px 18px;
-      border: 0;
-      background: transparent;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      cursor: pointer;
-      font-size: var(--font-size-body);
-      font-weight: var(--font-weight-semibold);
-      text-align: left;
-    }
-    .sidebar-accordion-toggle:hover,
-    .sidebar-accordion.open > .sidebar-accordion-toggle {
-      background: rgba(58,147,255,.08);
-    }
-    .sidebar-accordion-chevron {
-      color: var(--text-secondary);
-      transition: transform .2s ease;
-    }
-    .sidebar-accordion.open .sidebar-accordion-chevron { transform: rotate(180deg); }
-    .sidebar-accordion-panel {
-      display: none;
-      padding: 0 8px 10px;
-    }
-    .sidebar-accordion.open > .sidebar-accordion-panel { display: block; }
-    .sidebar-accordion-panel .sidebar-item {
-      width: 100%;
-      min-height: 44px;
-      padding: 10px 14px;
-      border: 0;
-      border-radius: 6px;
-      background: transparent;
-      text-align: left;
-      font: inherit;
-    }
-    .sidebar-accordion-panel .sidebar-subitem {
-      padding-left: 30px;
-      border-left: 2px solid rgba(59,130,246,.35);
-    }
-    .sidebar-item.active {
-      color: var(--text-primary);
-      background: rgba(58,147,255,.16);
-      box-shadow: inset 3px 0 0 var(--blue);
-    }
-    .sidebar-accordion-panel .sidebar-box,
-    .sidebar-accordion-panel .saved-dropdown {
-      padding-left: 14px;
-      padding-right: 14px;
-    }
-    .sidebar-menu-spacer { height: 12px; }
-    .sidebar-bottom-action {
-      width: 100%;
-      min-height: 44px;
-      border: 0;
-      background: transparent;
-      color: var(--text-secondary);
-      font: inherit;
-      text-align: left;
-      text-decoration: none;
-    }
-    .sidebar-bottom-action:hover { color: var(--text-primary); background: rgba(58,147,255,.12); }
-    .sidebar-box { padding: 6px 24px 14px; display: flex; flex-direction: column; gap: 8px; }
-    .sidebar-select, .field {
+    .field {
       width: 100%;
       background: var(--input);
       color: var(--text-primary);
@@ -529,37 +348,8 @@
       padding: 9px;
       outline: none;
     }
-    .saved-dropdown, .count-picker { display: none; padding: 0 24px 12px; }
-    .nested-box { background: var(--input); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+    .count-picker { display: none; padding: 0; }
     .mini-title { color: var(--text-secondary); font-size: var(--font-size-small); margin-bottom: 8px; }
-    .count-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 170px; overflow-y: auto; }
-    .count-grid button { background: var(--card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 5px; padding: 8px 0; cursor: pointer; }
-    .count-grid button:hover { color: var(--text-accent); border-color: var(--text-accent); }
-    .generator-count-label {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--text-primary);
-      font-size: var(--font-size-body);
-      font-weight: var(--font-weight-semibold);
-    }
-    .generator-helper {
-      margin: 7px 0 10px;
-      color: var(--text-secondary);
-      font-size: var(--font-size-small);
-      line-height: var(--line-height-body);
-    }
-    .generator-create {
-      width: 100%;
-      min-height: 44px;
-      border: 1px solid var(--blue);
-      border-radius: 6px;
-      background: var(--blue);
-      color: var(--text-primary);
-      font: inherit;
-      font-size: var(--font-size-button);
-      font-weight: var(--font-weight-bold);
-      cursor: pointer;
-    }
     .trash-list { display: flex; flex-direction: column; gap: 8px; }
     .trash-item { background: rgba(0,0,0,.16); border: 1px solid var(--border); border-radius: 6px; padding: 9px; }
     .trash-name { font-weight: var(--font-weight-bold); color: var(--text-primary); overflow-wrap: anywhere; }
@@ -823,7 +613,7 @@
     .workout-empty-actions strong { color: var(--text-primary); font-size: var(--font-size-body); }
     .workout-empty-actions span { margin-top: 3px; color: var(--text-secondary); font-size: var(--font-size-small); line-height: 1.35; }
     .workout-empty-actions .small-btn { min-height: 44px; width: auto; white-space: nowrap; }
-    body.workit-transient-menu-open:not(.sidebar-open) .workout-sticky-top {
+    body.workit-transient-menu-open .workout-sticky-top {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
@@ -1269,7 +1059,6 @@
       outline: none;
     }
     body.auth-locked .ai-coach-fab,
-    body.sidebar-open .ai-coach-fab,
     body.ai-coach-open .ai-coach-fab { display: none; }
     main.canvas { padding-bottom: max(92px, env(safe-area-inset-bottom, 0px) + 82px); }
     .ai-coach-panel {
@@ -1721,9 +1510,6 @@
     }
     .auth-gate-brand { display: flex; justify-content: center; margin-bottom: 10px; }
     .auth-gate-brand .brand-logo { width: min(240px, 76vw); }
-    .auth-gate.loading .auth-gate-brand .brand-logo { display: none; }
-    .auth-gate.loading .auth-hero-logo { display: block; margin: 0 auto 12px; width: min(280px, 76vw); max-height: 170px; object-fit: contain; }
-    .auth-hero-logo { display: none; }
     .auth-gate-title { margin: 8px 0 6px; font-size: var(--font-size-h1); line-height: var(--line-height-heading); }
     .auth-gate-copy { margin: 0 0 18px; color: var(--text-secondary); }
     .auth-gate-form { display: grid; gap: 12px; }
@@ -1919,7 +1705,7 @@
     .about-feature, .profile-account-section, .wizard-information {
       overflow-wrap: anywhere;
     }
-    .sidebar-item, .item, .stats, .set-controls, table, .sidebar-select, .field,
+    .item, .stats, .set-controls, table, .field,
     .copilot-input, .set-row input {
       font-size: var(--font-size-body);
       font-weight: var(--font-weight-medium);
@@ -1942,7 +1728,6 @@
       color: var(--text-secondary);
       font-weight: var(--font-weight-regular);
     }
-    .sidebar-item { color: var(--text-secondary); }
     .profile-login, #autosaveStatus, .copilot-title, .section, .progress-section-title,
     .modal-title { color: var(--text-accent); }
     .exercise-name, .custom-title, .list-count, #copilotFeedback {
@@ -2318,8 +2103,6 @@
     @media (max-width: 560px) {
             .brand-header-icon { width: 30px; height: 30px; }
       .brand-header-text { font-size: 1rem; }
-      .sidebar.open { width: 100dvw; }
-      .sidebar-view-title { font-size: var(--font-size-body); }
       .work4it-landing-hero .brand-hero-logo { width: min(300px, 86vw); max-height: 150px; }
       .profile-account-title-group, .membership-title-group { align-items: flex-start; flex-direction: column; gap: 8px; }
       .profile-account-logo { width: min(190px, 70vw); }
@@ -2558,8 +2341,7 @@
     .generator-create,
     .timer-btn,
     .square,
-    .nav-btn,
-    .menu-toggle-btn {
+    .nav-btn {
       min-height: var(--control-height);
       border-radius: var(--radius-sm);
       transition:
@@ -2598,8 +2380,7 @@
     input,
     select,
     textarea,
-    .field,
-    .sidebar-select {
+    .field {
       min-height: var(--control-height);
       border-radius: var(--radius-sm);
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
@@ -2608,8 +2389,7 @@
     input:focus,
     select:focus,
     textarea:focus,
-    .field:focus,
-    .sidebar-select:focus {
+    .field:focus {
       border-color: var(--blue);
       box-shadow: 0 0 0 3px rgba(59,130,246,.16);
     }
@@ -2619,8 +2399,7 @@
       background: color-mix(in srgb, var(--card), transparent 8%);
     }
 
-    .nav-btn,
-    .menu-toggle-btn {
+    .nav-btn {
       min-width: 44px;
     }
 
@@ -2731,16 +2510,6 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
-    .sidebar-item,
-    .sidebar-accordion-toggle {
-      min-height: 46px;
-      border-radius: var(--radius-sm);
-    }
-
-    .sidebar-accordion-panel {
-      gap: 4px;
-    }
-
     .exercise-actions {
       align-items: flex-start;
     }
@@ -2768,174 +2537,6 @@
       color: color-mix(in srgb, var(--text-secondary), var(--text-primary) 8%);
     }
 
-    .home-dashboard {
-      display: grid;
-      gap: 18px;
-      margin-bottom: 18px;
-    }
-    .home-dashboard-content {
-      display: grid;
-      gap: 16px;
-    }
-    .home-dashboard-content[hidden] { display: none; }
-    .home-dashboard-loading {
-      display: grid;
-      gap: 10px;
-      min-height: 190px;
-      padding: 16px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      background: var(--card);
-    }
-    .home-dashboard-loading[hidden] { display: none; }
-    .home-dashboard-loading span {
-      display: block;
-      height: 38px;
-      border-radius: var(--radius-sm);
-      background: color-mix(in srgb, var(--input), var(--border) 28%);
-    }
-    .home-dashboard-loading span:first-child { width: 48%; }
-    .home-dashboard-loading span:nth-child(2) { height: 62px; }
-    .home-sync-notice {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 12px;
-      border: 1px solid var(--orange);
-      border-radius: var(--radius-sm);
-      color: var(--text-primary);
-      background: var(--input);
-    }
-    .home-sync-notice[hidden] { display: none; }
-    .home-sync-notice button {
-      min-height: 44px;
-      padding: 8px 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--card);
-      color: var(--text-primary);
-      font: inherit;
-      cursor: pointer;
-    }
-    .home-welcome {
-      display: grid;
-      gap: 4px;
-    }
-    .home-welcome-kicker {
-      color: var(--text-accent);
-      font-size: var(--font-size-small);
-      font-weight: var(--font-weight-semibold);
-    }
-    .home-welcome h1 {
-      margin: 0;
-      font-size: clamp(1.55rem, 4vw, 2.2rem);
-      line-height: 1.15;
-    }
-    .home-welcome p {
-      margin: 0;
-      color: var(--text-secondary);
-    }
-    .home-section {
-      display: grid;
-      gap: 12px;
-      padding: 16px;
-      border: 1px solid color-mix(in srgb, var(--border), var(--blue) 18%);
-      border-radius: var(--radius-md);
-      background: color-mix(in srgb, var(--card), var(--input) 24%);
-    }
-    .home-section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .home-section-title {
-      margin: 0;
-      font-size: var(--font-size-h3);
-      font-weight: var(--font-weight-semibold);
-    }
-    .home-active-section {
-      border-color: color-mix(in srgb, var(--green), var(--border) 45%);
-    }
-    .home-status-badge {
-      padding: 5px 9px;
-      border: 1px solid var(--green);
-      border-radius: 999px;
-      color: var(--text-primary);
-      font-size: var(--font-size-small);
-      font-weight: var(--font-weight-semibold);
-    }
-    .home-status-badge.paused { border-color: var(--orange); }
-    .home-metric-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 16px;
-      color: var(--text-secondary);
-      font-size: var(--font-size-body);
-    }
-    .home-program-name {
-      font-size: clamp(1.15rem, 3vw, 1.45rem);
-      font-weight: var(--font-weight-semibold);
-      overflow-wrap: anywhere;
-    }
-    .home-program-meta,
-    .home-empty-copy {
-      color: var(--text-secondary);
-      line-height: 1.45;
-    }
-    .home-start-button {
-      width: 100%;
-      min-height: 66px;
-      border: 0;
-      border-radius: var(--radius-md);
-      background: linear-gradient(135deg, var(--green), color-mix(in srgb, var(--green), white 16%));
-      color: #04150a;
-      font: inherit;
-      font-size: 1.16rem;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 16px 34px rgba(34,197,94,.3);
-    }
-    .home-start-button:hover:not(:disabled) { filter: brightness(1.06); }
-    .home-start-button:focus-visible { outline: 3px solid rgba(34,197,94,.42); outline-offset: 3px; }
-    .home-start-button:disabled {
-      background: var(--input);
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-      box-shadow: none;
-      cursor: not-allowed;
-    }
-    .home-start-help {
-      margin: -4px 0 0;
-      color: var(--text-secondary);
-      font-size: var(--font-size-small);
-      line-height: 1.4;
-    }
-    .home-saved-list {
-      display: grid;
-      gap: 8px;
-    }
-    .home-saved-item {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--input);
-    }
-    .home-saved-name {
-      font-weight: var(--font-weight-semibold);
-      overflow-wrap: anywhere;
-    }
-    .home-saved-meta {
-      margin-top: 2px;
-      color: var(--text-secondary);
-      font-size: var(--font-size-small);
-    }
-    .home-secondary-button,
     .workout-editor-details > summary {
       min-height: 48px;
       border: 1px solid var(--border);
@@ -2945,59 +2546,6 @@
       font: inherit;
       font-weight: var(--font-weight-semibold);
       cursor: pointer;
-    }
-    .home-secondary-button { padding: 10px 16px; }
-    .home-text-button,
-    .home-more-link {
-      min-height: 44px;
-      border: 0;
-      background: transparent;
-      color: var(--text-accent);
-      font: inherit;
-      font-weight: var(--font-weight-semibold);
-      cursor: pointer;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-    .home-text-button { justify-self: start; padding: 8px 0; }
-    .home-more-link { justify-self: center; color: var(--text-secondary); padding: 8px 12px; }
-    .home-empty-state p { margin: 6px 0 0; color: var(--text-secondary); }
-    .home-empty-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .home-ai-button { border-color: var(--blue); color: var(--text-accent); }
-    .home-quick-section { display: grid; gap: 10px; }
-    .home-quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .home-quick-grid button {
-      display: grid;
-      place-items: center;
-      align-content: center;
-      gap: 5px;
-      min-height: 72px;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--input);
-      color: var(--text-primary);
-      font: inherit;
-      font-weight: var(--font-weight-semibold);
-      cursor: pointer;
-    }
-    .home-quick-grid button span:first-child { font-size: 1.25rem; }
-    .home-recommendation {
-      padding: 14px 16px;
-      border-left: 3px solid var(--blue);
-      border-radius: var(--radius-sm);
-      background: var(--input);
-    }
-    .home-recommendation h2 { margin: 0 0 5px; font-size: var(--font-size-body); }
-    .home-recommendation p { margin: 0; color: var(--text-secondary); line-height: 1.45; }
-    .home-quick-grid button:focus-visible,
-    .home-secondary-button:focus-visible,
-    .home-text-button:focus-visible,
-    .home-more-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue), transparent 45%); outline-offset: 2px; }
-    .home-create-button {
-      width: 100%;
-      border-color: color-mix(in srgb, var(--blue), var(--border) 28%);
-      color: var(--text-accent);
     }
     .workout-editor-details {
       margin-top: 12px;
@@ -3014,7 +2562,6 @@
     .workout-editor-details[open] > summary::after { content: " ↑"; }
     .workout-editor-content { padding-top: 18px; }
     body[data-workout-view="session"] .workout-editor-details > summary { display: none; }
-    body[data-workout-view="session"] .home-dashboard { display: none; }
 
     @media (min-width: 1180px) {
       .canvas {
@@ -3069,20 +2616,6 @@
       .program-action-btn {
         width: 100%;
       }
-      .home-dashboard { gap: 14px; }
-      .home-section { padding: 14px; }
-      .home-dashboard-content { gap: 14px; }
-      .home-empty-actions { grid-template-columns: 1fr; }
-      .home-quick-grid { grid-template-columns: 1fr; }
-      .home-quick-grid button { grid-template-columns: auto 1fr; justify-items: start; min-height: 52px; }
-      .home-sync-notice { align-items: stretch; flex-direction: column; }
-      .home-sync-notice button { width: 100%; }
-      .home-saved-item { grid-template-columns: 1fr; }
-      .home-saved-item .home-secondary-button { width: 100%; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .home-dashboard *, .home-dashboard *::before, .home-dashboard *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
     }
 
     .exercise-animation-viewer { display: grid; gap: 12px; }
@@ -3145,7 +2678,7 @@
 <body class="auth-locked">
   <section class="auth-gate loading" id="authGate" aria-label="Logger ind" aria-live="polite">
     <div class="auth-gate-panel">
-      <div class="auth-gate-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="Work4it"><img class="auth-hero-logo brand-fade-in" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
+      <div class="auth-gate-brand"><img class="brand-logo brand-fade-in" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" decoding="async"></div>
       <h1 class="auth-gate-title">Velkommen</h1>
       <p class="auth-gate-copy" id="authGateCopy">Kontrollerer eksisterende login...</p>
       <form class="auth-gate-form" onsubmit="loginFromAuthGate(event)">
@@ -3174,224 +2707,77 @@
     </div>
   </section>
   <header class="app-header">
-    <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
     <button class="nav-btn" onclick="goBackSafe()">Tilbage</button>
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
-    <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="work4it-logo-v1.png" alt="Work4it"><span class="brand-header-mobile"><img class="brand-header-icon" src="work4it-app-icon-192.png" alt=""><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
+    <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024"><span class="brand-header-mobile"><img class="brand-header-icon" src="Pictures/App%20Ikon%20V1.png" alt="" width="1254" height="1254"><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
   </header>
-
-  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-  <nav class="sidebar" id="sidebar" aria-label="Hovedmenu" aria-hidden="true">
-    <div class="sidebar-view-header">
-      <div class="sidebar-view-title"><img src="work4it-app-icon-192.png" alt="">Menu</div>
-      <button class="sidebar-close-btn" type="button" onclick="toggleSidebar(false)" aria-label="Luk menu">×</button>
-    </div>
-    <div class="profile">
-      <div class="avatar">👤</div>
-      <div><b id="sidebarProfileName">Min profil</b><br><span class="profile-login" id="sidebarProfileSubtitle">Profil og konto</span></div>
-    </div>
-
-    <section class="sidebar-accordion" data-accordion="user">
-      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('user')" aria-expanded="false">
-        <span>👤 Bruger</span><span class="sidebar-accordion-chevron">⌄</span>
-      </button>
-      <div class="sidebar-accordion-panel">
-        <button class="sidebar-item" id="profileAccountNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileSetup()">👤 Profil og konto</button>
-        <button class="sidebar-item sidebar-subitem" id="membershipNavItem" type="button" onclick="setActiveSidebarItem(this); openMembershipView()">💎 Medlemskab <span class="premium-indicator" id="membershipNavStatus">Gratis</span></button>
-        <button class="sidebar-item" id="trainingProfileNavItem" type="button" onclick="setActiveSidebarItem(this); openProfileWizardFromMenu()">Træningsprofil</button>
-        <button class="sidebar-item" id="aiCoachButton" type="button" onclick="setActiveSidebarItem(this); if(document.getElementById('sidebar')?.classList.contains('open')) toggleSidebar(false); openAiCoach()" aria-controls="aiCoachPanel" aria-expanded="false">✨ AI Coach</button>
-      </div>
-    </section>
-
-    <section class="sidebar-accordion open" data-accordion="training">
-      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('training')" aria-expanded="true">
-        <span>💪 Træning</span><span class="sidebar-accordion-chevron">⌄</span>
-      </button>
-      <div class="sidebar-accordion-panel">
-        <button class="sidebar-item" id="todayWorkoutNavItem" type="button" onclick="setActiveSidebarItem(this); openTodayWorkout()">▶ Dagens træning</button>
-        <button class="sidebar-item" type="button" onclick="setActiveSidebarItem(this); toggleGeneratorMenu()"><span id="generatorSectionTitle">✨ AI-genereret træningsplan</span></button>
-        <div class="sidebar-box" id="programGeneratorAccess" hidden>
-          <select class="sidebar-select" id="programType" onchange="chooseProgramType(this.value)">
-            <option value="" selected disabled>✨ Vælg træningstype...</option>
-            <option value="fullbody">Fullbody Pas</option>
-            <option value="push">Push Pas</option>
-            <option value="pull">Pull Pas</option>
-            <option value="legs">Legs Pas</option>
-            <option value="cardio">❤️ Cardio</option>
-            <option value="calisthenics">🤸 Calisthenics</option>
-          </select>
-          <div class="count-picker" id="countPicker">
-            <div class="nested-box">
-              <label class="generator-count-label" id="countTitle" for="automaticExerciseCount">Antal øvelser</label>
-              <select class="sidebar-select" id="automaticExerciseCount" onchange="setAutomaticExerciseCount(this.value)">
-                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-                <option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
-              </select>
-              <div id="cardioGoalPicker" style="display:none;margin-top:10px;">
-                <label class="generator-count-label" for="cardioGoalMode">Cardio-mål</label>
-                <select class="sidebar-select" id="cardioGoalMode">
-                  <option value="weight_loss">Vægttab</option><option value="conditioning">Kondition</option>
-                  <option value="general_health">Generel sundhed</option><option value="recovery">Restitution</option>
-                </select>
-              </div>
-              <div id="calisthenicsTemplatePicker" style="display:none;margin-top:10px;">
-                <label class="generator-count-label" for="calisthenicsTemplateMode">Programskabelon</label>
-                <select class="sidebar-select" id="calisthenicsTemplateMode">
-                  <option value="beginner">Begynder Calisthenics</option>
-                  <option value="muscle_gain">Calisthenics Muskelopbygning</option>
-                  <option value="strength">Calisthenics Styrke</option>
-                  <option value="no_equipment">Hjemmetræning uden udstyr</option>
-                  <option value="pullup_mastery">Pull-up Mastery</option>
-                  <option value="dip_mastery">Dip Mastery</option>
-                  <option value="muscleup_progression">Muscle-up Progression</option>
-                  <option value="street_workout">Avanceret Street Workout</option>
-                </select>
-              </div>
-              <p class="generator-helper">Vælg hvor mange øvelser dagens program skal indeholde.</p>
-              <button class="generator-create" type="button" onclick="generateSelectedAutomaticProgram()">Opret træningspas</button>
-            </div>
-          </div>
-        </div>
-        <button class="sidebar-item" id="newWorkoutNavItem" type="button" onclick="setActiveSidebarItem(this); openBlankWorkoutDialog()">➕ Opret tomt Træningspas</button>
-        <button class="sidebar-item" id="savedWorkoutsNavItem" type="button" onclick="setActiveSidebarItem(this); toggleSavedDropdown()">📂 Gemte Træningspas</button>
-        <div class="saved-dropdown" id="savedDropdown">
-          <div class="nested-box">
-            <div class="mini-title">Vælg et gemt træningspas</div>
-            <select class="sidebar-select" id="savedSelect" onchange="loadSavedProgram(this.value)"></select>
-            <div class="mini-title" id="savedEmpty" style="margin-top:8px;">Gem et træningspas for at se det her.</div>
-          </div>
-        </div>
-        <button class="sidebar-item" id="screenshotImportNavItem" type="button" onclick="setActiveSidebarItem(this); openScreenshotImportInfo()">📷 Importér fra screenshot</button>
-        <button class="sidebar-item" id="historyNavItem" type="button" onclick="setActiveSidebarItem(this); openDashboard()">📜 Historik / Dashboard</button>
-        <button class="sidebar-item" id="calorieNavItem" type="button" onclick="setActiveSidebarItem(this); openCalorieView()">🔥 Kalorie-estimat</button>
-        <button class="sidebar-item" id="progressNavItem" type="button" onclick="setActiveSidebarItem(this); openPremiumFeature('progress', openProgressView)">📈 Min udvikling <span class="premium-indicator">Premium</span></button>
-      </div>
-    </section>
-
-    <section class="sidebar-accordion" data-accordion="more">
-      <button class="sidebar-accordion-toggle" type="button" onclick="toggleSidebarAccordion('more')" aria-expanded="false">
-        <span>⚙️ Mere</span><span class="sidebar-accordion-chevron">⌄</span>
-      </button>
-      <div class="sidebar-accordion-panel">
-        <button class="sidebar-item" id="trashNavItem" type="button" onclick="setActiveSidebarItem(this); toggleTrashDropdown()">🗑 Papirkurv</button>
-        <div class="saved-dropdown" id="trashDropdown">
-          <div class="nested-box">
-            <div class="mini-title" id="trashTitle">Slettede træningspas</div>
-            <div class="trash-list" id="trashItems"></div>
-            <div class="mini-title" id="trashEmpty" style="margin-top:8px;">Papirkurven er tom.</div>
-          </div>
-        </div>
-        <button class="sidebar-item" id="exportDataNavItem" type="button" onclick="setActiveSidebarItem(this); exportDataFromMenu()">↗ Eksportér data</button>
-        <button class="sidebar-item" id="helpNavItem" type="button" onclick="setActiveSidebarItem(this); openHelpAboutDialog()">? Hjælp / Om appen</button>
-        <a class="sidebar-item" id="privacyNavItem"
-          href="https://work-4it.dk/"
-          target="_blank" rel="noopener noreferrer"
-          title="Se Privatliv og GDPR på Work-4it.dk"
-          onclick="setActiveSidebarItem(this); if(document.getElementById('sidebar')?.classList.contains('open')) toggleSidebar(false)">🔒 Privatliv / GDPR på Work-4it.dk</a>
-        <a class="sidebar-item" id="feedbackNavItem"
-          href="https://docs.google.com/forms/d/e/1FAIpQLScIi1YE2x3pzRQI7dmztC3kWgjysDFkcUfKJtZXcOzAeIV7Tg/viewform"
-          target="_blank" rel="noopener noreferrer"
-          title="Send fejl, forslag eller feedback til Work4it"
-          onclick="if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar()">📝 Feedback</a>
-      </div>
-    </section>
-    <div class="sidebar-menu-spacer"></div>
-    <button class="sidebar-item sidebar-bottom-action" id="sidebarLogoutBtn" type="button" onclick="logoutProfileAccount()">↪ Log ud</button>
-  </nav>
-  <script src="workit-menu-manager.js?v=20260712-menu-manager1"></script>
+  <script src="workit-menu-manager.js?v=20260721-modern-permanent1"></script>
 
   <main class="canvas" id="programCanvas">
     <section class="card">
-      <section class="modern-dashboard-ui program-only" id="modernDashboardUI" aria-labelledby="modernDashboardTitle" hidden>
+      <section class="modern-dashboard-ui program-only" id="modernDashboardUI" aria-labelledby="modernDashboardTitle">
         <header class="modern-dashboard-head">
-          <span class="modern-dashboard-brand"><img src="work4it-app-icon-192.png" alt="" width="40" height="40"><span><small>Modern Dashboard UI</small><strong id="modernDashboardTitle">Velkommen tilbage</strong></span></span>
-          <span class="modern-layout-badge">Eksperiment</span>
+          <span class="modern-dashboard-brand"><span><small>Dit Work4it-dashboard</small><strong id="modernDashboardTitle">Velkommen tilbage</strong></span></span>
+          <span class="modern-membership-status" id="membershipNavStatus">Gratis</span>
         </header>
+        <div class="modern-sync-notice" id="homeSyncNotice" role="status" aria-live="polite" hidden>
+          <span id="homeSyncNoticeText"></span>
+          <button type="button" id="homeSyncRetryButton" onclick="retryDashboardSync()">Prøv igen</button>
+        </div>
         <nav class="modern-icon-rail" id="modernIconRail" role="tablist" aria-label="Funktioner"></nav>
         <section class="modern-feature-card" id="modernFeaturePanel" role="tabpanel" aria-live="polite"></section>
         <section class="modern-shortcuts" aria-labelledby="modernShortcutsTitle">
           <h2 id="modernShortcutsTitle">Hurtig adgang</h2>
           <div class="modern-card-grid" id="modernCardGrid"></div>
         </section>
+        <section class="modern-tool-panel" id="modernToolPanel" aria-labelledby="modernToolTitle" hidden>
+          <header><h2 id="modernToolTitle">Værktøj</h2><button type="button" onclick="closeModernToolPanel()" aria-label="Luk">×</button></header>
+          <div class="modern-tool-content" id="programGeneratorAccess" hidden>
+            <h3 id="generatorSectionTitle">AI-genereret træningsplan</h3>
+            <label for="programType">Træningstype</label>
+            <select class="modern-select" id="programType" onchange="chooseProgramType(this.value)">
+              <option value="" selected disabled>Vælg træningstype...</option>
+              <option value="fullbody">Fullbody Pas</option><option value="push">Push Pas</option><option value="pull">Pull Pas</option>
+              <option value="legs">Legs Pas</option><option value="cardio">Cardio</option><option value="calisthenics">Calisthenics</option>
+            </select>
+            <div class="count-picker" id="countPicker">
+              <label id="countTitle" for="automaticExerciseCount">Antal øvelser</label>
+              <select class="modern-select" id="automaticExerciseCount" onchange="setAutomaticExerciseCount(this.value)">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                <option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+              </select>
+              <div id="cardioGoalPicker" style="display:none;">
+                <label for="cardioGoalMode">Cardio-mål</label>
+                <select class="modern-select" id="cardioGoalMode"><option value="weight_loss">Vægttab</option><option value="conditioning">Kondition</option><option value="general_health">Generel sundhed</option><option value="recovery">Restitution</option></select>
+              </div>
+              <div id="calisthenicsTemplatePicker" style="display:none;">
+                <label for="calisthenicsTemplateMode">Programskabelon</label>
+                <select class="modern-select" id="calisthenicsTemplateMode">
+                  <option value="beginner">Begynder Calisthenics</option><option value="muscle_gain">Calisthenics Muskelopbygning</option>
+                  <option value="strength">Calisthenics Styrke</option><option value="no_equipment">Hjemmetræning uden udstyr</option>
+                  <option value="pullup_mastery">Pull-up Mastery</option><option value="dip_mastery">Dip Mastery</option>
+                  <option value="muscleup_progression">Muscle-up Progression</option><option value="street_workout">Avanceret Street Workout</option>
+                </select>
+              </div>
+              <p>Vælg programtype og antal øvelser. Programmet åbnes automatisk efter oprettelse.</p>
+              <button class="modern-primary-button" type="button" onclick="generateSelectedAutomaticProgram()">Opret træningspas</button>
+            </div>
+          </div>
+          <div class="modern-tool-content" id="savedDropdown" hidden>
+            <h3>Vælg et gemt træningspas</h3>
+            <select class="modern-select" id="savedSelect" onchange="openModernSavedProgram(this.value)"></select>
+            <p id="savedEmpty">Gem et træningspas for at se det her.</p>
+          </div>
+          <div class="modern-tool-content" id="trashDropdown" hidden>
+            <h3 id="trashTitle">Slettede træningspas</h3>
+            <div class="trash-list" id="trashItems"></div>
+            <p id="trashEmpty">Papirkurven er tom.</p>
+          </div>
+        </section>
       </section>
-      <section class="home-dashboard program-only" id="homeDashboard" aria-labelledby="homeWelcomeTitle">
-        <header class="home-welcome">
-          <span class="home-welcome-kicker">Dit Work4it-dashboard</span>
-          <h1 id="homeWelcomeTitle">Velkommen tilbage</h1>
-          <p id="homeWelcomeSubtitle">Her er det vigtigste for din træning i dag.</p>
-        </header>
-
-        <section class="home-dashboard-loading" id="homeDashboardLoading" aria-label="Indlæser dashboard">
-          <span></span><span></span><span></span>
-        </section>
-
-        <div class="home-dashboard-content" id="homeDashboardContent" hidden>
-        <div class="home-sync-notice" id="homeSyncNotice" role="status" aria-live="polite" hidden>
-          <span id="homeSyncNoticeText"></span>
-          <button type="button" id="homeSyncRetryButton" onclick="retryDashboardSync()">Prøv igen</button>
-        </div>
-        <section class="home-section home-active-section" id="homeActiveSection" aria-labelledby="homeActiveHeading" hidden>
-          <div class="home-section-head">
-            <h2 class="home-section-title" id="homeActiveHeading">Aktiv træning</h2>
-            <span class="home-status-badge" id="homeActiveStatus">Aktiv</span>
-          </div>
-          <div class="home-program-name" id="homeActiveName"></div>
-          <div class="home-metric-row" id="homeActiveMetrics"></div>
-          <button class="home-start-button" id="homeResumeWorkoutButton" type="button" onclick="continueDashboardWorkout()" aria-label="Fortsæt den aktive træning">▶ Fortsæt træning</button>
-        </section>
-
-        <section class="home-section home-workout-section" id="homeWorkoutSection" aria-labelledby="homeCurrentProgramHeading" hidden>
-          <div class="home-section-head">
-            <h2 class="home-section-title" id="homeCurrentProgramHeading">Næste træning</h2>
-          </div>
-          <div class="home-program-name" id="homeCurrentProgramName"></div>
-          <div class="home-program-meta" id="homeCurrentProgramMeta"></div>
-          <button class="home-start-button" id="timerBtn" type="button" aria-describedby="homeStartHelp" onclick="startDashboardWorkout()">▶ Start træning</button>
-          <button class="home-text-button" id="homeViewProgramButton" type="button" onclick="viewDashboardFeaturedProgram()">Se træningspasset</button>
-          <p class="home-start-help" id="homeStartHelp" role="status" hidden>Tilføj mindst én gyldig øvelse for at starte træningen.</p>
-        </section>
-
-        <section class="home-section home-empty-state" id="homeEmptyState" aria-labelledby="homeEmptyHeading" hidden>
-          <div>
-            <h2 class="home-section-title" id="homeEmptyHeading">Kom i gang med din første træning</h2>
-            <p>Få hjælp til en plan, eller byg et enkelt træningspas selv.</p>
-          </div>
-          <div class="home-empty-actions">
-            <button class="home-secondary-button home-ai-button" type="button" onclick="openProgramGeneratorFromDashboard()">✨ Lad AI oprette et program</button>
-            <button class="home-secondary-button" type="button" onclick="openBlankWorkoutDialog()">＋ Opret selv</button>
-          </div>
-          <button class="home-text-button" type="button" onclick="openScreenshotImportInfo()">📷 Importér fra screenshot</button>
-        </section>
-
-        <section class="home-quick-section" id="homeQuickSection" aria-labelledby="homeQuickHeading" hidden>
-          <h2 class="home-section-title" id="homeQuickHeading">Hurtige handlinger</h2>
-          <div class="home-quick-grid">
-            <button type="button" onclick="openBlankWorkoutDialog()"><span aria-hidden="true">＋</span><span>Nyt træningspas</span></button>
-            <button type="button" onclick="openScreenshotImportInfo()"><span aria-hidden="true">📷</span><span>Importér træning</span></button>
-            <button type="button" onclick="openSavedProgramsFromDashboard()"><span aria-hidden="true">📂</span><span>Mine programmer</span></button>
-          </div>
-        </section>
-
-        <section class="home-section home-latest-section" id="homeLatestSection" aria-labelledby="homeLatestHeading" hidden>
-          <div class="home-section-head"><h2 class="home-section-title" id="homeLatestHeading">Seneste træning</h2></div>
-          <div class="home-program-name" id="homeLatestName"></div>
-          <div class="home-program-meta" id="homeLatestMeta"></div>
-          <button class="home-secondary-button" type="button" onclick="openLatestWorkoutFromDashboard()">Se træning</button>
-        </section>
-
-        <aside class="home-recommendation" id="homeRecommendation" aria-labelledby="homeRecommendationHeading" hidden>
-          <h2 id="homeRecommendationHeading">Work4it anbefaler</h2>
-          <p id="homeRecommendationText"></p>
-        </aside>
-
-        <button class="home-more-link" type="button" onclick="toggleSidebar(true)" aria-label="Åbn hovedmenu med flere funktioner">Flere funktioner findes i menuen</button>
-        </div>
-      </section>
-
       <details class="workout-editor-details" id="workoutEditorDetails">
         <summary>Se og redigér træningspas</summary>
         <div class="workout-editor-content">
-      <div class="work4it-landing-hero program-only brand-fade-in"><img class="brand-hero-logo" src="work4it-hero-logo-v1.png" alt="Work4it"></div>
       <div id="workoutTitle" role="button" tabindex="0" aria-label="Redigér programnavn" title="Tryk for at ændre programnavnet" onclick="beginProgramTitleEdit()" onkeydown="handleProgramTitleKey(event)">Mit nye træningspas</div>
       <div class="day-navigation program-only" id="dayNavigation" aria-label="Vælg træningsdag"></div>
       <div class="workout-sticky-top" id="workoutStickyTop" aria-label="Træningsstatus og hurtige handlinger">
@@ -3459,7 +2845,7 @@
     </section>
   </main>
 
-  <nav class="modern-bottom-nav" id="modernBottomNav" aria-label="Primær navigation" hidden>
+  <nav class="modern-bottom-nav" id="modernBottomNav" aria-label="Primær navigation">
     <button class="modern-bottom-tab" type="button" data-modern-category="user" aria-pressed="false"><span class="modern-icon" aria-hidden="true">👤</span><strong>Bruger</strong></button>
     <button class="modern-bottom-tab" type="button" data-modern-category="training" aria-pressed="true"><span class="modern-icon" aria-hidden="true">🏋️</span><strong>Træning</strong></button>
     <button class="modern-bottom-tab" type="button" data-modern-category="more" aria-pressed="false"><span class="modern-icon" aria-hidden="true">•••</span><strong>Mere</strong></button>
@@ -3510,7 +2896,7 @@
   <section class="profile-account-view" id="profileAccountView" aria-hidden="true">
     <div class="profile-account-shell">
       <div class="profile-account-head">
-        <div class="profile-account-title-group"><img class="profile-account-logo" src="work4it-logo-v1.png" alt="Work4it"><div class="profile-account-title">Profil og konto</div></div>
+        <div class="profile-account-title-group"><img class="profile-account-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" loading="lazy" decoding="async"><div class="profile-account-title">Profil og konto</div></div>
         <button class="close" onclick="closeProfileAccountView()" aria-label="Luk">×</button>
       </div>
       <p class="profile-account-intro">Administrér personlige oplysninger, træningsopsætning, konto og lokale data.</p>
@@ -3580,8 +2966,8 @@
               <label class="theme-option">
                 <input type="radio" name="work4it-theme" value="classic" onchange="changeAppTheme(this.value)">
                 <span>
-                  <span class="theme-option-title">Classic</span>
-                  <span class="theme-option-copy">Lyst, roligt og tidløst tema med ekstra fokus på læsbarhed.</span>
+                  <span class="theme-option-title">Lyst tema</span>
+                  <span class="theme-option-copy">Modern UI med lys baggrund og høj kontrast.</span>
                   <span class="theme-preview classic" aria-hidden="true">
                     <span class="theme-preview-card"></span>
                     <span class="theme-preview-row">
@@ -3594,19 +2980,6 @@
               </label>
             </div>
             <div class="theme-save-feedback" id="themeSaveFeedback" aria-live="polite"></div>
-            <h3 class="layout-setting-title">App-layout</h3>
-            <p class="profile-section-copy">Skift mellem det oprindelige layout og det nye mobile dashboard. Træningsdata og funktioner er de samme i begge visninger.</p>
-            <div class="layout-choice-grid" role="radiogroup" aria-label="App-layout">
-              <label class="layout-choice">
-                <input type="radio" name="work4it-layout" value="classic" onchange="changeAppLayout(this.value)">
-                <span><strong>Classic UI</strong><small>Det nuværende Work4it-layout med sidemenu.</small></span>
-              </label>
-              <label class="layout-choice">
-                <input type="radio" name="work4it-layout" value="modern" onchange="changeAppLayout(this.value)">
-                <span><strong>Modern Dashboard UI</strong><small>Kort, ikonrække og fast bundnavigation.</small></span>
-              </label>
-            </div>
-            <div class="layout-setting-feedback" id="layoutSettingFeedback" aria-live="polite"></div>
             <label class="theme-option" style="margin-top:12px;">
               <input type="checkbox" id="autoPauseEnabled" onchange="setAutoPauseEnabled(this.checked)">
               <span>
@@ -3741,7 +3114,7 @@
         <div class="progress-panel">
           <div class="chart-toolbar">
             <label for="developmentExercise">Øvelse</label>
-            <select class="sidebar-select" id="developmentExercise" onchange="renderDevelopmentChart(this.value)"></select>
+            <select class="field" id="developmentExercise" onchange="renderDevelopmentChart(this.value)"></select>
           </div>
           <div class="line-chart-wrap" id="developmentChart"></div>
         </div>
@@ -3752,9 +3125,9 @@
         <div class="progress-panel">
           <div class="chart-toolbar">
             <label for="cardioDevelopmentExercise">Cardio-øvelse</label>
-            <select class="sidebar-select" id="cardioDevelopmentExercise" onchange="renderCardioDevelopmentChart()"></select>
+            <select class="field" id="cardioDevelopmentExercise" onchange="renderCardioDevelopmentChart()"></select>
             <label for="cardioDevelopmentMetric">Måling</label>
-            <select class="sidebar-select" id="cardioDevelopmentMetric" onchange="renderCardioDevelopmentChart()">
+            <select class="field" id="cardioDevelopmentMetric" onchange="renderCardioDevelopmentChart()">
               <option value="distanceKm">Distance</option>
               <option value="durationMinutes">Tid</option>
               <option value="calories">Kalorier</option>
@@ -3791,7 +3164,7 @@
   <section class="membership-view" id="membershipView" aria-hidden="true">
     <div class="membership-shell">
       <div class="membership-head">
-        <div class="membership-title-group"><img class="membership-hero-logo brand-fade-in" src="work4it-hero-logo-v1.png" alt="Work4it"><div class="membership-title">Medlemskab</div></div>
+        <div class="membership-title-group"><img class="membership-hero-logo brand-fade-in" src="Pictures/Hero%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" loading="lazy" decoding="async"><div class="membership-title">Medlemskab</div></div>
         <button class="close" onclick="closeMembershipView()" aria-label="Luk">×</button>
       </div>
 
@@ -4263,17 +3636,8 @@
       if (navButtons[1]) navButtons[1].textContent = t("home");
       const appTitleText = $("appTitleText");
       if (appTitleText) appTitleText.textContent = t("appTitle");
-      window.updateSidebarProfileIdentity?.();
-
-      $("generatorSectionTitle").textContent = "✨ AI-genereret træningsplan";
-      $("todayWorkoutNavItem").textContent = "▶ Dagens træning";
-      $("newWorkoutNavItem").textContent = t("newWorkout");
-      $("savedWorkoutsNavItem").textContent = t("savedWorkouts");
-      $("trashNavItem").textContent = t("trashWorkouts");
-      $("progressNavItem").childNodes[0].textContent = `${t("myProgress")} `;
-      $("membershipNavItem").childNodes[0].textContent = `${t("membership")} `;
-      $("historyNavItem").textContent = t("history");
-      if ($("helpNavItem")) $("helpNavItem").textContent = "? Hjælp / Om appen";
+      window.updateProfileIdentity?.();
+      if ($("generatorSectionTitle")) $("generatorSectionTitle").textContent = "AI-genereret træningsplan";
 
       document.querySelector("#programType option[value='']").textContent = t("chooseType");
       document.querySelector("#programType option[value='fullbody']").textContent = tp("fullbody");
@@ -4282,7 +3646,8 @@
       document.querySelector("#programType option[value='legs']").textContent = tp("legs");
       document.querySelector("#programType option[value='cardio']").textContent = "❤️ Cardio";
       $("countTitle").textContent = "Antal øvelser";
-      document.querySelector("#savedDropdown .mini-title").textContent = t("savedTitle");
+      const savedTitle = document.querySelector("#savedDropdown h3");
+      if (savedTitle) savedTitle.textContent = t("savedTitle");
       $("savedEmpty").textContent = t("savedEmpty");
       $("trashTitle").textContent = t("trashTitle");
       $("trashEmpty").textContent = t("trashEmpty");
@@ -4292,7 +3657,6 @@
       }
 
       document.querySelector(".save-btn").textContent = t("save");
-      $("timerBtn").textContent = isTimerRunning ? t("pause") : t("start");
       $("stopBtn").textContent = t("stop");
       updateWorkoutButtonVisibility();
       $("timeUsedLabel").textContent = t("timeUsed");
@@ -4325,42 +3689,6 @@
       $("exercises").innerHTML = "";
       exerciseStates.forEach(ex => addExercise(ex.name, ex.muscle, ex.sets, ex));
       renderSaved();
-    }
-
-    function toggleSidebar(forceOpen) {
-      if (window.WorkitMenuView?.setOpen) {
-        window.WorkitMenuView.setOpen(forceOpen);
-        return;
-      }
-      const sidebar = $("sidebar");
-      const overlay = $("overlay");
-      if (!sidebar || !overlay) return;
-      const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !sidebar.classList.contains("open");
-      sidebar.classList.toggle("open", shouldOpen);
-      sidebar.setAttribute("aria-hidden", String(!shouldOpen));
-      overlay.classList.toggle("show", shouldOpen);
-      document.body.classList.toggle("sidebar-open", shouldOpen);
-    }
-
-    document.addEventListener("keydown", event => {
-      if (!window.WorkitMenuManager && event.key === "Escape" && $("sidebar")?.classList.contains("open")) {
-        toggleSidebar(false);
-      }
-    });
-    window.toggleSidebar = toggleSidebar;
-
-    function toggleSidebarAccordion(sectionName) {
-      document.querySelectorAll(".sidebar-accordion").forEach(section => {
-        const shouldOpen = section.dataset.accordion === sectionName && !section.classList.contains("open");
-        section.classList.toggle("open", shouldOpen);
-        section.querySelector(":scope > .sidebar-accordion-toggle")?.setAttribute("aria-expanded", String(shouldOpen));
-      });
-    }
-    window.toggleSidebarAccordion = toggleSidebarAccordion;
-
-    function setActiveSidebarItem(item) {
-      document.querySelectorAll(".sidebar-item.active").forEach(active => active.classList.remove("active"));
-      item?.classList.add("active");
     }
 
     function saveLastActiveView(view) {
@@ -4417,30 +3745,18 @@
       }
     }
 
-    function toggleGeneratorMenu() {
-      const generator = $("programGeneratorAccess");
-      if (!generator) return;
-      if (!generator.hidden) {
-        generator.hidden = true;
-        $("countPicker").style.display = "none";
-        return;
-      }
-      window.WorkitMenuManager?.closeActivePanel?.("generator-open");
-      generator.hidden = false;
-    }
-
     function openProfileWizardFromMenu() {
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       window.ProfileWizard?.open?.({ mode: "edit" });
     }
 
     function exportDataFromMenu() {
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       window.exportProfileData?.();
     }
 
     function openScreenshotImportInfo() {
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       if (!window.Work4itScreenshotImport?.open) {
         alert("Screenshot-importen kunne ikke indlæses. Genindlæs siden og prøv igen.");
         return;
@@ -4449,7 +3765,7 @@
     }
 
     function openPrivacyPolicyDialog() {
-      if ($("sidebar")?.classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       $("modalTitle").textContent = "Privatliv og GDPR";
       $("modalContent").innerHTML = `
         <p class="about-intro"><strong>Work4it behandler persondata for at kunne gemme din profil, dine træningspas og din udvikling.</strong> Denne side er praktisk information i appen og skal juridisk gennemgås, før Work4it bruges kommercielt.</p>
@@ -4473,7 +3789,7 @@
     }
 
     function openHelpAboutDialog() {
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       const locale = window.Work4itContent?.defaultLocale || "da";
       const help = window.Work4itContent?.locales?.[locale]?.help || window.Work4itContent?.locales?.da?.help || {};
       const actionLabels = help.actions || {};
@@ -4486,7 +3802,7 @@
       const valuePoints = (help.valuePoints || []).map(point => `<li>${esc(point)}</li>`).join("");
       $("modalTitle").textContent = help.title || "Hjælp / Om Work4it";
       $("modalContent").innerHTML = `
-        <div class="about-brand"><img class="brand-logo" src="work4it-logo-v1.png" alt="${esc(help.logoAlt || "Work4it")}"></div>
+        <div class="about-brand"><img class="brand-logo" src="Pictures/App%20Logo%20v1.png" alt="${esc(help.logoAlt || "Work4it")}" width="1536" height="1024" loading="lazy" decoding="async"></div>
         <p class="about-intro">
           <strong>${esc(help.introStrong || "")}</strong>
           ${esc(help.intro || "")}
@@ -4514,7 +3830,7 @@
     }
     function openTodayWorkout() {
       saveLastActiveView("today");
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       if (hasActiveWorkoutSession()) {
         showTrainingSession();
         return;
@@ -4588,10 +3904,6 @@
       }
       if ($("progressView")?.classList.contains("open")) {
         closeProgressView();
-        return;
-      }
-      if ($("sidebar").classList.contains("open")) {
-        toggleSidebar();
         return;
       }
       if (currentWorkoutView === "session" && hasActiveWorkoutSession()) {
@@ -5116,7 +4428,7 @@
 
     function openCalorieView() {
       saveLastActiveView("calorie");
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       $("progressView")?.classList.remove("open");
       $("membershipView")?.classList.remove("open");
       $("profileAccountView")?.classList.remove("open");
@@ -5183,8 +4495,8 @@
     }
 
     function presentGeneratedWorkout() {
-      if ($("sidebar")?.classList.contains("open")) toggleSidebar(false);
-      renderHomeDashboard();
+      window.Work4itModernDashboard?.closeToolPanel?.();
+      renderDashboard();
       openWorkoutEditor();
       $("autosaveStatus").textContent = "Træningspasset er oprettet og klar til redigering";
     }
@@ -5392,7 +4704,7 @@
     }
 
     function openBlankWorkoutDialog() {
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       $("modalTitle").textContent = "Opret tomt træningspas";
       $("modalContent").innerHTML = `
         <p class="helper-text">Vælg hvilken type træningspas du vil oprette.</p>
@@ -5417,10 +4729,7 @@
     }
 
     function openProgramGeneratorFromDashboard() {
-      toggleSidebar(true);
-      const trainingSection = document.querySelector('[data-accordion="training"]');
-      if (!trainingSection?.classList.contains("open")) toggleSidebarAccordion("training");
-      if ($("programGeneratorAccess")?.hidden) toggleGeneratorMenu();
+      return window.openModernProgramGenerator?.();
     }
 
     function openWorkoutEditor() {
@@ -7092,7 +6401,7 @@
         if (totalSeconds <= 10 || totalSeconds % 5 === 0) updateEstimatedCalories();
         if (totalSeconds % 5 === 0) {
           autoSave();
-          if (currentWorkoutView === "program") renderHomeDashboard();
+          if (currentWorkoutView === "program") renderDashboard();
         }
       }, 1000);
     }
@@ -7100,15 +6409,11 @@
     function updateWorkoutButtonVisibility() {
       sessionStatus = normalizeSessionStatus(sessionStatus);
       updateLiveTrainingVisibility();
-      const startButton = $("timerBtn");
       const pauseButton = $("pauseWorkoutBtn");
       const resumeButton = $("resumeWorkoutBtn");
       const finishButton = $("stopBtn");
       const statusText = $("sessionStatusText");
-      if (!startButton || !finishButton || !pauseButton || !resumeButton) return;
-      startButton.style.display = currentWorkoutView === "program" ? "block" : "none";
-      startButton.textContent = hasActiveWorkoutSession() ? "▶ Genoptag træning" : t("start");
-      startButton.classList.remove("active");
+      if (!finishButton || !pauseButton || !resumeButton) return;
       updateStartTrainingAvailability();
       pauseButton.style.display = currentWorkoutView === "session" && sessionStatus === "in_progress" ? "block" : "none";
       resumeButton.style.display = currentWorkoutView === "session" && sessionStatus === "paused" ? "block" : "none";
@@ -7155,7 +6460,7 @@
       updateWorkoutButtonVisibility();
       updateEstimatedCalories();
       refreshAllProgressionSuggestions();
-      renderHomeDashboard();
+      renderDashboard();
     }
 
     function resetSessionCompletionMarks() {
@@ -7286,7 +6591,7 @@
       updateWorkoutButtonVisibility();
       saveLastActiveView("program");
       autoSave();
-      renderHomeDashboard();
+      renderDashboard();
     }
 
     function beginWorkoutSession() {
@@ -7743,7 +7048,7 @@
       const list = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
       $("savedSelect").innerHTML = list.length ? `<option value="">${t("selectProgram")}</option>` + list.map(p => `<option value="${p.id}">${esc(p.title)} - ${new Date(p.savedAt).toLocaleDateString("da-DK")}</option>`).join("") : `<option value="">${t("noSavedPrograms")}</option>`;
       $("savedEmpty").style.display = list.length ? "none" : "block";
-      renderHomeDashboard(list);
+      renderDashboard(list);
     }
 
     function dashboardDisplayName() {
@@ -7772,16 +7077,12 @@
       return (program?.days || []).reduce((total, day) => total + (day?.exercises || [])
         .filter(exercise => isValidWorkoutExerciseName(exercise?.name)).length, 0);
     }
-
     function updateStartTrainingAvailability(program = null) {
-      const startButton = $("timerBtn");
-      if (!startButton) return false;
-      const selectedProgram = program || getPrograms().find(item => item.id === startButton.dataset.programId);
-      const hasValidExercise = validCanvasExerciseCount() > 0 || validProgramExerciseCount(selectedProgram) > 0;
-      startButton.disabled = !hasValidExercise;
-      startButton.setAttribute("aria-disabled", String(!hasValidExercise));
-      const help = $("homeStartHelp");
-      if (help) help.hidden = hasValidExercise;
+      const selectedProgram = program || modernDashboardSnapshot().view?.featuredWorkout;
+      const programId = selectedProgram?.id || "";
+      const storedProgram = dashboardProgramsForView(getPrograms()).find(item => item.id === programId) || selectedProgram;
+      const hasValidExercise = validCanvasExerciseCount() > 0 || validProgramExerciseCount(storedProgram) > 0;
+      window.Work4itModernDashboard?.render?.();
       return hasValidExercise;
     }
 
@@ -7820,12 +7121,9 @@
       }) || null;
     }
 
-    function setHomeDashboardLoading(loading) {
+    function setDashboardLoading(loading) {
       dashboardCloudPending = loading === true;
-      const skeleton = $("homeDashboardLoading");
-      const content = $("homeDashboardContent");
-      if (skeleton) skeleton.hidden = !dashboardCloudPending;
-      if (content) content.hidden = dashboardCloudPending;
+      window.Work4itModernDashboard?.render?.();
     }
 
     function setDashboardSyncNotice(message = "", retrying = false) {
@@ -7851,99 +7149,52 @@
         setDashboardSyncNotice(offline ? "Offline – ændringer synkroniseres senere" : "Kunne ikke synkronisere");
       }
     }
-
-    function renderHomeDashboard(programs = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt))) {
-      if (dashboardCloudPending) return setHomeDashboardLoading(true);
-      const view = buildCurrentDashboardViewModel(programs);
-      if (!view) return;
-      setHomeDashboardLoading(false);
-      $("homeWelcomeTitle").textContent = view.greeting;
-      $("homeWelcomeSubtitle").textContent = view.activeWorkout
-        ? "Din træning venter på dig."
-        : view.emptyState ? "Lad os gøre din første træning enkel." : "Her er dit næste skridt.";
-
-      const activeSection = $("homeActiveSection");
-      activeSection.hidden = !view.activeWorkout;
-      const resumeButton = $("homeResumeWorkoutButton");
-      resumeButton.disabled = !view.activeWorkout;
-      resumeButton.setAttribute("aria-disabled", String(!view.activeWorkout));
-      if (view.activeWorkout) {
-        $("homeActiveName").textContent = view.activeWorkout.title;
-        const metrics = [];
-        if (view.activeWorkout.totalSets > 0) metrics.push(`${view.activeWorkout.completedSets} af ${view.activeWorkout.totalSets} sæt gennemført`);
-        metrics.push(dashboardDurationLabel(view.activeWorkout.elapsedSeconds) || "Netop startet");
-        $("homeActiveMetrics").innerHTML = metrics.map(metric => `<span>${esc(metric)}</span>`).join("");
-        $("homeActiveStatus").textContent = view.activeWorkout.status;
-        $("homeActiveStatus").classList.toggle("paused", view.activeWorkout.statusCode === "paused");
-      }
-
-      const workoutSection = $("homeWorkoutSection");
-      workoutSection.hidden = !view.featuredWorkout;
-      const startButton = $("timerBtn");
-      if (view.featuredWorkout) {
-        $("homeCurrentProgramHeading").textContent = view.featuredWorkout.heading;
-        $("homeCurrentProgramName").textContent = view.featuredWorkout.title;
-        const meta = [`${view.featuredWorkout.exerciseCount} ${view.featuredWorkout.exerciseCount === 1 ? "øvelse" : "øvelser"}`];
-        if (view.featuredWorkout.estimatedMinutes) meta.push(`cirka ${view.featuredWorkout.estimatedMinutes} min.`);
-        if (view.featuredWorkout.dayCount > 1) meta.push(`${view.featuredWorkout.dayCount} træningsdage`);
-        $("homeCurrentProgramMeta").textContent = meta.join(" · ");
-        startButton.dataset.programId = view.featuredWorkout.id;
-        startButton.textContent = "▶ Start træning";
-        updateStartTrainingAvailability(dashboardProgramsForView(programs).find(program => program.id === view.featuredWorkout.id));
-      } else {
-        startButton.dataset.programId = "";
-        startButton.disabled = true;
-        startButton.setAttribute("aria-disabled", "true");
-      }
-
-      $("homeEmptyState").hidden = !view.emptyState;
-      $("homeQuickSection").hidden = view.emptyState || Boolean(view.activeWorkout);
-
-      const latestSection = $("homeLatestSection");
-      latestSection.hidden = !view.latestWorkout;
-      if (view.latestWorkout) {
-        $("homeLatestName").textContent = view.latestWorkout.title;
-        const latestMeta = [dashboardDateLabel(view.latestWorkout.date), dashboardDurationLabel(view.latestWorkout.durationSeconds)];
-        if (view.latestWorkout.completedSets > 0) latestMeta.push(`${view.latestWorkout.completedSets} sæt`);
-        if (view.latestWorkout.totalVolumeKg > 0) latestMeta.push(`${vol(view.latestWorkout.totalVolumeKg)} volumen`);
-        if (view.latestWorkout.personalRecords > 0) latestMeta.push(`${view.latestWorkout.personalRecords} ny ${view.latestWorkout.personalRecords === 1 ? "PR" : "PR'er"}`);
-        $("homeLatestMeta").textContent = latestMeta.filter(Boolean).join(" · ");
-      }
-
-      $("homeRecommendation").hidden = !view.recommendation;
-      if (view.recommendation) $("homeRecommendationText").textContent = view.recommendation.message;
+    function modernDashboardSnapshot(programs = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt))) {
+      const list = dashboardProgramsForView(programs);
+      return {
+        loading: dashboardCloudPending,
+        programs: list,
+        view: dashboardCloudPending ? null : buildCurrentDashboardViewModel(list)
+      };
     }
+
+    function renderDashboard(programs = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt))) {
+      const snapshot = modernDashboardSnapshot(programs);
+      window.dispatchEvent(new CustomEvent("work4it:dashboard-updated", { detail: snapshot }));
+      window.Work4itModernDashboard?.render?.();
+      return snapshot.view;
+    }
+
+    window.Work4itDashboardRuntime = Object.freeze({
+      getSnapshot: () => modernDashboardSnapshot(),
+      canStartProgram: programId => {
+        const program = dashboardProgramsForView(getPrograms()).find(item => item.id === programId);
+        return validProgramExerciseCount(program) > 0 || (currentSavedProgramId === programId && validCanvasExerciseCount() > 0);
+      }
+    });
 
     function openDashboardSavedProgram(encodedId) {
       const id = decodeURIComponent(encodedId || "");
-      loadSavedProgram(id, false);
+      loadSavedProgram(id);
       openWorkoutEditor();
-      renderHomeDashboard();
+      renderDashboard();
     }
 
     function continueDashboardWorkout() {
       if (!hasActiveWorkoutSession()) {
-        const button = $("homeResumeWorkoutButton");
-        if (button) {
-          button.disabled = true;
-          button.setAttribute("aria-disabled", "true");
-        }
-        return renderHomeDashboard();
+        return renderDashboard();
       }
       return showTrainingSession();
     }
 
     function viewDashboardFeaturedProgram() {
-      const id = $("timerBtn")?.dataset.programId || "";
-      if (id) loadSavedProgram(id, false);
+      const id = modernDashboardSnapshot().view?.featuredWorkout?.id || "";
+      if (id) loadSavedProgram(id);
       openWorkoutEditor();
     }
 
     function openSavedProgramsFromDashboard() {
-      toggleSidebar(true);
-      const trainingSection = document.querySelector('[data-accordion="training"]');
-      if (!trainingSection?.classList.contains("open")) toggleSidebarAccordion("training");
-      if (!window.WorkitMenuManager?.isPanelOpen?.("saved-dropdown")) toggleSavedDropdown();
+      return window.openModernSavedPrograms?.();
     }
 
     function openLatestWorkoutFromDashboard() {
@@ -7951,27 +7202,12 @@
     }
 
     function startDashboardWorkout() {
-      const button = $("timerBtn");
-      if (!button || button.disabled) return false;
-      const programId = button?.dataset.programId || "";
-      if (programId && (currentSavedProgramId !== programId || !slotIds().length)) loadSavedProgram(programId, false);
+      const programId = modernDashboardSnapshot().view?.featuredWorkout?.id || "";
+      if (!programId || !window.Work4itDashboardRuntime?.canStartProgram?.(programId)) return false;
+      if (programId && (currentSavedProgramId !== programId || !slotIds().length)) loadSavedProgram(programId);
       if (!hasActiveWorkoutSession() && validCanvasExerciseCount() === 0) return updateStartTrainingAvailability();
       openWorkoutEditor();
       toggleWorkoutTimer();
-    }
-    function toggleSavedDropdown() {
-      const dropdown = $("savedDropdown");
-      if (!dropdown) return;
-      if (window.WorkitMenuManager?.isPanelOpen?.("saved-dropdown")) {
-        window.WorkitMenuManager.closePanel("saved-dropdown");
-        return;
-      }
-      renderSaved();
-      dropdown.style.display = "block";
-      window.WorkitMenuManager?.openPanel?.("saved-dropdown", {
-        roots: [dropdown, $("savedWorkoutsNavItem")],
-        close: () => { dropdown.style.display = "none"; }
-      });
     }
     function daysLeftInTrash(deletedAt) {
       const expires = new Date(deletedAt).getTime() + 30 * 24 * 60 * 60 * 1000;
@@ -7990,20 +7226,6 @@
         </div>
       `).join("");
       $("trashEmpty").style.display = list.length ? "none" : "block";
-    }
-    function toggleTrashDropdown() {
-      const dropdown = $("trashDropdown");
-      if (!dropdown) return;
-      if (window.WorkitMenuManager?.isPanelOpen?.("trash-dropdown")) {
-        window.WorkitMenuManager.closePanel("trash-dropdown");
-        return;
-      }
-      renderTrash();
-      dropdown.style.display = "block";
-      window.WorkitMenuManager?.openPanel?.("trash-dropdown", {
-        roots: [dropdown, $("trashNavItem")],
-        close: () => { dropdown.style.display = "none"; }
-      });
     }
     function saveCanvasState() {
       if (!updateWorkoutEditorActionState()) return false;
@@ -8155,7 +7377,7 @@
       $("autosaveStatus").textContent = "Træningspas kopieret";
       alert("Træningspasset er kopieret og kan deles.");
     }
-    function loadSavedProgram(id, closeSidebar = true) {
+    function loadSavedProgram(id) {
       const p = getPrograms().find(x => x.id === id);
       if (!p) return;
       currentProgramSession = window.WorkoutProgramStore.normalizeProgram(p);
@@ -8168,9 +7390,8 @@
       autoSave();
       $("autosaveStatus").textContent = t("readyWorkout");
       updateWorkoutButtonVisibility();
-      renderHomeDashboard();
+      renderDashboard();
       $("savedDropdown").style.display = "none";
-      if (closeSidebar && $("sidebar").classList.contains("open")) toggleSidebar();
       saveLastActiveView("program");
     }
     function resetWorkoutCanvas(status = t("ready")) {
@@ -8213,9 +7434,6 @@
         const element = $(id);
         if (element) element.style.display = "none";
       });
-      $("sidebar")?.classList.remove("open");
-      $("overlay")?.classList.remove("show");
-      document.body.classList.remove("sidebar-open");
     }
 
     function activeWorkoutAutosave() {
@@ -8293,7 +7511,7 @@
     function newWorkout(type = "strength") {
       if (hasActiveWorkoutSession()) {
         alert("Der er allerede en aktiv træning. Genoptag eller afslut den, før du opretter et nyt træningspas.");
-        if ($("sidebar").classList.contains("open")) toggleSidebar();
+        window.Work4itModernDashboard?.closeToolPanel?.();
         return;
       }
       resetWorkoutCanvas(t("ready"));
@@ -8307,8 +7525,8 @@
         setExercisePickerContext("Alle");
       }
       openWorkoutEditor();
-      renderHomeDashboard();
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      renderDashboard();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       window.requestAnimationFrame(() => {
         const muscles = availablePickerMuscles();
         exercisePickerMuscle = muscles.length === 1 ? muscles[0] : "";
@@ -8750,7 +7968,7 @@
       renderProgressView();
       $("progressView").classList.add("open");
       $("progressView").setAttribute("aria-hidden", "false");
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
     }
 
     function closeProgressView() {
@@ -9294,7 +8512,7 @@
     }
 
     function openContactDialog() {
-      if ($("sidebar").classList.contains("open")) toggleSidebar();
+      window.Work4itModernDashboard?.closeToolPanel?.();
       $("modalTitle").textContent = "Kontakt";
       $("modalContent").innerHTML = `
         <form class="contact-form" onsubmit="sendContactMessage(event)">
@@ -10984,7 +10202,7 @@
       }
       const programId = preferredDailyProgramId();
       if (programId) {
-        loadSavedProgram(programId, false);
+        loadSavedProgram(programId);
         $("autosaveStatus").textContent = "Seneste aktive træningspas er klar";
         return;
       }
@@ -11225,9 +10443,9 @@
           : focus.includes("Ryg") && !focus.includes("Bryst")
             ? "pull"
             : "fullbody";
+      window.openModernProgramGenerator?.();
       chooseProgramType(type);
       $("programType").value = type;
-      if (!$("sidebar").classList.contains("open")) toggleSidebar();
       $("autosaveStatus").textContent = "Vælg antal øvelser til dagens nye træningspas";
     }
 
@@ -11304,7 +10522,7 @@
       }
       renderSaved();
       closeModal();
-      loadSavedProgram(id, false);
+      loadSavedProgram(id);
       $("autosaveStatus").textContent = window.FirestoreDataService?.isCloudPrimary?.()
         ? "Importeret og sendt til Cloud"
         : "Importeret og gemt lokalt";
@@ -11320,13 +10538,13 @@
     window.addEventListener("screenshot-import:approved", createProgramFromScreenshot);
     window.addEventListener("training-profile:updated", () => {
       updateEstimatedCalories();
-      renderHomeDashboard();
+      renderDashboard();
     });
     window.addEventListener("ai-requests:changed", event => updateAiRequestCounterDisplay(event.detail));
     window.addEventListener("exercise-history:changed", refreshAllProgressionSuggestions);
     window.addEventListener("workout-history:changed", refreshWorkoutHeatmapIfOpen);
     window.addEventListener("firebase-auth:changed", event => {
-      if (event.detail?.user?.uid) setHomeDashboardLoading(true);
+      if (event.detail?.user?.uid) setDashboardLoading(true);
       else dashboardCloudPending = false;
     });
     window.addEventListener("firestore:data-hydrated", () => {
@@ -11467,13 +10685,13 @@
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
   <script src="auth-gate.js?v=20260712-google-auth-domain1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
-  <script src="modern-dashboard-ui.js?v=20260719-modern-dashboard1"></script>
-  <script src="profile-account.js?v=20260719-modern-dashboard1"></script>
+  <script src="modern-dashboard-ui.js?v=20260721-modern-permanent1"></script>
+  <script src="profile-account.js?v=20260721-modern-permanent1"></script>
   <script src="profile-wizard.js?v=20260716-cardio-empty-time1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
-  <script src="membership.js?v=20260713-admin-subscription-test1"></script>
+  <script src="membership.js?v=20260721-modern-permanent1"></script>
   <script type="module" src="firebase-config.js?v=20260715-exercise-animations1"></script>
   <script type="module" src="exercise-animation-cloud-service.js?v=20260716-backend-admin-read1"></script>
   <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
@@ -11483,7 +10701,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260719-modern-dashboard1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260721-official-assets1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

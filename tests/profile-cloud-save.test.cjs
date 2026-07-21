@@ -63,10 +63,10 @@ function createStore({ user = { uid: "uid-1" }, cloudSave = async () => true } =
   assert.match(profileSource, /\[Work4it profil\] Cloud-gemning mislykkedes/);
   assert.match(profileSource, /users\/\$\{window\.FirebaseAuthService/);
   assert.match(html, /wizard-store\.js\?v=20260718-profile-cloud1/);
-  assert.match(html, /profile-account\.js\?v=20260719-modern-dashboard1/);
+  assert.match(html, /profile-account\.js\?v=20260721-modern-permanent1/);
   assert.match(html, /firestore-cloud-service\.js\?v=20260718-dashboard-buttons1/);
-  assert.match(html, /service-worker\.js\?v=20260719-modern-dashboard1/);
-  assert.match(serviceWorker, /work4it-shell-v125-modern-dashboard1/);
+  assert.match(html, /service-worker\.js\?v=20260721-official-assets1/);
+  assert.match(serviceWorker, /work4it-shell-v127-official-assets1/);
 
   console.log("Profile local-first and confirmed Cloud-save scenarios passed");
 })().catch(error => {

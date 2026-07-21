@@ -645,12 +645,7 @@
   }
 
   function clearMenuStateBeforeOpen() {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("overlay");
-    sidebar?.classList.remove("open");
-    sidebar?.setAttribute("aria-hidden", "true");
-    overlay?.classList.remove("show");
-    document.body.classList.remove("sidebar-open");
+    window.Work4itModernDashboard?.closeToolPanel?.();
     document.querySelectorAll(".app-header, main.canvas, .modal, .progress-view, .calorie-view, .profile-account-view, .membership-view, .wizard-shell").forEach(element => {
       element.removeAttribute("aria-hidden");
       element.inert = false;

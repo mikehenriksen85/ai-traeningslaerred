@@ -4,3 +4,7 @@ Thumbs.db
 .vscode/
 .idea/
 node_modules/
+
+# Generated from the official source in public/Pictures.
+app/Pictures/
+website/Pictures/

@@ -1,16 +1,6 @@
 (function initMenuViewController() {
   "use strict";
   if (window.WorkitMenuManager?.__work4itMenuManagerVersion === "1.0") return;
-  const workspaceSelectors = [
-    ".app-header",
-    "main.canvas",
-    ".modal",
-    ".progress-view",
-    ".calorie-view",
-    ".profile-account-view",
-    ".membership-view",
-    ".wizard-shell"
-  ];
   const menuState = {
     activeSurface: null,
     activePanel: null,
@@ -22,18 +12,6 @@
   }
   function containsTarget(roots, target) {
     return elementList(roots).some(root => root === target || root.contains?.(target));
-  }
-  function setWorkspaceHidden(hidden) {
-    document.querySelectorAll(workspaceSelectors.join(",")).forEach(element => {
-      if (element.id === "sidebar" || element.closest("#sidebar")) return;
-      if (hidden) {
-        element.setAttribute("aria-hidden", "true");
-        element.inert = true;
-      } else {
-        element.removeAttribute("aria-hidden");
-        element.inert = false;
-      }
-    });
   }
   function pushMenuHistory(id) {
     try {
@@ -68,21 +46,8 @@
       updateTransientMenuState();
     }
   }
-  function applySidebarOpen(shouldOpen) {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("overlay");
-    if (!sidebar || !overlay) return;
-    sidebar.classList.toggle("open", shouldOpen);
-    sidebar.setAttribute("aria-hidden", String(!shouldOpen));
-    overlay.classList.toggle("show", shouldOpen);
-    document.body.classList.toggle("sidebar-open", shouldOpen);
-    setWorkspaceHidden(shouldOpen);
-  }
   function closeSurfaceDom(id, reason = "close") {
-    if (id === "sidebar") {
-      closeActivePanel(reason);
-      applySidebarOpen(false);
-    } else if (id === "modal") {
+    if (id === "modal") {
       const modal = document.getElementById("modal");
       if (modal) {
         modal.style.display = "none";
@@ -132,22 +97,6 @@
       updateTransientMenuState();
     }
   }
-  function setSidebarOpen(forceOpen) {
-    const sidebar = document.getElementById("sidebar");
-    const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !sidebar?.classList.contains("open");
-    if (shouldOpen) {
-      openSurface("sidebar", {
-        roots: () => [document.getElementById("sidebar")],
-        close: () => applySidebarOpen(false)
-      });
-      applySidebarOpen(true);
-    } else if (menuState.activeSurface?.id === "sidebar") {
-      closeActiveSurface("manual-close");
-    } else {
-      applySidebarOpen(false);
-    }
-  }
-  window.toggleSidebar = setSidebarOpen;
   window.WorkitMenuManager = {
     __work4itMenuManagerVersion: "1.0",
     openSurface,
@@ -208,12 +157,7 @@
         modal.style.display = "none";
         modal.setAttribute("aria-hidden", "true");
       }
-      applySidebarOpen(false);
     }
-  };
-  window.WorkitMenuView = {
-    setOpen: setSidebarOpen,
-    setWorkspaceHidden
   };
   document.addEventListener("pointerdown", event => {
     const target = event.target;
@@ -223,7 +167,7 @@
       return;
     }
     const surface = menuState.activeSurface;
-    if (surface?.id && surface.id !== "sidebar" && !containsTarget(surface.roots, target)) {
+    if (surface?.id && !containsTarget(surface.roots, target)) {
       closeActiveSurface("outside");
     }
   }, true);

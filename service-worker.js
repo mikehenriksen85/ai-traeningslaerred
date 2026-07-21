@@ -1,12 +1,11 @@
-const CACHE_NAME = "work4it-shell-v54-cloudsave-fix1";
+const CACHE_NAME = "work4it-shell-v55-official-assets1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./work4it-app-icon-192.png",
-  "./work4it-app-icon-512.png",
-  "./work4it-logo-v1.png",
-  "./work4it-hero-logo-v1.png",
+  "./public/Pictures/App%20Ikon%20V1.png",
+  "./public/Pictures/App%20Logo%20v1.png",
+  "./public/Pictures/Hero%20Logo%20v1.png",
   "./storage-scope.js?v=20260621-cloud-primary1",
   "./calorie-estimator.js?v=20260615-cardio1",
   "./training-goal-engine.js?v=20260620-calisthenics1",

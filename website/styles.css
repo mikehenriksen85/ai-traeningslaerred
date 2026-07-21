@@ -11,6 +11,10 @@
   --muted-soft: #94A3B8;
   --border: rgba(148,163,184,.22);
   --shadow: 0 22px 70px rgba(0,0,0,.28);
+  --brand-icon-size: 2.625rem;
+  --brand-hero-width: 31.25rem;
+  --brand-hero-height: 15rem;
+  --space-lg: 1rem;
 }
 
 * { box-sizing: border-box; }
@@ -42,7 +46,7 @@ a { color: inherit; }
   backdrop-filter: blur(14px);
 }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 800; font-size: 1.08rem; }
-.brand img { width: 42px; height: 42px; object-fit: contain; }
+.brand img { width: var(--brand-icon-size); aspect-ratio: 1; height: auto; object-fit: contain; }
 .nav { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
 .nav a { color: var(--muted); text-decoration: none; font-weight: 650; font-size: .94rem; }
 .nav .app-link { background: var(--blue); padding: 10px 14px; border-radius: 12px; color: #fff; }
@@ -57,7 +61,7 @@ a { color: inherit; }
 }
 .hero-inner { max-width: 920px; margin: 0 auto; text-align: center; }
 .logo-link { display: inline-flex; justify-content: center; align-items: center; text-decoration: none; }
-.hero-logo { width: min(500px, 86vw); max-height: 240px; object-fit: contain; margin-bottom: 16px; animation: fadeIn .6s ease both; }
+.hero-logo { width: min(var(--brand-hero-width), 86vw); max-width: 100%; max-height: var(--brand-hero-height); height: auto; object-fit: contain; margin-bottom: var(--space-lg); animation: fadeIn .6s ease both; }
 .eyebrow {
   display: inline-flex;
   align-items: center;

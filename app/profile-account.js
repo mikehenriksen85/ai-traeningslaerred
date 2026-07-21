@@ -126,24 +126,11 @@
     if (resetButton) resetButton.disabled = !ready || !loggedIn;
     const changePasswordButton = byId("profileChangePasswordBtn");
     if (changePasswordButton) changePasswordButton.disabled = !ready || !loggedIn;
-    updateSidebarProfileIdentity();
+    updateProfileIdentity();
   }
 
-  function updateSidebarProfileIdentity() {
-    const service = window.FirebaseAuthService;
-    const ready = Boolean(service?.isInitialized?.());
-    const user = ready ? service?.getCurrentUser?.() || null : null;
-    const profile = user ? window.TrainingWizardStore?.getProfile?.() || {} : {};
-    const label = String(
-      (user && profile.name) ||
-      user?.displayName ||
-      user?.email ||
-      "Min profil"
-    ).trim();
-    const nameElement = byId("sidebarProfileName");
-    const subtitleElement = byId("sidebarProfileSubtitle");
-    if (nameElement) nameElement.textContent = label || "Min profil";
-    if (subtitleElement) subtitleElement.textContent = "Profil og konto";
+  function updateProfileIdentity() {
+    window.Work4itModernDashboard?.render?.();
   }
 
   function authErrorMessage(error) {
@@ -359,7 +346,6 @@
     renderFocusAreas(Array.isArray(profile.focusAreas) ? profile.focusAreas : []);
     renderAccountStatus();
     populateThemeSettings();
-    populateLayoutSettings();
     const feedback = byId("profileSaveFeedback");
     if (feedback) feedback.textContent = "";
   }
@@ -396,36 +382,12 @@
     }
   }
 
-  function populateLayoutSettings() {
-    const layout = window.Work4itModernDashboard?.getLayout?.() || "classic";
-    document.querySelectorAll('input[name="work4it-layout"]').forEach(input => {
-      input.checked = input.value === layout;
-    });
-  }
-
-  function setLayoutFeedback(message, isWarning = false) {
-    const feedback = byId("layoutSettingFeedback");
-    if (!feedback) return;
-    feedback.textContent = message || "";
-    feedback.style.color = isWarning ? "#fbbf24" : "";
-  }
-
-  function changeAppLayout(layout) {
-    if (!window.Work4itModernDashboard?.setLayout) {
-      setLayoutFeedback("Layout-systemet er ikke klar endnu.", true);
-      return;
-    }
-    const applied = window.Work4itModernDashboard.setLayout(layout, { source: "profile" });
-    populateLayoutSettings();
-    setLayoutFeedback(`${applied === "modern" ? "Modern Dashboard UI" : "Classic UI"} er aktivt og gemt på denne enhed ✓`);
-  }
-
   function openProfileAccountView() {
     window.WorkitViewState?.save?.("profile");
     document.getElementById("progressView")?.classList.remove("open");
     document.getElementById("membershipView")?.classList.remove("open");
     document.getElementById("calorieView")?.classList.remove("open");
-    if (document.getElementById("sidebar")?.classList.contains("open")) window.toggleSidebar?.();
+    window.Work4itModernDashboard?.closeToolPanel?.();
     populateProfileAccount();
     const view = byId("profileAccountView");
     view?.classList.add("open");
@@ -522,7 +484,7 @@
           feedback.style.color = "";
         }
         await window.TrainingWizardStore?.saveProfileAndSync?.(profile);
-        updateSidebarProfileIdentity();
+        updateProfileIdentity();
         if (feedback) {
           feedback.textContent = "✔ Profil gemt automatisk lokalt og i Cloud";
           feedback.style.color = "";
@@ -559,14 +521,14 @@
         ? await window.TrainingWizardStore.saveProfileAndSync(profile)
         : window.TrainingWizardStore?.saveProfile?.(profile);
       saveMeasurementSnapshot(savedProfile || profile);
-      updateSidebarProfileIdentity();
+      updateProfileIdentity();
       if (feedback) {
         feedback.textContent = "✔ Profil gemt lokalt og i Cloud";
         feedback.style.color = "";
       }
     } catch (error) {
       saveMeasurementSnapshot(profile);
-      updateSidebarProfileIdentity();
+      updateProfileIdentity();
       console.error("[Work4it profil] Cloud-gemning mislykkedes.", {
         code: error?.code || "unknown",
         message: error?.message || String(error),
@@ -655,9 +617,8 @@
   window.deleteProfileAccountAndData = deleteProfileAccountAndData;
   window.refreshProfileAccountView = populateProfileAccount;
   window.changeAppTheme = changeAppTheme;
-  window.changeAppLayout = changeAppLayout;
   window.saveProfileMeasurementSnapshot = saveMeasurementSnapshot;
-  window.updateSidebarProfileIdentity = updateSidebarProfileIdentity;
+  window.updateProfileIdentity = updateProfileIdentity;
   window.loginProfileWithEmail = loginProfileWithEmail;
   window.createProfileAccount = createProfileAccount;
   window.loginProfileWithGoogle = loginProfileWithGoogle;
@@ -668,7 +629,6 @@
   window.sendPasswordResetFromDialog = sendPasswordResetFromDialog;
 
   window.addEventListener("firebase-auth:ready", renderAccountStatus);
-  window.addEventListener("work4it:layout-changed", populateLayoutSettings);
   window.addEventListener("firebase-auth:changed", event => {
     renderAccountStatus();
     const error = event.detail?.error;
@@ -679,7 +639,7 @@
     if (byId("profileAccountView")?.classList.contains("open")) populateProfileAccount();
   });
   window.addEventListener("firestore:user-cache-cleared", renderAccountStatus);
-  window.addEventListener("training-profile:updated", updateSidebarProfileIdentity);
+  window.addEventListener("training-profile:updated", updateProfileIdentity);
   window.addEventListener("work4it:theme-applied", populateThemeSettings);
   window.addEventListener("work4it:theme-cloud-saving", () => setThemeFeedback("Tema gemmes i Cloud..."));
   window.addEventListener("work4it:theme-cloud-saved", () => setThemeFeedback("Tema gemt i Cloud ☁️"));

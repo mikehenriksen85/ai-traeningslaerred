@@ -7,13 +7,10 @@ Dato: 2026-06-19
 - `index.html`
 - `manifest.webmanifest`
 - `service-worker.js`
-- `work4it-app-icon.png`
-- `work4it-app-icon-192.png`
-- `work4it-app-icon-512.png`
-- `work4it-logo-v1.png`
-- `work4it-hero-logo-v1.png`
-- `screenshots/work4it-design-desktop.png`
-- `screenshots/work4it-design-mobile.png`
+- `public/Pictures/App Ikon V1.png`
+- `public/Pictures/App Logo v1.png`
+- `public/Pictures/Hero Logo v1.png`
+- `scripts/sync-official-assets.cjs`
 
 ## Logo v1 bruges her
 
@@ -24,8 +21,7 @@ Dato: 2026-06-19
 
 ## Hero-logo v1 bruges her
 
-- Velkomst/topsektion på programsiden
-- Splash/loading-visning før loginstatus er afklaret
+- Login og splash/loading-visning
 - Medlemskabssiden
 - Open Graph/Twitter preview image
 
@@ -49,16 +45,9 @@ Dato: 2026-06-19
 
 Dashboard- og AI-relaterede knapper er standardiseret til blå. Gem/success bruger grøn, og slet/fare bruger rød.
 
-## Manglende filer eller stier
+## Assetstruktur
 
-Ingen nødvendige brandfiler manglede. Filen `public/Pictures/Logo` findes uden filendelse og er ikke brugt, fordi de tre navngivne filer dækker kravene.
-
-## Screenshots
-
-- Desktop: `screenshots/work4it-design-desktop.png`
-- Mobil 390px: `screenshots/work4it-design-mobile.png`
-
-Screenshots er taget med Microsoft Edge headless fra `http://localhost:8767/`.
+`public/Pictures` er eneste officielle kilde. Firebase-appens og websitets `Pictures`-mapper genereres automatisk før lokal start og deploy. Der er derfor ingen døde screenshot- eller legacy-logoreferencer i rapporten.
 
 ## Branding-status
 

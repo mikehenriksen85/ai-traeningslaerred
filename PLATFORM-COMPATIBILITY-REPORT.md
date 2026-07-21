@@ -103,8 +103,7 @@ Automatisk/kodebaseret:
   - `/profile-account.js?v=20260619-gdpr1`
   - `/auth-service.js?v=20260619-gdpr1`
   - `/firestore-cloud-service.js?v=20260619-gdpr1`
-  - `/work4it-icon-192.png`
-  - `/work4it-icon-512.png`
+  - `/Pictures/App%20Ikon%20V1.png` (officiel source: `public/Pictures/App Ikon V1.png`)
 
 ## Testbegrænsninger
 
