@@ -55,6 +55,8 @@ assert.match(source, /function openModernTrash\(/);
 assert.match(source, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/, "Horizontal tabs support keyboard navigation");
 assert.match(source, /class="modern-mini-card/);
 assert.match(source, /data-modern-open=/);
+assert.match(source, /class="modern-mini-card-label"/);
+assert.doesNotMatch(source, /<small>\$\{escapeHtml\(state\.meta \|\| action\.description\)\}<\/small>/, "Quick access cards show names only");
 assert.match(source, /Work4itIcons\?\.markup/);
 assert.match(source, /scrollIntoView\?\.\(\{ behavior: "smooth", block: "nearest", inline: "center" \}\)/);
 
@@ -79,7 +81,9 @@ assert.doesNotMatch(html, />▶<\/button>|>↺<\/button>|>📷|>🗑|>💾|>➕/
 assert.match(css, /position: fixed/);
 assert.match(css, /overflow-x: auto/);
 assert.match(css, /\.modern-icon-label/);
-assert.match(css, /white-space: normal/);
+assert.match(css, /\.modern-icon-label[\s\S]*?white-space: nowrap/);
+assert.match(css, /\.modern-mini-card strong[\s\S]*?white-space: nowrap/);
+assert.match(css, /@media \(max-width: 560px\)[\s\S]*?\.modern-card-grid \{ grid-template-columns: 1fr; \}/);
 assert.match(css, /\.work4it-icon-svg/);
 assert.match(css, /--modern-icon-color/);
 assert.match(css, /--modern-touch: 48px/);
@@ -89,15 +93,16 @@ assert.match(css, /@media \(max-width: 560px\)/);
 assert.match(css, /@media \(min-width: 760px\)/);
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
-for (const asset of ["modern-dashboard-ui.css", "work4it-icons.js", "modern-dashboard-ui.js"])
-  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260722-icon-system1`));
+for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260722-card-labels1`));
+assert.match(html, /work4it-icons\.js\?v=20260722-icon-system1/);
 for (const asset of ["profile-account.js", "workit-menu-manager.js", "membership.js"])
   assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
-assert.match(html, /service-worker\.js\?v=20260722-icon-system1/);
-assert.match(serviceWorker, /work4it-shell-v128-icon-system1/);
-for (const asset of [
-  "modern-dashboard-ui.css", "work4it-icons.js", "modern-dashboard-ui.js"
-]) assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260722-icon-system1`));
+assert.match(html, /service-worker\.js\?v=20260722-card-labels1/);
+assert.match(serviceWorker, /work4it-shell-v129-card-labels1/);
+for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
+  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260722-card-labels1`));
+assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);
 for (const asset of ["profile-account.js", "workit-menu-manager.js", "membership.js"])
   assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
 

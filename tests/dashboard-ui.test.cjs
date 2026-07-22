@@ -56,7 +56,7 @@ assert.match(html, /function updateLiveTrainingVisibility\(/);
 assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
 assert.match(html, /document\.body\.dataset\.liveTraining = String\(isActive\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
-assert.match(html, /service-worker\.js\?v=20260722-icon-system1/);
+assert.match(html, /service-worker\.js\?v=20260722-card-labels1/);
 assert.match(html, /dashboard-view-model\.js\?v=20260718-dashboard-buttons1/);
 assert.match(html, /workout-heatmap\.js\?v=20260718-heatmap1/);
 assert.match(html, /function renderWorkoutHeatmapSection\(/);

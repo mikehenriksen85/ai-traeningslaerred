@@ -153,7 +153,7 @@
       return `<button class="modern-mini-card modern-tone-${escapeHtml(action.tone || "blue")}${action.destructive ? " destructive" : ""}" type="button"
         data-modern-open="${escapeHtml(action.id)}" ${state.disabled ? 'disabled aria-disabled="true"' : 'aria-disabled="false"'}>
         <span class="modern-icon" aria-hidden="true">${iconMarkup(action.icon)}</span>
-        <span><strong>${escapeHtml(action.label)}</strong><small>${escapeHtml(state.meta || action.description)}</small></span>
+        <span class="modern-mini-card-label"><strong>${escapeHtml(action.label)}</strong></span>
       </button>`;
     }).join("");
   }
