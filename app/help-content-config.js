@@ -12,43 +12,43 @@
     ],
     features: [
       {
-        icon: "🤖",
+        icon: "coach",
         title: "AI der gør træning mere praktisk",
         text: "Få hjælp til programmer, øvelsesvalg, tilpasninger og hurtige ændringer uden at lede rundt i menuer."
       },
       {
-        icon: "🎯",
+        icon: "target",
         title: "Programmer efter dine mål",
         text: "Work4it understøtter styrketræning, cardio og calisthenics, så planen matcher det, du faktisk vil opnå."
       },
       {
-        icon: "⚡",
+        icon: "active",
         title: "Hurtig registrering",
         text: "Registrér sæt, reps, vægt, pauser, cardio og gennemførte sæt hurtigt, mens du træner."
       },
       {
-        icon: "📊",
+        icon: "progress",
         title: "Historik og statistik",
         text: "Se volumen, estimeret 1RM, kropsmålinger, kalorier og udvikling over tid i et samlet overblik."
       },
       {
-        icon: "☁️",
+        icon: "cloud",
         title: "Cloud på tværs af enheder",
         text: "Når du er logget ind, kan dine programmer og profil følge dig mellem computer, tablet og mobil."
       },
       {
-        icon: "📸",
+        icon: "import",
         title: "Import fra screenshots",
         text: "AI-import kan hjælpe med at omsætte billeder af træningsprogrammer til programmer i Work4it."
       }
     ],
     premium: {
-      icon: "⭐",
+      icon: "membership",
       title: "Premium giver mere fart på hverdagen",
       text: "Premium fremhæver de funktioner, der sparer tid: flere AI Requests, stærkere analyse, smartere planlægning og mere overblik."
     },
     feedback: {
-      icon: "📝",
+      icon: "feedback",
       title: "Bygget med brugernes feedback",
       text: "Work4it udvikles løbende ud fra rigtige behov, forslag og fejlmeldinger fra brugerne."
     },

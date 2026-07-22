@@ -373,7 +373,7 @@
       <div class="screenshot-import">
         <div class="screenshot-drop" id="screenshotDropZone">
           <input id="screenshotFile" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" hidden>
-          <div class="screenshot-drop-icon">📷</div>
+          <div class="screenshot-drop-icon" aria-hidden="true">${window.Work4itIcons?.markup?.("import") || "▧"}</div>
           <h3>Upload dit træningsprogram</h3>
           <p>Understøtter screenshots og billeder fra Hevy, Strong, Fitbod, Excel og PDF-visninger.</p>
           <button class="small-btn" type="button" id="screenshotChooseBtn">Vælg billede</button>

@@ -55,7 +55,7 @@
   <link rel="apple-touch-icon" href="Pictures/App%20Ikon%20V1.png">
   <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
   <link rel="stylesheet" href="progression.css?v=20260718-progression1">
-  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260721-modern-permanent1">
+  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260722-icon-system1">
   <title>Work4it</title>
   <style>
     :root {
@@ -2783,11 +2783,11 @@
       <div class="workout-sticky-top" id="workoutStickyTop" aria-label="Træningsstatus og hurtige handlinger">
         <div class="workout-empty-actions" id="workoutEditorEmptyActions">
           <div><strong>Tilføj din første øvelse</strong><span>Vælg en øvelse for at bygge og gemme træningspasset.</span></div>
-          <button class="small-btn" type="button" onclick="openFirstExercisePicker(event)">＋ Tilføj øvelse</button>
+          <button class="small-btn modern-tone-green" type="button" data-work4it-leading-icon="add" onclick="openFirstExercisePicker(event)">Tilføj øvelse</button>
         </div>
         <div class="top-controls" id="workoutPrimaryActions" hidden>
-          <button class="top-btn save-btn" id="saveWorkoutButton" type="button" onclick="saveCanvasState()">💾 Gem</button>
-          <button class="top-btn stop-btn session-only" id="stopBtn" onclick="finishWorkout()">⏹ Afslut</button>
+          <button class="top-btn save-btn modern-tone-cyan" id="saveWorkoutButton" type="button" data-work4it-leading-icon="save" onclick="saveCanvasState()">Gem</button>
+          <button class="top-btn stop-btn session-only modern-tone-red" id="stopBtn" data-work4it-leading-icon="finish" onclick="finishWorkout()">Afslut</button>
         </div>
         <section class="session-banner session-only" id="trainingSessionView" aria-label="Aktiv træningssession">
           <div class="session-banner-head">
@@ -2795,9 +2795,9 @@
             <span class="session-status-badge" id="sessionStatusText">I gang</span>
           </div>
           <div class="session-controls">
-            <button class="session-control-btn pause" id="pauseWorkoutBtn" onclick="pauseWorkoutSession()">⏸ Pause</button>
-            <button class="session-control-btn resume" id="resumeWorkoutBtn" onclick="resumeWorkoutSession()">▶ Fortsæt</button>
-            <button class="session-control-btn close-session" onclick="closeTrainingWindow()">✕ Luk</button>
+            <button class="session-control-btn pause modern-tone-orange" id="pauseWorkoutBtn" data-work4it-leading-icon="pause" onclick="pauseWorkoutSession()">Pause</button>
+            <button class="session-control-btn resume modern-tone-green" id="resumeWorkoutBtn" data-work4it-leading-icon="play" onclick="resumeWorkoutSession()">Fortsæt</button>
+            <button class="session-control-btn close-session modern-tone-blue" data-work4it-leading-icon="close" onclick="closeTrainingWindow()">Luk</button>
           </div>
         </section>
         <div class="stats" id="workoutStatusSummary" hidden>
@@ -2817,10 +2817,10 @@
       <details class="program-secondary-actions" id="programSecondaryActions">
         <summary>Flere programhandlinger</summary>
         <div class="program-secondary-content">
-          <button class="dashboard-btn live-training-only" type="button" onclick="openDashboard()" hidden>📊 Åbn avanceret dashboard</button>
+          <button class="dashboard-btn live-training-only modern-tone-cyan" type="button" data-work4it-leading-icon="progress" onclick="openDashboard()" hidden>Åbn avanceret dashboard</button>
           <div class="program-actions program-only">
-            <button class="program-action-btn share" onclick="shareCurrentProgram()">🔗 Del træningspas</button>
-            <button class="program-action-btn delete" onclick="deleteCurrentProgram()">🗑 Slet træningspas</button>
+            <button class="program-action-btn share modern-tone-violet" data-work4it-leading-icon="share" onclick="shareCurrentProgram()">Del træningspas</button>
+            <button class="program-action-btn delete modern-tone-red" data-work4it-leading-icon="trash" onclick="deleteCurrentProgram()">Slet træningspas</button>
           </div>
         </div>
       </details>
@@ -2838,7 +2838,7 @@
           <div class="mini-title" id="exercisePickerTitle" style="padding:10px 14px;margin:0;border-bottom:1px solid var(--border);">Hvilken muskelgruppe?</div>
           <div id="muscleMenuItems"></div>
         </div>
-        <button class="add-btn" onclick="toggleMuscleMenu(event)">➕ Tilføj ny øvelse</button>
+        <button class="add-btn modern-tone-green" data-work4it-leading-icon="add" onclick="toggleMuscleMenu(event)">Tilføj ny øvelse</button>
       </div>
         </div>
       </details>
@@ -2846,9 +2846,9 @@
   </main>
 
   <nav class="modern-bottom-nav" id="modernBottomNav" aria-label="Primær navigation">
-    <button class="modern-bottom-tab" type="button" data-modern-category="user" aria-pressed="false"><span class="modern-icon" aria-hidden="true">👤</span><strong>Bruger</strong></button>
-    <button class="modern-bottom-tab" type="button" data-modern-category="training" aria-pressed="true"><span class="modern-icon" aria-hidden="true">🏋️</span><strong>Træning</strong></button>
-    <button class="modern-bottom-tab" type="button" data-modern-category="more" aria-pressed="false"><span class="modern-icon" aria-hidden="true">•••</span><strong>Mere</strong></button>
+    <button class="modern-bottom-tab" type="button" data-modern-category="user" aria-pressed="false"><span class="modern-icon" data-work4it-icon="user" aria-hidden="true"></span><strong>Bruger</strong></button>
+    <button class="modern-bottom-tab" type="button" data-modern-category="training" aria-pressed="true"><span class="modern-icon" data-work4it-icon="training" aria-hidden="true"></span><strong>Træning</strong></button>
+    <button class="modern-bottom-tab" type="button" data-modern-category="more" aria-pressed="false"><span class="modern-icon" data-work4it-icon="more" aria-hidden="true"></span><strong>Mere</strong></button>
   </nav>
 
   <div class="exercise-action-menu" id="exerciseActionMenu" role="menu" aria-label="Øvelseshandlinger" onkeydown="handleExerciseActionMenuKey(event)" hidden>
@@ -3428,28 +3428,28 @@
         profile: "Trænings Profil",
         login: "Log ind",
         manual: "Manuel styring",
-        newWorkout: "➕ Opret tomt Træningspas",
-        savedWorkouts: "📂 Gemte Træningspas",
-        trashWorkouts: "🗑 Papirkurv",
-        myProgress: "📈 Min udvikling",
-        membership: "💎 Medlemskab",
-        history: "📜 Historik / Dashboard",
+        newWorkout: "Opret tomt Træningspas",
+        savedWorkouts: "Gemte Træningspas",
+        trashWorkouts: "Papirkurv",
+        myProgress: "Min udvikling",
+        membership: "Medlemskab",
+        history: "Historik / Dashboard",
         autoPrograms: "Automatiske træningspas",
-        chooseType: "✨ Vælg træningstype...",
+        chooseType: "Vælg træningstype...",
         savedTitle: "Vælg et gemt træningspas",
         savedEmpty: "Gem et træningspas for at se det her.",
         trashTitle: "Slettede træningspas",
         trashEmpty: "Papirkurven er tom.",
         defaultTitle: "Mit nye træningspas",
-        save: "💾 Gem",
-        start: "▶ Start Træning",
-        pause: "⏸ Pause Træning",
-        stop: "⏹ Afslut",
+        save: "Gem",
+        start: "Start Træning",
+        pause: "Pause Træning",
+        stop: "Afslut",
         timeUsed: "Tid brugt:",
         ready: "Klar til første øvelse",
-        dashboard: "📊 Åbn træningsdashboard",
-        addExercise: "➕ Tilføj ny øvelse",
-        copilotTitle: "✨ AI Træningsassistent (Profil, programmer og træningspas)",
+        dashboard: "Åbn træningsdashboard",
+        addExercise: "Tilføj ny øvelse",
+        copilotTitle: "AI Træningsassistent (Profil, programmer og træningspas)",
         copilotPlaceholder: "F.eks. 'Lav et styrkeprogram', 'Jeg har kun håndvægte' eller 'Opdater min vægt til 88 kg'",
         run: "Kør",
         chooseMuscle: "Hvilken muskelgruppe?",
@@ -3689,6 +3689,7 @@
       $("exercises").innerHTML = "";
       exerciseStates.forEach(ex => addExercise(ex.name, ex.muscle, ex.sets, ex));
       renderSaved();
+      window.Work4itIcons?.hydrate?.(document);
     }
 
     function saveLastActiveView(view) {
@@ -3795,7 +3796,7 @@
       const actionLabels = help.actions || {};
       const featureCards = (help.features || []).map(feature => `
           <section class="about-feature">
-            <span class="about-feature-icon" aria-hidden="true">${esc(feature.icon || "✓")}</span>
+            <span class="about-feature-icon" aria-hidden="true">${window.Work4itIcons?.markup?.(feature.icon) || esc(feature.icon || "✓")}</span>
             <h3>${esc(feature.title)}</h3>
             <p>${esc(feature.text)}</p>
           </section>`).join("");
@@ -3811,12 +3812,12 @@
         <div class="about-feature-grid">
           ${featureCards}
           ${help.premium ? `<section class="about-feature future">
-            <span class="about-feature-icon" aria-hidden="true">${esc(help.premium.icon || "⭐")}</span>
+            <span class="about-feature-icon" aria-hidden="true">${window.Work4itIcons?.markup?.(help.premium.icon) || esc(help.premium.icon || "membership")}</span>
             <h3>${esc(help.premium.title)}</h3>
             <p>${esc(help.premium.text)}</p>
           </section>` : ""}
           ${help.feedback ? `<section class="about-feature future">
-            <span class="about-feature-icon" aria-hidden="true">${esc(help.feedback.icon || "📝")}</span>
+            <span class="about-feature-icon" aria-hidden="true">${window.Work4itIcons?.markup?.(help.feedback.icon) || esc(help.feedback.icon || "feedback")}</span>
             <h3>${esc(help.feedback.title)}</h3>
             <p>${esc(help.feedback.text)}</p>
           </section>` : ""}
@@ -4709,10 +4710,11 @@
       $("modalContent").innerHTML = `
         <p class="helper-text">Vælg hvilken type træningspas du vil oprette.</p>
         <div class="row">
-          <button class="small-btn" onclick="closeModal();newWorkout('strength')">🏋️ Styrketræning</button>
-          <button class="small-btn" onclick="closeModal();newWorkout('calisthenics')">🤸 Calisthenics</button>
-          <button class="small-btn" onclick="closeModal();newWorkout('cardio')">❤️ Cardio</button>
+          <button class="small-btn modern-tone-blue" data-work4it-leading-icon="training" onclick="closeModal();newWorkout('strength')">Styrketræning</button>
+          <button class="small-btn modern-tone-violet" data-work4it-leading-icon="calisthenics" onclick="closeModal();newWorkout('calisthenics')">Calisthenics</button>
+          <button class="small-btn modern-tone-orange" data-work4it-leading-icon="calories" onclick="closeModal();newWorkout('cardio')">Cardio</button>
         </div>`;
+      window.Work4itIcons?.hydrate?.($("modalContent"));
       openModal();
     }
 
@@ -4721,10 +4723,11 @@
       $("modalContent").innerHTML = `
         <p class="helper-text">Vælg den enkleste vej til dit næste træningspas.</p>
         <div class="row">
-          <button class="small-btn" type="button" onclick="closeModal();openBlankWorkoutDialog()">＋ Opret træningspas</button>
-          <button class="small-btn" type="button" onclick="closeModal();openScreenshotImportInfo()">📷 Importér screenshot</button>
-          <button class="small-btn" type="button" onclick="closeModal();openProgramGeneratorFromDashboard()">✨ Generér træningsplan</button>
+          <button class="small-btn modern-tone-green" type="button" data-work4it-leading-icon="add" onclick="closeModal();openBlankWorkoutDialog()">Opret træningspas</button>
+          <button class="small-btn modern-tone-orange" type="button" data-work4it-leading-icon="import" onclick="closeModal();openScreenshotImportInfo()">Importér screenshot</button>
+          <button class="small-btn modern-tone-violet" type="button" data-work4it-leading-icon="aiPlan" onclick="closeModal();openProgramGeneratorFromDashboard()">Generér træningsplan</button>
         </div>`;
+      window.Work4itIcons?.hydrate?.($("modalContent"));
       openModal();
     }
 
@@ -5850,8 +5853,8 @@
                     <input class="pause" id="pause-${slot}-${i}" inputmode="numeric" pattern="[0-9:]*" autocomplete="off" placeholder="00:00" value="${esc(pauseValue)}" data-pause-manual="${pauseManual}" oninput="sanitizePauseInput(this); markPauseManual(this)" onblur="normalizePauseInput(this)">
                     <div class="pause-progress" id="pause-progress-${slot}-${i}" role="progressbar" aria-label="Pause" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="pause-progress-fill"></span></div>
                   </div>
-                  <button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})" aria-label="Start eller pause pausetimer">▶</button>
-                  <button class="timer-btn" onclick="resetPause('${slot}',${i})" aria-label="Nulstil pausetimer">↺</button>
+                  <button class="timer-btn" id="pause-btn-${slot}-${i}" onclick="togglePause('${slot}',${i})" aria-label="Start eller pause pausetimer">${window.Work4itIcons?.markup?.("play") || "Start"}</button>
+                  <button class="timer-btn" onclick="resetPause('${slot}',${i})" aria-label="Nulstil pausetimer">${window.Work4itIcons?.markup?.("reset") || "Nulstil"}</button>
                 </div>
               </div>
             </div>
@@ -6218,7 +6221,7 @@
         control: `pause-control-${slot}-${set}`,
         progress: `pause-progress-${slot}-${set}`
       };
-      btn.textContent = "⏸";
+      btn.innerHTML = window.Work4itIcons?.markup?.("pause") || "Pause";
       btn.classList.add("running");
       input.value = formatPause(pauseTimers[key].remaining);
       updatePauseProgress(key);
@@ -6242,7 +6245,7 @@
       clearInterval(pauseTimers[key].interval);
       pauseTimers[key].interval = null;
       const btn = $(pauseTimers[key].btn);
-      if (btn) { btn.textContent = "▶"; btn.classList.remove("running"); }
+      if (btn) { btn.innerHTML = window.Work4itIcons?.markup?.("play") || "Start"; btn.classList.remove("running"); }
       pauseTimers[key].running = false;
       pauseTimers[key].endsAt = null;
       updatePauseProgress(key, options);
@@ -8447,7 +8450,7 @@
       const chartVals = hist.slice(-12).map(e => e.bestOneRm || 0);
       const max = Math.max(1, ...chartVals);
       const bars = chartVals.length ? chartVals.map(v => `<div class="bar" style="height:${Math.max(8,Math.round((v/max)*145))}px"></div>`).join("") : `<span class="helper-text">${t("noHistory")}</span>`;
-      $("modalTitle").textContent = slot ? `${t("simulateBtn")}: ${$(`name-${slot}`).textContent}` : t("dashboard").replace("📊 ", "");
+      $("modalTitle").textContent = slot ? `${t("simulateBtn")}: ${$(`name-${slot}`).textContent}` : t("dashboard");
       $("modalContent").classList.add("brand-surface", "dashboard-brand-surface");
       $("modalContent").innerHTML = `
         ${heatmap}
@@ -10685,7 +10688,8 @@
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
   <script src="auth-gate.js?v=20260712-google-auth-domain1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
-  <script src="modern-dashboard-ui.js?v=20260721-modern-permanent1"></script>
+  <script src="work4it-icons.js?v=20260722-icon-system1"></script>
+  <script src="modern-dashboard-ui.js?v=20260722-icon-system1"></script>
   <script src="profile-account.js?v=20260721-modern-permanent1"></script>
   <script src="profile-wizard.js?v=20260716-cardio-empty-time1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
@@ -10701,7 +10705,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260721-official-assets1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260722-icon-system1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

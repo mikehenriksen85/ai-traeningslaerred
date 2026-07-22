@@ -110,14 +110,56 @@ body {
 
 .modern-icon-rail::-webkit-scrollbar { display: none; }
 
+.work4it-icon-svg {
+  width: 1em;
+  height: 1em;
+  display: block;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.work4it-icon-svg .work4it-icon-fill { fill: currentColor; stroke: none; }
+
+[data-work4it-leading-icon] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.work4it-leading-icon {
+  width: 1.25em;
+  height: 1.25em;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--modern-icon-color, currentColor);
+  font-size: 1.05em;
+}
+
+.modern-tone-blue { --modern-icon-color: #60a5fa; }
+.modern-tone-cyan { --modern-icon-color: #22d3ee; }
+.modern-tone-green { --modern-icon-color: #4ade80; }
+.modern-tone-orange { --modern-icon-color: #fb923c; }
+.modern-tone-amber { --modern-icon-color: #fbbf24; }
+.modern-tone-violet { --modern-icon-color: #c084fc; }
+.modern-tone-red { --modern-icon-color: #f87171; }
+
 .modern-icon-tab {
-  min-width: 78px;
-  min-height: 68px;
+  flex: 0 0 108px;
+  width: 108px;
+  min-width: 108px;
+  min-height: 82px;
   display: grid;
   place-items: center;
   align-content: center;
   gap: 5px;
-  padding: 8px;
+  padding: 9px 7px;
+  overflow: hidden;
   scroll-snap-align: start;
   border: 1px solid transparent;
   border-radius: var(--modern-radius-md);
@@ -126,19 +168,43 @@ body {
   cursor: pointer;
   font: inherit;
   font-size: 11px;
-  line-height: 1.2;
-  white-space: nowrap;
+  line-height: 1.25;
 }
 
 .modern-icon-tab .modern-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 84%);
+  color: var(--modern-icon-color, var(--text-accent));
   font-size: 1.35rem;
   line-height: 1;
 }
 
+.modern-icon-label {
+  width: 100%;
+  min-width: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: center;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .modern-icon-tab[aria-selected="true"] {
-  border-color: color-mix(in srgb, var(--blue), transparent 48%);
-  background: color-mix(in srgb, var(--blue), transparent 82%);
+  border-color: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 38%);
+  background: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 84%);
   color: var(--text-primary);
+}
+
+.modern-icon-tab[aria-selected="true"] .modern-icon {
+  background: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 70%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 52%);
 }
 
 .modern-feature-card {
@@ -157,11 +223,11 @@ body {
   box-shadow: 0 20px 44px rgba(0,0,0,.24);
 }
 
-.modern-feature-card::after {
-  content: attr(data-icon);
+.modern-feature-art {
   position: absolute;
   right: 22px;
   top: 14px;
+  color: rgba(255,255,255,.72);
   font-size: clamp(3.25rem, 12vw, 5.25rem);
   opacity: .16;
   transform: rotate(-7deg);
@@ -223,7 +289,17 @@ body {
 .modern-mini-card:hover { border-color: color-mix(in srgb, var(--blue), transparent 40%); }
 .modern-mini-card:disabled { opacity: .52; cursor: not-allowed; }
 .modern-mini-card.destructive { border-color: color-mix(in srgb, var(--red), transparent 55%); }
-.modern-mini-card .modern-icon { color: var(--text-accent); font-size: 1.45rem; line-height: 1; }
+.modern-mini-card .modern-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 84%);
+  color: var(--modern-icon-color, var(--text-accent));
+  font-size: 1.45rem;
+  line-height: 1;
+}
 .modern-mini-card strong,
 .modern-mini-card span,
 .modern-mini-card small { display: block; }
@@ -351,8 +427,19 @@ body {
   font-weight: var(--font-weight-semibold);
 }
 
-.modern-bottom-tab .modern-icon { font-size: 1.25rem; }
-.modern-bottom-tab[aria-current="page"] { background: color-mix(in srgb, var(--blue), transparent 80%); color: var(--text-primary); }
+.modern-bottom-tab .modern-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+}
+.modern-bottom-tab[data-modern-category="user"] { --modern-icon-color: #22d3ee; }
+.modern-bottom-tab[data-modern-category="training"] { --modern-icon-color: #4ade80; }
+.modern-bottom-tab[data-modern-category="more"] { --modern-icon-color: #c084fc; }
+.modern-bottom-tab[aria-current="page"] { background: color-mix(in srgb, var(--modern-icon-color), transparent 84%); color: var(--text-primary); }
+.modern-bottom-tab[aria-current="page"] .modern-icon { color: var(--modern-icon-color); }
 
 .modern-icon-tab:focus-visible,
 .modern-feature-open:focus-visible,
@@ -403,11 +490,13 @@ button { font-family: var(--font-primary); }
   .modern-feature-open,
   .modern-primary-button { width: 100%; }
   .modern-mini-card { min-height: 118px; padding: 13px; }
+  .modern-icon-rail { gap: 6px; padding: 6px; }
+  .modern-icon-tab { flex-basis: 102px; width: 102px; min-width: 102px; font-size: 10.5px; }
 }
 
 @media (max-width: 370px) {
   .modern-card-grid { grid-template-columns: 1fr; }
-  .modern-icon-tab { min-width: 70px; }
+  .modern-icon-tab { flex-basis: 96px; width: 96px; min-width: 96px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

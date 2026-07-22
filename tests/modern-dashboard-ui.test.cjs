@@ -6,12 +6,16 @@ const vm = require("node:vm");
 
 const html = fs.readFileSync("app/index.html", "utf8");
 const source = fs.readFileSync("app/modern-dashboard-ui.js", "utf8");
+const iconSource = fs.readFileSync("app/work4it-icons.js", "utf8");
 const css = fs.readFileSync("app/modern-dashboard-ui.css", "utf8");
 const profile = fs.readFileSync("app/profile-account.js", "utf8");
+const helpContent = fs.readFileSync("app/help-content-config.js", "utf8");
+const screenshotImport = fs.readFileSync("app/screenshot-import.js", "utf8");
 const menuManager = fs.readFileSync("app/workit-menu-manager.js", "utf8");
 const serviceWorker = fs.readFileSync("app/service-worker.js", "utf8");
 
 new Function(source);
+new Function(iconSource);
 
 for (const id of [
   "modernDashboardUI", "modernDashboardTitle", "modernIconRail", "modernFeaturePanel",
@@ -51,9 +55,33 @@ assert.match(source, /function openModernTrash\(/);
 assert.match(source, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/, "Horizontal tabs support keyboard navigation");
 assert.match(source, /class="modern-mini-card/);
 assert.match(source, /data-modern-open=/);
+assert.match(source, /Work4itIcons\?\.markup/);
+assert.match(source, /scrollIntoView\?\.\(\{ behavior: "smooth", block: "nearest", inline: "center" \}\)/);
+
+for (const iconName of [
+  "profile", "target", "membership", "coach", "settings", "play", "aiPlan", "blank",
+  "programs", "active", "import", "history", "progress", "calories", "trash", "export",
+  "help", "privacy", "feedback", "logout", "user", "training", "more", "save",
+  "finish", "pause", "close", "share", "add", "cloud", "reset", "calisthenics"
+]) assert.match(iconSource, new RegExp(`${iconName}:`), `Shared icon system includes ${iconName}`);
+assert.doesNotMatch(source, /👤|🏋️|◆|✦|▣|◷|▧|⌫/, "Modern navigation no longer uses generic emoji or text glyphs");
+assert.match(html, /data-work4it-icon="user"/);
+assert.match(html, /data-work4it-icon="training"/);
+assert.match(html, /data-work4it-icon="more"/);
+for (const iconName of ["save", "finish", "pause", "play", "close", "progress", "share", "trash", "add"])
+  assert.match(html, new RegExp(`data-work4it-leading-icon="${iconName}"`), `Core app action uses ${iconName} SVG icon`);
+assert.match(helpContent, /icon: "coach"/);
+assert.match(helpContent, /icon: "cloud"/);
+assert.doesNotMatch(helpContent, /🤖|🎯|📊|☁️|📸|⭐|📝/);
+assert.match(screenshotImport, /Work4itIcons\?\.markup\?\.\("import"\)/);
+assert.doesNotMatch(html, />▶<\/button>|>↺<\/button>|>📷|>🗑|>💾|>➕/);
 
 assert.match(css, /position: fixed/);
 assert.match(css, /overflow-x: auto/);
+assert.match(css, /\.modern-icon-label/);
+assert.match(css, /white-space: normal/);
+assert.match(css, /\.work4it-icon-svg/);
+assert.match(css, /--modern-icon-color/);
 assert.match(css, /--modern-touch: 48px/);
 assert.match(css, /min-height: var\(--modern-touch\)/);
 assert.match(css, /body\[data-workout-view="session"\] \.modern-bottom-nav/);
@@ -61,16 +89,17 @@ assert.match(css, /@media \(max-width: 560px\)/);
 assert.match(css, /@media \(min-width: 760px\)/);
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
+for (const asset of ["modern-dashboard-ui.css", "work4it-icons.js", "modern-dashboard-ui.js"])
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260722-icon-system1`));
+for (const asset of ["profile-account.js", "workit-menu-manager.js", "membership.js"])
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
+assert.match(html, /service-worker\.js\?v=20260722-icon-system1/);
+assert.match(serviceWorker, /work4it-shell-v128-icon-system1/);
 for (const asset of [
-  "modern-dashboard-ui.css", "modern-dashboard-ui.js", "profile-account.js",
-  "workit-menu-manager.js", "membership.js"
-]) assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
-assert.match(html, /service-worker\.js\?v=20260721-official-assets1/);
-assert.match(serviceWorker, /work4it-shell-v127-official-assets1/);
-for (const asset of [
-  "modern-dashboard-ui.css", "modern-dashboard-ui.js", "profile-account.js",
-  "workit-menu-manager.js", "membership.js"
-]) assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
+  "modern-dashboard-ui.css", "work4it-icons.js", "modern-dashboard-ui.js"
+]) assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260722-icon-system1`));
+for (const asset of ["profile-account.js", "workit-menu-manager.js", "membership.js"])
+  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
 
 const listeners = new Map();
 const window = {

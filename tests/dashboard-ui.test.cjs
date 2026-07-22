@@ -56,7 +56,7 @@ assert.match(html, /function updateLiveTrainingVisibility\(/);
 assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
 assert.match(html, /document\.body\.dataset\.liveTraining = String\(isActive\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
-assert.match(html, /service-worker\.js\?v=20260721-official-assets1/);
+assert.match(html, /service-worker\.js\?v=20260722-icon-system1/);
 assert.match(html, /dashboard-view-model\.js\?v=20260718-dashboard-buttons1/);
 assert.match(html, /workout-heatmap\.js\?v=20260718-heatmap1/);
 assert.match(html, /function renderWorkoutHeatmapSection\(/);
@@ -74,7 +74,7 @@ assert.match(trainingGoalEngine, /exerciseType: "cardio", durationMinutes: ""/);
 
 assert.match(html, /class="sticky-metric live-training-only" id="elapsedTimeMetric" hidden/);
 assert.match(html, /class="calorie-panel live-training-only" id="caloriePanel" aria-live="polite" hidden/);
-assert.match(html, /class="dashboard-btn live-training-only" type="button" onclick="openDashboard\(\)" hidden/);
+assert.match(html, /class="dashboard-btn live-training-only[^"]*"[^>]*data-work4it-leading-icon="progress"[^>]*onclick="openDashboard\(\)"[^>]*hidden/);
 assert.match(html, /function isValidWorkoutExerciseName\(/);
 assert.match(html, /function updateWorkoutProgress\(\) \{\s+updateStartTrainingAvailability\(\);\s+updateWorkoutEditorActionState\(\)/);
 assert.match(html, /id="workoutEditorEmptyActions"/);

@@ -50,11 +50,11 @@ for (const filename of filenames) {
 }
 
 const allRuntimeReferences = Object.values(files).join("\n");
-assert.doesNotMatch(allRuntimeReferences, /work4it-(?:app-icon|hero-logo|logo|icon)|\/assets\/(?:app-icon|hero-logo)/i);
+assert.doesNotMatch(allRuntimeReferences, /work4it-(?:app-icon|hero-logo|logo|icon)(?:[-.])|\/assets\/(?:app-icon|hero-logo)/i);
 assert.match(files.appHtml, /Pictures\/App%20Ikon%20V1\.png/);
 assert.match(files.appHtml, /Pictures\/App%20Logo%20v1\.png/);
 assert.match(files.appHtml, /Pictures\/Hero%20Logo%20v1\.png/);
-assert.match(files.appWorker, /work4it-shell-v127-official-assets1/);
+assert.match(files.appWorker, /work4it-shell-v128-icon-system1/);
 assert.match(files.appManifest, /Pictures\/App Ikon V1\.png/);
 
 for (const [relativeFile, baseDirectory] of [
