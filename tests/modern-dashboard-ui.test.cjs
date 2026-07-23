@@ -98,8 +98,8 @@ for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
 assert.match(html, /work4it-icons\.js\?v=20260722-icon-system1/);
 for (const asset of ["profile-account.js", "workit-menu-manager.js", "membership.js"])
   assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
-assert.match(html, /service-worker\.js\?v=20260722-card-labels1/);
-assert.match(serviceWorker, /work4it-shell-v129-card-labels1/);
+assert.match(html, /service-worker\.js\?v=20260723-sync-notice1/);
+assert.match(serviceWorker, /work4it-shell-v130-sync-notice1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
   assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260722-card-labels1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);

@@ -7145,11 +7145,25 @@
       if (!service?.syncAllLocalData) return setDashboardSyncNotice("Cloud kan ikke kontaktes lige nu.");
       setDashboardSyncNotice("Gemmer…", true);
       try {
-        await service.syncAllLocalData();
-        setDashboardSyncNotice();
+        const synced = await (service.retryCloudConnection?.() || service.syncAllLocalData());
+        if (synced === true) {
+          setDashboardSyncNotice();
+          return;
+        }
+        const status = service.getCloudStatus?.() || {};
+        setDashboardSyncNotice(status.state === "offline"
+          ? "Offline – ændringer synkroniseres automatisk senere"
+          : "Cloud kunne ikke synkronisere. Prøv igen senere.");
       } catch (error) {
         const offline = service.isConnectivityError?.(error) === true;
-        setDashboardSyncNotice(offline ? "Offline – ændringer synkroniseres senere" : "Kunne ikke synkronisere");
+        console.error("Manuel cloud-synkronisering mislykkedes.", {
+          code: error?.code || "unknown",
+          message: error?.message || String(error),
+          error
+        });
+        setDashboardSyncNotice(offline
+          ? "Offline – ændringer synkroniseres automatisk senere"
+          : "Cloud kunne ikke synkronisere. Prøv igen senere.");
       }
     }
     function modernDashboardSnapshot(programs = getPrograms().sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt))) {
@@ -10580,17 +10594,29 @@
     });
     window.addEventListener("firestore:fallback-active", event => {
       const error = event.detail?.error;
+      const background = event.detail?.background === true;
+      const offline = window.FirestoreDataService?.isConnectivityError?.(error) === true;
       if (dashboardCloudPending) {
         dashboardCloudPending = false;
         loadAutosave();
         renderSaved();
       }
-      setDashboardSyncNotice(window.FirestoreDataService?.isConnectivityError?.(error)
-        ? "Offline – ændringer synkroniseres senere"
-        : "Kunne ikke synkronisere");
-      $("autosaveStatus").textContent = window.FirestoreDataService?.isConnectivityError?.(error)
-        ? "Træningspas gemt lokalt - Cloud ikke tilgængelig"
-        : `Cloud-fejl (${error?.code || "ukendt"}) - lokale data er bevaret`;
+      console.error("Firestore-fallback aktiveret.", {
+        phase: event.detail?.phase || "unknown",
+        code: error?.code || "unknown",
+        message: error?.message || String(error || "Ukendt Firestore-fejl"),
+        error
+      });
+      // Automatiske opstarts- og resume-forsøg må ikke blive til en permanent
+      // fejlbesked på dashboardet. Appen bruger UID-cachen og prøver Cloud igen
+      // ved online, fokus og app-resume. En manuel retry viser fortsat resultatet.
+      if (background) setDashboardSyncNotice();
+      else setDashboardSyncNotice(offline
+        ? "Offline – ændringer synkroniseres automatisk senere"
+        : "Cloud kunne ikke synkronisere. Prøv igen senere.");
+      $("autosaveStatus").textContent = offline
+        ? "Lokale data er tilgængelige - Cloud synkroniseres automatisk senere"
+        : "Lokale data er tilgængelige - Cloud-forbindelsen prøves igen automatisk";
     });
     window.addEventListener("firestore:user-cache-cleared", () => {
       setDashboardSyncNotice();
@@ -10700,12 +10726,12 @@
   <script type="module" src="exercise-animation-cloud-service.js?v=20260716-backend-admin-read1"></script>
   <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
   <script type="module" src="auth-service.js?v=20260713-stripe-google-login1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260718-dashboard-buttons1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260722-sync-notice1"></script>
   <script type="module" src="ai-request-counter.js?v=20260713-stripe-google-login1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260722-card-labels1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260723-sync-notice1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

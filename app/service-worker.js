@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v129-card-labels1";
+const CACHE_NAME = "work4it-shell-v130-sync-notice1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -48,7 +48,7 @@ const APP_SHELL = [
   "./firebase-config.js?v=20260715-exercise-animations1",
   "./exercise-animation-cloud-service.js?v=20260716-backend-admin-read1",
   "./auth-service.js?v=20260713-stripe-google-login1",
-  "./firestore-cloud-service.js?v=20260718-dashboard-buttons1"
+  "./firestore-cloud-service.js?v=20260722-sync-notice1"
 ];
 
 self.addEventListener("install", event => {

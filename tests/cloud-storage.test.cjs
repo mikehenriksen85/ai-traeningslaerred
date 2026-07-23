@@ -23,6 +23,13 @@ assert.match(htmlSource, /cloudService\.saveProgramsToCloud\(programs\)/);
 assert.match(htmlSource, /✔ Gemt i Cloud/);
 assert.match(htmlSource, /isConnectivityError\?\.\(error\)/);
 assert.match(cloudSource, /reportFirestoreError\("saveProgramsToCloud"/);
+assert.match(cloudSource, /function dispatchFallbackActive\(error, phase = "initialize"\)/);
+assert.match(cloudSource, /detail: \{ error, phase, background: true \}/);
+assert.match(cloudSource, /dispatchFallbackActive\(error, "hydrate"\)/);
+assert.match(cloudSource, /dispatchFallbackActive\(error, "initialize"\)/);
+assert.match(cloudSource, /setCloudState\(isConnectivityError\(error\) \? "offline" : "error", error\)/);
+assert.match(cloudSource, /async function reconnectCloud\(reason = "manual"\)/);
+assert.match(cloudSource, /retryCloudConnection: async \(\) =>/);
 assert.match(cloudSource, /COLLECTIONS\.workouts/);
 assert.match(cloudSource, /function activeSessionFromAutosave\(\)[\s\S]*?hasValidExercise[\s\S]*?\["in_progress", "paused"\][\s\S]*?hasValidExercise/,
   "Cloud only retains an active autosave when it contains a valid exercise");

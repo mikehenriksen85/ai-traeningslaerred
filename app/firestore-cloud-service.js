@@ -67,6 +67,7 @@ let refreshInProgress = false;
 let lastCloudRefreshAt = 0;
 let cloudHydrationInProgress = false;
 let localSyncReady = false;
+let lastFallbackError = null;
 const initializationByUid = new Map();
 
 const NETWORK_ERROR_CODES = new Set([
@@ -102,6 +103,15 @@ function setCloudState(state, error = null) {
       message: error?.message || ""
     }
   }));
+}
+
+function dispatchFallbackActive(error, phase = "initialize") {
+  if (error && lastFallbackError === error) return false;
+  lastFallbackError = error || null;
+  window.dispatchEvent(new CustomEvent("firestore:fallback-active", {
+    detail: { error, phase, background: true }
+  }));
+  return true;
 }
 
 function parseLocal(key, fallback = null) {
@@ -629,11 +639,13 @@ async function syncAllLocalData(uid = activeUid) {
       localStorageRole: "cache_fallback",
       status: "synced"
     });
+    if (cloudState !== "initializing") setCloudState("ready");
     localFingerprint = currentLocalFingerprint();
     window.dispatchEvent(new CustomEvent("firestore:sync-completed"));
     return true;
   } catch (error) {
     reportFirestoreError("syncAllLocalData", ["users", uid], error, uid);
+    setCloudState(isConnectivityError(error) ? "offline" : "error", error);
     await setSyncMetadata(uid, {
       status: "failed",
       lastError: error?.code || error?.message || "unknown"
@@ -788,10 +800,11 @@ async function hydrateFromFirestore(uid = activeUid, options = {}) {
     window.dispatchEvent(new CustomEvent("firestore:data-hydrated", {
       detail: { uid, source: "firestore", authoritative: !preserveLocalWhenCloudEmpty, cloudHasData }
     }));
+    lastFallbackError = null;
     return { success: true, cloudHasData };
   } catch (error) {
     console.warn("Firestore kunne ikke hentes. Appen fortsætter med den aktive brugers UID-cache.", error);
-    window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
+    dispatchFallbackActive(error, "hydrate");
     return { success: false, cloudHasData: false, error };
   }
 }
@@ -951,6 +964,7 @@ function clearRuntimeForLogout() {
   localSyncReady = false;
   cloudHydrationInProgress = false;
   localFingerprint = "";
+  lastFallbackError = null;
   storageScope?.setActiveUid("");
   setCloudState("signed_out");
   window.dispatchEvent(new CustomEvent("firestore:user-cache-cleared"));
@@ -1003,7 +1017,16 @@ window.addEventListener("work4it:theme-changed", event => {
     window.dispatchEvent(new CustomEvent("work4it:theme-cloud-failed", { detail: { theme, error } }));
   });
 });
-window.addEventListener("focus", () => refreshFromCloud("focus").catch(() => {}));
+async function reconnectCloud(reason = "manual") {
+  const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+  if (!user) return false;
+  if (!cloudEnabled) await initializeUser(user);
+  return refreshFromCloud(reason);
+}
+
+window.addEventListener("focus", () => reconnectCloud("focus").catch(error => {
+  reportFirestoreError("focusReconnect", ["users", activeUid || "unknown"], error, activeUid);
+}));
 window.addEventListener("online", () => {
   const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
   if (!user) return;
@@ -1019,7 +1042,9 @@ window.addEventListener("online", () => {
   });
 });
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") refreshFromCloud("visibility").catch(() => {});
+  if (document.visibilityState === "visible") reconnectCloud("visibility").catch(error => {
+    reportFirestoreError("visibilityReconnect", ["users", activeUid || "unknown"], error, activeUid);
+  });
 });
 window.setInterval(() => {
   if (!activeUid || !localSyncReady || cloudHydrationInProgress) return;
@@ -1167,6 +1192,12 @@ window.FirestoreDataService = {
   saveDailyToCloud,
   saveMembershipToCloud,
   refreshFromCloud,
+  retryCloudConnection: async () => {
+    const user = window.FirebaseAuthService?.getCurrentUser?.() || null;
+    if (!user) return false;
+    if (!cloudEnabled) await initializeUser(user);
+    return syncAllLocalData(activeUid);
+  },
   syncAllLocalData,
   saveProgramsToCloud,
   clearActiveWorkout,
@@ -1225,7 +1256,7 @@ function beginAuthenticatedUser(user) {
     cloudEnabled = false;
     setCloudState(isConnectivityError(error) ? "offline" : "error", error);
     console.error("Kunne ikke initialisere brugerens cloud-data.", error);
-    window.dispatchEvent(new CustomEvent("firestore:fallback-active", { detail: { error } }));
+    dispatchFallbackActive(error, "initialize");
     window.dispatchEvent(new CustomEvent("firestore:user-ready", {
       detail: { uid: user.uid, fallback: true }
     }));
